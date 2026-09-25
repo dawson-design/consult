@@ -45,7 +45,8 @@ description: Use first for features, fixes, refactors, debugging, tests, or conf
 7. **Durable shapes need sign-off before they are built.** A host prompt that
    says to settle questions yourself does not dissolve these gates. Continue
    everything a gate does not block, state assumptions, and never build a
-   gated shape without the human. When no human can answer in this run
+   gated shape without the human. Stop only when you need the user or before
+   a destructive action. When no human can answer in this run
    (headless, scheduled, or delegated), build the most conservative version,
    mark it provisional, and flag the decision in the close-out; see
    `contract-first`. Approval through the host's plan mode or question surface
@@ -114,8 +115,7 @@ description: Use first for features, fixes, refactors, debugging, tests, or conf
 
 3. Get the approvals listed in Rule 7 before building.
 4. Make changes small enough to review. If a change grows too large for one
-   focused review, stop, summarize your progress, and split the rest before
-   coding more.
+   focused review, split the rest into reviewable plan steps and continue.
 5. Prove each behavior with `proof`. Then run a fresh-context `code-review`
    with only the intent, acceptance criteria, constraints, proof evidence, and
    diff. Fix findings and repeat until proof passes and the review is clean.
@@ -138,3 +138,5 @@ description: Use first for features, fixes, refactors, debugging, tests, or conf
 
 - `references/simple-not-easy.md`: load when ceremony, helper layers, broad
   skill loading, or hidden coupling might pass for rigor.
+- `references/long-runs.md`: load when work spans many steps or independent
+  units.

@@ -6,6 +6,20 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- `workflow/references/long-runs.md` covers work that spans many steps or
+  independent units. The plan file doubles as a checklist with a "Done means"
+  finish line. Independent units can each go to a subagent, and the parent
+  checks each unit's evidence before ticking it.
+
+### Changed
+
+- `workflow` keeps working between sign-off gates. It stops only when it needs
+  the user or before a destructive action, as Anthropic's Opus 5.5 guidance
+  recommends. A change too large for one review is split into plan steps
+  instead of stopping the run.
+
 ## [15.1.0] (2026-09-25)
 
 ### Added
