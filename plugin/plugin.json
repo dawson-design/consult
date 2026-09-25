@@ -1,7 +1,7 @@
 {
   "name": "consult",
   "description": "Consult: collaborative engineering-discipline skills (data, proof, security, design, and more).",
-  "version": "15.1.0",
+  "version": "15.2.0",
   "author": { "name": "Alastair Dawson", "url": "https://github.com/kreek" },
   "homepage": "https://github.com/kreek/consult",
   "repository": "https://github.com/kreek/consult",
