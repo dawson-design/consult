@@ -34,7 +34,8 @@ description: "Use for version-sensitive framework, library, SDK, or platform beh
    smallest source-compatible implementation.
 4. When source guidance alone does not prove runtime behavior, prove it with
    `proof`.
-5. In the final claim, name the source checked, or mark the claim unverified.
+5. In the final claim, name the source checked, or mark the claim unverified
+   and say where you looked.
 
 ## Tripwires
 

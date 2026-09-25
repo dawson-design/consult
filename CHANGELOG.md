@@ -20,6 +20,8 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   recommends. A change too large for one review is split into plan steps
   instead of stopping the run.
 - The `workflow` close-out opens with what needs the user's attention.
+- `official-source-check` says where it looked when it marks a claim
+  unverified.
 
 ## [15.1.0] (2026-09-25)
 
