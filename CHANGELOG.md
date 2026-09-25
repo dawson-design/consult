@@ -19,6 +19,7 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   the user or before a destructive action, as Anthropic's Opus 5.5 guidance
   recommends. A change too large for one review is split into plan steps
   instead of stopping the run.
+- The `workflow` close-out opens with what needs the user's attention.
 
 ## [15.1.0] (2026-09-25)
 

@@ -121,8 +121,8 @@ description: Use first for features, fixes, refactors, debugging, tests, or conf
    diff. Fix findings and repeat until proof passes and the review is clean.
    Label a same-context review as a fallback. Finish documentation and release
    work afterward.
-6. Report what changed, why it is better, what proves it, what remains
-   unproven, and what needs the user's attention.
+6. Report what needs the user's attention first, then what changed, why it
+   is better, what proves it, and what remains unproven.
 
 ## Tripwires
 
