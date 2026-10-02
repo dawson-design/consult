@@ -39,11 +39,11 @@ Consult is not a fixed approval pipeline. The `workflow` skill classifies each
 task by significance (how much other code it impacts) and durability (how
 costly it is to reverse), then sets the involvement level from those stakes.
 Low-stakes, disposable work runs autonomously with no gates. Approval gates
-(design direction, caller-facing interfaces, durable data shapes, migrations)
 fire only when the output is significant or hard to change, and each gate asks
 one decision question, not a barrage. If Consult feels like it is asking too
-often on routine work, that is a bug: the eval suite tracks interruption count
-per trial, and reports of gate fatigue are worth filing.
+often on routine work, that is a bug: the eval suite lowers a trial's score for
+each agent message that ends in a question, and reports of gate fatigue are
+worth filing.
 
 ## Install
 
@@ -67,30 +67,29 @@ names, so `code-review` and `security` become ambiguous with the built-ins of
 the same name. Running both also loads every skill twice. Pick one.
 
 The plugin ships a SessionStart hook that tells Claude to load the `workflow`
-skill before non-trivial code work, so you do not need a line in `CLAUDE.md`
-for that. If you added one, you can remove it.
+skill before non-trivial code work. You do not need a line in `CLAUDE.md` for
+that. If you added one, you can remove it.
 
 ### Codex
 
 ```sh
 codex plugin marketplace add kreek/consult
+codex plugin add consult@consult
 ```
 
-Then open `/plugins` in Codex, find **Consult** in the list,
-press Enter to open its details, and select `Install plugin`.
+You can also install from `/plugins` inside Codex: find **Consult**, press
+Enter to open its details, and select `Install plugin`.
 
 Codex then asks you to review and trust Consult's SessionStart hook. The hook
 prints one line telling Codex to load the `workflow` skill before non-trivial
 code work. Until you trust it, Codex picks skills from their descriptions alone.
 
-To update:
+To update, refresh the marketplace and add the plugin again:
 
 ```sh
 codex plugin marketplace upgrade consult
+codex plugin add consult@consult
 ```
-
-Then open `/plugins`, find **Consult** in the list, press Enter
-to open its details, and select `Install plugin` again.
 
 ### Cursor
 
@@ -165,13 +164,26 @@ anything. It links `~/.agents/skills/`, installs the Antigravity plugin via
 `agy plugin install`, and links tool-specific skill locations when those tools
 are present. End-user installs do not need Python or uv.
 
+### Do I need to add a routing line?
+
+Only the Claude Code and Codex plugins ship the SessionStart hook that tells
+the agent to load the `workflow` skill. Pi, Antigravity, and manual installs
+have no hook. Cursor finds the hook file, but we have not confirmed that it
+uses the output. On those hosts the agent picks skills from their descriptions
+alone. To route non-trivial code work through `workflow`, add this line to the
+host's instruction file, for example `AGENTS.md`:
+
+```text
+Before a non-trivial feature, fix, refactor, debugging task, test, or config change, load the Consult workflow skill and follow the narrower Consult skills it selects. Skip it for trivial edits and questions that involve no code change.
+```
+
 ## Skills
 
-Consult includes 23 skills. Open a skill for its triggers, workflow, and
-verification.
+Consult includes 23 skills. Open a skill for when it applies and the rules it
+sets.
 
 - Routing and proof:
-  - [`workflow`](agents/.agents/skills/workflow/SKILL.md): Use first for almost every software engineering task to route risks, choose skills, and define proof.
+  - [`workflow`](agents/.agents/skills/workflow/SKILL.md): Loads first for non-trivial code changes to choose skills, sign-off gates, and checks.
   - [`proof`](agents/.agents/skills/proof/SKILL.md): Tests, claims, invariants, behavior specs, edge cases, and evidence.
   - [`contract-first`](agents/.agents/skills/contract-first/SKILL.md): Approve caller-facing interfaces or shared structure before implementation.
 - Design:
@@ -183,57 +195,78 @@ verification.
   - [`debugging`](agents/.agents/skills/debugging/SKILL.md): Reproduce symptoms, isolate causes, inspect evidence, and fix bugs.
   - [`error-handling`](agents/.agents/skills/error-handling/SKILL.md): Error types, propagation, retries, user messages, and recovery.
   - [`refactoring`](agents/.agents/skills/refactoring/SKILL.md): Behavior-preserving change, tests, and safe rewrites.
-  - [`official-source-check`](agents/.agents/skills/official-source-check/SKILL.md): Check external behavior against official sources.
+  - [`official-source-check`](agents/.agents/skills/official-source-check/SKILL.md): Version-sensitive framework, library, SDK, or platform behavior, checked against official sources.
 - Safety:
   - [`security`](agents/.agents/skills/security/SKILL.md): Auth, secrets, crypto, input validation, dependency risk, and trust boundaries.
   - [`database`](agents/.agents/skills/database/SKILL.md): Schemas, migrations, indexes, transactions, query plans, and locking.
   - [`release`](agents/.agents/skills/release/SKILL.md): Release prep and release-artifact sync, on request or approval.
 - Public surfaces:
   - [`api`](agents/.agents/skills/api/SKILL.md): REST API contracts: endpoints, fields, evolution, status codes, errors, pagination, idempotency.
-  - [`documentation`](agents/.agents/skills/documentation/SKILL.md): READMEs, ADRs, runbooks, API docs, and comments.
+  - [`documentation`](agents/.agents/skills/documentation/SKILL.md): READMEs, runbooks, API docs, module docs, and comments for existing code.
   - [`ui-design`](agents/.agents/skills/ui-design/SKILL.md): Frontend UI, layouts, components, responsive behavior, accessibility, WCAG, keyboard, and focus.
 - Production quality:
-  - [`async-systems`](agents/.agents/skills/async-systems/SKILL.md): Concurrency, queues, streams, pub/sub, ordering, and backpressure.
-  - [`observability`](agents/.agents/skills/observability/SKILL.md): Logs, metrics, traces, health checks, dashboards, alerts, and SLOs.
+  - [`async-systems`](agents/.agents/skills/async-systems/SKILL.md): Message contracts and schemas, queues, streams, concurrency, ordering, and backpressure.
+  - [`observability`](agents/.agents/skills/observability/SKILL.md): Production logs, metrics, traces, health checks, alerts, SLOs, and performance measurement.
   - [`performance`](agents/.agents/skills/performance/SKILL.md): Profiling, latency, throughput, allocation, caching, and hot paths.
 - Repo workflow:
   - [`commit`](agents/.agents/skills/commit/SKILL.md): Staging reviewed work, commit splits, and messages.
   - [`scaffolding`](agents/.agents/skills/scaffolding/SKILL.md): New projects, package setup, quality tooling, CI, and repo structure.
   - [`git-workflow`](agents/.agents/skills/git-workflow/SKILL.md): Branches, history edits, conflicts, rebases, recovery, and force-push.
 
-Writing and prose guidance is not part of Consult. For voice, clarity,
-outlining, and editing skills, install [Terse](https://github.com/kreek/terse),
-a companion plugin from the same author.
-
 Greenfield stack templates live under
 [`scaffolding/references/stacks/`](agents/.agents/skills/scaffolding/references/stacks/).
 Shared language defaults are in
 [`language-defaults.md`](agents/.agents/skills/scaffolding/references/language-defaults.md).
 
+## Writing documents with Terse
+
+Consult's `documentation` skill covers docs for existing code. For specs, ADRs,
+design docs, PR descriptions, and posts, use
+[Terse](https://github.com/kreek/terse), a companion plugin from the same
+author. Terse pairs an offline style checker with skills to brainstorm,
+outline, draft, and edit, and it keeps the writer's voice. It needs Node.js 18
+or newer.
+
+In Claude Code:
+
+```text
+/plugin marketplace add kreek/terse
+/plugin install terse@terse
+```
+
+In Codex:
+
+```sh
+codex plugin marketplace add kreek/terse
+codex plugin add terse@terse
+```
+
 ## How routing works
 
-Consult routing is **collaboration-aware, quality-driven, and risk-triggered**.
-Risk determines which skills load; working mode determines whether the agent
-should continue, ask for approval, or stay read-only.
+The `workflow` skill loads first for non-trivial code work. It picks the
+narrower skills that change what the agent does next or how it checks the
+result.
 
-The working modes are **Direct**, **Guided**, **Design-partner**, and
-**Review-only**. Most implementation work stays in Direct or Guided mode.
+The agent asks for sign-off before it builds any of these:
 
-Consult is autonomous by default and consultative for significant or hard-to-change
-work. The agent should get a plan or shape/API sign-off before significant new
-code (a substantial new module or component, non-trivial logic, or a deliberate
-behavior change) and before it locks in a caller-facing interface, class or
-library API, project/package/module structure, structural runtime dependency,
-data model, or boundary that future work will depend on. Local helpers, private
-file moves, and narrow bug fixes that restore intended behavior should not become
-consultation gates.
+- the design direction
+- a caller-facing interface
+- a core data shape that future work binds to
+- a migration or destructive data change
+- a release artifact
+- a history-changing or destructive git operation
 
-Caller-facing interfaces and shared structure trigger `contract-first`: the
-agent stops at one recommended contract/API/structure and high-level plan, then
-asks for approval before implementation continues.
+Local helpers, private file moves, and narrow bug fixes that restore intended
+behavior never need sign-off. Some runs have no human to answer, such as
+headless or scheduled runs. There the agent builds the most conservative
+version, marks it provisional, and flags the decision.
+
+When work needs approval before building, the agent saves the approved plan as
+Markdown. A fresh session, or a cheaper model, can then build from the plan
+without the planning conversation.
 
 See [`workflow`](agents/.agents/skills/workflow/SKILL.md) for the full
-routing model and [`contract-first`](agents/.agents/skills/contract-first/SKILL.md)
+routing table and [`contract-first`](agents/.agents/skills/contract-first/SKILL.md)
 for sign-off on interfaces and shared structure.
 
 ## Evaluation
@@ -241,8 +274,8 @@ for sign-off on interfaces and shared structure.
 [`eval/README.md`](eval/README.md) benchmarks Claude Code and Codex with and
 without Consult on shared engineering tasks, using Harbor for sandboxed trials
 and RewardKit for scoring. It combines deterministic hidden tests with
-LLM-judged engineering maturity, proof quality, simplicity, and risk handling,
-and reports the lift from installing Consult.
+LLM-judged engineering maturity, proof quality, simplicity, and risk handling.
+It reports the lift from installing Consult.
 
 ## Contributing
 
@@ -273,7 +306,14 @@ If you installed the Claude Code plugin, run these from inside Claude Code:
 /plugin marketplace remove consult
 ```
 
-For Codex, remove Consult from the plugin UI or marketplace commands. For Cursor,
+For Codex:
+
+```sh
+codex plugin remove consult@consult
+codex plugin marketplace remove consult
+```
+
+For Cursor,
 disable or uninstall **consult** from the marketplace panel (or remove
 `~/.cursor/plugins/local/consult` and any `~/.cursor/plugins/cache/consult` copy). For
 Antigravity, run `agy plugin uninstall consult`.
