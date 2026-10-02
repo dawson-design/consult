@@ -85,13 +85,14 @@ two sentences.>
 - <Nearby work this Issue does not do.>
 
 ## Notes
-<Optional context: related code, logs, designs. No step-by-step plan.>
+<Optional links to related code, logs, or designs. No step-by-step plan.>
 ```
 
 Do not add an "As a user" story unless the project's template asks for one.
 The Problem section names who has the problem and what it costs them. A
-story's "As a" and "so that" clauses hold the same facts. A child Issue's Problem can be one
-sentence, because its Epic's Goal holds the larger reason.
+story's "As a" and "so that" clauses hold the same facts. A child Issue's
+Problem can be one sentence. Link its Epic for the larger reason. Do not copy
+the Epic's Goal, scope, or background into the Issue.
 
 Write each acceptance criterion as one line. Use Given/When/Then only when a
 precondition changes the result, or when the team runs BDD tests from the
@@ -183,6 +184,7 @@ Initiative (existing #40): Cut checkout abandonment from 18% to 12% by Q1
 Signals that an Issue is too large:
 
 - It breaks a Rule 3 size limit, or no one can estimate it.
+- Its body passes Rule 5's 200 words even with the parent's context linked.
 - Its title needs "and".
 - No single test could show it working.
 

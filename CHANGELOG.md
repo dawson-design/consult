@@ -29,14 +29,16 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `eval/verifier/rules.json` records every rule of every skill as `check`,
   `judge-only`, or `untested`. The anatomy validator fails when a rule is
   missing, an entry is stale, or a `check` entry has no function.
-- New `issue-tracking` skill. It organizes tracker work as Initiatives,
-  Epics, and Issues, with each Issue sized to half a sprint or less and split
-  by behavior, not by layer. It maps the three levels onto the tracker's
-  existing types and parent links. Before any tracker write, the user approves
-  the whole tree. It also loads when a task cites a tracker item, so a PR
-  closes an Issue only when every acceptance criterion is met. Its references
-  hold item templates, splitting patterns, and notes for GitHub Issues and
-  Projects, Jira, Linear, Azure DevOps, and GitLab.
+- New `issue-tracking` skill. It organizes tracker work as Initiatives, Epics,
+  and Issues, with each Issue sized to half a sprint or less and split by
+  behavior, not by layer. An Issue body stays under 200 words and links its
+  Epic or Initiative for context instead of repeating it. It maps the three
+  levels onto the tracker's existing types and parent links. Before any
+  tracker write, the user approves the whole tree. It also loads when a task
+  cites a tracker item, so a PR closes an Issue only when every acceptance
+  criterion is met. Its references hold item templates, splitting patterns,
+  and notes for GitHub Issues and Projects, Jira, Linear, Azure DevOps, and
+  GitLab.
 
 ### Fixed
 
