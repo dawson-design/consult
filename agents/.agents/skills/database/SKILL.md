@@ -1,6 +1,6 @@
 ---
 name: database
-description: Use for databases, schemas, migrations, indexes, transactions, query plans, locking.
+description: Migrations, schema changes, indexes, queries, transactions, or locking. Load before writing them.
 ---
 
 # Database

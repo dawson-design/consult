@@ -1,6 +1,6 @@
 ---
 name: performance
-description: Use for performance, profiling, latency, throughput, allocation, caching, hot paths.
+description: "Code is slow, times out, or must get faster: latency, throughput, memory, caching. Load before editing."
 ---
 
 # Performance

@@ -1,6 +1,6 @@
 ---
 name: async-systems
-description: Use for async systems, message contracts and schemas, queues, streams, concurrency, ordering, backpressure.
+description: Queues, workers, batch jobs, concurrency limits, retries, streams, or message payloads. Load before editing.
 ---
 
 # Async Systems

@@ -20,7 +20,7 @@ describe("plugin SessionStart hook", () => {
     const routing = result.stdout.trim();
     expect(routing.length).toBeGreaterThan(0);
     expect(routing.length).toBeLessThanOrEqual(MAX_ROUTING_CHARS);
-    const named = routing.match(/Consult (\S+) skill/)?.[1];
+    const named = routing.match(/consult:([a-z][a-z0-9-]*) skill/)?.[1];
     expect(named, "routing line names no Consult skill").toBeDefined();
     expect(existsSync(join(ROOT, "plugin/skills", named, "SKILL.md"))).toBe(true);
   });

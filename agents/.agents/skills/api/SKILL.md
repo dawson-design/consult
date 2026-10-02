@@ -1,6 +1,6 @@
 ---
 name: api
-description: "Use for REST API contracts: endpoints, fields, evolution, status codes, errors, pagination, idempotency."
+description: Adding or changing an HTTP endpoint, handler, status code, response or error body, or pagination. Load before editing.
 ---
 
 # API

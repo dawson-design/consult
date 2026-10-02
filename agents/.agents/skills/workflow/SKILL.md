@@ -1,6 +1,6 @@
 ---
 name: workflow
-description: Use first for features, fixes, refactors, debugging, tests, or config changes to choose skills and checks.
+description: Load before reading code for any feature, bug fix, refactor, test, or config change. Then load the skills it names.
 ---
 
 # Workflow
@@ -24,17 +24,16 @@ description: Use first for features, fixes, refactors, debugging, tests, or conf
 ## Rules
 
 1. **Keep unrelated parts separate.** Make state and effects explicit. Keep the
-   number of things a maintainer must understand together small. A familiar
-   or quick solution may still be hard to change.
+   number of things a maintainer must understand together small.
 2. **Explain the change to the user.** Show what changed, why, and what
    evidence supports it. If you cannot explain those points, clarify the work
    before proceeding.
 3. **Consult sets the engineering bar, and the host owns the mechanics.** When
    they conflict, Consult's bar wins, and the host decides how to meet it.
 4. **Build only what the user asked for.** Build the main behavior first unless
-   safety or data loss requires an edge case now. Prefer composition to
-   inheritance. Extract an abstraction only when code in more than one place
-   serves the same purpose; similar syntax alone is not enough.
+   safety or data loss requires an edge case now. Extract an abstraction only
+   when code in more than one place serves the same purpose; similar syntax
+   alone is not enough.
 5. **Check existing tools before building one.** Look for a maintained library
    before writing code for a solved problem. Ask before adding a dependency.
 6. **Ask more of the user when changes affect more code or are harder to
@@ -67,10 +66,11 @@ description: Use first for features, fixes, refactors, debugging, tests, or conf
    bug fixes that restore intended behavior, and routine implementation
    details need no sign-off.
 
-8. **Load a skill only when it changes what you do next or how you check the
-   result.** Load `documentation` and `release` only on request, when a project
-   check requires them, or for approved work that needs them. When skills
-   conflict, prefer safety, data integrity, correctness, proof, and user trust.
+8. **Load only the skills whose routing table rows match the task.** Load
+   `commit`, `git-workflow`, `documentation`, and `release` only on request,
+   when a project check requires them, or for approved work that needs them.
+   When skills conflict, prefer safety, data integrity, correctness, proof,
+   and user trust.
 9. **Plan with the strongest model, and save the plan so a cheaper one can
    build it.** When Rule 6 calls for approval before building, save the
    approved plan as Markdown: the host's plan file when the host writes one,
@@ -85,8 +85,10 @@ description: Use first for features, fixes, refactors, debugging, tests, or conf
    else it may affect. If the desired result is unclear, propose acceptance
    criteria and ask one question at a time. Ask before adding compatibility
    shims.
-2. Apply Rule 6 and load the Consult skills the task needs. Use Consult skills
-   even when the host has a built-in skill with the same name.
+2. **Before your first edit, load every skill whose row in this routing table
+   matches the task.** Its checks apply even when the fix looks obvious. Match
+   the request first, then the code you read. Load `code-review` at step 5.
+   Prefer Consult skills to same-named host skills.
 
    | Skill | Load when |
    | --- | --- |
@@ -113,7 +115,7 @@ description: Use first for features, fixes, refactors, debugging, tests, or conf
    | `git-workflow` | Branches, conflicts, rebases, recovery, force-push, GitHub access. |
    | `release` | Release prep is requested or a validator requires artifact sync. |
 
-3. Get the approvals listed in Rule 7 before building.
+3. Apply Rule 6, and get Rule 7 approvals before building.
 4. Make changes small enough to review. If a change grows too large for one
    focused review, split the rest into reviewable plan steps and continue.
 5. Prove each behavior with `proof`. Then run a fresh-context `code-review`
@@ -136,7 +138,7 @@ description: Use first for features, fixes, refactors, debugging, tests, or conf
 
 ## References
 
-- `references/simple-not-easy.md`: load when ceremony, helper layers, broad
-  skill loading, or hidden coupling might pass for rigor.
+- `references/simple-not-easy.md`: load when ceremony, helper layers, or
+  hidden coupling might pass for rigor.
 - `references/long-runs.md`: load when work spans many steps or independent
   units.

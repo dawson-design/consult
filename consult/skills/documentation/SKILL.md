@@ -1,6 +1,6 @@
 ---
 name: documentation
-description: "Use for docs describing existing code: READMEs, runbooks, API docs, module docs, comments."
+description: "Only when asked to write or update docs for existing code: READMEs, runbooks, API docs, comments."
 ---
 
 # Documentation

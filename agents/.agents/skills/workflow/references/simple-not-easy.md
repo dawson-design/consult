@@ -32,7 +32,7 @@ easy when it hides data, effects, ownership, time, trust, or rollout risk.
 | Shortcut thought | Simpler move |
 |---|---|
 | "Add a service/repository/DTO layer" | First name the boundary: transport, persistence, trust, or independent change cadence. |
-| "Use every relevant skill" | Load only skills that change the next action or proof obligation. |
+| "Use every relevant skill" | Load the skills whose routing table rows match the task, not every skill the task touches. |
 | "Make a generic helper" | Extract only after two call sites share the same domain meaning, not just similar syntax. |
 | "Support both old and new paths" | Ask whether compatibility is required; otherwise keep one path. |
 | "This is safer" | State the failure mode and add the proof, or drop it. |

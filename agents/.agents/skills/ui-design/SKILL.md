@@ -1,6 +1,6 @@
 ---
 name: ui-design
-description: Use for frontend UI, layouts, components, responsive behavior, accessibility, WCAG, keyboard, focus.
+description: "Frontend UI: forms, components, layout, styling, accessibility, keyboard, focus. Load before editing."
 ---
 
 # UI Design

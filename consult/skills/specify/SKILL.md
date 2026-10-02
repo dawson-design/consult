@@ -1,6 +1,6 @@
 ---
 name: specify
-description: "Use to design before building: discovery, tradeoffs, ADRs, RFCs, tech specs, and decisions needing user agreement."
+description: A new service or feature from a brief, or a design choice with open tradeoffs or an ADR. Load before building.
 ---
 
 # Specify

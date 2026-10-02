@@ -1,6 +1,6 @@
 ---
 name: contract-first
-description: Use before locking in public functions, types, endpoints, schemas, CLI flags, event payloads, or shared structure.
+description: Before adding or changing a field, shape, signature, CLI flag, event, or schema that clients or other code read.
 ---
 
 # Contract First

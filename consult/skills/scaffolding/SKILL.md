@@ -1,6 +1,6 @@
 ---
 name: scaffolding
-description: Use for scaffolding, new projects, package setup, quality tooling, CI, repo structure.
+description: "Setting up a new project or package: scripts, test, lint, typecheck, CI, tooling. Load before creating files."
 ---
 
 # Scaffolding

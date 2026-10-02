@@ -1,6 +1,6 @@
 ---
 name: official-source-check
-description: "Use for version-sensitive framework, library, SDK, or platform behavior: upgrades, deprecations, current APIs."
+description: Is a library, framework, or runtime API current, deprecated, or version-specific? Check official docs first.
 ---
 
 # Official Source Check

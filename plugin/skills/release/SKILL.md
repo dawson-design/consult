@@ -1,6 +1,6 @@
 ---
 name: release
-description: Use only on request/approval for release prep, or when validation requires release artifact sync.
+description: Only when asked to prepare a release, or when a project check requires release file sync.
 ---
 
 # Release

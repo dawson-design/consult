@@ -1,6 +1,6 @@
 ---
 name: debugging
-description: Use to debug failures, reproduce symptoms, isolate causes, inspect evidence, fix bugs.
+description: A bug report, wrong output, crash, failing or flaky test, or regression. Load before editing to find the cause.
 ---
 
 # Debugging

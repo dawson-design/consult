@@ -1,6 +1,6 @@
 ---
 name: security
-description: Use when auth, secrets, crypto, trust boundaries, dependency risk, or untrusted input are at stake.
+description: Code touching auth, permissions, secrets, crypto, redirects, or untrusted input. Load before editing it.
 ---
 
 # Security

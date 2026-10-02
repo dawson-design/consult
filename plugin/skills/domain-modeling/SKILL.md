@@ -1,6 +1,6 @@
 ---
 name: domain-modeling
-description: Use for domain modeling, data shapes, invariants, state transitions, parsing, effects.
+description: Adding or changing data shapes, records, or statuses, or parsing and normalizing input. Load before editing.
 ---
 
 # Domain Modeling

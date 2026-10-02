@@ -1,6 +1,6 @@
 ---
 name: error-handling
-description: "Use when failure contracts matter: error types, propagation, retries, recovery, user-facing messages."
+description: "How code fails: error types, error messages and responses, validation errors, retries. Load before editing."
 ---
 
 # Error Handling

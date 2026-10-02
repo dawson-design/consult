@@ -1,6 +1,6 @@
 ---
 name: commit
-description: Use for staging reviewed work, commit splits, messages.
+description: "Only when asked to commit: staging, splitting commits, commit messages."
 ---
 
 # Commit

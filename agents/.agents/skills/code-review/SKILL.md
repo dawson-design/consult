@@ -1,6 +1,6 @@
 ---
 name: code-review
-description: Use to review diffs and PRs for bugs, regressions, edge cases, proof, merge readiness.
+description: Reviewing a diff, branch, or PR for bugs, regressions, missing tests, and merge readiness.
 ---
 
 # Code Review

@@ -1,6 +1,6 @@
 ---
 name: refactoring
-description: Use for refactoring, behavior-preserving change, tests, safe rewrites.
+description: Restructuring or untangling code without changing behavior, or before extending tangled code. Load before editing.
 ---
 
 # Refactoring
