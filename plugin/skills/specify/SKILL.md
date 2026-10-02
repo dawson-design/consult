@@ -26,7 +26,7 @@ description: A new service or feature from a brief, or a design choice with open
   dependency bumps with no public surface change, or narrow bug fixes that
   restore intended behavior.
 - The design is settled and the user wants a task plan; use `workflow` or the
-  host's planning mode.
+  host's planning mode. To file it as tracker work, use `issue-tracking`.
 - A caller-facing interface is already concrete and only needs approval; use
   `contract-first`.
 

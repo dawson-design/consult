@@ -199,14 +199,15 @@ Every `SKILL.md` must have:
   no longer than 120 characters, and the pack-wide canonical description total
   must stay under 2,400 characters, because agents may load every description
   before selecting a skill body. That ceiling is ~600 tokens of always-loaded
-  routing surface and leaves room for roughly four more skills; it was raised
-  from 2,000 once the validator stopped truncating descriptions at their first
-  inner colon and revealed the pack had been over the old limit all along. Raise
-  it again only with a stated reason.
+  routing surface. With `issue-tracking` the pack sits at 2,399, so the next
+  skill needs description cuts elsewhere. The ceiling was raised from 2,000
+  once the validator stopped truncating descriptions at their first inner
+  colon and revealed the pack had been over the old limit all along. Raise it
+  again only with a stated reason.
 - Required sections: `## When to Use`, `## When NOT to Use`, `## Rules`.
 - Body budget: 700 words after frontmatter. Raised for three skills, each
   with a reason recorded next to the constant: 950 for `proof` and
-  `code-review` and 1,120 for `workflow`, which carry the routing and sign-off
+  `code-review` and 1,135 for `workflow`, which carry the routing and sign-off
   tables plus the host-harness, fresh-context-review, and plan-handoff
   policy. Table pipes
   and separator rows do not count. Raise a skill's budget only with a stated

@@ -113,6 +113,7 @@ description: Load before reading code for any feature, bug fix, refactor, test, 
    | `code-review` | A review is requested, or the change is non-trivial. |
    | `commit` | Staging reviewed files, splitting commits, writing messages. |
    | `git-workflow` | Branches, conflicts, rebases, recovery, force-push, GitHub access. |
+   | `issue-tracking` | Drafting, splitting, or tracking initiatives, epics, or issues, or a task citing one. |
    | `release` | Release prep is requested or a validator requires artifact sync. |
 
 3. Apply Rule 6, and get Rule 7 approvals before building.

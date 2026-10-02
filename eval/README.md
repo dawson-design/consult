@@ -115,7 +115,7 @@ uv run scripts/triggers.py --attempts 3                                # make ev
 ```
 
 The trigger suite checks whether Claude Code loads the right Consult skill at
-the right time. `triggers/cases.yaml` holds 19 positive cases, where a named
+the right time. `triggers/cases.yaml` holds 20 positive cases, where a named
 skill should load before the first write. It also holds 8 negative cases:
 typo fixes, questions, and test runs, where no Consult skill should load.
 Each trial runs `claude -p` once in a container built from the case's

@@ -188,6 +188,18 @@ cases:
     required_any: [release]
     expect_silent: [commit, git-workflow, documentation]
 
+  - name: epic-breakdown
+    kind: positive
+    source: {task: large-checkout-workflow}
+    prompt: >-
+      Next quarter we want checkout to survive duplicate submits and payment
+      failures. Draft an epic and the issues under it for our GitHub tracker.
+      Don't create anything yet, just show me the drafts.
+    # Tracker drafts, not a code change.
+    code_change: false
+    required_any: [issue-tracking]
+    expect_silent: [release, commit, documentation]
+
   - name: node-api-support
     kind: positive
     source: {fixture: node-api-support}

@@ -179,7 +179,7 @@ Before a non-trivial feature, fix, refactor, debugging task, test, or config cha
 
 ## Skills
 
-Consult includes 23 skills. Open a skill for when it applies and the rules it
+Consult includes 24 skills. Open a skill for when it applies and the rules it
 sets.
 
 - Routing and proof:
@@ -212,6 +212,7 @@ sets.
   - [`commit`](agents/.agents/skills/commit/SKILL.md): Staging reviewed work, commit splits, and messages.
   - [`scaffolding`](agents/.agents/skills/scaffolding/SKILL.md): New projects, package setup, quality tooling, CI, and repo structure.
   - [`git-workflow`](agents/.agents/skills/git-workflow/SKILL.md): Branches, history edits, conflicts, rebases, recovery, and force-push.
+  - [`issue-tracking`](agents/.agents/skills/issue-tracking/SKILL.md): Initiatives, epics, and issues in GitHub, Jira, or another tracker: drafting, sizing, linking, and status.
 
 Greenfield stack templates live under
 [`scaffolding/references/stacks/`](agents/.agents/skills/scaffolding/references/stacks/).

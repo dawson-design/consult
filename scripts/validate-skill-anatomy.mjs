@@ -27,19 +27,21 @@ const OBSOLETE_RULE_SECTIONS = ["Core Ideas", "Verification", "Before Saying Don
 // in this space; explanations of standard practice do not.
 const MAX_BODY_WORDS = 700;
 // Raised budgets, each with a reason. workflow carries the validator-mandated
-// 23-row routing table (~200 words) plus the sign-off table. workflow,
+// 24-row routing table (~215 words) plus the sign-off table. workflow,
 // code-review, and proof also absorbed the 12.1.0 host-harness and 13.1.0
 // fresh-context-review policy, which is rule text, not explanation. workflow
 // rose to 1,120 for the plan-handoff rule, which lets a cheaper model build
-// from a plan a stronger model wrote.
-const BODY_WORD_EXCEPTIONS = { workflow: 1120, proof: 950, "code-review": 950 };
+// from a plan a stronger model wrote, and to 1,135 for the issue-tracking
+// routing row the router cross-check requires.
+const BODY_WORD_EXCEPTIONS = { workflow: 1135, proof: 950, "code-review": 950 };
 const MAX_TRIPWIRE_ROWS = 8;
 const MAX_DESCRIPTION_LENGTH = 120;
 // ~600 tokens of routing surface that every host loads before picking a skill.
 // Chosen deliberately once the measurement was honest: the previous 2,000 was
 // never enforced (descriptions were truncated at their first inner colon), and
-// the pack turned out to be at 2,069 the whole time. 2,400 leaves room for about
-// four more skills without forcing keyword cuts. Raise it only with a reason.
+// the pack turned out to be at 2,069 the whole time. 2,400 left room for about
+// four more skills. issue-tracking brought the pack to 2,399, so the next skill
+// needs keyword cuts elsewhere or a stated reason to raise this.
 const MAX_TOTAL_DESCRIPTION_LENGTH = 2400;
 
 const NAME_RE = /^name:\s+[a-z][a-z0-9-]*\s*$/m;

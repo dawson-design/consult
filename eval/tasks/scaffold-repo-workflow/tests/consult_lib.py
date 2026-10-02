@@ -54,9 +54,9 @@ SKILL_BASE_DIR_RE = re.compile(r"Base directory for this skill: \S*/skills/([a-z
 # repo is absent; test_skill_detection.py fails when this list drifts.
 CONSULT_SKILLS = frozenset({
     "api", "architecture", "async-systems", "code-review", "commit", "contract-first", "database",
-    "debugging", "documentation", "domain-modeling", "error-handling", "git-workflow", "observability",
-    "official-source-check", "performance", "proof", "refactoring", "release", "scaffolding", "security",
-    "specify", "ui-design", "workflow",
+    "debugging", "documentation", "domain-modeling", "error-handling", "git-workflow", "issue-tracking",
+    "observability", "official-source-check", "performance", "proof", "refactoring", "release", "scaffolding",
+    "security", "specify", "ui-design", "workflow",
 })
 # `node --test` and `npm run -s test` may carry flags; `--test-name-pattern` alone is not a test run.
 POST_WRITE_PROOF_RE = re.compile(

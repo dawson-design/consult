@@ -1,0 +1,4 @@
+interface:
+  display_name: "Consult: Issue Tracking"
+  short_description: "Organize work as initiatives, epics, and issues"
+  default_prompt: "Use Consult issue-tracking to draft, split, link, or track initiatives, epics, and issues, and get the whole tree approved before writing to the tracker."
