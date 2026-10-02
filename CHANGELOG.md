@@ -6,6 +6,8 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [15.3.0] (2026-10-02)
+
 ### Added
 
 - The eval suite scores skill rules one by one. `eval/verifier/shared/consult_rules.py`

@@ -33,7 +33,7 @@ describe("Pi single-package layout", () => {
     const pkg = readPackage(META_PACKAGE);
 
     expect(pkg.name).toBe("@kreek/consult");
-    expect(pkg.version).toBe("15.2.0");
+    expect(pkg.version).toBe("15.3.0");
     expect(pkg.engines.node).toBe(">=22.19.0");
     expect(pkg.pi.extensions).toEqual(["./src/index.ts"]);
     expect(pkg.pi.skills).toEqual(["./skills"]);
