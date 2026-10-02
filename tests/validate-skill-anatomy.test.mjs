@@ -277,6 +277,12 @@ function makeAntigravityPluginPackage(root, { name = "consult", includeManifest 
   writeFileSync(join(root, "plugin/plugin.json"), JSON.stringify({ name }), "utf8");
 }
 
+function makeRuleCoverage(root, coverage = { "good.1": "untested" }) {
+  mkdirSync(join(root, "eval/verifier/shared"), { recursive: true });
+  writeFileSync(join(root, "eval/verifier/rules.json"), JSON.stringify(coverage), "utf8");
+  writeFileSync(join(root, "eval/verifier/shared/consult_rules.py"), "CHECKS = {}\n", "utf8");
+}
+
 describe("validate-skill-anatomy CLI", () => {
   afterEach(() => {
     if (tmp) cleanupTempDir(tmp);
@@ -300,6 +306,7 @@ describe("validate-skill-anatomy CLI", () => {
     }
     makeCodexPluginPackage(tmp);
     makeAntigravityPluginPackage(tmp);
+    makeRuleCoverage(tmp);
 
     const result = runScript(skillsDir);
 
@@ -311,6 +318,7 @@ describe("validate-skill-anatomy CLI", () => {
     expect(result.stdout).toContain("cursor plugin package valid");
     expect(result.stdout).toContain("antigravity plugin package valid");
     expect(result.stdout).toContain("plugin hooks valid");
+    expect(result.stdout).toContain("rule coverage complete (1 untested)");
     expect(readFileSync(join(tmp, "plugin/skills/good/SKILL.md"), "utf8")).toBe(
       readFileSync(join(skillsDir, "good/SKILL.md"), "utf8"),
     );
