@@ -1,0 +1,257 @@
+# Trigger suite: does Consult load the right skill before the agent first writes?
+# Run with eval/scripts/triggers.py. Pre-registered: change a threshold or a
+# case only before a run, never to make a finished run pass.
+#
+# A case field reference:
+#   kind            positive (Consult should load) or negative (it should not)
+#   source          {task: <eval/tasks dir>} reuses that task's workspace and its
+#                   first-turn instruction; {fixture: <eval/triggers/fixtures dir>}
+#                   builds the fixture with eval/verifier/shared/Dockerfile
+#   prompt          overrides the task instruction; required for a fixture
+#   edits           applied to the workspace before the scaffold commit:
+#                   {path, replace: [old, new]} (old must occur once) or {path, content}
+#   uncommitted     same shape, applied after the scaffold commit (a dirty tree)
+#   code_change     counts toward workflow recall
+#   required_any    positives: one of these must load before the first write
+#   expect_silent   skills that have no business loading here (reported, not gated)
+
+# Metrics compare the point estimate with the threshold; report.md also shows
+# the Wilson interval at `confidence`.
+confidence: 0.90
+thresholds:
+  workflow_recall: {min: 0.83}      # code-changing positives: workflow before the first write
+  narrow_recall: {min: 0.73}        # positives: a required_any skill before the first write
+  false_trigger_rate: {max: 0.08}   # negatives: any Consult load
+  negative_case_max_triggered: 1    # a negative that triggers in 2+ attempts fails
+
+cases:
+  # Positives from existing eval tasks (first turn). expect_silent carries the
+  # task's tests/consult.json list, plus release, commit, git-workflow, and
+  # documentation where the task does not ask for them.
+  - name: bug-from-symptom
+    kind: positive
+    source: {task: bug-from-symptom}
+    code_change: true
+    required_any: [debugging]
+    expect_silent: [contract-first, specify, scaffolding, documentation, api, database, observability, release, async-systems, performance, commit, git-workflow]
+
+  - name: proof-first-bugfix
+    kind: positive
+    source: {task: proof-first-bugfix}
+    code_change: true
+    required_any: [proof, debugging]
+    expect_silent: [release, commit, git-workflow, documentation]
+
+  - name: security-boundary-fix
+    kind: positive
+    source: {task: security-boundary-fix}
+    code_change: true
+    required_any: [security]
+    expect_silent: [release, commit, git-workflow, documentation]
+
+  - name: debugging-regression
+    kind: positive
+    source: {task: debugging-regression}
+    code_change: true
+    required_any: [debugging, security]
+    expect_silent: [release, commit, git-workflow, documentation]
+
+  - name: api-error-contract
+    kind: positive
+    source: {task: api-error-contract}
+    code_change: true
+    required_any: [api, error-handling]
+    expect_silent: [release, commit, git-workflow]
+
+  - name: money-field-change
+    kind: positive
+    source: {task: money-field-change}
+    code_change: true
+    required_any: [contract-first, specify, domain-modeling, api]
+    expect_silent: [scaffolding, documentation, observability, database, async-systems, performance, debugging, refactoring, release, commit, git-workflow]
+
+  - name: service-from-brief
+    kind: positive
+    source: {task: service-from-brief}
+    code_change: true
+    required_any: [specify, scaffolding, api, contract-first]
+    expect_silent: [async-systems, performance, release, refactoring, commit, git-workflow, documentation]
+
+  - name: database-release-safety
+    kind: positive
+    source: {task: database-release-safety}
+    code_change: true
+    required_any: [database]
+    expect_silent: [commit, git-workflow, documentation]
+
+  - name: observable-async-worker
+    kind: positive
+    source: {task: observable-async-worker}
+    code_change: true
+    required_any: [async-systems, observability]
+    expect_silent: [release, commit, git-workflow, documentation]
+
+  - name: accessible-ui-state
+    kind: positive
+    source: {task: accessible-ui-state}
+    code_change: true
+    required_any: [ui-design]
+    expect_silent: [release, commit, git-workflow, documentation]
+
+  - name: proof-organize-tangled-seam
+    kind: positive
+    source: {task: proof-organize-tangled-seam}
+    code_change: true
+    required_any: [refactoring, architecture]
+    expect_silent: [release, commit, git-workflow, documentation]
+
+  - name: design-decision-record
+    kind: positive
+    source: {task: design-decision-record}
+    code_change: true
+    required_any: [specify, architecture]
+    expect_silent: [release, commit, git-workflow]
+
+  - name: proof-pipeline-shape
+    kind: positive
+    source: {task: proof-pipeline-shape}
+    code_change: true
+    required_any: [domain-modeling, error-handling, proof]
+    expect_silent: [release, commit, git-workflow, documentation]
+
+  - name: proof-validator-error-content
+    kind: positive
+    source: {task: proof-validator-error-content}
+    code_change: true
+    required_any: [error-handling, domain-modeling]
+    expect_silent: [release, commit, git-workflow, documentation]
+
+  - name: scaffold-repo-workflow
+    kind: positive
+    source: {task: scaffold-repo-workflow}
+    code_change: true
+    required_any: [scaffolding]
+    expect_silent: [release, commit]
+
+  # Positives from small fixtures. Prompts never name Consult or a skill.
+  - name: slow-report
+    kind: positive
+    source: {fixture: slow-report}
+    prompt: >-
+      Exporting the monthly report takes minutes for our larger accounts (about
+      5,000 customers and 50,000 orders). Make `buildReport` in src/report.js fast
+      enough for that size without changing its output.
+    code_change: true
+    required_any: [performance]
+    expect_silent: [release, commit, git-workflow, documentation]
+
+  - name: commit-dirty-tree
+    kind: positive
+    source: {fixture: dirty-tree}
+    prompt: Commit this work as small reviewable commits.
+    # The first write is the first `git commit`.
+    code_change: false
+    required_any: [commit, git-workflow]
+    expect_silent: [release, documentation]
+    uncommitted:
+      - path: src/format.js
+        content: |
+          export function titleCase(name) {
+            if (!name) return "";
+            return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+          }
+      - path: src/farewell.js
+        content: |
+          import { titleCase } from "./format.js";
+
+          export function farewell(name) {
+            return `Goodbye, ${titleCase(name)}. See you soon!`;
+          }
+      - path: test/farewell.test.js
+        content: |
+          import assert from "node:assert/strict";
+          import test from "node:test";
+          import { farewell } from "../src/farewell.js";
+
+          test("says goodbye by name", () => {
+            assert.equal(farewell("BO"), "Goodbye, Bo. See you soon!");
+          });
+      - path: README.md
+        replace: ["Formats greetings for the welcome email.", "Formats greetings and farewells for account emails."]
+
+  - name: release-prep
+    kind: positive
+    source: {fixture: release-prep}
+    prompt: Prepare the 2.0.0 release.
+    # A version bump and changelog, not a code change.
+    code_change: false
+    required_any: [release]
+    expect_silent: [commit, git-workflow, documentation]
+
+  - name: node-api-support
+    kind: positive
+    source: {fixture: node-api-support}
+    prompt: >-
+      Is `url.parse`, which src/links.js uses, still supported in current Node.js
+      releases? Then update the code accordingly.
+    code_change: true
+    required_any: [official-source-check]
+    expect_silent: [release, commit, git-workflow, documentation]
+
+  # Negatives: trivial edits and questions. Any Consult load is a false trigger.
+  - name: readme-typo
+    kind: negative
+    source: {task: money-field-change}
+    edits:
+      - path: README.md
+        replace: ["storefront orders", "storefornt orders"]
+    prompt: Fix the typo in README.md.
+    code_change: true
+
+  - name: log-message-typo
+    kind: negative
+    source: {task: money-field-change}
+    edits:
+      - path: src/main.js
+        replace: ["order service on", "order servcie on"]
+    prompt: The startup log message in src/main.js has a typo. Fix it.
+    code_change: true
+
+  - name: empty-input-question
+    kind: negative
+    source: {task: proof-first-bugfix}
+    prompt: What does `totalCents` in src/cart.js return for an empty cart? Don't change anything.
+    code_change: false
+
+  - name: explain-file
+    kind: negative
+    source: {task: bug-from-symptom}
+    prompt: Explain src/store.js.
+    code_change: false
+
+  - name: last-commit
+    kind: negative
+    source: {task: security-boundary-fix}
+    prompt: What changed in the last commit?
+    code_change: false
+
+  - name: run-tests
+    kind: negative
+    source: {task: api-error-contract}
+    prompt: Run the tests and tell me the result.
+    code_change: false
+
+  - name: summarize-readme
+    kind: negative
+    source: {task: money-field-change}
+    prompt: Summarize the README.
+    code_change: false
+
+  - name: gitignore-line
+    kind: negative
+    source: {task: bug-from-symptom}
+    edits:
+      - path: .gitignore
+        content: "node_modules/\n"
+    prompt: Add `coverage/` to .gitignore.
+    code_change: true

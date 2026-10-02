@@ -1,0 +1,104 @@
+# Borderline suite: small requests in the grey zone between "just do it" and
+# "load a skill first". Reported descriptively, not gated.
+#
+# Every case is kind: negative only so the report counts each Consult load as a
+# "trigger". Here "false trigger" means "loaded Consult" and nothing more: the
+# right answer for these cases is not fixed, and a load is not a failure. The
+# pass/fail lines in report.md are not a verdict on this file. workflow_recall
+# and narrow_recall show "no data" because there are no positives.
+#
+# code_change is false throughout so no case enters workflow recall.
+# Run with eval/scripts/triggers.py --suite eval/triggers/borderline.yaml.
+# Field reference: see the header of eval/triggers/cases.yaml.
+
+# Metrics compare the point estimate with the threshold; report.md also shows
+# the Wilson interval at `confidence`.
+confidence: 0.90
+thresholds:
+  workflow_recall: {min: 0.83}      # code-changing positives: workflow before the first write
+  narrow_recall: {min: 0.73}        # positives: a required_any skill before the first write
+  false_trigger_rate: {max: 0.08}   # negatives: any Consult load
+  negative_case_max_triggered: 1    # a negative that triggers in 2+ attempts fails
+
+cases:
+  - name: b-rename
+    kind: negative
+    source: {fixture: slow-report}
+    prompt: in report.js rename `mine` to `customerOrders`
+    code_change: false
+
+  - name: b-port
+    kind: negative
+    source: {task: money-field-change}
+    prompt: Change the default port from 3000 to 8080.
+    code_change: false
+
+  - name: b-dep-bump
+    kind: negative
+    source: {task: large-checkout-workflow}
+    edits:
+      - path: package.json
+        content: |
+          {
+            "name": "checkout-flow",
+            "version": "0.1.0",
+            "private": true,
+            "type": "module",
+            "scripts": {
+              "test": "node --test",
+              "format": "prettier --write ."
+            },
+            "devDependencies": {
+              "prettier": "3.3.2"
+            }
+          }
+    prompt: bump prettier to 3.3.3
+    code_change: false
+
+  - name: b-docs-request
+    kind: negative
+    source: {fixture: dirty-tree}
+    edits:
+      - path: README.md
+        content: |
+          # greeter
+
+          Formats greetings for the welcome email.
+    prompt: Add a section to the README explaining how to run the tests.
+    code_change: false
+
+  - name: b-commit-only
+    kind: negative
+    source: {task: bug-from-symptom}
+    uncommitted:
+      - path: test/store.test.js
+        replace:
+          - 'test("unknown dashboards throw", () => {'
+          - |-
+            test("a new store lists nothing", () => {
+              assert.deepEqual(createStore().list(), []);
+            });
+
+            test("unknown dashboards throw", () => {
+    prompt: Commit this with a good message.
+    code_change: false
+
+  - name: b-add-test
+    kind: negative
+    source: {task: proof-organize-tangled-seam}
+    prompt: >-
+      Add a test that processOrder takes 10% off orders of $50 or more. It already
+      works, I just want it covered.
+    code_change: false
+
+  - name: b-log-line
+    kind: negative
+    source: {task: money-field-change}
+    prompt: Log a line with the order id whenever an order gets created.
+    code_change: false
+
+  - name: b-small-validation
+    kind: negative
+    source: {task: scaffold-repo-workflow}
+    prompt: formatName should reject empty names, including ones that are only spaces.
+    code_change: false

@@ -1,0 +1,237 @@
+# Generalization suite: the same trigger questions as cases.yaml, asked in new
+# words. Prompts were written without reading the skills, the hook, or the
+# cases.yaml prompts, and never name Consult, a skill, or a methodology term.
+# Registers vary: terse chat, customer reports, ticket text, long paragraphs.
+# Run with eval/scripts/triggers.py --suite eval/triggers/generalization.yaml.
+# Pre-registered: change a threshold or a case only before a run, never to make
+# a finished run pass.
+#
+# Field reference: see the header of eval/triggers/cases.yaml.
+
+# Metrics compare the point estimate with the threshold; report.md also shows
+# the Wilson interval at `confidence`.
+confidence: 0.90
+thresholds:
+  workflow_recall: {min: 0.83}      # code-changing positives: workflow before the first write
+  narrow_recall: {min: 0.73}        # positives: a required_any skill before the first write
+  false_trigger_rate: {max: 0.08}   # negatives: any Consult load
+  negative_case_max_triggered: 1    # a negative that triggers in 2+ attempts fails
+
+cases:
+  # Positives. expect_silent is release, commit, git-workflow, and documentation,
+  # minus any skill the case requires.
+  - name: g-bug-report
+    kind: positive
+    source: {task: proof-first-bugfix}
+    prompt: >-
+      Forwarding from support: "I had $50 of stuff in my cart, typed in SAVE10,
+      and checkout said I owed $5.00. Happy to pay the right amount, just thought
+      you should know." Two more customers reported the same thing today. Can you
+      sort it out?
+    code_change: true
+    required_any: [debugging]
+    expect_silent: [release, commit, git-workflow, documentation]
+
+  - name: g-slow
+    kind: positive
+    source: {fixture: slow-report}
+    prompt: >-
+      monthly export is timing out for the big accounts (~8k customers, 120k
+      orders). needs to come back in a second or two, same totals and ordering
+      as today
+    code_change: true
+    required_any: [performance]
+    expect_silent: [release, commit, git-workflow, documentation]
+
+  - name: g-new-endpoint
+    kind: positive
+    source: {task: api-error-contract}
+    prompt: |-
+      USR-418: Admin console needs to delete a user by id
+
+      Support admins currently ask engineering to remove accounts by hand. Add a
+      DELETE /users/:id handler next to the existing user lookup so the admin
+      console can remove an account by its id. The console team will wire up the
+      button once this exists.
+    code_change: true
+    required_any: [api, contract-first, error-handling]
+    expect_silent: [release, commit, git-workflow, documentation]
+
+  - name: g-client-field
+    kind: positive
+    source: {task: money-field-change}
+    prompt: >-
+      Our warehouse partner pulls each order from GET /orders/{id} into their
+      system every few minutes, and they've asked us to include when the order was
+      placed so they can pick the oldest ones first. Right now they guess from when
+      their sync first saw the order, which is wrong whenever the sync falls
+      behind. Please add the time the order was created to what we send back for
+      an order. Their system parses exactly what we return, and the iOS app reads
+      the same endpoint, so nothing that's there today can break.
+    code_change: true
+    required_any: [contract-first, domain-modeling, api]
+    expect_silent: [release, commit, git-workflow, documentation]
+
+  - name: g-open-redirect
+    kind: positive
+    source: {task: security-boundary-fix}
+    prompt: >-
+      A customer emailed us: "I clicked a sign-in link that looked like it was
+      from you, logged in on your real site, and then landed on a different site
+      that asked for my card number." The link was our genuine login page with a
+      next= parameter pointing at someone else's domain. After logging in, people
+      should only ever end up back on our own pages.
+    code_change: true
+    required_any: [security]
+    expect_silent: [release, commit, git-workflow, documentation]
+
+  - name: g-column-change
+    kind: positive
+    source: {task: database-release-safety}
+    prompt: |-
+      CUST-77: Rename customers.email to login_email
+
+      Billing email is getting its own column next quarter and people already mix
+      the two up. customers has about 30M rows. Deploys roll out gradually, so the
+      old and new app versions run side by side for a while. This can't lock the
+      table or break whichever version is still serving traffic.
+    code_change: true
+    required_any: [database]
+    expect_silent: [release, commit, git-workflow, documentation]
+
+  - name: g-screen-reader
+    kind: positive
+    source: {task: accessible-ui-state}
+    prompt: >-
+      Email from a subscriber: "I'm blind and use VoiceOver. On your newsletter
+      signup I can't tell what the text box is for, I can't find any way to send
+      it, and I never hear whether it worked." Can we fix the signup page for her?
+    code_change: true
+    required_any: [ui-design]
+    expect_silent: [release, commit, git-workflow, documentation]
+
+  - name: g-tangled
+    kind: positive
+    source: {task: proof-organize-tangled-seam}
+    prompt: >-
+      processOrder has turned into a wall of code. every discount tweak means
+      wading through the charging and email stuff too. untangle it so the pricing
+      part can change on its own. what it returns and records has to stay exactly
+      the same
+    code_change: true
+    required_any: [refactoring, architecture]
+    expect_silent: [release, commit, git-workflow, documentation]
+
+  - name: g-flaky-sends
+    kind: positive
+    source: {task: observable-async-worker}
+    prompt: >-
+      A few customers say they never got their notifications, and every case we
+      checked lines up with a moment when our email provider was briefly returning
+      errors. The send throws, the worker stops, and that notification plus the
+      rest of the batch never go out. The provider is back within seconds, so these
+      should have been delivered. Can you change the notification worker so a short
+      blip on the provider's side doesn't lose anything, without anyone getting the
+      same notification twice?
+    code_change: true
+    required_any: [async-systems, error-handling]
+    expect_silent: [release, commit, git-workflow, documentation]
+
+  - name: g-design-note
+    kind: positive
+    source: {task: design-decision-record}
+    prompt: >-
+      Before anyone touches checkout validation again, can you write up a short
+      proposal for the team? Two options: keep the checks in the route handler, or
+      move all of them into the cart helper. Lay out what each one costs us and
+      which you'd pick. Put it in docs/ and don't change any code yet.
+    # A written proposal, not a code change.
+    code_change: false
+    required_any: [specify, architecture]
+    expect_silent: [release, commit, git-workflow, documentation]
+
+  - name: g-tooling
+    kind: positive
+    source: {task: scaffold-repo-workflow}
+    prompt: >-
+      this repo has nothing set up. want a linter, one npm script that runs lint
+      and tests together, and a github actions workflow that runs it on every PR
+    code_change: true
+    required_any: [scaffolding]
+    expect_silent: [release, commit, git-workflow, documentation]
+
+  - name: g-deprecated-api
+    kind: positive
+    source: {fixture: node-api-support}
+    prompt: |-
+      Since we moved the servers to Node 24, every link preview logs this:
+
+          (node:1) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that ...
+
+      Can you get rid of it properly?
+    code_change: true
+    required_any: [official-source-check]
+    expect_silent: [release, commit, git-workflow, documentation]
+
+  # Negatives: typo and wording fixes and questions that ask for no change.
+  # Any Consult load is a false trigger.
+  - name: g-neg-typo-comment
+    kind: negative
+    source: {task: money-field-change}
+    edits:
+      - path: src/catalog.js
+        replace: ["per currency.", "per curency."]
+    prompt: the comment at the top of catalog.js misspells currency, fix it
+    code_change: true
+
+  - name: g-neg-question-behavior
+    kind: negative
+    source: {task: proof-organize-tangled-seam}
+    prompt: >-
+      What does processOrder return for an order with one line of sku_2, quantity
+      2? Just tell me, don't change anything.
+    code_change: false
+
+  - name: g-neg-where
+    kind: negative
+    source: {task: large-checkout-workflow}
+    prompt: Where do we work out sales tax during checkout? Just point me at it.
+    code_change: false
+
+  - name: g-neg-wording
+    kind: negative
+    source: {fixture: dirty-tree}
+    edits:
+      - path: src/greet.js
+        content: |
+          import { titleCase } from "./format.js";
+
+          export const WELCOME_SUBJECT = "An email welcoming you to your brand new account with us";
+
+          export function greet(name) {
+            return `Hello, ${titleCase(name)}!`;
+          }
+    prompt: >-
+      The welcome email subject line is clunky. Change it to "Welcome to your new
+      account".
+    code_change: true
+
+  - name: g-neg-count
+    kind: negative
+    source: {task: bug-from-symptom}
+    prompt: how many tests does this repo have?
+    code_change: false
+
+  - name: g-neg-explain-diff
+    kind: negative
+    source: {task: scaffold-repo-workflow}
+    uncommitted:
+      - path: src/index.js
+        content: |
+          export function formatName(name) {
+            return name.trim().replace(/\s+/g, " ");
+          }
+    prompt: >-
+      There's an uncommitted change in here that I don't remember making. What
+      does it do? Don't touch or commit anything.
+    code_change: false

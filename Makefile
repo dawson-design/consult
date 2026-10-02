@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 .SHELLFLAGS := -euo pipefail -c
 
-.PHONY: test eval eval-fast smoke update-installed-plugins update-installed-plugins-dry-run pi-install-local pi-uninstall-local publish-pi publish-pi-dry-run
+.PHONY: test eval eval-fast eval-triggers smoke update-installed-plugins update-installed-plugins-dry-run pi-install-local pi-uninstall-local publish-pi publish-pi-dry-run
 
 CONSULT_PI_LOCAL_PACKAGE := $(abspath consult)
 
@@ -34,6 +34,12 @@ smoke:
 # arm only, no judge, against the saved release baseline. See eval/README.md.
 eval-fast:
 	uv run --project eval eval/scripts/run.py --tier fast $(ARGS)
+
+# Trigger suite: does Claude Code load the right Consult skill before its first
+# write, and stay silent on trivial edits? Needs Docker and
+# CLAUDE_CODE_OAUTH_TOKEN. See eval/README.md.
+eval-triggers:
+	uv run --project eval eval/scripts/triggers.py $(ARGS)
 
 update-installed-plugins:
 	scripts/update-installed-plugins.sh

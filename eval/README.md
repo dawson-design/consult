@@ -107,6 +107,53 @@ guidance." `scripts/stub.py` builds it under `runs/stub-skills/`.
 Both arms read one snapshot of `agents/.agents/skills` taken when the run
 starts, so an edit made mid-run reaches neither.
 
+### Trigger suite
+
+```sh
+uv run scripts/triggers.py --wiring-check --arms plugin,skills,bare   # no model call
+uv run scripts/triggers.py --attempts 3                                # make eval-triggers
+```
+
+The trigger suite checks whether Claude Code loads the right Consult skill at
+the right time. `triggers/cases.yaml` holds 19 positive cases, where a named
+skill should load before the first write. It also holds 8 negative cases:
+typo fixes, questions, and test runs, where no Consult skill should load.
+Each trial runs `claude -p` once in a container built from the case's
+workspace.
+
+- `plugin`: this repo's `plugin/` loaded with `--plugin-dir`, as a real
+  install loads it, so skills appear as `consult:<name>`. `--plugin <dir>`
+  tests a variant.
+- `skills`: Harbor's wiring, with plain names and the hook through
+  `--settings`. Comparing it with `plugin` shows whether Harbor results carry
+  over to a real install.
+- `bare`: the control.
+
+A positive trial stops at the agent's first write. A load counts when a
+Skill call or a SKILL.md read for a catalog skill succeeds before that write.
+The thresholds sit in `cases.yaml` and are fixed before a run:
+
+- Workflow recall on code-changing positives: at least 0.83.
+- Narrow recall, one of the case's `required_any` skills: at least 0.73.
+- False-trigger rate on negatives: at most 0.08, and no negative may trigger
+  in 2 of its attempts.
+
+The report gives each rate with a 90% Wilson interval. The script exits 1
+when a Consult arm fails or has no usable data.
+
+`--suite` runs another cases file with the same rules:
+
+- `triggers/generalization.yaml`: 12 positives and 6 negatives, written by an
+  agent that never saw the skill descriptions or the hook. Use it to check
+  that a description change generalizes beyond the prompts it was tuned on.
+- `triggers/borderline.yaml`: 8 requests with no agreed answer, such as a
+  one-line port change, a dependency bump, or a commit-only request. Every
+  case is marked negative, so a "false trigger" there only means that Consult
+  loaded. Read the loads per case; the pass line is not a verdict. Results and every transcript
+land in `runs/triggers/<timestamp>-<label>/`. The token reaches the container
+by name only. `--wiring-check` runs without it: Claude Code prints its skill
+list and hook events before it fails at auth.
+
 ### Reading the lift report
 
 Consult aims to raise the floor of engineering maturity, so the report shows
@@ -324,7 +371,8 @@ harbor run -p tasks -i <task> -a oracle -o runs --yes
   the consult arm also installs the plugin's SessionStart hook through the
   `consult_settings` key in `agents/claude-code.yaml`, which `run.py` passes as
   Claude's `--settings` file. Without the hook, Claude loaded no Consult skill
-  in any consult-arm trial.
+  in any consult-arm trial. The trigger suite's `plugin` arm covers the real
+  install.
 - With the hook, Sonnet 5 at medium effort loaded a Consult skill in 2 of 19
   consult-arm trials on the `rules` suite (2026-09-24), and in 6 of 9 at high
   effort. The +0.141 lift from those runs came with almost no skill loaded, so
