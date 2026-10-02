@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 .SHELLFLAGS := -euo pipefail -c
 
-.PHONY: test eval smoke update-installed-plugins update-installed-plugins-dry-run pi-install-local pi-uninstall-local publish-pi publish-pi-dry-run
+.PHONY: test eval eval-fast smoke update-installed-plugins update-installed-plugins-dry-run pi-install-local pi-uninstall-local publish-pi publish-pi-dry-run
 
 CONSULT_PI_LOCAL_PACKAGE := $(abspath consult)
 
@@ -16,10 +16,12 @@ test:
 	pnpm --dir consult test
 
 # Static checks for the Harbor eval suite: the vendored verifier copies match
-# their source, and the smoke job config resolves. Needs `harbor` and `uv` on
-# PATH, so it is opt-in rather than part of `make test`.
+# their source, the rule checks pass their fixtures, and the smoke job config
+# resolves. Needs `harbor` and `uv` on PATH, so it is opt-in rather than part
+# of `make test`.
 eval:
 	uv run --project eval eval/scripts/sync_tests.py --check
+	uv run --project eval python -m unittest discover eval/verifier/tests
 	harbor run -c eval/jobs/smoke.example.yaml --dry-run --yes
 
 # Run the smoke suite through Harbor with Consult skills against a real Claude
@@ -27,6 +29,11 @@ eval:
 # not bill the API. See eval/README.md for setup and other suites.
 smoke:
 	uv run --project eval eval/scripts/run.py --suite smoke --agent claude-code --arms consult $(ARGS)
+
+# Fast eval tier: the tasks that exercise the skills changed since HEAD, consult
+# arm only, no judge, against the saved release baseline. See eval/README.md.
+eval-fast:
+	uv run --project eval eval/scripts/run.py --tier fast $(ARGS)
 
 update-installed-plugins:
 	scripts/update-installed-plugins.sh

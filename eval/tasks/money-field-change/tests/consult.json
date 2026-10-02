@@ -1,0 +1,13 @@
+{
+  "task": "money-field-change",
+  "kind": "code",
+  "intended_skills": ["workflow", "specify", "contract-first", "api", "domain-modeling", "proof", "code-review"],
+  "expect_silent": [
+    "scaffolding", "documentation", "observability", "database", "async-systems",
+    "performance", "debugging", "refactoring"
+  ],
+  "rules": ["domain-modeling.10", "domain-modeling.11", "api.1", "api.2", "api.3", "documentation.1"],
+  "gated_paths": ["src/*"],
+  "visible_test_cmd": "npm test",
+  "test_file_cmd": "node --test {files}"
+}

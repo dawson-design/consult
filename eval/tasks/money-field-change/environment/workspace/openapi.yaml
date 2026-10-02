@@ -1,0 +1,89 @@
+openapi: 3.1.0
+info:
+  title: Order service
+  version: 1.0.0
+paths:
+  /orders:
+    post:
+      summary: Create an order
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "400":
+          $ref: "#/components/responses/Error"
+  /orders/{id}:
+    get:
+      summary: Read an order
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: The order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "404":
+          $ref: "#/components/responses/Error"
+components:
+  responses:
+    Error:
+      description: Error
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [error]
+            properties:
+              error:
+                type: object
+                required: [code, message]
+                properties:
+                  code: { type: string }
+                  message: { type: string }
+  schemas:
+    OrderRequest:
+      type: object
+      required: [customerId, items]
+      properties:
+        customerId: { type: string }
+        items:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [sku, quantity]
+            properties:
+              sku: { type: string }
+              quantity: { type: integer, minimum: 1 }
+    Order:
+      type: object
+      required: [id, customerId, status, items, total]
+      properties:
+        id: { type: string }
+        customerId: { type: string }
+        status: { type: string, enum: [pending, paid, shipped] }
+        items:
+          type: array
+          items:
+            type: object
+            required: [sku, quantity, unitPrice]
+            properties:
+              sku: { type: string }
+              quantity: { type: integer }
+              unitPrice: { type: number, description: Price in dollars }
+        total: { type: number, description: Order total in dollars }

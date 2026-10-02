@@ -88,6 +88,20 @@ function tripwireRowCount(body) {
   return rows;
 }
 
+// Numbers of the top-level rules in `## Rules`, up to the first `##` or `###`.
+// Rule ids (`<skill>.<n>`) key the eval's rule checks in eval/verifier/rules.json.
+export function ruleNumbers(body) {
+  const lines = body.split(/\r?\n/);
+  const start = lines.findIndex((line) => /^##\s+Rules\s*$/.test(line));
+  if (start === -1) return [];
+  const rest = lines.slice(start + 1);
+  const end = rest.findIndex((line) => /^###?\s+/.test(line));
+  return (end === -1 ? rest : rest.slice(0, end))
+    .map((line) => line.match(/^(\d+)\.\s/)?.[1])
+    .filter(Boolean)
+    .map(Number);
+}
+
 function bodyWordCount(body) {
   const withoutFrontmatter = body.replace(/^---[\s\S]*?\n---\n/, "");
   // Count words, not table plumbing: pipes and separator rows cost almost nothing.
@@ -657,6 +671,55 @@ export function validatePluginHooks(skillsDir) {
   return problems.length;
 }
 
+const RULE_STATUSES = new Set(["check", "judge-only", "untested"]);
+
+function skillRuleIds(skillsDir) {
+  return readdirSync(skillsDir)
+    .filter((name) => existsSync(join(skillsDir, name, "SKILL.md")))
+    .sort()
+    .flatMap((name) => ruleNumbers(readFileSync(join(skillsDir, name, "SKILL.md"), "utf8")).map((n) => `${name}.${n}`));
+}
+
+// Every rule of every skill must appear in rules.json with a status, no entry may
+// name a rule that no longer exists (a renumbered skill), and every "check" entry
+// must have a function in consult_rules.py's CHECKS table.
+export function ruleCoverageProblems(skillsDir, coverage, checksSource) {
+  const expected = skillRuleIds(skillsDir);
+  const known = new Set(expected);
+  const missing = expected.filter((id) => !(id in coverage)).map((id) => `rule ${id} has no entry in rules.json`);
+  const stale = Object.keys(coverage)
+    .filter((id) => !known.has(id))
+    .map((id) => `rules.json names ${id}, which is not a rule in its SKILL.md`);
+  const invalid = Object.entries(coverage)
+    .filter(([, status]) => !RULE_STATUSES.has(status))
+    .map(([id, status]) => `rules.json ${id} has unknown status ${JSON.stringify(status)}`);
+  const unchecked = Object.entries(coverage)
+    .filter(([id, status]) => status === "check" && !checksSource.includes(`"${id}":`))
+    .map(([id]) => `rules.json marks ${id} as check but consult_rules.py has no CHECKS entry for it`);
+  return [...missing, ...stale, ...invalid, ...unchecked];
+}
+
+export function validateRuleCoverage(skillsDir) {
+  const verifier = join(repoRootForSkillsDir(skillsDir), "eval/verifier");
+  const checksPath = join(verifier, "shared/consult_rules.py");
+  const [coverage, readProblem] = readJsonObject(join(verifier, "rules.json"));
+  const checksProblem = existsSync(checksPath) ? null : `missing ${checksPath}`;
+  const problems =
+    readProblem || checksProblem
+      ? [readProblem, checksProblem].filter(Boolean)
+      : ruleCoverageProblems(skillsDir, coverage, readFileSync(checksPath, "utf8"));
+
+  if (problems.length > 0) {
+    for (const problem of problems) console.log(`rule coverage: ${problem}`);
+    console.log("");
+    console.log(`${problems.length} rule coverage problem(s)`);
+  } else {
+    const counts = Object.values(coverage).reduce((acc, s) => ({ ...acc, [s]: (acc[s] ?? 0) + 1 }), {});
+    console.log(`rule coverage complete (${Object.entries(counts).map(([s, n]) => `${n} ${s}`).join(", ")})`);
+  }
+  return problems.length;
+}
+
 function writeFixture(path, text) {
   mkdirSync(dirname(path), { recursive: true });
   writeFileSync(path, text, { encoding: "utf8", flag: "w" });
@@ -877,11 +940,43 @@ description: ${longDescription}
       return 1;
     }
 
+    if (ruleCoverageSelfTest(join(tmp, "coverage")) !== 0) return 1;
+
     console.log("self-test ok");
     return 0;
   } finally {
     rmSync(tmp, { recursive: true, force: true });
   }
+}
+
+function ruleCoverageSelfTest(dir) {
+  writeFixture(
+    join(dir, "demo/SKILL.md"),
+    "---\nname: demo\n---\n\n## Rules\n\n1. One.\n   Continued.\n2. Two.\n\n### Detail\n\n3. Not a rule.\n\n## Handoffs\n",
+  );
+  const problems = ruleCoverageProblems(
+    dir,
+    { "demo.1": "check", "demo.3": "untested", "demo.9": "maybe" },
+    'CHECKS = {"other.1": x}',
+  ).join("\n");
+  for (const expected of [
+    "rule demo.2 has no entry in rules.json",
+    "rules.json names demo.3, which is not a rule",
+    'rules.json demo.9 has unknown status "maybe"',
+    "rules.json marks demo.1 as check but consult_rules.py has no CHECKS entry",
+  ]) {
+    if (!problems.includes(expected)) {
+      console.error(`self-test failed: missing ${JSON.stringify(expected)} in rule coverage output`);
+      console.error(problems);
+      return 1;
+    }
+  }
+  const clean = ruleCoverageProblems(dir, { "demo.1": "check", "demo.2": "judge-only" }, 'CHECKS = {"demo.1": f}');
+  if (clean.length > 0) {
+    console.error(`self-test failed: complete rule coverage flagged: ${clean.join("; ")}`);
+    return 1;
+  }
+  return 0;
 }
 
 export function main(argv = process.argv.slice(2)) {
@@ -906,12 +1001,14 @@ Validate SKILL.md frontmatter, required sections, and plugin drift.`);
   const cursorPluginProblems = validateCursorPluginPackage(skillsDir);
   const antigravityPluginProblems = validateAntigravityPluginPackage(skillsDir);
   const pluginHookProblems = validatePluginHooks(skillsDir);
+  const ruleCoverageProblemCount = validateRuleCoverage(skillsDir);
   return findings.length ||
     drift ||
     codexPluginProblems ||
     cursorPluginProblems ||
     antigravityPluginProblems ||
-    pluginHookProblems
+    pluginHookProblems ||
+    ruleCoverageProblemCount
     ? 1
     : 0;
 }

@@ -1,0 +1,37 @@
+schema_version = "1.4"
+# The brief step's sign-off score lives in step_results; the trial reward is the build step's.
+multi_step_reward_strategy = "final"
+
+[task]
+name = "consult/service-from-brief"
+description = "Build a self-hosted link shortener from a product brief, with a scripted approval turn."
+
+[metadata]
+kind = "code"
+features = ["workflow", "scaffolding", "specify", "contract-first", "domain-modeling", "api", "security", "ui-design", "proof", "code-review"]
+
+[agent]
+timeout_sec = 900.0
+
+[verifier]
+timeout_sec = 600.0
+
+[verifier.env]
+CLAUDE_CODE_OAUTH_TOKEN = "${CLAUDE_CODE_OAUTH_TOKEN:-}"
+REWARDKIT_FORCE_SUBSCRIPTION = "${REWARDKIT_FORCE_SUBSCRIPTION:-1}"
+REWARDKIT_JUDGE = "${CONSULT_EVAL_JUDGE:-claude-code}"
+
+# Step verifier timeouts must be set per step: a step's default is 600 and ignores [verifier].
+[[steps]]
+name = "brief"
+[steps.agent]
+timeout_sec = 900.0
+[steps.verifier]
+timeout_sec = 300.0
+
+[[steps]]
+name = "approve"
+[steps.agent]
+timeout_sec = 2400.0
+[steps.verifier]
+timeout_sec = 900.0

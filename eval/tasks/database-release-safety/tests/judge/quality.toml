@@ -1,8 +1,12 @@
 # Synced from eval/verifier/shared/judge/quality.toml. Do not edit in tests/.
 # REWARDKIT_JUDGE (set in task.toml [verifier.env]) overrides `judge` at run time.
 # claude-code runs the judge through the Claude Code CLI, the one client that
-# accepts a subscription token. It ignores `files` and `reasoning_effort` and
-# reads the paths named in prompt.md; an LLM judge override uses them.
+# accepts a subscription token. It ignores `files` and `reasoning_effort`, so
+# consult_lib.py `prepare` inlines the instruction and bundle into prompt.md and
+# test.sh sets the CLI's effort. An LLM judge override reads `files` instead.
+# No atif-trajectory: the judge scores the deliverable, and the deterministic
+# proof dimension already scores process evidence from the trajectory. Reading
+# the trajectory with tool calls cost about 440k judge input tokens per trial.
 # isolated stays false: RewardKit isolates with an overlay mount, which fails in
 # Harbor's unprivileged Docker trials. Headless `claude -p` denies writes anyway.
 # cwd is "/" because `claude -p` denies reads outside its working directory, and
@@ -13,9 +17,8 @@ model = "anthropic/claude-sonnet-5"
 isolated = false
 cwd = "/"
 files = ["/tests/judge/instruction.md", "/logs/verifier/judge-bundle.md"]
-atif-trajectory = "/logs/agent/trajectory.json"
 prompt_template = "prompt.md"
-reasoning_effort = "medium"
+reasoning_effort = "low"
 timeout = 300
 
 [scoring]

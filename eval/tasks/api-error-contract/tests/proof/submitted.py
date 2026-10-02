@@ -13,4 +13,5 @@ def read(path: Path) -> str:
 
 def submitted_proof(workspace: Path) -> bool:
     tests = read(workspace / "test" / "users.test.js")
-    return all(re.search(p, tests) for p in (r"\b400\b", r"\b404\b", r"\berror\b", r"\bmessage\b"))
+    # "stable machine-readable and human-readable fields" names no field, so code, type, detail, title count.
+    return all(re.search(p, tests) for p in (r"\b400\b", r"\b404\b", r"\b(error|code|type)\b", r"\b(message|detail|title)\b"))

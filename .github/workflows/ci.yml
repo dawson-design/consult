@@ -38,6 +38,12 @@ jobs:
         if: ${{ !cancelled() }}
         run: python3 eval/scripts/sync_tests.py --check
 
+      # Positive and negative fixtures for every eval rule check. Standard
+      # library only, like the sync check.
+      - name: Eval rule-check tests
+        if: ${{ !cancelled() }}
+        run: python3 -m unittest discover eval/verifier/tests
+
       # Each check is its own step so one failure does not mask the others. The
       # cheap deterministic checks run first: skill prose is the common change,
       # and the validator is what covers it.

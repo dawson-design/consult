@@ -1,0 +1,12 @@
+{
+  "task": "bug-from-symptom",
+  "kind": "code",
+  "intended_skills": ["workflow", "debugging", "proof", "code-review"],
+  "expect_silent": [
+    "contract-first", "specify", "scaffolding", "documentation", "api",
+    "database", "observability", "release", "async-systems", "performance"
+  ],
+  "rules": ["debugging.1", "debugging.5", "documentation.1", "workflow.7"],
+  "visible_test_cmd": "npm test",
+  "test_file_cmd": "node --test {files}"
+}

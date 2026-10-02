@@ -1,8 +1,8 @@
 Evaluate this coding-agent run.
 
-You receive the task instruction, a bundle with the diff against the starting repository, any new files, and the agent's final message, and the agent's trajectory. The bundle is the deliverable. The trajectory is context about how the agent worked.
+You receive the task instruction and a bundle with the diff against the starting repository, any new files, and the agent's final message. The bundle is the deliverable.
 
-Read the task instruction at `/tests/judge/instruction.md` and the bundle at `/logs/verifier/judge-bundle.md` if they are not already included below. Do not modify any files.
+Read the task instruction at `/tests/judge/instruction.md` and the bundle at `/logs/verifier/judge-bundle.md` only if they are not included below. Do not modify any files.
 
 Score each criterion from 0 to 100.
 

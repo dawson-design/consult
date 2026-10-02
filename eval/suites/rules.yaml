@@ -1,0 +1,6 @@
+name: rules
+description: Underspecified tasks with scripted approval turns, scored per skill rule and by which skills fired or stayed silent.
+trials:
+  - bug-from-symptom
+  - money-field-change
+  - service-from-brief

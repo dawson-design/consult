@@ -6,10 +6,26 @@
 # CLAUDE_FORCE_OAUTH drops ANTHROPIC_API_KEY so the run bills the subscription and
 # fails loudly when the token is missing.
 name: claude-code
-model_name: anthropic/claude-sonnet-5
+model_name: anthropic/claude-opus-5-5
+# resume_trajectory continues the same session in each later step of a
+# multi-step task (the scripted approval turn). Single-step tasks ignore it.
+resume_trajectory: true
+# The consult arm installs the plugin's SessionStart hook through Claude Code's
+# --settings file, as a plugin install would. Without it Claude never loads a
+# Consult skill in headless runs (2026-09-24: no skill read in any consult-arm trial).
+consult_settings: plugin/hooks/hooks.json
 kwargs:
-  reasoning_effort: medium
+  # Matches the CLI preinstalled in verifier/shared/Dockerfile, so Harbor skips its install.
+  version: "2.1.282"
+  # The proof target: Opus 5.5 at xhigh, the maintainer's own setting. The trigger
+  # suite reads this too. An absent key would make Harbor fall back to the host's
+  # CLAUDE_CODE_EFFORT_LEVEL or MAX_THINKING_TOKENS, which the baseline key cannot
+  # see, so max_thinking_tokens is an explicit null. --effort overrides both.
+  reasoning_effort: xhigh
+  max_thinking_tokens: null
   permission_mode: bypassPermissions
-  max_budget_usd: "2"
+  # A cap that binds cuts the consult arm, which reads skills, harder than bare.
+  # Sonnet 5 steps so far cost under $0.50; Opus costs more per token.
+  max_budget_usd: "10"
 host_env:
   CLAUDE_FORCE_OAUTH: "true"

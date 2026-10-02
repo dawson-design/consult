@@ -12,15 +12,15 @@ from rewardkit import criterion  # noqa: E402
 @criterion
 def proof_level(workspace: Path) -> float:
     """Proof ladder from the previous scorer: 100/85/60/35/15, as 1.0/0.85/0.6/0.35/0.15."""
+    meta = cl.load_task_meta()
     submitted_proof = bool(submitted.submitted_proof(workspace))
-    post_write = cl.has_post_write_proof(cl.load_trajectory())
+    post_write = cl.has_post_write_proof(cl.load_trajectory(), meta.get("visible_test_cmd"))
     if submitted_proof and post_write:
         return 1.0
     if submitted_proof:
         return 0.85
     if post_write:
         return 0.6
-    meta = cl.load_task_meta()
     if cl.visible_tests_pass(workspace, meta) and cl.hidden_check_passes(workspace):
         return 0.35
     return 0.15

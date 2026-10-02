@@ -1,0 +1,13 @@
+{
+  "task": "service-from-brief",
+  "kind": "code",
+  "intended_skills": [
+    "workflow", "scaffolding", "specify", "contract-first", "domain-modeling",
+    "api", "security", "ui-design", "proof", "code-review"
+  ],
+  "expect_silent": ["async-systems", "performance", "release", "refactoring"],
+  "rules": ["scaffolding.1", "scaffolding.5", "scaffolding.6", "scaffolding.7", "api.1"],
+  "gated_paths": ["*"],
+  "visible_test_cmd": "npm test",
+  "test_file_cmd": "node --test {files}"
+}

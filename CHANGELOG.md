@@ -6,6 +6,44 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- The eval suite scores skill rules one by one. `eval/verifier/shared/consult_rules.py`
+  holds a check per rule id, such as `api.1` or `debugging.5`. `lift.py`
+  reports each rule's pass rate for the bare and Consult arms. It also lists,
+  per task, the skills the Consult arm read, the ones it missed, and the ones it
+  read despite the task's `expect_silent` list.
+- The new `rules` suite has three underspecified tasks: a bug from a customer
+  report, a multi-currency change to a shipped API field, and a link shortener
+  built from a brief. The two build tasks run in two steps with a scripted
+  approval, so the agent meets real sign-off gates. Rule scores carry weight 0
+  until calibrated.
+- On Claude Code, the eval's consult arm installs the plugin's SessionStart
+  hook, as a plugin install does. Harbor's skill injection skips it, and
+  without it Claude loaded no Consult skill in any consult-arm trial.
+- `eval/scripts/run.py` runs a skill-loading preflight before the arms: the
+  first turn of each task in the consult arm, verification off. It stops the run
+  when too few trials load a Consult skill, so a long run cannot measure a
+  consult arm that never used Consult. `--effort` overrides the agent's
+  reasoning effort.
+- `eval/verifier/rules.json` records every rule of every skill as `check`,
+  `judge-only`, or `untested`. The anatomy validator fails when a rule is
+  missing, an entry is stale, or a `check` entry has no function.
+
+### Fixed
+
+- Eval diffs compare against the scaffold commit, so an agent that commits its
+  work no longer hides its changes from the verifier and judge.
+- `non_interruption` counts only questions after the last user turn, so
+  questions asked before an approval turn no longer lower the score.
+- The verifier no longer counts `=>`, `>=`, or a quoted `>` in a shell command
+  as a file write, and it treats `tests/`, `__tests__/`, and `.spec.*` files as
+  tests. Existing tasks' `change_quality`, `proof`, and `no_file_writes` scores
+  can shift where they hit those cases.
+- The verifier strips credential variables, including the judge token, from
+  the environment of agent-written code it runs: tests, npm scripts, and the
+  app itself.
+
 ## [15.2.0] (2026-09-25)
 
 ### Added

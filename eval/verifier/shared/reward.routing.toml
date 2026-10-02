@@ -2,4 +2,4 @@
 [[reward]]
 name = "reward"
 aggregation = "weighted-mean"
-weights = { no_file_writes = 0.55, judge = 0.45, skill_triggering = 0.0, non_interruption = 0.0 }
+weights = { no_file_writes = 0.55, judge = 0.45, skill_triggering = 0.0, non_interruption = 0.0, rules = 0.0 }
