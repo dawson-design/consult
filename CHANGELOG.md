@@ -6,6 +6,14 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- The eval's `lift.py` report has a cost and effort table: each arm's mean
+  output tokens, cost, agent seconds, turns, lines changed, and questions
+  asked, with the change between arms and a 90% bootstrap interval. Judge
+  bundle parsing moved from `rescore.py` to `eval/scripts/bundle.py` so both
+  scripts can read it.
+
 ### Fixed
 
 - `AGENTS.md` names the directory `agy plugin install` actually writes,

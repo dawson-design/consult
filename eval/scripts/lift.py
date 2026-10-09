@@ -31,7 +31,15 @@ other does not, both are rescored from their shared deterministic dimensions
 with the weights in verifier/shared/reward.<kind>.toml, renormalized as
 RewardKit's weighted mean does.
 
-Two scorecards follow the lift table:
+A cost table follows the lift table: each arm's suite mean for output tokens,
+cost, agent seconds, turns, lines changed, and questions asked, with the change
+and its 90% bootstrap interval. Tokens, cost, and agent time come from Harbor's
+agent records in result.json (see token_records for multi-step trials); turns
+and questions from the final step's trajectory; lines changed from its
+judge-bundle.md. A trial that did not record a metric is left out of that
+metric's mean.
+
+Two scorecards follow:
   rules   per-rule pass rate per arm, from each trial's reward-details.json
           (`rules` criteria, plus the step-1 `signoff` criteria of a multi-step
           task, which count only when the build step's verification passed)
@@ -50,12 +58,14 @@ import statistics
 import sys
 from collections import Counter, defaultdict
 from collections.abc import Iterable
+from datetime import datetime
 from itertools import chain
 from pathlib import Path
 
 EVAL_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(EVAL_DIR / "verifier" / "shared"))
 import consult_lib as cl  # noqa: E402
+from bundle import RebuildError, parse_bundle  # noqa: E402
 
 MODES = ("stopped", "provisional", "built")
 READOUTS = ("skill_triggering", "non_interruption")
@@ -64,6 +74,13 @@ FLOOR_REWARD = 0.5
 BOOTSTRAP_ROUNDS = 2000
 WEIGHTS_RE = re.compile(r"^weights\s*=\s*\{(.*)\}", re.MULTILINE)
 WEIGHT_RE = re.compile(r"(\w+)\s*=\s*([0-9.]+)")
+COST_METRICS = ("output_tokens", "cost_usd", "agent_seconds", "turns", "lines_changed", "questions")
+COST_LABELS = {"output_tokens": ("output tokens", ",.0f"), "cost_usd": ("cost (USD)", ",.2f"),
+               "agent_seconds": ("agent seconds", ",.0f"), "turns": ("turns", ",.1f"),
+               "lines_changed": ("lines changed", ",.0f"), "questions": ("questions", ",.2f")}
+COST_NOTE = ("Each metric averages over the tasks where both arms recorded it. Cost is the agent's API-equivalent "
+             "estimate; these runs bill a subscription. Questions count agent messages that end in a question after "
+             "the last user turn, the gate-fatigue number.")
 JUDGE_EXCLUDED_NOTE = "Rewards exclude the judge: one job ran without it, so both are scored on deterministic dimensions."
 
 
@@ -84,7 +101,7 @@ def load_trials(job_dir: Path) -> dict[str, list[dict]]:
 
 
 def trial_evidence(trial_dir: Path, result: dict, rewards: dict) -> dict:
-    """Rule scores, sign-off mode, and skills read for one trial, single- or multi-step."""
+    """Rule scores, sign-off mode, skills read, and cost for one trial, single- or multi-step."""
     steps = [s["step_name"] for s in result.get("step_results") or []]
     final_dir = trial_dir / "steps" / steps[-1] if steps else trial_dir
     rules = criteria(final_dir / "verifier" / "reward-details.json", "rules")
@@ -94,7 +111,87 @@ def trial_evidence(trial_dir: Path, result: dict, rewards: dict) -> dict:
     mode = next((m for m in MODES if signoff.get(f"mode_{m}") == 1.0), None)
     rules.update({k: (v if built_ok else 0.0) for k, v in signoff.items() if not k.startswith("mode_")})
     trajectory = cl.load_trajectory(final_dir / "agent" / "trajectory.json")
-    return {"rules": rules, "signoff_mode": mode, "skills_read": cl.read_skill_names(trajectory)}
+    cost = trial_cost(result, trajectory, final_dir / "verifier" / "judge-bundle.md")
+    return {"rules": rules, "signoff_mode": mode, "skills_read": cl.read_skill_names(trajectory), "cost": cost}
+
+
+def trial_cost(result: dict, trajectory: cl.Trajectory, bundle_path: Path) -> dict:
+    """What one trial spent: Harbor's token, cost, and agent-time records, plus turns, changed lines, and questions.
+
+    Agent seconds sum every step's wall time. Tokens and cost come from token_records(). Turns and questions
+    come from the final step's trajectory, the one the verifier scores. A metric the trial did not record is
+    None, so it is left out of a mean rather than averaged in as 0.
+    """
+    steps = result.get("step_results") or []
+    phases = [s.get("agent_execution") or {} for s in steps] if steps else [result.get("agent_execution") or {}]
+    tokens, cost = token_records(result, steps)
+    return {
+        "output_tokens": tokens,
+        "cost_usd": cost,
+        "agent_seconds": total(phase_seconds(p) for p in phases),
+        "turns": len(trajectory.agent_messages) if trajectory.steps else None,
+        "lines_changed": lines_changed(bundle_path),
+        "questions": cl.question_message_count(trajectory) if trajectory.steps else None,
+    }
+
+
+def token_records(result: dict, steps: list[dict]) -> tuple[float | None, float | None]:
+    """(output tokens, cost) from Harbor's agent records.
+
+    A single-step trial has one record. Without resume_trajectory each step runs
+    its own session, so the steps sum. With it, each step continues the last
+    session and Harbor builds the step's record from the whole session, so the
+    final step's tokens already hold every earlier step. That is read from
+    Harbor's Claude Code agent; for Codex it is unverified. Cost is left None:
+    whether Claude Code's total_cost_usd covers the whole session on --continue
+    is unverified, and Harbor's fallback estimate prices the whole trajectory.
+    """
+    if not steps:
+        record = result.get("agent_result") or {}
+        return record.get("n_output_tokens"), record.get("cost_usd")
+    if ((result.get("config") or {}).get("agent") or {}).get("resume_trajectory"):
+        return (steps[-1].get("agent_result") or {}).get("n_output_tokens"), None
+    records = [s.get("agent_result") or {} for s in steps]
+    return total(r.get("n_output_tokens") for r in records), total(r.get("cost_usd") for r in records)
+
+
+def total(values: Iterable[float | None]) -> float | None:
+    """Sum of the recorded values; None when none was recorded."""
+    recorded = [v for v in values if v is not None]
+    return sum(recorded) if recorded else None
+
+
+def phase_seconds(phase: dict) -> float | None:
+    if not phase.get("started_at") or not phase.get("finished_at"):
+        return None
+    return (datetime.fromisoformat(phase["finished_at"]) - datetime.fromisoformat(phase["started_at"])).total_seconds()
+
+
+def lines_changed(bundle_path: Path) -> int | None:
+    """Added and removed diff lines plus new-file lines; None without a readable bundle.
+
+    build_bundle skips new files over 64 KB, so a trial that writes one undercounts.
+    """
+    if not bundle_path.is_file():
+        return None
+    try:
+        bundle = parse_bundle(bundle_path.read_text(errors="replace"))
+    except RebuildError:
+        return None
+    return hunk_line_count(bundle.diff) + sum(len(content.splitlines()) for _, content in bundle.new_files)
+
+
+def hunk_line_count(diff: str) -> int:
+    """Added and removed lines inside hunks; file headers sit between `diff --git` and the first `@@`."""
+    count, in_hunk = 0, False
+    for line in diff.splitlines():
+        if line.startswith("diff --git "):
+            in_hunk = False
+        elif line.startswith("@@"):
+            in_hunk = True
+        elif in_hunk and line[:1] in ("+", "-"):
+            count += 1
+    return count
 
 
 def criteria(details_path: Path, dimension: str) -> dict[str, float]:
@@ -234,14 +331,61 @@ def summarize(bare: dict[str, list[dict]], consult: dict[str, list[dict]]) -> di
                 if any(d in e["rewards"] for e in b + c)
             },
             "readouts": {r: {"bare": mean_reward(b, r), "consult": mean_reward(c, r)} for r in READOUTS},
+            "cost": {m: {"bare": mean_cost(b, m), "consult": mean_cost(c, m)} for m in COST_METRICS},
             "failed": failed_trials(b + c),
         }
         row["lift"] = row["consult"] - row["bare"]
         rows.append(row)
     suite = compare(bare, consult)
     return {"tasks": rows, "suite_lift": suite["reward"], "suite": suite, "judge_excluded": judge_excluded,
+            "cost": {m: compare_cost(bare, consult, m) for m in COST_METRICS},
             "rules": rule_scorecard(bare, consult),
             "skills": [skill_row(t, bare.get(t, []), consult.get(t, [])) for t in tasks]}
+
+
+def mean_cost(entries: list[dict], metric: str) -> float | None:
+    """Mean over the trials that recorded the metric; None when none did."""
+    values = recorded(entries, metric)
+    return statistics.fmean(values) if values else None
+
+
+def recorded(entries: list[dict], metric: str) -> list[float]:
+    return [e["cost"][metric] for e in entries if e["cost"][metric] is not None]
+
+
+def compare_cost(bare: dict[str, list[dict]], consult: dict[str, list[dict]], metric: str, seed: int = 0) -> dict:
+    """Each arm's suite mean for the metric, the change, and a 90% bootstrap interval when one can be estimated.
+
+    Only recorded values count, and only tasks where both arms recorded the metric, so every resample averages
+    over the same tasks as the point estimate.
+    """
+    b = {t: recorded(entries, metric) for t, entries in bare.items()}
+    c = {t: recorded(entries, metric) for t, entries in consult.items()}
+    tasks = sorted(t for t in c if b.get(t) and c[t])
+    if not tasks:
+        return {"bare": None, "consult": None, "change": None, "interval": None, "tasks": 0}
+    before, after = suite_means(b, tasks), suite_means(c, tasks)
+    result = {"bare": before, "consult": after, "change": after - before, "interval": None, "tasks": len(tasks)}
+    if values_estimable([b[t] for t in tasks] + [c[t] for t in tasks]):
+        rng = random.Random(seed)
+        draws = [suite_means(resample_values(c, tasks, rng), tasks) - suite_means(resample_values(b, tasks, rng), tasks)
+                 for _ in range(BOOTSTRAP_ROUNDS)]
+        result["interval"] = interval(draws)
+    return result
+
+
+def suite_means(values: dict[str, list[float]], tasks: list[str]) -> float:
+    """Mean of the per-task means, each task weighted equally."""
+    return statistics.fmean(statistics.fmean(values[t]) for t in tasks)
+
+
+def resample_values(values: dict[str, list[float]], tasks: list[str], rng: random.Random) -> dict[str, list[float]]:
+    return {t: rng.choices(values[t], k=len(values[t])) for t in tasks}
+
+
+def values_estimable(groups: list[list[float]]) -> bool:
+    """Every arm-task has 2+ recorded values and some group varies, as estimable() asks of rewards."""
+    return all(len(g) >= 2 for g in groups) and any(len(set(g)) > 1 for g in groups)
 
 
 def failed_trials(entries: Iterable[dict]) -> list[str]:
@@ -322,7 +466,29 @@ def render_markdown(summary: dict, bare_dir: Path, consult_dir: Path) -> str:
             lines.append(f"- {row['task']}: {dims}")
         if row["failed"]:
             lines.append(f"- {row['task']}: no reward for {', '.join(row['failed'])}")
-    return "\n".join(lines + render_rules(summary["rules"]) + render_skills(summary["skills"])) + "\n"
+    sections = render_cost(summary["cost"]) + render_rules(summary["rules"]) + render_skills(summary["skills"])
+    return "\n".join(lines + sections) + "\n"
+
+
+def render_cost(cost: dict[str, dict]) -> list[str]:
+    rows = [render_cost_row(m, cost[m]) for m in COST_METRICS if cost[m]["change"] is not None]
+    if not rows:
+        return []
+    header = ["", "## Cost and effort", "", "| metric | tasks | bare | consult | change | 90% interval |",
+              "| --- | ---: | ---: | ---: | ---: | --- |"]
+    return header + rows + ["", COST_NOTE]
+
+
+def render_cost_row(metric: str, result: dict) -> str:
+    label, spec = COST_LABELS[metric]
+    change = format(result["change"], "+" + spec)
+    if result["bare"]:
+        change += f" ({result['change'] / result['bare']:+.0%})"
+    bounds = result["interval"]
+    spread = "no interval" if bounds is None else (
+        f"{format(bounds[0], '+' + spec)} to {format(bounds[1], '+' + spec)}, {noise_verdict(*bounds)}")
+    means = f"{format(result['bare'], spec)} | {format(result['consult'], spec)}"
+    return f"| {label} | {result['tasks']} | {means} | {change} | {spread} |"
 
 
 def render_comparison(result: dict, label: str, before: str = "the earlier job") -> list[str]:

@@ -165,6 +165,13 @@ the low end next to the mean:
 - **Intervals**: suite lift and floor-rate change each carry a 90% bootstrap
   interval over trials resampled within each task. An interval that contains
   0 is labelled "not distinguishable from noise".
+- **Cost and effort**: each arm's mean output tokens, cost, agent seconds,
+  turns, lines changed, and questions asked, with the change and its interval.
+  Questions count agent messages that end in a question after the last user
+  turn, the gate-fatigue number. Cost is the agent's API-equivalent estimate,
+  since runs bill a subscription. A resumed multi-step trial reports its final
+  step's tokens, which already include the earlier steps, and no cost, until
+  a real trial shows whether Harbor's per-step cost covers one step or all.
 
 When one job has judge scores and the other does not, as in a fast run
 against a release baseline, both are rescored from their shared
@@ -286,7 +293,7 @@ suite, which scores the task's sign-off rule, such as `domain-modeling.10`:
 `multi_step_reward_strategy = "final"` keeps the sign-off score out of the
 trial reward.
 
-After the lift table, `lift.py` prints two scorecards:
+After the lift and cost tables, `lift.py` prints two scorecards:
 
 - The pass rate per rule for each arm. A sign-off score counts only when the
   build step's verification passed.
