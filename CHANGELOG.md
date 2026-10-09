@@ -16,6 +16,10 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- Eval tasks that score no rules get a zero `rules` weight in their vendored
+  `reward.toml`. Their `rules` dimension is a placeholder that scores 1.0, so
+  any weight would have handed them a free point once rule checks count
+  toward the reward.
 - `AGENTS.md` names the directory `agy plugin install` actually writes,
   `~/.gemini/antigravity-cli/plugins/consult`, and says it copies the skills
   rather than linking them. The README and `setup.sh` already said so.
