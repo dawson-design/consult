@@ -110,5 +110,3 @@ here expecting them.
 - `references/removals.md`: load for removals and replacements.
 - `references/test-theater.md`: load when a test asserts how the code is
   built instead of what it does.
-- The Pi `/proof` command runs a red-green cycle; its output counts only
-  toward the claims it covers.
