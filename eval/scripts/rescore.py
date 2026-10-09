@@ -48,12 +48,8 @@ EVAL_DIR = Path(__file__).resolve().parent.parent
 TASKS_DIR = EVAL_DIR / "tasks"
 sys.path.insert(0, str(EVAL_DIR / "scripts"))
 import lift  # noqa: E402
+from bundle import Bundle, RebuildError, parse_bundle  # noqa: E402
 
-BUNDLE_HEAD = "# Changes against the starting repository\n\n## Diff\n\n```diff\n"
-NEW_FILE_HEAD = "## New file: "
-FINAL_HEAD = "## Final agent message\n\n"
-# consult_lib.build_bundle closes each fenced block with "\n```\n\n" before the next section header.
-SECTION_BREAK_RE = re.compile(r"\n```\n\n(?=## New file: [^\n]+\n\n```\n|## Final agent message\n\n)")
 HUNK_RE = re.compile(r"^@@ -\d+(?:,(\d+))? \+\d+(?:,(\d+))? @@")
 # Host git must ignore the user's config: a global diff or apply setting changes the result.
 GIT_ENV = {"GIT_CONFIG_GLOBAL": os.devnull, "GIT_CONFIG_NOSYSTEM": "1"}
@@ -64,18 +60,8 @@ VERIFIER_TIMEOUT_SEC = 900
 SUMMARY_KEYS = ("verification", "proof", "change_quality", "reward")
 
 
-class RebuildError(ValueError):
-    """The workspace cannot be rebuilt: no bundle, a truncated or malformed one, or a diff that does not apply."""
-
-
 class DockerError(RuntimeError):
     pass
-
-
-@dataclass(frozen=True)
-class Bundle:
-    diff: str
-    new_files: tuple[tuple[str, str], ...]
 
 
 @dataclass(frozen=True)
@@ -108,23 +94,6 @@ class Trial:
 
 
 # ------------------------------------------------------------------- bundle
-
-def parse_bundle(text: str) -> Bundle:
-    """The diff and new files consult_lib.build_bundle wrote; RebuildError when truncated or malformed."""
-    if not text.startswith(BUNDLE_HEAD):
-        raise RebuildError("bundle does not start with the diff section")
-    blocks = SECTION_BREAK_RE.split(text[len(BUNDLE_HEAD) - 1:])
-    if len(blocks) < 2 or not blocks[-1].startswith(FINAL_HEAD):
-        raise RebuildError("bundle is truncated: no final agent message section")
-    return Bundle(diff=blocks[0][1:], new_files=tuple(parse_new_file(b) for b in blocks[1:-1]))
-
-
-def parse_new_file(block: str) -> tuple[str, str]:
-    header, fence, content = block.partition("\n\n```\n")
-    if not header.startswith(NEW_FILE_HEAD) or not fence:
-        raise RebuildError(f"bundle has a malformed section: {header[:80]!r}")
-    return header[len(NEW_FILE_HEAD):], content
-
 
 def patch_text(diff: str) -> str:
     """The diff as git printed it: build_bundle strips the final newline and any blank context lines before it."""
