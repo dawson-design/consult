@@ -13,8 +13,10 @@ Use when reviewing Rust code in the diff. Apply this alongside the main
   too if features are non-trivial.
 - `cargo deny check` (if configured): flags advisories, license
   changes, and disallowed sources.
-- For applications: `Cargo.lock` is committed. For libraries: it is
-  not (unless the project has a deliberate policy).
+- `Cargo.lock` is committed by default for applications and
+  libraries (Cargo's guidance since 2023). A library that commits it
+  still needs CI against latest dependencies, because consumers
+  ignore its lockfile.
 
 ## High-signal review checks
 
@@ -24,10 +26,11 @@ Use when reviewing Rust code in the diff. Apply this alongside the main
   the invariant is provably enforced and commented.
 - Panics: indexing (`v[i]`), `unwrap`, `expect`, `unreachable!`,
   `todo!`, integer division, slice ranges. Each one needs a why.
-- Async: blocking work inside `async fn` (file I/O, `std::sync`
-  primitives, CPU-heavy loops) starves the runtime. Look for
-  `std::thread::sleep`, blocking DB drivers, or `Mutex` held across
-  `.await`.
+- Async: blocking work inside `async fn` (file I/O, CPU-heavy
+  loops) starves the runtime. Look for `std::thread::sleep`, blocking
+  DB drivers, or a `std::sync::Mutex` guard held across `.await`.
+  A `std::sync::Mutex` locked briefly and released before `.await` is
+  fine and is Tokio's recommended default.
 - `Send + Sync`: spawned futures and shared state must satisfy the
   bounds. `Rc`, `RefCell`, raw pointers in spawned tasks are red flags.
 - Lifetimes vs clones: a sudden `.clone()` on a hot path is worth

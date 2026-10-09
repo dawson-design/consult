@@ -18,7 +18,9 @@ Apply this alongside the main `code-review` skill workflow.
 - Strict mode: every script that isn't a tiny one-liner should
   start with `set -euo pipefail` and a sane `IFS`. Missing it on a
   new script is a finding.
-  - `-e`: exit on error.
+  - `-e`: exit on error. It does not fire inside `if`/`while`
+    tests, `&&`/`||` lists, functions called from those, or
+    `$(...)` without `inherit_errexit`: check those explicitly.
   - `-u`: unset variables are errors.
   - `-o pipefail`: catch failures inside pipelines.
 - Quoting: every `$var` and `$(cmd)` expansion that could
@@ -47,8 +49,9 @@ Apply this alongside the main `code-review` skill workflow.
   classes; don't rely on the last command's exit code unless the
   script is a one-liner.
 - `eval`: `eval` on anything derived from outside input is a
-  Critical injection finding. Almost always avoidable with arrays
-  or `bash -c`.
+  Critical injection finding. Almost always avoidable with arrays.
+  `bash -c` with interpolated input is the same injection: pass data
+  as positional args (`bash -c 'cmd "$1"' _ "$arg"`).
 
 ## Anti-patterns / red flags
 

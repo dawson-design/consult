@@ -32,7 +32,14 @@ are SQLite and Postgres.
   -- 3. Add NOT NULL via NOT VALID + VALIDATE (cheap lock).
   ALTER TABLE t ADD CONSTRAINT t_c_notnull CHECK (c IS NOT NULL) NOT VALID;
   ALTER TABLE t VALIDATE CONSTRAINT t_c_notnull;
+  -- 4. PG12+: SET NOT NULL trusts the valid check and skips the scan.
+  ALTER TABLE t ALTER COLUMN c SET NOT NULL;
+  ALTER TABLE t DROP CONSTRAINT t_c_notnull;
   ```
+  Before PG12, `SET NOT NULL` scans the whole table under an exclusive
+  lock, so keep the check constraint instead of step 4. On PG18+,
+  `ADD CONSTRAINT t_c_notnull NOT NULL c NOT VALID` then
+  `VALIDATE CONSTRAINT` gives a real not-null constraint without the check.
 - `ALTER TABLE ... ADD FOREIGN KEY` takes a `ShareRowExclusiveLock` on both
   tables. Use `NOT VALID` then `VALIDATE CONSTRAINT` so the validation scan
   holds only a share lock.

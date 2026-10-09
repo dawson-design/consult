@@ -19,7 +19,7 @@ on every PR.
 | Working tree only | `gitleaks dir . --redact -v` |
 | All history | `gitleaks git . --redact -v` |
 | Staged diff (pre-commit) | `gitleaks git --pre-commit --staged . --redact -v` |
-| Branch since base | `trufflehog git file://. --since-commit <base-commit> --only-verified` |
+| Branch since base | `trufflehog git file://. --since-commit <base-commit> --results=verified` |
 | Specific commit range | `gitleaks git . --log-opts="<base>..HEAD" --redact -v` |
 
 ## CI integration
@@ -37,12 +37,14 @@ Add to `.pre-commit-config.yaml`:
 ```yaml
 repos:
   - repo: https://github.com/gitleaks/gitleaks
-    rev: v8.x.y
+    rev: <commit-sha>  # frozen: v8.x.y
     hooks: [{id: gitleaks}]
 ```
 
-Pin `rev` to a tag, not `main`. Review tag changes; pre-commit hooks run with
-full filesystem access.
+Pin `rev` to a commit SHA, not a tag or `main`: tags can be moved.
+`pre-commit autoupdate --freeze` writes the SHA with a `# frozen:` tag
+comment. Review rev changes; pre-commit hooks run with full filesystem
+access.
 
 ## On a hit
 

@@ -57,8 +57,8 @@ LTS, version catalog). Use the `java/` templates with
 `language_flavor: kotlin` when you want Kotlin source against a
 Java-shaped framework (Javalin, Quarkus, Spring Boot).
 
-- Kotlin compiler: K2 (modern front-end) is the default for new
-  Kotlin projects.
+- Kotlin compiler: K2 (modern front-end) is the default compiler
+  since Kotlin 2.0.
 - Concurrency: Kotlin coroutines + structured concurrency for new
   async code; avoid mixing with raw threads or callback-style APIs
   unless interop with a Java library forces it.
@@ -72,8 +72,8 @@ Java-shaped framework (Javalin, Quarkus, Spring Boot).
 ## Ruby
 
 - Bundler with `Gemfile` + `Gemfile.lock`.
-- Target the current stable Ruby. YJIT is on by default; no extra
-  tuning required.
+- Target the current stable Ruby. Ruby does not enable YJIT by
+  default; Rails 7.2+ turns it on for new apps on Ruby 3.3+.
 - Avoid raw Rack app scaffolds for web apps unless the project is a
   tiny library/teaching example.
 
@@ -82,7 +82,8 @@ Java-shaped framework (Javalin, Quarkus, Spring Boot).
 - The stdlib `net/http` `ServeMux` (method matching such as
   `GET /users/{id}`, wildcards, `Request.PathValue()`) subsumes
   most of what third-party routers were historically used for.
-  `gorilla/mux` is archived; do not scaffold it into new projects.
+  `gorilla/mux` was archived in 2022 and revived in 2023, but the
+  stdlib covers its common uses; do not scaffold it into new projects.
 - Reach for a heavier framework only when the app actually needs
   the ecosystem, middleware set, or FastHTTP perf profile.
 
@@ -124,7 +125,7 @@ Java-shaped framework (Javalin, Quarkus, Spring Boot).
 ## Elixir
 
 - Mix with Hex dependencies and `mix.lock`.
-- Elixir features to rely on for new code: type checking of
+- Elixir features to rely on for new code (1.18+): type checking of
   function calls, built-in JSON, and `mix format --migrate` to
   carry older patterns forward.
 - Phoenix uses Bandit as its default web server; Cowboy is legacy.
@@ -156,4 +157,5 @@ Java-shaped framework (Javalin, Quarkus, Spring Boot).
 
 - For large projects: Material for MkDocs by default, regardless of
   app language or framework, unless the repo/user/publishing
-  constraint chooses another.
+  constraint chooses another. It has been in maintenance mode since
+  November 2025 (fixes only; new work moved to Zensical).

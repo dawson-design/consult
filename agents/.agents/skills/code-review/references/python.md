@@ -90,7 +90,8 @@ When in doubt, route to the `domain-modeling` skill.
   re-raise the original. `raise X(...)` inside `except` already
   chains via `__context__`: don't accidentally suppress.
 - Log-and-reraise is an antipattern: `log.error(f"... {e}"); raise`
-  loses the traceback and double-logs at the boundary. Either
+  writes a log line with no traceback (the bare `raise` keeps it),
+  then the boundary logs the same error again. Either
   `log.exception("foo failed")` (full traceback, no re-raise) or
   re-raise, never both.
 - `ExceptionGroup` / `except*` (PEP 654, 3.11+) for aggregated

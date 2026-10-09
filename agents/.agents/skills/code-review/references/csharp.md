@@ -61,8 +61,9 @@ When in doubt, route to the `domain-modeling` skill.
   - `.Include()` chains causing cartesian explosion.
   - `AsNoTracking()` missing on read-only queries.
   - N+1 inside a loop iterating over a navigation property.
-  - Raw SQL with string interpolation: use `FromSqlInterpolated` /
-    parameters.
+  - Raw SQL with string interpolation: use `FromSql` (EF Core 7+) or
+    `FromSqlInterpolated` (earlier) / parameters, never `FromSqlRaw`
+    with interpolated input.
 - LINQ: `IEnumerable<T>` returned from a method that the caller
   enumerates twice will execute twice. Materialise (`.ToList()`)
   once when callers will re-enumerate; avoid materialising in tight

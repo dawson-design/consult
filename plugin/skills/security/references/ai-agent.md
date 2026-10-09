@@ -1,7 +1,7 @@
 # AI agent and LLM application security
 
 Reference for the `security` skill. Threats specific to applications built
-on LLMs and tool-using agents. The booster pack itself is one of these.
+on LLMs and tool-using agents. Consult itself is one of these.
 
 ## Threat model
 
@@ -23,9 +23,10 @@ follows.
 Mitigations:
 
 - Treat every external content channel as untrusted input. Tool outputs,
-  fetched URLs, file contents, search results, all of them. Wrap them in
-  delimiters and tell the model in the system prompt that content inside
-  the delimiters is data, not instructions.
+  fetched URLs, file contents, search results, all of them. Wrapping them
+  in delimiters and telling the model the content is data reduces
+  injection but does not prevent it. It is not a control; the controls
+  below are.
 - Capability isolation. The model that *summarises a webpage* must not
   have a tool that *sends email*. If both are needed, use two agents with
   disjoint tool sets and a structured (typed) handoff between them.
@@ -88,8 +89,9 @@ The model can leak data even without an explicit "send" tool:
   when other users query.
 - Per-tenant indexes (or per-user filters enforced at retrieval time, not
   in the prompt) for any private corpus.
-- Strip or escape control characters and prompt-injection markers from
-  indexed documents.
+- Stripping control characters and known injection markers from indexed
+  documents removes some noise. It is not a control: injected
+  instructions need no special markers.
 - Citations: show the user what was retrieved so they can spot manipulated
   context.
 

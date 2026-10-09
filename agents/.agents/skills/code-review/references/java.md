@@ -66,16 +66,18 @@ When in doubt, route to the `domain-modeling` skill.
   - `synchronized` on `this` or on a public reference is a
     Critical-tier finding (callers can lock on the same monitor).
     Prefer a private `final Object lock = new Object();`.
-  - Virtual threads (Java 21+): blocking is fine, but synchronized
-    blocks pin the carrier: prefer `ReentrantLock`.
+  - Virtual threads (Java 21+): blocking is fine. Before JDK 24,
+    synchronized blocks pin the carrier: prefer `ReentrantLock`.
+    JDK 24+ (JEP 491) no longer pins on `synchronized`.
 - `equals` / `hashCode` / `toString`: must move together.
   `record` gives them for free; manual overrides need tests.
   Inheritance + `equals` is a known minefield (see Effective Java).
 - Spring `@Transactional`:
   - Self-invocation (`this.method()`) bypasses the proxy and the
     transaction.
-  - `@Transactional` on a private/protected method is silently a
-    no-op.
+  - `@Transactional` on a private method is silently a no-op. On a
+    protected or package-private method it is also a no-op before
+    Spring 6.0, and with interface-based (JDK) proxies on any version.
   - Default rollback only on `RuntimeException`: checked exceptions
     don't roll back unless declared (`rollbackFor = ...`).
 - Dependency injection: prefer constructor injection over field
@@ -98,7 +100,8 @@ When in doubt, route to the `domain-modeling` skill.
 
 - `catch (Exception e) { /* log and continue */ }`.
 - `synchronized(this)` or `synchronized` on a public reference.
-- `@Transactional` on a private/protected method.
+- `@Transactional` on a private method, or on a protected or
+  package-private one before Spring 6.0 or with JDK proxies.
 - Field injection (`@Autowired private Foo foo;`).
 - `throw ex;` losing the cause chain.
 - `Optional<T>` as a field or parameter.

@@ -2,8 +2,7 @@
 
 Use this when storing, comparing, formatting, serialising, or computing
 on dates or times: at the language, wire, database, or display layer.
-Triggered from the `domain-modeling` skill's Crosscutting Hazards
-section.
+Loaded by Rule 11 of the `domain-modeling` skill.
 
 ## Iron rules
 
@@ -31,7 +30,7 @@ section.
 |---|---|
 | Database | `TIMESTAMP WITH TIME ZONE` (Postgres `TIMESTAMPTZ`); MySQL `DATETIME` only with an enforced UTC convention; SQLite stores text: pick ISO 8601. For wall-clock-only values use `DATE` / `TIME` / `LocalDate` types. |
 | Wire / API / log | RFC 3339 string with `Z` or explicit offset. Epoch seconds/millis acceptable for high-throughput protocols, but document the unit. Mixing string and numeric formats in one API is a finding. |
-| Domain code | The language's tz-aware type: Python `datetime` with `tzinfo=UTC`; JS `Date` is fine for instants but lacks tz semantics: prefer Temporal (Stage 4 in 2026) or `Luxon`/`date-fns-tz`; Rust `chrono::DateTime<Utc>` or `jiff`; Java/Kotlin `Instant` / `ZonedDateTime`; Ruby `Time.now.utc` / `ActiveSupport::TimeWithZone`; .NET `DateTimeOffset` (never `DateTime` for instants). |
+| Domain code | The language's tz-aware type: Python `datetime` with `tzinfo=UTC`; JS `Date` is fine for instants but lacks tz semantics: prefer Temporal (TC39 Stage 4 as of March 2026) or `Luxon`/`date-fns-tz`; Rust `chrono::DateTime<Utc>` or `jiff`; Java/Kotlin `Instant` / `ZonedDateTime`; Ruby `Time.now.utc` / `ActiveSupport::TimeWithZone`; .NET `DateTimeOffset` (never `DateTime` for instants). |
 | Display | Locale-aware formatting at the UI edge: `Intl.DateTimeFormat`, ICU, `Locale.format`. Never inject locale-specific strings into logs, APIs, or filenames. |
 
 ## High-signal review checks
@@ -60,8 +59,9 @@ section.
 - Server clock drift / NTP sync assumptions: rate limits,
   signatures, JWTs that depend on `now()` need monotonic + wall
   clock distinguished.
-- Leap second handling: most code can assume no leap seconds (Linux
-  and most OSes smear); audit when you depend on millisecond
+- Leap second handling: most code can assume no leap seconds. The
+  Linux kernel inserts the extra second by default; some NTP providers
+  (Google, AWS) smear it instead; audit when you depend on millisecond
   ordering across boundaries.
 
 ## Anti-patterns / red flags

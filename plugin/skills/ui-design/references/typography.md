@@ -55,8 +55,10 @@ the text worth reading.
 - Preserve vertical rhythm with spacing tokens and consistent component
   internals. Baseline grids are useful as discipline, but responsive components
   may need optical alignment instead of strict mathematical alignment.
-- Use `max-width`, grid columns, and container queries to maintain readable
-  measures instead of scaling font size with viewport width.
+- Use `max-width` in `ch`, grid columns, and container queries to maintain
+  readable measures. Fluid type via `clamp()` is fine when the preferred value
+  includes a `rem` term. Do not size text in pure `vw`, because it ignores
+  browser zoom (WCAG 1.4.4).
 
 ## Type Choice
 

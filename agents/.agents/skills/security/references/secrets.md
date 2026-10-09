@@ -123,11 +123,16 @@ those rules.
   alert on spikes. See `api-and-auth.md` for the rate-limit pattern.
 - Account recovery / password-reset tokens: ≥ 128 bits CSPRNG,
   single-use, ≤ 15 min validity, bound to account ID. Send via the
-  user's verified channel (email or in-app notification), never in URL
-  query strings or paths that leak via logs, browser history, and
-  `Referer`. Avoid fragments too unless the flow is deliberately
-  client-side; fragments are readable by same-origin JavaScript and do
-  not reach the server. Rotate the session ID on successful reset.
+  user's verified channel (email or in-app notification). An emailed
+  link must carry the token, and URLs leak via logs, browser history,
+  and `Referer`. So serve the landing page with
+  `Referrer-Policy: no-referrer`, move the token into form state or a
+  short-lived cookie on landing, and redirect to a URL without it.
+  Consume the token only on the POST that sets the new password,
+  because email link scanners fetch the GET before the user does. Avoid
+  fragments too unless the flow is deliberately client-side; fragments
+  are readable by same-origin JavaScript and do not reach the server.
+  Rotate the session ID on successful reset.
 
 ## MFA
 

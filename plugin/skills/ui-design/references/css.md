@@ -6,7 +6,7 @@ that depends on a newer feature.
 
 ---
 
-## Baseline widely available: use without feature query
+## Baseline widely available (checked 2026-10): use without feature query
 
 - Cascade layers: `@layer reset, base, tokens, layout, components, utilities;`
 - Native nesting: `&` selector.
@@ -14,17 +14,28 @@ that depends on a newer feature.
   `cqi` / `cqw` / `cqh`.
 - `:has()`: relational selector.
 - Subgrid.
-- View Transitions Level 1: same-document SPA transitions.
 - `color-mix()`.
 - OKLCH and oklab.
-- `light-dark()` with `color-scheme`.
-- `@starting-style` with `transition-behavior: allow-discrete`: enter / exit
-  from `display:none`.
-- HTML Popover API: `popover`, `popovertarget`.
-- `field-sizing: content`: auto-sizing inputs.
-- `text-wrap: balance` on headings. `text-wrap: pretty` on paragraphs.
-- `@property`: typed custom properties.
 - `dvh` / `svh` / `lvh` viewport units.
+
+---
+
+## Baseline newly available or limited (checked 2026-10): use with `@supports` or as progressive enhancement
+
+Newly available features work in current browsers but not yet in older ones
+still in use. Each becomes widely available 30 months after its newly
+available date.
+
+- View Transitions Level 1: same-document SPA transitions. Newly available
+  2025-10.
+- `light-dark()` with `color-scheme`. Newly available 2024-05.
+- `@starting-style` with `transition-behavior: allow-discrete`: enter / exit
+  from `display:none`. Newly available 2024-08.
+- HTML Popover API: `popover`, `popovertarget`. Newly available 2025-01.
+- `field-sizing: content`: auto-sizing inputs. Newly available 2026-06.
+- `text-wrap: balance` on headings. Newly available 2024-05.
+- `text-wrap: pretty` on paragraphs. Limited availability.
+- `@property`: typed custom properties. Newly available 2024-07.
 
 ---
 

@@ -16,12 +16,13 @@ deserialising, unpacking, or persisting untrusted bytes.
   from `usercontent.example.net`.
 - Force `Content-Disposition: attachment` for any type the user did not
   explicitly choose to render inline.
-- Block executable content types by default: SVG, HTML, XHTML, EICAR,
+- Block executable content types by default: SVG, HTML, XHTML, and
   archives the app does not need to extract.
 - Size limits enforced at the proxy / server **before** buffering in
   memory. The application limit is too late.
 - Antivirus / content scan for risky types in regulated environments.
-  ClamAV in a sidecar is the cheap baseline.
+  ClamAV in a sidecar is the cheap baseline. Prove the scanner is wired in
+  by uploading the EICAR antivirus test file and asserting rejection.
 - Random storage names. Never use the user-supplied filename as the
   storage path. Map to a UUID; keep the original name only in metadata.
 - MIME-sniffing defence. Send `X-Content-Type-Options: nosniff` and
@@ -32,6 +33,9 @@ deserialising, unpacking, or persisting untrusted bytes.
 - Canonicalise (`realpath`, `Path.resolve`) the joined path **then**
   prefix-check against the allowed root. `os.path.join` does not stop
   `../`; canonicalisation does.
+- Prefix-check against the root plus a trailing separator, or use a
+  path-relative API (`path.relative`, `Path.is_relative_to`). A bare
+  `resolved.startsWith("/srv/up")` accepts `/srv/uploads-evil`.
 - Reject paths containing `..`, NULs, absolute paths, drive letters, UNC
   prefixes, URL-encoded variants (`%2e%2e%2f`).
 - On Windows, also reject reserved device names (`CON`, `PRN`, `AUX`,
@@ -53,16 +57,20 @@ deserialising, unpacking, or persisting untrusted bytes.
 
 ## XML / XXE
 
-- Disable external entity resolution at the parser. Most language stdlib
-  parsers ship with XXE enabled by default; the safe configuration is
-  parser-specific:
+- Disable external entity resolution at the parser. Defaults vary by
+  parser and version (Java JAXP still resolves external entities by
+  default), so set the safe configuration explicitly:
   - Java: `XMLConstants.FEATURE_SECURE_PROCESSING = true`,
     `disallow-doctype-decl = true`, set
     `ACCESS_EXTERNAL_DTD/SCHEMA = ""`.
   - Python `lxml`: `etree.XMLParser(resolve_entities=False, no_network=True)`.
-    `xml.etree` from the stdlib is generally safer but use `defusedxml` for
-    untrusted input.
+    lxml 5.0+ defaults to `resolve_entities='internal'`; older versions
+    expand external entities. The stdlib `xml` modules do not fetch
+    external entities but still expand internal ones, so use `defusedxml`
+    for untrusted input.
   - .NET: `XmlReaderSettings { DtdProcessing = Prohibit, XmlResolver = null }`.
+    These are the defaults from .NET Framework 4.5.2 on; set them
+    explicitly for older targets.
   - Go: `encoding/xml` does not resolve external entities by default; safe.
 - SOAP, SAML, RSS, OOXML, SVG, EPUB are all XML-based and inherit XXE risk.
 - XInclude, XSLT, schemaLocation can also fetch URLs; disable.
@@ -75,9 +83,12 @@ Never deserialise untrusted input via:
 - Java `ObjectInputStream` (use a vetted alternative: JSON, protobuf; if
   unavoidable, use look-ahead deserialisation with a strict allowlist).
 - PHP `unserialize`.
-- Ruby `Marshal.load`, `YAML.load` (safe is `YAML.safe_load`).
+- Ruby `Marshal.load`, `YAML.unsafe_load`, and `YAML.load` before Psych 4
+  (Ruby < 3.1). Psych 4 made `YAML.load` safe; `YAML.safe_load` is safe
+  on every version.
 - Node `vm.runInNewContext`, `vm.runInThisContext`, `eval`, `Function`.
-- .NET `BinaryFormatter` (deprecated for security reasons), `NetDataContractSerializer`,
+- .NET `BinaryFormatter` (throws from .NET 9 on unless the unsupported
+  compatibility package is added; still live on .NET Framework), `NetDataContractSerializer`,
   `SoapFormatter`, `ObjectStateFormatter`. Even `JavaScriptSerializer` with
   `SimpleTypeResolver` is unsafe.
 - Go: most JSON/protobuf use is safe; avoid `gob` for untrusted input.
@@ -107,8 +118,11 @@ risk.
 - Audit regexes in hot paths for catastrophic backtracking: patterns with
   nested quantifiers (`(a+)+`), alternations sharing a prefix
   (`(a|a)+`), unbounded `.*` near alternations.
-- Prefer linear-time engines: Go `regexp`, Rust `regex`, RE2; for engines
-  with backtracking (PCRE, Java, .NET, JS), set a timeout per match.
+- Prefer linear-time engines: Go `regexp`, Rust `regex`, RE2. For
+  backtracking engines, use what the platform offers: .NET has a per-match
+  timeout (`matchTimeout`) and `RegexOptions.NonBacktracking` (.NET 7+);
+  PCRE has match and backtrack limits. JS and Java have no built-in regex
+  timeout: use an RE2 binding or run the match where it can be killed.
 - Cap input length before matching.
 
 ## Other parser traps

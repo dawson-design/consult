@@ -73,10 +73,10 @@ Ruby's culture leans heavily on objects with state. The
 
 ## Performance and Object Shapes
 
-- Lazy `||=` ivar memoisation creates many shapes per class.
-  Five memoised ivars can produce 121 shapes; classes that exceed
-  the limit fall back to a hash (`SHAPE_TOO_COMPLEX`). Eagerly init
-  ivars in `initialize`.
+- Lazy `||=` ivar memoisation creates many shapes per class,
+  because ivars set in varying order each make a new shape. Classes
+  that exceed the variation limit fall back to a hash
+  (`SHAPE_TOO_COMPLEX`). Eagerly init ivars in `initialize`.
 - `@result ||= compute` caches `false`/`nil` incorrectly. Use
   `defined?(@result) ? @result : (@result = compute)` when those are
   valid memoised values.
@@ -172,9 +172,13 @@ Ruby's culture leans heavily on objects with state. The
 - `insert_all` / `upsert_all` are 10–100× faster but bypass
   validations, callbacks, and timestamps. Flag missing DB unique
   index when relying on `unique_by:`. `returning:` is Postgres-only.
-- `enqueue_after_transaction_commit = :always` (Rails 7.2
-  default) prevents the "background job runs against rolled-back
-  row" bug. Don't make HTTP calls inside `transaction do`: the
+- Deferring enqueue until commit prevents the "background job runs
+  against rolled-back row" bug. Rails 8.0 and 8.1: set
+  `self.enqueue_after_transaction_commit = true` per job (default
+  `false`; 8.0 deprecates the global config and 8.1 removes it).
+  Check the release notes for later versions. Rails 7.2: `:always`,
+  or the 7.2 default `:default`, which lets the queue adapter
+  decide. Don't make HTTP calls inside `transaction do`: the
   row lock is held for the call duration.
 - `strong_migrations` in the Gemfile catches dangerous
   migrations (adding `NOT NULL` without default; `change_column`
@@ -306,8 +310,10 @@ Decision matrix for where logic lives:
   `verify_doubled_constant_names = true`.
 - factory_bot: traits over factory proliferation (`:user` +
   `:admin`/`:active`, not `:admin_user`/`:active_admin_user`).
-  `build_stubbed` is the right default for unit tests; `build` still
-  calls `create` for associations: the trap that catches new users.
+  `build_stubbed` is the right default for unit tests. `build`
+  builds associations too (factory_bot 5+), unless the project sets
+  `FactoryBot.use_parent_strategy = false`, which makes it `create`
+  them.
   CI Rake task running `FactoryBot.lint` catches factory rot.
 - 300+ system tests is a smell: pull variations down to
   request/model specs and keep ~15-30 happy-path smoke tests at

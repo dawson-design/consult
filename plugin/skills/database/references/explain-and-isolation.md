@@ -24,15 +24,16 @@ EXPLAIN (ANALYZE, BUFFERS, FORMAT TEXT) SELECT ...;
 | Hash Join                     | Build hash on smaller side, probe with larger | Memory-hungry; watch `work_mem` spills                                    |
 | Merge Join                    | Needs sorted input on both sides              | Usually good; expensive if a Sort node is injected                        |
 | Sort                          | Explicit ordering                             | Sorts spilling to disk (`external merge`) → raise `work_mem` or add index |
-| Parallel Seq Scan             | Seq scan across workers                       | PG10+; fine when CPU-bound, bad when disk-bound                           |
+| Parallel Seq Scan             | Seq scan across workers                       | PG9.6+; fine when CPU-bound, bad when disk-bound                          |
 
 ### Numbers to read first
 
 - actual time: how long the node took, per loop × loops. Multiply when
   there are many loops.
 - rows vs actual rows: estimator accuracy. A 100× mismatch means stale
-  statistics; run `ANALYZE` or increase `default_statistics_target` for the
-  column.
+  statistics, correlated columns, or a predicate the planner cannot estimate.
+  Run `ANALYZE`, increase `default_statistics_target` for the column, or add
+  `CREATE STATISTICS` for correlated columns.
 - Buffers: shared hit vs read: `hit` is cache, `read` is disk. A repeated
   query with high `read` is a cache miss pattern; a single hot query with high
   `read` is a missing index.
@@ -86,6 +87,8 @@ Zero-scan indexes cost write throughput. If stats are fresh (no recent
   Snapshot Isolation; stronger than ANSI RR (no phantoms). Still allows
   write skew (two transactions read overlapping rows and write
   non-overlapping rows, each violating an invariant the other didn't see).
+  Updating or locking a row that a concurrent transaction changed and
+  committed aborts with `SQLSTATE 40001`. **Callers MUST retry** here too.
 - Serialisable: Snapshot Isolation + SSI (Serialisable Snapshot Isolation).
   True serializability. Transactions may abort with
   `SQLSTATE 40001 serialization_failure`. **Callers MUST retry.**
@@ -128,7 +131,7 @@ Under Repeatable Read both commit. Under Serialisable one aborts with
 
 - OLTP default: Read Committed.
 - Need consistency across many rows read in one transaction: Repeatable Read
-  (check for write skew).
+  + retry loop (check for write skew).
 - Need invariants enforced across transactions: Serialisable + retry loop.
 - Want specific locks: `SELECT ... FOR UPDATE` / `SELECT ... FOR SHARE`,
   regardless of level.

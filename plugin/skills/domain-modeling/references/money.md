@@ -2,8 +2,7 @@
 
 Use this when storing, comparing, formatting, serialising, or computing
 on monetary amounts: at the language, wire, database, or display
-layer. Triggered from the `domain-modeling` skill's Crosscutting Hazards
-section.
+layer. Loaded by Rule 11 of the `domain-modeling` skill.
 
 ## Iron rules
 
@@ -22,8 +21,8 @@ section.
    what happened. Convert once at the edge and persist the rate plus
    the conversion timestamp.
 5. Pick a rounding policy and document it. Banker's rounding
-   (half-to-even, financial default), half-up, half-down: all are
-   valid; silent inconsistency between layers is not.
+   (half-to-even, a common choice; follow the jurisdiction or
+   processor rule), half-up, half-down: all are valid; silent inconsistency between layers is not.
 
 ## Storage / wire / display
 
@@ -31,7 +30,7 @@ section.
 |---|---|
 | Database | Two columns: `amount_minor BIGINT NOT NULL` (integer minor units, e.g. cents) plus `currency CHAR(3) NOT NULL`. Or `NUMERIC(19, 4)` with a documented scale and the currency column. Never `FLOAT` / `REAL` / `DOUBLE PRECISION`. Add a check constraint on the currency column. |
 | Wire / API | Object form: `{ "amount": "12.34", "currency": "USD" }` (string for the amount preserves precision across JSON's float). Or `{ "amount_minor": 1234, "currency": "USD" }` for an explicit minor-unit contract. Document which one. |
-| Domain code | A `Money` value object that bundles amount and currency, rejects mixed-currency arithmetic, and uses `Decimal` / `BigDecimal` internally. Most ecosystems have one (`py-moneyed`, `joda-money`, `Money.gem`, `Stripe.Money`); reach for it before rolling your own. |
+| Domain code | A `Money` value object that bundles amount and currency, rejects mixed-currency arithmetic, and uses `Decimal` / `BigDecimal` or integer minor units internally. Most ecosystems have one (`py-moneyed`, `joda-money`, the `money` gem, `Dinero.js`); reach for it before rolling your own. |
 | Display | Locale-aware formatting at the UI edge: `Intl.NumberFormat(locale, { style: "currency", currency })`, ICU, `Locale.format`. The DB never sees `"$1,234.56"`; the user never sees `"123456 USD"`. |
 
 ## Per-currency decimal places
@@ -59,8 +58,8 @@ significant digit.
   per-line rounding rules are jurisdiction-specific. Round per line,
   then sum. (Exception: VAT regimes that round at the invoice
   total.)
-- Storing `1234.567` in a `NUMERIC(19, 2)` column: the database
-  silently truncates to `1234.57` (or 56, depending on policy).
+- Storing `1234.567` in a `NUMERIC(19, 2)` column: Postgres
+  silently rounds to `1234.57`, losing the third digit.
 - Storing the symbol `"$"` instead of the code `"USD"`. Australian
   dollars, Canadian dollars, US dollars, Mexican pesos, Chilean
   pesos, and several others all share `$`.

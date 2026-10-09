@@ -66,7 +66,9 @@ Preview of structural changes:
 
 - Outcomes replace binary success criteria.
 - Bronze / Silver / Gold conformance tiers.
-- APCA as the candidate contrast method.
+- Contrast method not yet chosen. The 10 September 2026 Working Draft says the
+  algorithm is "yet to be determined" and no longer names APCA, which earlier
+  drafts proposed.
 
 Ref: https://www.w3.org/TR/wcag-3.0/
 
@@ -125,8 +127,8 @@ Quoted from https://www.w3.org/WAI/ARIA/apg/practices/read-me-first/ :
 > behavior you require already built in, instead of re-purposing an element and
 > adding an ARIA role, state or property to make it accessible, then do so."
 
-WebAIM Million data: sites using ARIA average 41% more detected
-accessibility errors than those without. No ARIA is better than bad ARIA.
+WebAIM Million 2026 data: home pages using ARIA average 41% more detected
+accessibility errors than those without (59.1 versus 42). No ARIA is better than bad ARIA.
 https://webaim.org/projects/million/
 
 ### The Five Rules
@@ -193,15 +195,16 @@ both the unfocused state and the adjacent surface. Concretely:
 ```css
 :focus-visible {
   /* Visible ring; pick a token with 3:1 against both element bg and adjacent surface. */
+  /* Forced Colors repaints outline-color, so a solid outline survives as is. */
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
 
-@media (forced-colors: active) {
-  :focus-visible {
-    /* Forced Colors strips author colors; a transparent outline becomes the UA's forced ring. */
-    outline: 2px solid transparent;
-  }
+/* Trap: Forced Colors forces box-shadow to none, so a shadow-only ring vanishes. */
+.shadow-ring:focus-visible {
+  box-shadow: 0 0 0 2px var(--focus-ring);
+  /* Invisible normally; Forced Colors repaints it as a visible system-color ring. */
+  outline: 2px solid transparent;
 }
 ```
 
@@ -260,7 +263,7 @@ Honour these; do not override:
 | VoiceOver     | Safari            |
 | TalkBack      | Chrome on Android |
 
-Automated tools catch a bounded share of issues. Deque's 2024 published
+Automated tools catch a bounded share of issues. Deque's 2021 published
 analysis of 13,000+ first-audit page states puts axe-core at ~57%; the
 conservative industry range is 30–50%; vendor-marketing claims of ~80% include
 semi-automated guided tests. Always follow with manual keyboard and

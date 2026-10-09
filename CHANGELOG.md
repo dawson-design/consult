@@ -8,6 +8,51 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- Skill references no longer carry wrong or dated claims an audit found;
+  each fix was checked against an official source or a local run.
+  - Security:
+    - The open-redirect recipe in `web-app.md` now uses WHATWG parsing with
+      an origin comparison and names the real bypasses (`/\evil.example`,
+      `/<TAB>/evil.example`). The file's raw NUL, US, and DEL bytes, which
+      made tools treat it as binary, became printable escapes.
+    - XXE, `YAML.load`, `BinaryFormatter`, and regex-timeout claims are now
+      version-conditioned.
+    - Reset-token links follow OWASP: single use, short TTL, stripped from
+      the URL on landing, and consumed only on the password-setting POST.
+    - Path containment checks compare against the root plus a separator,
+      and EICAR is the scanner wiring test rather than a blocked type.
+    - Prompt-injection delimiters and marker stripping are labelled as
+      noise reduction, not controls.
+    - Pre-commit `rev` is pinned to a SHA, and trufflehog uses
+      `--results=verified`.
+    - SSRF IP pinning drops the resolver-TTL step it contradicted and
+      keeps the original hostname for SNI and certificate checks.
+    - Corrected `bun audit` version, `NuGetAudit`, and the GCP metadata
+      behavior.
+  - Code review: virtual-thread pinning before JDK 24, Spring 6 proxying of
+    protected methods, committed `Cargo.lock` for libraries, Kotlin 1.7
+    exhaustive `when`, factory_bot 5 `build`, Rails 7.2 to 8.1 enqueue
+    defaults, Ruby object shapes, Tokio and `std::sync::Mutex`, bare
+    `raise`, EF Core `FromSql`, `bash -c` injection, `set -e` gaps, the
+    TypeScript peer-dependency range, and a broken `dotnet.md` pointer.
+  - Database, domain modeling, and scaffolding:
+    - PostgreSQL Repeatable Read retries, the parallel scan version,
+      `CREATE STATISTICS` for misestimates, and the `SET NOT NULL` step in
+      the online-DDL recipe.
+    - Stale pointers to retired sections ("Crosscutting Hazards", "Core
+      Ideas") now name the current rules.
+    - `NUMERIC` rounds rather than truncates, and the `Stripe.Money` library
+      that does not exist is gone.
+    - Leap-second handling and Temporal's stage.
+    - `gorilla/mux`, YJIT, K2, Elixir 1.18, and Material for MkDocs status.
+  - UI design:
+    - The CSS Baseline "widely available" list keeps only features that are
+      widely available.
+    - Type sizing with `clamp()` and negative tracking no longer contradict
+      across files.
+    - WCAG 3 no longer names APCA, and the Deque and WebAIM figures carry
+      correct years.
+    - The forced-colors focus snippet shows the `box-shadow` trap.
 - `AGENTS.md` names the directory `agy plugin install` actually writes,
   `~/.gemini/antigravity-cli/plugins/consult`, and says it copies the skills
   rather than linking them. The README and `setup.sh` already said so.

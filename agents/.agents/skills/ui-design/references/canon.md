@@ -90,7 +90,8 @@ inside that structure.
   technical values.
 - Type scale follows hierarchy, not viewport width. Do not use hero-scale type
   inside compact panels, dashboards, or form tools.
-- Avoid negative letter spacing. UI text should remain legible at small sizes.
+- Avoid negative letter spacing on body and UI text. Large, short display
+  headings may take slight negative tracking.
 
 Useful fallback stack:
 

@@ -326,8 +326,10 @@ Classes are easy to reach for in TS and rarely the right tool. The
   without a major version bump: narrowing return types, widening
   parameter types, removing overloads, renaming exported types,
   changing generic parameter defaults.
-- `typescript` belongs in `peerDependencies` with a range like
-  `">=5.4 <6.0"`, not `dependencies`.
+- Most libraries ship `.d.ts` files and need no `typescript`
+  dependency. A package that calls the compiler at runtime puts
+  `typescript` in `peerDependencies`, not `dependencies`, with a
+  range matching the majors its CI tests.
 - Variance annotations (`in`/`out`, TS 4.7+) are a library tool
   for deeply recursive types: block in app code without a stated
   reason.

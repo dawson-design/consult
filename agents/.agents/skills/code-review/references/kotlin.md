@@ -61,9 +61,10 @@ When in doubt, route to the `domain-modeling` skill.
   - `runBlocking` outside `main` / tests is suspicious.
   - Hot `Flow` (`SharedFlow`, `StateFlow`) shared without a scope
     leaks subscribers.
-- `when` exhaustiveness: `when` over a sealed type used as an
-  expression is exhaustive; used as a statement, it isn't. Prefer
-  the expression form, or assign to `Unit` to force exhaustiveness.
+- `when` exhaustiveness: since Kotlin 1.7, a `when` statement over a
+  sealed, enum, or Boolean subject must be exhaustive (compile
+  error). Before 1.7, only the expression form is enforced:
+  prefer it, or assign to `Unit` to force exhaustiveness.
 - Extension functions: an extension on a type the project
   doesn't own is fine; one that shadows a member function is a bug
   (member wins). Flag any extension named the same as a method on
@@ -96,7 +97,7 @@ When in doubt, route to the `domain-modeling` skill.
 - `data class` with mutable `var` properties.
 - `companion object` with mutable shared state.
 - `when` statement over a sealed type with no `else` and no
-  exhaustiveness check.
+  exhaustiveness check (Kotlin before 1.7).
 - Extension function shadowing a member function.
 - `Thread.sleep` inside a coroutine.
 

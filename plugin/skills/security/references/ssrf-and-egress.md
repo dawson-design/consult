@@ -58,9 +58,9 @@ naive wildcard subdomain rule lets `attacker.example.com` past the gate.
    is blocked, refuse.
 3. Connect to the resolved IP, not by re-resolving the hostname inside the
    HTTP client.
-4. Send the original `Host` header so TLS still works.
-5. Cap the resolver TTL so a split-horizon nameserver cannot return one answer
-   to validation and a different answer to the connect.
+4. Keep the original hostname for TLS: send it as SNI and verify the
+   certificate against it, and send it as the `Host` header. Connecting
+   by IP must not skip hostname verification.
 
 ## HTTP client hardening
 
@@ -82,8 +82,11 @@ naive wildcard subdomain rule lets `attacker.example.com` past the gate.
 - AWS: enforce IMDSv2 (`HttpTokens: required`); set
   `HttpPutResponseHopLimit: 1` so containers cannot reach IMDS through the
   host.
-- GCP: require the `Metadata-Flavor: Google` header at the workload level;
-  avoid running unauthenticated proxies on the same network.
+- GCP: the metadata server rejects requests without
+  `Metadata-Flavor: Google` and any request carrying `X-Forwarded-For`.
+  That blocks naive
+  URL-only SSRF and requests relayed through a standard proxy. It does not
+  stop an SSRF primitive that lets the attacker set request headers.
 - Use workload identity (IRSA on EKS, Workload Identity on GKE, federated
   OIDC for CI) so a leaked metadata response is not, by itself, a long-lived
   credential.
