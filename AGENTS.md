@@ -18,11 +18,11 @@ repo maintenance helpers and plugin packaging.
 - **Canonical skills**: `agents/.agents/skills/<name>/SKILL.md`. Every skill
   lives here; siblings may add `agents/`, `references/`, and `scripts/`.
 - **Repo instructions**: `AGENTS.md` is the main portable instruction file in
-  the repo. `CLAUDE.md` mirrors the same maintainer guidance for hosts that read
-  Claude-specific files. Normal Consult use relies on skill frontmatter, plugin
-  metadata, the `workflow` skill, and the plugin SessionStart hook that tells
-  the agent to load `workflow` before non-trivial code work; users do not need
-  to install or merge system instruction files.
+  the repo. `CLAUDE.md` imports it with `@AGENTS.md`, because Claude Code reads
+  `CLAUDE.md` but not `AGENTS.md`. Normal Consult use relies on skill
+  frontmatter, plugin metadata, the `workflow` skill, and the plugin
+  SessionStart hook that tells the agent to load `workflow` before non-trivial
+  code work; users do not need to install or merge system instruction files.
 - **Claude Code plugin mirror**: `plugin/skills/<name>` contains generated
   copies of canonical skills from `agents/.agents/skills/<name>`.
   `.claude-plugin/marketplace.json` points Claude Code at the `plugin/` root,

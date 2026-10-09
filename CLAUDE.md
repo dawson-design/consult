@@ -1,5 +1,7 @@
 # CLAUDE.md
 
-This file provides Claude-specific guidance for working on Consult. The main
-portable maintainer instructions live in `AGENTS.md`; follow that file for repo
-layout, validation, skill anatomy, versioning, and release rules.
+Claude Code reads this file but not `AGENTS.md`, so this file imports the
+portable maintainer guide below. Put maintainer guidance in `AGENTS.md`, not
+here.
+
+@AGENTS.md
