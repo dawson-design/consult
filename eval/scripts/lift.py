@@ -28,8 +28,8 @@ from timeouts or auth failures is not a skill-content effect.
 
 The fast tier runs without the judge. When one job has judge scores and the
 other does not, both are rescored from their shared deterministic dimensions
-with the weights in verifier/shared/reward.<kind>.toml, renormalized as
-RewardKit's weighted mean does.
+with the weights in each task's tests/reward.toml, renormalized as RewardKit's
+weighted mean does.
 
 A cost table follows the lift table: each arm's suite mean for output tokens,
 cost, agent seconds, turns, lines changed, and questions asked, with the change
@@ -63,6 +63,7 @@ from itertools import chain
 from pathlib import Path
 
 EVAL_DIR = Path(__file__).resolve().parent.parent
+TASKS_DIR = EVAL_DIR / "tasks"
 sys.path.insert(0, str(EVAL_DIR / "verifier" / "shared"))
 import consult_lib as cl  # noqa: E402
 from bundle import RebuildError, parse_bundle  # noqa: E402
@@ -202,7 +203,7 @@ def criteria(details_path: Path, dimension: str) -> dict[str, float]:
 
 
 def task_meta(task: str) -> dict:
-    path = EVAL_DIR / "tasks" / task.split("/")[-1] / "tests" / "consult.json"
+    path = TASKS_DIR / task.split("/")[-1] / "tests" / "consult.json"
     return json.loads(path.read_text()) if path.is_file() else {}
 
 
@@ -275,8 +276,9 @@ def interval(values: list[float]) -> tuple[float, float]:
     return percentile(values, 0.05), percentile(values, 0.95)
 
 
-def reward_weights(kind: str) -> dict[str, float]:
-    text = (EVAL_DIR / "verifier" / "shared" / f"reward.{kind}.toml").read_text()
+def task_weights(task: str) -> dict[str, float]:
+    """The reward weights in the task's own tests/reward.toml, which sync_tests.py writes per task."""
+    text = (TASKS_DIR / task.split("/")[-1] / "tests" / "reward.toml").read_text()
     return {name: float(w) for name, w in WEIGHT_RE.findall(WEIGHTS_RE.search(text).group(1))}
 
 
@@ -286,7 +288,7 @@ def has_judge(by_task: dict[str, list[dict]]) -> bool:
 
 def without_judge(task: str, entries: list[dict]) -> list[dict]:
     """Entries with reward recomputed as the weighted mean of their non-judge dimensions."""
-    weights = reward_weights(task_meta(task).get("kind") or "code")
+    weights = task_weights(task)
     return [rescored(e, deterministic_reward(e["rewards"], weights)) for e in entries]
 
 

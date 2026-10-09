@@ -204,11 +204,6 @@ def dependency_notes(workspace: Path) -> list[str]:
 
 # ------------------------------------------------------------------- rewards
 
-def task_weights(task: str) -> dict[str, float]:
-    text = (TASKS_DIR / task / "tests" / "reward.toml").read_text()
-    return {name: float(w) for name, w in lift.WEIGHT_RE.findall(lift.WEIGHTS_RE.search(text).group(1))}
-
-
 def weighted_reward(dimensions: dict[str, float], weights: dict[str, float]) -> float:
     """RewardKit's weighted mean over the dimensions present, rounded as it rounds; an unlisted dimension weighs 1."""
     total = sum(weights.get(d, 1.0) for d in dimensions)
@@ -234,7 +229,7 @@ def merge_details(old_path: Path, new_path: Path) -> dict:
 def merge_final(trial: Trial, verifier_dir: Path) -> dict:
     """Merge the original judge into the new reward.json and reward-details.json; returns the rewards."""
     rewards = merge_rewards(trial.old_rewards, json.loads((verifier_dir / "reward.json").read_text()),
-                            task_weights(trial.task))
+                            lift.task_weights(trial.task))
     details = merge_details(trial.bundle_path.parent / "reward-details.json", verifier_dir / "reward-details.json")
     replace_file(verifier_dir / "reward.json", json.dumps(rewards, indent=2))
     replace_file(verifier_dir / "reward-details.json", json.dumps(details, indent=2))

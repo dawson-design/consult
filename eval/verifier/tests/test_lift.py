@@ -12,6 +12,7 @@ import tempfile
 import unittest
 from contextlib import redirect_stdout
 from pathlib import Path
+from unittest import mock
 
 EVAL_DIR = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(EVAL_DIR / "scripts"))
@@ -168,6 +169,20 @@ class LiftTests(unittest.TestCase):
         summary = self.summary(bare, consult)
         self.assertTrue(summary["judge_excluded"])
         self.assertAlmostEqual(summary["suite_lift"], 0.0)
+
+    def test_judge_free_rescoring_uses_the_tasks_own_reward_weights(self):
+        """A task's vendored reward.toml can differ from the shared one: sync_tests zeroes rules where none score."""
+        tests = self.root / "tasks" / "proof-first-bugfix" / "tests"
+        tests.mkdir(parents=True)
+        (tests / "consult.json").write_text(json.dumps({"kind": "code"}))
+        (tests / "reward.toml").write_text("[[reward]]\nweights = { verification = 0.5, proof = 0.5, "
+                                           "change_quality = 0.0, judge = 0.5, rules = 0.0 }\n")
+        bare = self.job("bare", {"proof-first-bugfix": [code_rewards(0.4, judge=0.0)]})
+        consult = self.job("consult", {"proof-first-bugfix": [{**code_rewards(0.9, judge=None), "proof": 0.0,
+                                                                "rules": 1.0}]})
+        with mock.patch.object(lift, "TASKS_DIR", self.root / "tasks"):
+            row = self.summary(bare, consult)["tasks"][0]
+        self.assertAlmostEqual(row["consult"], 0.5)
 
     def test_the_report_compares_against_an_earlier_consult_job(self):
         bare = self.job("bare", {"proof-first-bugfix": [code_rewards(0.4)] * 3})
