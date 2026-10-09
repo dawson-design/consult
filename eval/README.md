@@ -279,7 +279,12 @@ of one SKILL.md. It reads the trajectory, the diff against the scaffold commit,
 or a per-task probe. A check that an idle agent would pass, such as
 `documentation.1`, scores 0 unless verification passed. Per-rule scores land in
 `reward-details.json`. `rules` stays at weight 0 until a sample of hand
-ratings calibrates the checks.
+ratings calibrates the checks. `scripts/rule_labels.py export <sheet.csv>
+<job>...` writes one row per rule verdict with the rule's text and the trial
+dir to read. A reviewer writes `pass` or `fail` in the `human` column, and
+`rule_labels.py agree <sheet.csv>` reports how often each check matched. Tasks
+that score no rules get `rules = 0.0` in their `reward.toml`, so a calibrated
+weight reaches only the tasks that list rules.
 
 In a two-step task the `brief` step runs its own verifier, the `signoff`
 suite, which scores the task's sign-off rule, such as `domain-modeling.10`:

@@ -16,6 +16,9 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `eval/scripts/reference_reads.py` reports, per eval job, the share of
   trials that opened each skill reference file, as input to a reference
   length audit.
+- `eval/scripts/rule_labels.py` exports each trial's rule verdicts to a CSV
+  sheet for hand labelling and reports how often each check agreed with the
+  labels, the input for giving the `rules` dimension a weight.
 
 ### Fixed
 
