@@ -91,7 +91,11 @@ def write_sheet(path: Path, rows: list[dict]) -> None:
 def read_sheet(path: Path) -> list[dict]:
     """The sheet's rows with labels lower-cased and scores as numbers; SystemExit naming a row that is unreadable."""
     with path.open(newline="") as handle:
-        return [parse_row(number, row) for number, row in enumerate(csv.DictReader(handle), start=2)]
+        reader = csv.DictReader(handle)
+        missing = [c for c in ("rule", "automated", "human") if c not in (reader.fieldnames or [])]
+        if missing:
+            raise SystemExit(f"{path} has no {', '.join(missing)} column; export a sheet with rule_labels.py")
+        return [parse_row(number, row) for number, row in enumerate(reader, start=2)]
 
 
 def parse_row(number: int, row: dict) -> dict:

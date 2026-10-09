@@ -130,6 +130,13 @@ class AgreementTests(unittest.TestCase):
             rule_labels.main(["rule_labels.py", "agree", str(sheet)])
         self.assertIn("| api.1 | 2 | 1 | 1 | 0 | 50% |", out.getvalue())
 
+    def test_a_sheet_without_the_label_columns_stops(self):
+        """A spreadsheet that renames human to Human would otherwise skip every row and report nothing."""
+        sheet = self.root / "renamed.csv"
+        sheet.write_text("rule,automated,Human\napi.1,1.0,pass\n")
+        with self.assertRaisesRegex(SystemExit, "has no human column"):
+            rule_labels.read_sheet(sheet)
+
     def test_an_unreadable_label_or_score_stops_the_report_naming_its_row(self):
         with self.assertRaisesRegex(SystemExit, r"row 2 \(t__0, api.1\): human must be pass or fail"):
             rule_labels.read_sheet(self.sheet([("api.1", "1.0", "maybe")]))
