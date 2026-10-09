@@ -6,14 +6,14 @@
   },
   "metadata": {
     "description": "Consult: collaborative engineering-discipline skills for Cursor.",
-    "version": "15.3.0",
+    "version": "16.0.0",
     "license": "MIT"
   },
   "plugins": [
     {
       "name": "consult",
       "description": "Portable, collaborative engineering-discipline skill pack: data, proof, security, design, and more.",
-      "version": "15.3.0",
+      "version": "16.0.0",
       "author": {
         "name": "Dawson Design Ltd."
       },

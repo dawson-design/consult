@@ -6,6 +6,8 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [16.0.0] (2026-10-09)
+
 ### Removed
 
 - The Pi runtime package (`consult/`): the proof runtime, the independent
