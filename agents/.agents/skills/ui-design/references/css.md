@@ -1,4 +1,4 @@
-# Modern CSS: frontend-design
+# Modern CSS: ui-design
 
 Browser support is a moving target: treat MDN Baseline and the linked
 browser-compat tables as the source of truth before shipping production code

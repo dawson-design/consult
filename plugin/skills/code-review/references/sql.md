@@ -11,7 +11,7 @@ ad-hoc query scripts, in the diff. Apply this alongside the main
   rollout.
 - ORM-generated queries: review the call site (N+1, eager
   loading) using the language reference (e.g. `ruby.md` for AR,
-  `dotnet.md` for EF Core, `python.md` for SQLAlchemy).
+  `csharp.md` for EF Core, `python.md` for SQLAlchemy).
 - This file focuses on hand-written SQL in app code, raw queries,
   views, and stored procedures.
 

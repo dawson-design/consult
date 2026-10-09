@@ -26,6 +26,14 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- Reference files lost stale pointers and broken bytes: `code-review/sql.md`
+  links `csharp.md` instead of a missing `dotnet.md`; `security/web-app.md`
+  writes its control-character class as escaped text instead of raw NUL and
+  DEL bytes, which made git treat the file as binary; `dates.md` and
+  `money.md` name `domain-modeling` Rule 11 instead of a retired section;
+  `data-shape-boundaries.md` names `proof` Rule 3 instead of retired Core
+  Ideas; the `css.md` and `frameworks.md` titles use `ui-design`; and
+  `typescript.md` labels its example with words instead of emoji.
 - Eval tasks that score no rules get a zero `rules` weight in their vendored
   `reward.toml`. Their `rules` dimension is a placeholder that scores 1.0, so
   any weight would have handed them a free point once rule checks count

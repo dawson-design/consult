@@ -1,4 +1,4 @@
-# Framework tradeoffs: frontend-design
+# Framework tradeoffs: ui-design
 
 Opinionated picks to kick-start a scaffold. Version numbers and release dates
 are not pinned here: check each project's release notes before committing.
