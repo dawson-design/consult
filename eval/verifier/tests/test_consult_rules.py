@@ -163,6 +163,38 @@ class LibTests(unittest.TestCase):
         self.assertEqual(cl.question_message_count(traj), 1)
 
 
+class GitCredentialTests(WorkspaceCase):
+    def test_git_hides_credentials_from_commands_the_agent_configured(self):
+        # The agent owns /app/.git/config, and git runs core.fsmonitor on every
+        # index refresh and diff.external on a content diff.
+        import os
+        os.environ["FAKE_EVAL_TOKEN"] = "secret"
+        self.addCleanup(os.environ.pop, "FAKE_EVAL_TOKEN")
+        log = Path(self._tmp.name) / "hook.log"
+        hook = Path(self._tmp.name) / "hook.sh"
+        hook.write_text(f'#!/bin/sh\necho "${{FAKE_EVAL_TOKEN:-hidden}}" >> "{log}"\n')
+        hook.chmod(0o755)
+        run_git(self.ws, "config", "core.fsmonitor", str(hook))
+        run_git(self.ws, "config", "diff.external", str(hook))
+        self.write_files({"src/a.js": "export const a = 2;\n"})
+        cl.changed_paths(self.ws)
+        cl.git(self.ws, "diff", cl.scaffold_sha(self.ws))
+        seen = log.read_text().split()
+        self.assertTrue(seen, "the configured commands never ran, so this test proves nothing")
+        self.assertEqual(set(seen), {"hidden"})
+
+    def test_git_keeps_config_passed_through_the_environment(self):
+        # GIT_CONFIG_KEY_<n> matches the KEY credential pattern, and git refuses
+        # to run when GIT_CONFIG_COUNT names a key that is missing.
+        import os
+        for name, value in {"GIT_CONFIG_COUNT": "1", "GIT_CONFIG_KEY_0": "core.quotepath",
+                            "GIT_CONFIG_VALUE_0": "false"}.items():
+            os.environ[name] = value
+            self.addCleanup(os.environ.pop, name)
+        self.write_files({"src/a.js": "export const a = 2;\n", "src/b.js": "export const b = 1;\n"})
+        self.assertEqual(cl.changed_paths(self.ws), ["src/a.js", "src/b.js"])
+
+
 class DebuggingTests(WorkspaceCase):
     scaffold = {
         "src/a.js": "export const double = (n) => n + n + 1;\n",

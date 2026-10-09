@@ -43,7 +43,8 @@ WRITE_TOOL_RE = re.compile(
 # `=>`, `->`, `>=`, and `>>`'s second `>` are not redirects.
 WRITE_COMMAND_RE = re.compile(r"apply_patch|(?<![0-9&=<>-])>(?!=)\s*(?!/dev/null|&)\S|\btee\b|\bsed\s+-i\b")
 QUOTED_RE = re.compile(r"'[^']*'|\"(?:[^\"\\]|\\.)*\"")
-# Variables a verifier must not hand to agent-written code (npm scripts, the app).
+# Variables a verifier must not hand down to agent-written code (npm scripts, the
+# app) or to commands the agent names in the workspace's .git/config.
 CREDENTIAL_ENV_RE = re.compile(r"TOKEN|KEY|SECRET|PASSWORD|CREDENTIAL|AUTH", re.IGNORECASE)
 SKILL_PATH_RE = re.compile(r"skills/([a-z][a-z0-9-]*)/SKILL\.md")
 # Claude Code injects this line and the skill body as a user message once a Skill
@@ -497,8 +498,29 @@ def _in_workspace(path: str, cwd_in_workspace: bool) -> bool:
     return cwd_in_workspace and bool(path)
 
 
+def without_credentials() -> dict[str, str]:
+    """The verifier's environment minus credentials, for a child process the agent's work can influence.
+
+    The child no longer inherits them, which stops accidental leaks such as a
+    test that prints its environment. A child running as the verifier's user
+    can still read an ancestor's environment from /proc, so this is not a
+    boundary against a hostile workspace. GIT_CONFIG_KEY_<n> matches KEY but
+    names a config key, and git refuses to run without it.
+    """
+    return {k: v for k, v in os.environ.items() if k.startswith("GIT_CONFIG_") or not CREDENTIAL_ENV_RE.search(k)}
+
+
 def git(workspace: Path, *args: str) -> str:
-    return subprocess.run(["git", "-C", str(workspace), *args], capture_output=True, text=True, check=False).stdout
+    """Run git in the workspace and return stdout.
+
+    The agent controls the workspace's .git/config, and git runs commands it
+    names there (core.fsmonitor on every index refresh, clean filters,
+    diff.external and textconv on content diffs), so git's environment drops
+    credentials the same way run_command's does.
+    """
+    return subprocess.run(
+        ["git", "-C", str(workspace), *args], env=without_credentials(), capture_output=True, text=True, check=False,
+    ).stdout
 
 
 def scaffold_sha(workspace: Path) -> str:
@@ -527,9 +549,10 @@ def classify(path: str) -> str:
 
 def run_command(workspace: Path, argv: list[str], timeout: int) -> tuple[bool, str]:
     """Run agent-influenced code (tests, npm scripts, the app) without the verifier's credentials."""
-    env = {k: v for k, v in os.environ.items() if not CREDENTIAL_ENV_RE.search(k)}
     try:
-        result = subprocess.run(argv, cwd=workspace, env=env, capture_output=True, text=True, timeout=timeout, check=False)
+        result = subprocess.run(
+            argv, cwd=workspace, env=without_credentials(), capture_output=True, text=True, timeout=timeout, check=False,
+        )
     except subprocess.TimeoutExpired:
         return False, f"timed out after {timeout}s: {' '.join(argv)}"
     return result.returncode == 0, (result.stdout + result.stderr)[-4000:]
