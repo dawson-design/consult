@@ -13,16 +13,20 @@ Most edits are to skill bodies, the top-level `AGENTS.md`, or the
 `README.md`. There is no application build or service to run; tests cover
 repo maintenance helpers and plugin packaging.
 
+Claude Code and Codex are the hosts the maintainer uses and the eval
+measures. Check behavior changes on those first; the other hosts load the same
+skills but nothing measures them.
+
 ## Source of truth and mirrors
 
 - **Canonical skills**: `agents/.agents/skills/<name>/SKILL.md`. Every skill
   lives here; siblings may add `agents/`, `references/`, and `scripts/`.
 - **Repo instructions**: `AGENTS.md` is the main portable instruction file in
-  the repo. `CLAUDE.md` mirrors the same maintainer guidance for hosts that read
-  Claude-specific files. Normal Consult use relies on skill frontmatter, plugin
-  metadata, the `workflow` skill, and the plugin SessionStart hook that tells
-  the agent to load `workflow` before non-trivial code work; users do not need
-  to install or merge system instruction files.
+  the repo. `CLAUDE.md` imports it with `@AGENTS.md`, because Claude Code reads
+  `CLAUDE.md` but not `AGENTS.md`. Normal Consult use relies on skill
+  frontmatter, plugin metadata, the `workflow` skill, and the plugin
+  SessionStart hook that tells the agent to load `workflow` before non-trivial
+  code work; users do not need to install or merge system instruction files.
 - **Claude Code plugin mirror**: `plugin/skills/<name>` contains generated
   copies of canonical skills from `agents/.agents/skills/<name>`.
   `.claude-plugin/marketplace.json` points Claude Code at the `plugin/` root,
@@ -87,9 +91,14 @@ that runs the Consult evaluation suite through Harbor; it is not a pnpm
 workspace package. `make eval` runs its static checks and `make smoke` runs
 one real trial. See `eval/README.md` for setup.
 
+Real eval runs (`make smoke`, `make eval-fast`, `make eval-triggers`, and
+`eval/scripts/run.py`) bill the maintainer's Claude or Codex subscription.
+Start one only when the maintainer asks, and state the trial count first.
+
 `make test` runs the whole check sequence, cheapest first, so a failing test
 suite cannot stop the anatomy validator from reporting. `.github/workflows/ci.yml`
-runs the same checks as separate steps on every push and pull request.
+runs the same checks as separate steps on every push and pull request, plus the
+eval verifier sync and rule-check tests.
 
 ```sh
 # Re-run the local installer and per-tool fan-out after a
@@ -100,9 +109,10 @@ runs the same checks as separate steps on every push and pull request.
 node scripts/generate-plugin-symlinks.mjs
 
 # Validate every SKILL.md against the playbook anatomy (frontmatter,
-# required sections, no inline expert attribution), plugin/ drift, and
-# Codex and Google Antigravity plugin shapes. Run this before publishing
-# skill changes.
+# sections, budgets, em dashes, attribution), plugin/ drift, rule coverage
+# in eval/verifier/rules.json, the plugin hooks file, and the Codex, Cursor,
+# and Google Antigravity plugin packages. Run this before publishing skill
+# changes.
 node scripts/validate-skill-anatomy.mjs
 
 # Validate local Markdown links and anchors. Remote URL checks are omitted by
@@ -123,12 +133,12 @@ changes.
 
 ## Maintainer skills
 
-- `$ship` is a project-local Codex skill for the guarded maintainer ship flow.
-  Its source lives at `.agents/skills/ship/SKILL.md`. It is not part of the
-  published Consult skill pack. Do not move it into `plugin/skills/` or bump
-  plugin package versions for changes to this skill alone. Current Codex CLI
-  builds do not support repo-local custom slash commands, so `/ship` is not the
-  supported invocation path.
+- `ship` is a project-local skill for the guarded maintainer ship flow. Its
+  source lives at `.agents/skills/ship/SKILL.md`. Codex invokes it as `$ship`,
+  because current Codex CLI builds do not support repo-local slash commands;
+  Claude Code lists it as the `ship` skill. It is not part of the published
+  Consult skill pack. Do not move it into `plugin/skills/` or bump plugin
+  package versions for changes to this skill alone.
 
 ## Validation scope and token discipline
 
@@ -141,6 +151,9 @@ risk.
   generator's `MIRROR_DESTS`), so it is sufficient on its own; no
   separate `cmp` pass, and no need for root `pnpm test`. Regenerate with
   `node scripts/generate-plugin-symlinks.mjs` when it reports drift.
+- `eval/` changes: run `make eval`, which needs `harbor` and `uv`, or the two
+  checks CI runs without them: `python3 eval/scripts/sync_tests.py --check`
+  and `python3 -m unittest discover eval/verifier/tests`.
 - Markdown link/doc-wide changes: run `pnpm run check:links` only when
   links or broad docs moved. Do not run it for ordinary runtime or narrow skill
   edits.
@@ -173,17 +186,22 @@ Every `SKILL.md` must have:
   with a reason recorded next to the constant: 950 for `proof` and
   `code-review` and 1,135 for `workflow`, which carry the routing and sign-off
   tables plus the host-harness, fresh-context-review, and plan-handoff
-  policy. Table pipes
-  and separator rows do not count. Raise a skill's budget only with a stated
-  reason. The budget is the regression guard for the knowledge-vs-policy
-  rule below. Raise a single skill's budget only with a stated reason.
+  policy. Table pipes and separator rows do not count. The budget is the
+  regression guard for the knowledge-vs-policy rule below. Raise a single
+  skill's budget only with a stated reason.
 - Optional section: `## Tripwires` when a skill has known agent failure modes.
-  Table format only, at most 8 rows. Use them only for high-probability
-  moments where agents weaken, skip, or misapply the skill. Put rare
-  exceptions and detailed taxonomies in references. Omit the section when no
-  row pays for its tokens.
+  Table format only, at most 8 rows, with this header:
+  `| Trigger | Do this instead | False alarm |`. Use them only for
+  high-probability moments where agents weaken, skip, or misapply the skill.
+  Put rare exceptions and detailed taxonomies in references. Omit the section
+  when no row pays for its tokens.
 - No inline `per <Expert Name>` attribution outside a `## References` or
   `## Canon` section: move citations there.
+- No em dashes in a skill body or its `references/` files. Use a period,
+  colon, comma, or parentheses.
+- A skill that mentions approving a design or RFC carries this sentence
+  verbatim, so the rule cannot drift between skills: "An approving design or
+  RFC approves the direction, not the concrete shapes".
 - Put references to people, books, talks, papers, videos, and YouTube links in
   `## References`, `## Canon`, or a `references/` file, not in frontmatter or
   the steering body. Skill bodies should spend tokens on agent behavior, not
@@ -228,15 +246,14 @@ Each rule is stated once. Section ownership:
 `## Core Ideas`, `## Verification`, and `## Before Saying Done` are retired.
 The validator rejects them once a skill has `## Rules`.
 
-Plus the README's authoring rules: keep skills short and directive. A
-`SKILL.md` is steering context, not a book: every paragraph competes with the
-repo, diff, user request, and proof evidence for the agent's attention. The
-body should answer only when to use the skill, what rule/workflow to follow,
-and how to verify the result. Lead with an Iron Law when one exists, route to
-neighbours via `Handoffs` instead of duplicating their bodies, push
-deterministic checks into `scripts/`, and move nuance, citations, examples, and
-deep ecosystem notes into targeted `references/` files that are loaded only
-when needed.
+Keep skills short and directive. A `SKILL.md` is steering context, not a book:
+every paragraph competes with the repo, diff, user request, and proof evidence
+for the agent's attention. The body should answer only when to use the skill,
+what rule/workflow to follow, and how to verify the result. Lead with an Iron
+Law when one exists, route to neighbours via `Handoffs` instead of duplicating
+their bodies, push deterministic checks into `scripts/`, and move nuance,
+citations, examples, and deep ecosystem notes into targeted `references/` files
+that are loaded only when needed.
 
 Write skill prose in short, plain sentences. Prefer concrete verbs and familiar
 words. If a sentence needs rereading, split it. If a heading names an abstract
@@ -257,17 +274,21 @@ behavior.
 
 ## When skill changes ripple
 
-Adding or renaming a skill needs four updates, in order:
+Adding or renaming a skill needs five updates, in order:
 
-1. Canonical files under `agents/.agents/skills/<name>/` (and a test that
-   the body satisfies the validator's required sections).
-2. `README.md`: update the human-facing skill list and its
-   `[skill-<name>]:` reference link at the bottom.
-3. `workflow`: update the meta-skill only when the new or renamed skill changes
+1. Canonical files under `agents/.agents/skills/<name>/`: `SKILL.md`, and
+   `agents/openai.yaml` with the Codex display name, short description, and
+   default prompt. Nothing validates `openai.yaml`, so copy a neighbour's
+   shape. A new description must fit the pack-wide description ceiling.
+2. `eval/verifier/rules.json`: one entry per numbered rule (`<name>.<n>`)
+   with status `check`, `judge-only`, or `untested`. The validator fails until
+   every rule has one and no entry names a missing rule.
+3. `README.md`: add or rename the skill in the grouped list under `## Skills`.
+4. `workflow`: update the meta-skill only when the new or renamed skill changes
    the broad Consult routing workflow.
-4. `./setup.sh` to regenerate `plugin/skills/<name>` and refresh or prune
+5. `./setup.sh` to regenerate `plugin/skills/<name>` and refresh or prune
    per-agent manual-install links. The validator's drift check fails CI/local
-   runs if step 4 is skipped.
+   runs if step 5 is skipped.
 
 Neighbouring skills may need their `Handoffs` updated when routing
 changes. Do not duplicate skill prose between files.
@@ -277,9 +298,17 @@ changes. Do not duplicate skill prose between files.
 The pack publishes a single semantic version in
 `.claude-plugin/marketplace.json` (both `metadata.version` and the
 `plugins[0].version`), `.cursor-plugin/marketplace.json` (same fields),
-`plugin/.claude-plugin/plugin.json`, `plugin/.cursor-plugin/plugin.json`, and
-`plugin/.codex-plugin/plugin.json`. Bump all of them together when canonical
-content changes so plugin managers see the same package version.
+`plugin/.claude-plugin/plugin.json`, `plugin/.cursor-plugin/plugin.json`,
+`plugin/.codex-plugin/plugin.json`, and `plugin/plugin.json` (Antigravity).
+They move together so plugin managers see the same package version. The
+validator checks all of them except `plugin/plugin.json`.
+
+Feature and fix commits describe their change under `## [Unreleased]` in
+`CHANGELOG.md` and leave the versions alone. A release is a separate
+`Release X.Y.Z` commit on `main`: it promotes `## [Unreleased]` to a dated
+`## [X.Y.Z] (YYYY-MM-DD)` section, leaves a fresh empty `## [Unreleased]`
+above it, and bumps every manifest. The `ship` skill runs this flow. Classify
+the bump from everything since the last release:
 
 | Bump | Trigger |
 |---|---|
@@ -287,16 +316,15 @@ content changes so plugin managers see the same package version.
 | **minor** (1.X.0) | New skill added; new reference file under `references/`; new section in an existing `SKILL.md`; doctrine clarified or strengthened without reversal; new tooling expectation that's strictly additive |
 | **patch** (1.0.X) | Typos, link fixes, formatting, internal re-flow that doesn't change meaning |
 
-Bump in the same PR as the canonical edit; both `version` fields move
-together. Pre-1.0 (`0.x.y`) is reserved for early development and
-follows the same shape, but minor bumps may carry breaking changes;
-the pack is past that and should not regress to it.
+Pre-1.0 (`0.x.y`) is reserved for early development and follows the same
+shape, but minor bumps may carry breaking changes; the pack is past that and
+should not regress to it.
 
 ## Conventions specific to this repo
 
-- Markdown and JavaScript are the repo-owned languages. Use
-  Vitest for repo-owned JS tests and `check:links` for local Markdown link
-  validation. Keep Markdown prose manually formatted; do not add a docs
-  formatter.
+- Markdown, JavaScript, and Python (`eval/`, a `uv` project) are the repo-owned
+  languages. Use Vitest for JS tests, `unittest` for the eval verifier, and
+  `check:links` for local Markdown link validation. Keep Markdown prose
+  manually formatted; do not add a docs formatter.
 - Do not add author-attribution trailers (`Co-Authored-By`,
   `Generated by`) to commits.
