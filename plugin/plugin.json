@@ -2,7 +2,7 @@
   "name": "consult",
   "description": "Consult: collaborative engineering-discipline skills (data, proof, security, design, and more).",
   "version": "15.3.0",
-  "author": { "name": "Alastair Dawson", "url": "https://github.com/dawson-design" },
+  "author": { "name": "Dawson Design Ltd.", "url": "https://github.com/dawson-design" },
   "homepage": "https://github.com/dawson-design/consult",
   "repository": "https://github.com/dawson-design/consult",
   "license": "MIT",

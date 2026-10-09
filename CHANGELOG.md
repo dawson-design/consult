@@ -32,6 +32,8 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   organization. Install commands, manifest homepage and repository URLs,
   `scripts/update-installed-plugins.sh`, and the Terse links now use
   `dawson-design`. GitHub redirects the old `kreek/consult` URLs.
+- The plugin manifests and marketplaces name Dawson Design Ltd. as owner and
+  author, matching the root `LICENSE`.
 
 ## [15.3.0] (2026-10-02)
 

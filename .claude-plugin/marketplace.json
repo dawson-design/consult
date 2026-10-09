@@ -1,7 +1,7 @@
 {
   "name": "consult",
   "owner": {
-    "name": "Alastair Dawson",
+    "name": "Dawson Design Ltd.",
     "url": "https://github.com/dawson-design"
   },
   "metadata": {
@@ -15,7 +15,7 @@
       "description": "Portable, collaborative engineering-discipline skill pack: data, proof, security, design, and more.",
       "version": "15.3.0",
       "author": {
-        "name": "Alastair Dawson"
+        "name": "Dawson Design Ltd."
       },
       "homepage": "https://github.com/dawson-design/consult",
       "license": "MIT",

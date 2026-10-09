@@ -3,7 +3,7 @@
   "version": "15.3.0",
   "description": "Consult (collaborative engineering-discipline skill pack): data, proof, security, design, and more.",
   "author": {
-    "name": "Alastair Dawson",
+    "name": "Dawson Design Ltd.",
     "url": "https://github.com/dawson-design"
   },
   "homepage": "https://github.com/dawson-design/consult",
@@ -22,7 +22,7 @@
     "displayName": "Consult",
     "shortDescription": "Collaborative engineering-discipline skills for coding agents.",
     "longDescription": "Consult helps coding agents produce simpler, safer, more correct, accessible, maintainable, and production-ready software while keeping humans involved in architecture, design, judgment, and acceptance.",
-    "developerName": "Alastair Dawson",
+    "developerName": "Dawson Design Ltd.",
     "category": "Coding",
     "capabilities": [
       "Read",

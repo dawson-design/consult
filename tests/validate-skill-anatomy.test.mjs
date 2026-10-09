@@ -254,7 +254,7 @@ function makeCodexPluginPackage(
 
     const cursorMarketplace = {
       name: "consult",
-      owner: { name: "Alastair Dawson", url: "https://github.com/dawson-design" },
+      owner: { name: "Dawson Design Ltd.", url: "https://github.com/dawson-design" },
       metadata: { version: claudeMarketplaceVersion },
       plugins: [{ name: "consult", version: claudeEntryVersion, source: "./plugin" }],
     };
@@ -576,7 +576,7 @@ describe("validate-skill-anatomy CLI", () => {
       join(tmp, ".cursor-plugin/marketplace.json"),
       JSON.stringify({
         name: "consult",
-        owner: { name: "Alastair Dawson" },
+        owner: { name: "Dawson Design Ltd." },
         metadata: { version: "2.0.0" },
         plugins: [{ name: "consult", version: "2.0.0", source: "./wrong" }],
       }),

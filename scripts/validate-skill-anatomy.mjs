@@ -553,8 +553,8 @@ export function validateCursorPluginPackage(skillsDir) {
     if (marketplace.name !== "consult") problems.push(`${marketplacePath} name must be 'consult'`);
     if (!marketplace.owner || typeof marketplace.owner !== "object") {
       problems.push(`${marketplacePath} owner must be an object`);
-    } else if (marketplace.owner.name !== "Alastair Dawson") {
-      problems.push(`${marketplacePath} owner.name must be 'Alastair Dawson'`);
+    } else if (marketplace.owner.name !== "Dawson Design Ltd.") {
+      problems.push(`${marketplacePath} owner.name must be 'Dawson Design Ltd.'`);
     }
 
     const claudeVersion = (() => {
