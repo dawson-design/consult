@@ -13,6 +13,9 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   asked, with the change between arms and a 90% bootstrap interval. Judge
   bundle parsing moved from `rescore.py` to `eval/scripts/bundle.py` so both
   scripts can read it.
+- `eval/scripts/reference_reads.py` reports, per eval job, the share of
+  trials that opened each skill reference file, as input to a reference
+  length audit.
 
 ### Fixed
 

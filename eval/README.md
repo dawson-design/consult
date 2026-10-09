@@ -301,6 +301,10 @@ After the lift and cost tables, `lift.py` prints two scorecards:
   `expect_silent`, and each arm's sign-off mode: `stopped`, `provisional`, or
   `built`.
 
+`scripts/reference_reads.py <job>...` prints, per job, the share of trials
+that opened each skill reference file. A file nobody opened reads 0, which
+the reference audit weighs against its upkeep.
+
 The judge receives the task instruction and a bundle with the git diff, new
 files, and the agent's final message. `consult_lib.py prepare` writes both
 into the prompt, so the `claude-code` judge scores in one turn at low effort
