@@ -94,6 +94,19 @@ attempts per task and a per-task reward SD of about 0.15, it cannot resolve a
 change smaller than about 0.3. The release tier's 15 tasks at 3 attempts
 resolve a suite lift of about 0.1.
 
+### Reference ablation
+
+`--drop-references code-review,security` runs the consult arm without those
+skills' `references/` directories; the SKILL.md bodies still name the files.
+Write a suite file under `eval/suites/` listing the tasks whose trials opened
+those references (`scripts/reference_reads.py` shows which), then run it on
+the fast tier with `--suite`. `run.py` stops unless a reusable baseline's
+consult arm ran today's full pack, so the lift report's comparison against
+that arm measures the dropped references and no other skill edit. An ablation
+never saves a baseline. With 3 attempts and no judge, the fast tier resolves
+only large changes, so "no difference" is weak evidence that a reference is
+not needed.
+
 ### Stub arm
 
 The stub arm separates what the skills say from the fact that they are
@@ -279,7 +292,14 @@ of one SKILL.md. It reads the trajectory, the diff against the scaffold commit,
 or a per-task probe. A check that an idle agent would pass, such as
 `documentation.1`, scores 0 unless verification passed. Per-rule scores land in
 `reward-details.json`. `rules` stays at weight 0 until a sample of hand
-ratings calibrates the checks.
+ratings calibrates the checks. `scripts/rule_labels.py export <sheet.csv>
+<job>...` writes one row per rule verdict with the rule's text and the trial
+evidence dir to read; it leaves out sign-off rules and never overwrites a sheet. A
+reviewer writes `pass` or `fail` in the `human` column, and
+`rule_labels.py agree <sheet.csv>` reports how often each check matched, with
+its false passes and false fails. Tasks
+that score no rules get `rules = 0.0` in their `reward.toml`, so a calibrated
+weight reaches only the tasks that list rules.
 
 In a two-step task the `brief` step runs its own verifier, the `signoff`
 suite, which scores the task's sign-off rule, such as `domain-modeling.10`:

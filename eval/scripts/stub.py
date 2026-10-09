@@ -56,9 +56,14 @@ def build(source: Path, root: Path) -> Path:
     return write_tree(stub_files(source), root)
 
 
-def snapshot(source: Path, root: Path) -> Path:
-    """A frozen copy of every file under source, at root/<content hash>; an existing one is reused."""
-    return write_tree(skill_files(source), root)
+def snapshot(source: Path, root: Path, drop_references: tuple[str, ...] = ()) -> Path:
+    """A frozen copy of every file under source, at root/<content hash>; an existing one is reused.
+
+    drop_references names skills whose references/ the copy leaves out, for an ablation run.
+    """
+    dropped = tuple(f"{skill}/references/" for skill in drop_references)
+    files = {path: data for path, data in skill_files(source).items() if not path.startswith(dropped)}
+    return write_tree(files, root)
 
 
 def write_tree(files: dict[str, bytes], root: Path) -> Path:
