@@ -1,6 +1,6 @@
 # Data-shape boundaries: worked examples
 
-This reference expands `proof`'s boundary-testing Core Ideas. The shared rule across all
+This reference expands `proof` Rule 3, test at boundaries. The shared rule across all
 examples: **a boundary worth testing is a point where data shape or values
 change observably**. These shape-change points are component handoffs: the
 seams where production defects concentrate, and the primary proof target.

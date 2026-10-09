@@ -268,8 +268,8 @@ Classes are easy to reach for in TS and rarely the right tool. The
 - `return promise` inside `try` without `await`: the catch
   never fires:
   ```ts
-  try { return fetchData(); } catch (e) { log(e); }      // 🚩 catch never fires
-  try { return await fetchData(); } catch (e) { log(e); } // ✅
+  try { return fetchData(); } catch (e) { log(e); }      // wrong: catch never fires
+  try { return await fetchData(); } catch (e) { log(e); } // right
   ```
   Enable `@typescript-eslint/return-await` (`"in-try-catch"` or
   `"always"`).

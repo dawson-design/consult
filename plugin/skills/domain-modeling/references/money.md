@@ -2,8 +2,7 @@
 
 Use this when storing, comparing, formatting, serialising, or computing
 on monetary amounts: at the language, wire, database, or display
-layer. Triggered from the `domain-modeling` skill's Crosscutting Hazards
-section.
+layer. Loaded by `domain-modeling` Rule 11.
 
 ## Iron rules
 
