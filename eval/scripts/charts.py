@@ -40,6 +40,7 @@ MARGIN, PLOT_WIDTH, RIGHT_MARGIN = 16, 480, 48
 TOP, ROW_HEIGHT, MARKER_RADIUS = 76, 28, 5
 TICKS = (0.0, 0.25, 0.5, 0.75, 1.0)
 LABEL_GAP = 64  # top-row markers closer than this get no direct labels
+NAMED_LEFT_OUT = 3  # the footer names this many left-out tasks, then counts the rest
 
 
 @dataclass(frozen=True)
@@ -96,15 +97,17 @@ def caption(summary: dict) -> str:
     return f"Suite lift {signed(suite['reward'])} across {len(suite['tasks'])} tasks ({spread})"
 
 
-def footnotes(summary: dict) -> list[str]:
-    """The caveats lift.py reports that a reader of the chart alone would miss."""
+def footnotes(summary: dict, rows: list[dict]) -> list[str]:
+    """The caveats lift.py reports that a reader of the chart alone would miss, each short enough for one line."""
     notes = []
-    if summary["suite"].get("missing"):
-        names = ", ".join(task_name(t) for t in summary["suite"]["missing"])
-        notes.append(f"Left out, no bare trials: {names}")
-    failed = sum(len(r.get("failed") or []) for r in summary["tasks"])
+    missing = [task_name(t) for t in summary["suite"].get("missing") or []]
+    if missing:
+        named = ", ".join(missing[:NAMED_LEFT_OUT])
+        more = f", and {len(missing) - NAMED_LEFT_OUT} more" if len(missing) > NAMED_LEFT_OUT else ""
+        notes.append(f"Left out, no bare trials ({len(missing)}): {named}{more}")
+    failed = sum(len(r.get("failed") or []) for r in rows)
     if failed:
-        notes.append(f"{failed} trial{'s' if failed > 1 else ''} without a reward counted as 0")
+        notes.append(f"{failed} failed trial{'s' if failed > 1 else ''} in the plotted tasks; see the results file")
     if summary.get("judge_excluded"):
         notes.append("Rewards exclude the judge: one arm ran without it")
     return notes
@@ -175,8 +178,8 @@ def dumbbell_svg(summary: dict, theme: dict, agent: str) -> str:
     rows = scored_rows(summary)
     layout = Layout(plot_left=2 * MARGIN + max(label_width(task_name(r["task"])) for r in rows), rows=len(rows))
     title = f"Reward per task on {agent}: bare agent vs Consult"
-    lines = [caption(summary), *footnotes(summary)]
-    height = layout.bottom + 32 + 20 * len(lines)
+    lines = [caption(summary), *footnotes(summary, rows)]
+    height = layout.bottom + 40 + 20 * len(lines)
     body = [f'<rect width="100%" height="100%" fill="{theme["surface"]}"/>', *header(title, theme),
             *grid(layout, theme)]
     for index, task in enumerate(rows):
@@ -200,7 +203,10 @@ def main(argv: list[str]) -> int:
         print(__doc__, file=sys.stderr)
         return 2
     summary = json.loads(Path(argv[1]).read_text())
-    out_dir, agent = Path(argv[2]), argv[3]
+    out_dir, agent = Path(argv[2]), argv[3].strip()
+    if not slug(agent):
+        print("the agent name needs a letter or digit, e.g. \"Claude Code\"", file=sys.stderr)
+        return 2
     out_dir.mkdir(parents=True, exist_ok=True)
     for theme in (LIGHT, DARK):
         path = out_dir / f"release-lift-{slug(agent)}-{theme['name']}.svg"

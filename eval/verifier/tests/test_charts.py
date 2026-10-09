@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import io
 import json
 import sys
@@ -90,7 +91,41 @@ class ChartTests(unittest.TestCase):
         self.assertEqual([t.text for t in elements(root, "text", "task")], ["kept"])
         footer = [t.text for t in elements(root, "text", "footer")]
         self.assertTrue(footer[0].startswith("Suite lift +0.40 across 1 tasks"))
-        self.assertIn("Left out, no bare trials: unpaired", footer)
+        self.assertIn("Left out, no bare trials (1): unpaired", footer)
+
+    def test_many_left_out_tasks_are_counted_after_the_first_few_names(self):
+        consult = {"kept": [0.8], **{f"gone-{i}": [0.9] for i in range(5)}}
+        footer = [t.text for t in elements(self.chart(self.summary({"kept": [0.4]}, consult)), "text", "footer")]
+        self.assertIn("Left out, no bare trials (5): gone-0, gone-1, gone-2, and 2 more", footer)
+
+    def test_failed_trials_are_counted_only_in_plotted_tasks(self):
+        summary = self.summary({"kept": [0.4, 0.5], "both": [0.3, 0.3]}, {"kept": [0.8, 0.9], "unpaired": [0.9]})
+        summary["tasks"][0]["failed"] = ["kept__1"]
+        summary["tasks"][1]["failed"] = ["unpaired__0", "unpaired__1"]
+        footer = [t.text for t in elements(self.chart(summary), "text", "footer")]
+        self.assertIn("1 failed trial in the plotted tasks; see the results file", footer)
+
+    def test_a_judge_free_comparison_is_noted(self):
+        summary = self.three_tasks()
+        summary["judge_excluded"] = True
+        footer = [t.text for t in elements(self.chart(summary), "text", "footer")]
+        self.assertIn("Rewards exclude the judge: one arm ran without it", footer)
+
+    def test_the_bare_ring_is_drawn_over_the_consult_dot_so_a_tie_shows_both(self):
+        circles = [c.get("class") for c in self.chart(self.three_tasks()).iter(f"{SVG}circle")
+                   if c.get("class") in ("bare", "consult")]
+        self.assertEqual(circles[:2], ["consult", "bare"])
+
+    def test_the_footer_ends_inside_the_canvas_with_room_below(self):
+        root = self.chart(self.three_tasks())
+        last = float(elements(root, "text", "footer")[-1].get("y"))
+        self.assertGreaterEqual(float(root.get("height")) - last, 8)
+
+    def test_main_refuses_an_empty_agent_name(self):
+        summary_path = self.root / "summary.json"
+        summary_path.write_text(json.dumps(self.three_tasks()))
+        with redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            self.assertEqual(charts.main(["charts.py", str(summary_path), str(self.root / "out"), " "]), 2)
 
     def test_the_footer_and_description_state_the_suite_lift_and_its_interval(self):
         summary = self.summary({"t": [0.3, 0.35, 0.4]}, {"t": [0.8, 0.85, 0.9]})
