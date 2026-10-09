@@ -6,6 +6,29 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Removed
+
+- The Pi runtime package (`consult/`): the proof runtime, the independent
+  review runner, the self-review guard, the Consult header, and the Codex
+  fast-mode extension. `pi install git:github.com/kreek/consult` no longer
+  installs anything. Pi still reads the plain skills from `~/.agents/skills/`:
+  run `pi remove git:github.com/kreek/consult`, then use the manual install
+  (`./setup.sh`). To keep the runtime instead, pin the last commit that
+  shipped it, using the same URL so Pi moves the existing package:
+  `pi install git:github.com/kreek/consult@da74fc120323b5e758e27445398673990bda4983`.
+- The Pi tooling that served the package: `make pi-install-local`,
+  `make publish-pi`, the repo-local `/yeet` command, the `consult/skills`
+  mirror, the Pi CI step, and `THIRD_PARTY_NOTICES.md`, which covered only
+  the adapted Pi extensions.
+
+### Changed
+
+- `proof` no longer mentions the Pi `/proof` command, `scaffolding` no longer
+  mentions `/consult:scaffold`, and `code-review` no longer lists Pi among
+  hosts with a fresh-context review mechanism.
+- `AGENTS.md` describes a single host posture: a person is present to answer
+  in every session, and Consult ships no runtime enforcement.
+
 ## [15.3.0] (2026-10-02)
 
 ### Added
