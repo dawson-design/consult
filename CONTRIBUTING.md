@@ -8,8 +8,8 @@ need to know before opening a PR.
 - Read [`AGENTS.md`](AGENTS.md) before authoring or editing skills. It defines
   the engineering defaults the skill bodies assume.
 - Skills live under `agents/.agents/skills/<name>/SKILL.md`. The
-  `plugin/skills/` and `consult/skills/` trees are generated copies; edit the
-  canonical copy only and regenerate with `./setup.sh`.
+  `plugin/skills/` tree is a generated copy; edit the canonical copy only and
+  regenerate with `./setup.sh`.
 - Each skill must conform to the anatomy enforced by
   `scripts/validate-skill-anatomy.mjs`: frontmatter (name + description),
   `# Title`, `## When to Use`, `## When NOT to Use`, `## Rules`,
@@ -89,12 +89,11 @@ pnpm run check:links
 node scripts/validate-skill-anatomy.mjs
 ```
 
-The validator checks every skill, both generated mirrors, and
+The validator checks every skill, the generated mirror, and
 the Codex plugin manifest in one pass.
 
 The optional repo pre-commit hook is intentionally narrow: it checks staged
-whitespace, runs the Markdown validator for staged Markdown files, and runs
-Pi-focused tests for Pi package or extension changes.
+whitespace and runs the Markdown validator for staged Markdown files.
 
 ```sh
 git config core.hooksPath .githooks
@@ -131,9 +130,7 @@ Run:
 
 This refreshes the per-agent symlink fan-out for manual installs and regenerates
 the `plugin/skills/` mirror used by the Claude Code, Codex, and Cursor plugin
-builds. Pi
-npm packages rebuild their `skills/` directories at `npm pack` time via each
-package's `scripts/build-skills.mjs`; those bundles are gitignored.
+builds.
 
 Then update, as relevant:
 
@@ -149,8 +146,6 @@ Then update, as relevant:
 - [`.cursor-plugin/marketplace.json`](.cursor-plugin/marketplace.json) and
   [`plugin/.cursor-plugin/plugin.json`](plugin/.cursor-plugin/plugin.json):
   when Cursor plugin metadata or packaged skill content changes.
-- `consult*/package.json`: when Pi package metadata, composition,
-  or versions change.
 
 ## Local plugin development
 

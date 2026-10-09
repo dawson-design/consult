@@ -1,4 +1,0 @@
-interface:
-  display_name: "Consult: Error Handling"
-  short_description: "Design explicit error flows"
-  default_prompt: "Use $error-handling to review this error propagation and user-facing failure shape."

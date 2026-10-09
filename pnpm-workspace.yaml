@@ -1,7 +1,5 @@
-# `eval/` is not a workspace package: it is a `uv` project that drives the
-# Harbor evaluation suite (see eval/README.md), with no Node dependencies.
-packages:
-  - consult
+# Root pnpm settings. `eval/` is not a Node package: it is a `uv` project that
+# drives the Harbor evaluation suite (see eval/README.md).
 
 # Delay fresh registry publishes to reduce supply-chain blast radius.
 # 1440 minutes = 24 hours.

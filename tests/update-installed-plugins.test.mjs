@@ -46,7 +46,6 @@ describe("update-installed-plugins.sh", () => {
     expect(result.stdout).toContain("codex plugin marketplace add kreek/consult");
     expect(result.stdout).toContain("codex plugin marketplace upgrade consult");
     expect(result.stdout).toContain("codex plugin add consult@consult");
-    expect(result.stdout).toContain("make pi-install-local");
     expect(result.stdout).not.toContain("pi install");
     expect(result.stdout).toContain("agy plugin install");
     expect(result.stdout).toContain("cursor agent --print");

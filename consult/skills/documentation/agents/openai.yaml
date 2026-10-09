@@ -1,4 +1,0 @@
-interface:
-  display_name: "Consult: Documentation"
-  short_description: "Write durable technical docs"
-  default_prompt: "Use $documentation to rewrite this doc around the reader question."

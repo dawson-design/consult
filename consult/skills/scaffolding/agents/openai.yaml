@@ -1,4 +1,0 @@
-interface:
-  display_name: "Consult: Scaffolding"
-  short_description: "Bootstrap projects and tooling"
-  default_prompt: "Use $scaffolding to set up the project baseline tooling and smoke test."

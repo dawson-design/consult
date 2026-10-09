@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Run deterministic Consult pre-commit checks for Markdown and Pi package changes.
+// Run deterministic Consult pre-commit checks for staged diffs and Markdown changes.
 
 import { spawnSync } from "node:child_process";
 import { existsSync, statSync } from "node:fs";
@@ -38,10 +38,6 @@ export function stagedPaths(root) {
     .filter(Boolean);
 }
 
-export function pathMatches(path, ...prefixes) {
-  return prefixes.some((prefix) => path === prefix || path.startsWith(`${prefix}/`));
-}
-
 function hasAny(paths, predicate) {
   return paths.some(predicate);
 }
@@ -56,41 +52,6 @@ export function selectChecks(paths) {
 
   if (hasAny(paths, (path) => path.endsWith(".md"))) {
     checks.push(new Check("Markdown parses and local links resolve", ["pnpm", "run", "check:links"], ["pnpm"]));
-  }
-
-  if (
-    hasAny(paths, (path) =>
-      pathMatches(path, ".pi", "consult") ||
-      pathMatches(path, "tests/pi-install-local-make-target.test.mjs") ||
-      pathMatches(path, "tests/pi-local-yeet-command.test.mjs") ||
-      pathMatches(path, "tests/pi-meta-package-local-dependencies.test.mjs") ||
-      pathMatches(path, "tests/pi-sibling-skill-bundles.test.mjs") ||
-      pathMatches(path, "tests/consult-header.test.mjs") ||
-      pathMatches(path, "tests/publish-pi-packages.test.mjs") ||
-      pathMatches(path, "scripts/pi-install-local.sh") ||
-      pathMatches(path, "scripts/publish-pi-packages.sh") ||
-      pathMatches(path, "package.json", "pnpm-lock.yaml", "pnpm-workspace.yaml"),
-    )
-  ) {
-    checks.push(
-      new Check(
-        "repo Pi tests pass",
-        [
-          "pnpm",
-          "exec",
-          "vitest",
-          "run",
-          "tests/consult-header.test.mjs",
-          "tests/pi-install-local-make-target.test.mjs",
-          "tests/pi-local-yeet-command.test.mjs",
-          "tests/pi-meta-package-local-dependencies.test.mjs",
-          "tests/pi-sibling-skill-bundles.test.mjs",
-          "tests/publish-pi-packages.test.mjs",
-        ],
-        ["pnpm"],
-      ),
-    );
-    checks.push(new Check("packaged Pi extension tests pass", ["pnpm", "--dir", "consult", "test"], ["pnpm"]));
   }
 
   return checks;

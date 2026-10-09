@@ -136,12 +136,6 @@ run_if_available "Codex" codex codex plugin marketplace upgrade consult
 run_if_available "Codex" codex codex plugin add consult@consult
 
 echo ""
-echo "Pi: no official remote-install path is wired up (the published 'consult' npm"
-echo "    name belongs to an unrelated package, and the repo root is not a Pi"
-echo "    package). Install the local Pi package with 'make pi-install-local',"
-echo "    then run /reload inside Pi."
-
-echo ""
 run_if_available "Google Antigravity" agy agy plugin install "$REPO_ROOT/plugin"
 echo "Google Antigravity: verify with 'agy plugin list'."
 

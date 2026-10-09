@@ -11,7 +11,7 @@ Windsurf). It ships
 prose (`SKILL.md` files plus a few maintenance helpers), not application code.
 Most edits are to skill bodies, the top-level `AGENTS.md`, or the
 `README.md`. There is no application build or service to run; tests cover
-repo maintenance helpers, plugin packaging, and extension packages.
+repo maintenance helpers and plugin packaging.
 
 ## Source of truth and mirrors
 
@@ -59,60 +59,26 @@ When you add, rename, or delete a skill, the canonical file under
 `agents/.agents/skills/` is the only place to write. Everything else is
 regenerated.
 
-## Pi self-improvement source access
+## Host posture: attended sessions
 
-Pi can inspect its own installed package when runtime behavior, extension APIs,
-or self-improvement work depends on Pi internals. Treat that package as a
-read-only upstream source: read it to confirm current APIs and behavior, but
-make Consult changes in this repository unless the user explicitly asks to work
-on Pi itself.
-
-For most npm-style installs, find Pi's package with:
-
-```sh
-npm root -g
-```
-
-Then look under `@earendil-works/pi-coding-agent` in that global
-`node_modules` directory. Package-manager installs usually place the same global
-`node_modules` tree under the manager prefix, for example
-`<prefix>/lib/node_modules/@earendil-works/pi-coding-agent`. Do not hard-code a
-machine-specific absolute path in repo docs or committed code. Resolve it at
-runtime with `npm root -g`, `which pi`, or the package manager's prefix command.
-
-Useful read-only entry points are the package `README.md`, `docs/`, `examples/`,
-`package.json`, and exported type declarations. Follow linked docs before
-changing Consult extensions that depend on Pi APIs.
-
-## Host posture: attended vs unattended
-
-Consult targets two different working modes, and that difference decides where
-enforcement is allowed to live. It is a deliberate split, not an inconsistency
-or a gap in coverage.
-
-- **Attended hosts (Claude Code, Codex, Cursor, and the rest).** A human is
-  watching the session and answering as it runs. The human *is* the gate, so
-  skills carry high-level guidance and ask for sign-off in prose. Consultation
-  works here because someone is present to consult.
-- **Unattended host (Pi).** Nobody is reading the session while it runs, so a
-  prose request for approval has no one to answer it. Pi therefore gets runtime
-  enforcement — `consult/extensions/self-review-guard.ts` and the `/proof`
-  command — that mechanically holds the line a present human would otherwise
-  hold.
+Consult assumes a person is watching the session and answering as it runs.
+That person *is* the gate, so skills carry high-level guidance and ask for
+sign-off in prose. Consultation works because someone is present to consult.
+Consult ships no runtime enforcement. A run with nobody to answer (headless,
+scheduled, or delegated) follows the `workflow` skill's sign-off rule: build
+the most conservative version, mark it provisional, and flag the decision.
 
 Consequences for anyone editing this repo:
 
-- Do not "fix" the attended hosts by adding host-specific enforcement
-  primitives, blocking gates, or hook configuration to shared skill bodies. The
-  absence of those is the design. Skill prose stays portable and host-neutral.
-- Do not move Pi's enforcement into skill prose either. Runtime gates belong in
-  `consult/extensions/`, where they apply only to the host that needs them.
+- Do not add host-specific enforcement primitives, blocking gates, or hook
+  configuration to shared skill bodies. The absence of those is the design.
+  Skill prose stays portable and host-neutral.
 - The plugin SessionStart hook is context, not enforcement. It prints one
   routing line and blocks nothing. Keep it that way: a hook that gates or
-  checks work is the host-specific enforcement the attended hosts leave out.
-- When a skill body says to get approval, it is addressing an attended session.
-  Keep that phrasing about the *decision* that needs a human, not about the
-  mechanism a particular host would use to block on it.
+  checks work is the host-specific enforcement Consult leaves out.
+- When a skill body says to get approval, it is addressing the person in the
+  session. Keep that phrasing about the *decision* that needs a human, not
+  about the mechanism a particular host would use to block on it.
 
 ## Common commands
 
@@ -170,11 +136,9 @@ Run the narrowest check that proves the touched surface first. Broaden only
 when the changed files require it or the narrow check exposes cross-package
 risk.
 
-- Pi runtime extension changes under `consult/extensions/` or
-  `consult/test/`: run `pnpm --dir consult test`.
 - Canonical skill prose changes: run `node scripts/validate-skill-anatomy.mjs`.
-  It now checks every generated mirror (`plugin/skills` and `consult/skills`,
-  read from the generator's `MIRROR_DESTS`), so it is sufficient on its own — no
+  It checks the generated mirror (`plugin/skills`, read from the
+  generator's `MIRROR_DESTS`), so it is sufficient on its own; no
   separate `cmp` pass, and no need for root `pnpm test`. Regenerate with
   `node scripts/generate-plugin-symlinks.mjs` when it reports drift.
 - Markdown link/doc-wide changes: run `pnpm run check:links` only when
@@ -330,14 +294,9 @@ the pack is past that and should not regress to it.
 
 ## Conventions specific to this repo
 
-- Markdown, JavaScript, and TypeScript are the repo-owned languages. Use
-  Vitest for repo-owned JS/TS tests and `check:links` for local Markdown link
+- Markdown and JavaScript are the repo-owned languages. Use
+  Vitest for repo-owned JS tests and `check:links` for local Markdown link
   validation. Keep Markdown prose manually formatted; do not add a docs
   formatter.
-- Pi extension source must be TypeScript, not JavaScript. Use `.ts` for
-  repo-local `.pi/extensions/` commands and packaged
-  `consult/extensions/` runtime extensions; keep generated,
-  third-party, or ordinary maintenance scripts in their existing language
-  unless the task is explicitly to migrate them.
 - Do not add author-attribution trailers (`Co-Authored-By`,
   `Generated by`) to commits.

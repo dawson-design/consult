@@ -62,10 +62,6 @@ jobs:
         if: ${{ !cancelled() }}
         run: pnpm test
 
-      - name: Pi package tests
-        if: ${{ !cancelled() }}
-        run: pnpm --dir consult test
-
       # The confirmation tests must not silently skip on CI. If expect went
       # missing, this catches it rather than letting coverage quietly drop.
       - name: Assert setup.sh confirmation tests ran

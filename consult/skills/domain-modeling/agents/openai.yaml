@@ -1,4 +1,0 @@
-interface:
-  display_name: "Consult: Domain Modeling"
-  short_description: "Shape data and effects first"
-  default_prompt: "Use $domain-modeling to model data shapes, invariants, and boundaries before writing transformations."

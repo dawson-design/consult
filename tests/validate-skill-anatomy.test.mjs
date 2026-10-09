@@ -300,10 +300,8 @@ describe("validate-skill-anatomy CLI", () => {
     tmp = makeTempDir();
     const skillsDir = join(tmp, "agents/.agents/skills");
     makeSkill(skillsDir, "good");
-    for (const dest of ["plugin/skills", "consult/skills"]) {
-      mkdirSync(join(tmp, dest), { recursive: true });
-      cpSync(join(skillsDir, "good"), join(tmp, dest, "good"), { recursive: true });
-    }
+    mkdirSync(join(tmp, "plugin/skills"), { recursive: true });
+    cpSync(join(skillsDir, "good"), join(tmp, "plugin/skills/good"), { recursive: true });
     makeCodexPluginPackage(tmp);
     makeAntigravityPluginPackage(tmp);
     makeRuleCoverage(tmp);
@@ -313,7 +311,6 @@ describe("validate-skill-anatomy CLI", () => {
     expect(result.status).toBe(0);
     expect(result.stdout).toContain("all skills conform to the anatomy");
     expect(result.stdout).toContain("plugin/skills mirror in sync with source");
-    expect(result.stdout).toContain("consult/skills mirror in sync with source");
     expect(result.stdout).toContain("codex plugin package valid");
     expect(result.stdout).toContain("cursor plugin package valid");
     expect(result.stdout).toContain("antigravity plugin package valid");
@@ -532,10 +529,8 @@ describe("validate-skill-anatomy CLI", () => {
     tmp = makeTempDir();
     const skillsDir = join(tmp, "agents/.agents/skills");
     makeSkill(skillsDir, "good");
-    for (const dest of ["plugin/skills", "consult/skills"]) {
-      mkdirSync(join(tmp, dest), { recursive: true });
-      cpSync(join(skillsDir, "good"), join(tmp, dest, "good"), { recursive: true });
-    }
+    mkdirSync(join(tmp, "plugin/skills"), { recursive: true });
+    cpSync(join(skillsDir, "good"), join(tmp, "plugin/skills/good"), { recursive: true });
     makeCodexPluginPackage(tmp, { pluginHooks });
     makeAntigravityPluginPackage(tmp);
 

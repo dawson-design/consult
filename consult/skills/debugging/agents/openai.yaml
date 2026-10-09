@@ -1,4 +1,0 @@
-interface:
-  display_name: "Consult: Debugging"
-  short_description: "Root-cause bugs systematically"
-  default_prompt: "Use $debugging to reproduce and root-cause this failure."

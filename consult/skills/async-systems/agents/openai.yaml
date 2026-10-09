@@ -1,4 +1,0 @@
-interface:
-  display_name: "Consult: Async Systems"
-  short_description: "Design async, queues, and streams"
-  default_prompt: "Use $async-systems to review ownership, lifetime, backpressure, retries, ordering, delivery, and async failure visibility."

@@ -25,13 +25,10 @@ description: Run Consult's guarded maintainer flow for commit, merge, version bu
 ## Repo Facts
 
 - Main branch is `main`; remote is `origin`.
-- There are two independent release streams. Never bump them in lockstep.
 - Plugin version lives in `plugin/.claude-plugin/plugin.json`,
   `plugin/.codex-plugin/plugin.json`, `plugin/.cursor-plugin/plugin.json`,
   `.claude-plugin/marketplace.json`, and `.cursor-plugin/marketplace.json`.
   `plugin/plugin.json` should match these too; reconcile drift when bumping.
-- The `consult` npm package version lives in `consult/package.json`. Bump it
-  only when the diff changes the published package.
 - Root `package.json` is private tooling and is not versioned for release.
 - Version marker is the `CHANGELOG.md` header `## [X.Y.Z] (YYYY-MM-DD)`.
   Promote `## [Unreleased]` into a dated version section and leave a fresh
@@ -60,14 +57,13 @@ description: Run Consult's guarded maintainer flow for commit, merge, version bu
 
 ## Before Saying Done
 
-Report the branch shipped, merge result, old and new version per release stream,
-validation result, pushed commit, skipped release streams, and any remaining
-publishing or plugin-sync work.
+Report the branch shipped, merge result, old and new version, validation
+result, pushed commit, and any remaining plugin-sync work.
 
 ## Verification
 
 - [ ] The skill stopped at each approval gate before committing, merging,
       versioning, and pushing.
-- [ ] Release-stream bumps matched the actual changed surface.
+- [ ] The version bump matched the actual changed surface.
 - [ ] `CHANGELOG.md` and every relevant manifest agreed after the version bump.
 - [ ] Validation ran before push, or the skipped validation is clearly reported.

@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { chmodSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -41,15 +41,7 @@ export function commandExists(command) {
   return probe.status === 0;
 }
 
-export function readJson(path) {
-  return JSON.parse(readFileSync(path, "utf8"));
-}
-
 export function writeExecutable(path, text) {
   writeFileSync(path, text, "utf8");
   chmodSync(path, 0o755);
-}
-
-export function shellQuote(value) {
-  return `'${String(value).replaceAll("'", "'\\''")}'`;
 }

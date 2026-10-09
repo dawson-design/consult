@@ -1,4 +1,0 @@
-interface:
-  display_name: "Consult: Commit"
-  short_description: "Stage reviewed work and write commits"
-  default_prompt: "Use Consult commit to package reviewed changes into a clean commit with current proof."

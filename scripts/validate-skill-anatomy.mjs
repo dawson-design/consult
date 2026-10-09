@@ -340,8 +340,7 @@ function sameBytes(left, right) {
 
 // Every generated mirror, checked against the same canonical source. Reads the
 // list from the generator so a new destination cannot be added there and silently
-// escape validation -- which is exactly how the consult/skills Pi bundle went
-// unchecked while only plugin/skills was verified.
+// escape validation.
 export function validatePluginDrift(skillsDir) {
   const root = repoRootForSkillsDir(skillsDir);
   let drift = 0;

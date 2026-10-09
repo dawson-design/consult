@@ -35,7 +35,7 @@ describe("generate-plugin-symlinks CLI", () => {
     const canonical = readFileSync(join(tmp, "agents/.agents/skills/code-review/SKILL.md"), "utf8");
     // Guards against a destination being dropped from MIRROR_DESTS: losing one
     // would otherwise only surface later, as drift on the next canonical edit.
-    expect(MIRROR_DESTS).toEqual(["plugin/skills", "consult/skills"]);
+    expect(MIRROR_DESTS).toEqual(["plugin/skills"]);
     for (const dest of MIRROR_DESTS) {
       expect(readFileSync(join(tmp, dest, "code-review/SKILL.md"), "utf8")).toBe(canonical);
     }
