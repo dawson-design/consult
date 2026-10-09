@@ -306,6 +306,11 @@ CHECKS = {
 SIGNOFF_RULES = {"scaffolding.1", "domain-modeling.10"}
 
 
+def scored_rule_ids(rule_ids: list[str]) -> list[str]:
+    """The rule ids the root rules dimension scores; sign-off rules score in the brief step's suite instead."""
+    return [r for r in rule_ids if r not in SIGNOFF_RULES]
+
+
 def score(rule_id: str, workspace: Path) -> float:
     """Run one check; any failure scores 0 and is logged instead of raised."""
     try:

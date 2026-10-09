@@ -20,7 +20,7 @@ def no_rules(workspace: Path, reason: str) -> float:
     return 1.0
 
 
-RULE_IDS = [r for r in cl.load_task_meta().get("rules") or [] if r not in cr.SIGNOFF_RULES]
+RULE_IDS = cr.scored_rule_ids(cl.load_task_meta().get("rules") or [])
 for rule_id in RULE_IDS:
     criteria.rule_check(rule_id, name=rule_id)
 if not RULE_IDS:

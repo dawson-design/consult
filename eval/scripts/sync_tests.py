@@ -11,7 +11,8 @@ Per task it writes:
   tests/test.sh                   from verifier/shared/test.sh
   tests/consult_lib.py            from verifier/shared/consult_lib.py
   tests/consult_rules.py          from verifier/shared/consult_rules.py
-  tests/reward.toml               from verifier/shared/reward.<kind>.toml
+  tests/reward.toml               from verifier/shared/reward.<kind>.toml, with the
+                                  rules weight zeroed when the task scores no rules
   tests/<dimension>/...           from verifier/shared/<dimension>/ (kind-dependent set)
   tests/hidden.mjs                from verifier/hidden/<task>.mjs (code tasks)
   tests/rules_probe.mjs           from verifier/hidden/<task>.rules.mjs (when present)
@@ -42,8 +43,12 @@ EVAL_DIR = Path(__file__).resolve().parent.parent
 TASKS_DIR = EVAL_DIR / "tasks"
 SHARED_DIR = EVAL_DIR / "verifier" / "shared"
 HIDDEN_DIR = EVAL_DIR / "verifier" / "hidden"
+sys.path.insert(0, str(SHARED_DIR))
+from consult_rules import scored_rule_ids  # noqa: E402
+
 # task.toml step names; a regex, not tomllib, so CI's and macOS's python3 both run this.
 STEP_NAME_RE = re.compile(r'^\[\[steps\]\]\s*\n\s*name\s*=\s*"([^"]+)"', re.MULTILINE)
+RULES_WEIGHT_RE = re.compile(r"(\brules\s*=\s*)[0-9.]+")
 
 COMMON_DIMENSIONS = ("skill_triggering", "non_interruption", "rules", "judge")
 DIMENSIONS_BY_KIND = {
@@ -70,6 +75,26 @@ def task_kind(task: Path) -> str:
     if kind not in DIMENSIONS_BY_KIND:
         raise SystemExit(f"{task.name}: consult.json kind must be one of {sorted(DIMENSIONS_BY_KIND)}, got {kind!r}")
     return kind
+
+
+def task_rules(task: Path) -> list[str]:
+    return json.loads((task / "tests" / "consult.json").read_text()).get("rules") or []
+
+
+def reward_toml(task: Path, kind: str) -> bytes:
+    """The shared reward weights; a task that scores no rules gets rules = 0.0.
+
+    Its rules dimension is a placeholder criterion that returns 1.0, kept because
+    RewardKit rejects a weight naming a missing dimension. Any rules weight there
+    would add a free point to the reward.
+    """
+    shared = (SHARED_DIR / f"reward.{kind}.toml").read_text()
+    if scored_rule_ids(task_rules(task)):
+        return shared.encode()
+    zeroed, count = RULES_WEIGHT_RE.subn(r"\g<1>0.0", shared)
+    if count != 1:
+        raise SystemExit(f"reward.{kind}.toml must name the rules weight once to zero it for {task.name}; found {count}")
+    return zeroed.encode()
 
 
 def step_names(task: Path) -> list[str]:
@@ -113,7 +138,7 @@ def planned_copies(task: Path) -> list[tuple[Path | bytes, Path]]:
         (SHARED_DIR / "test.sh", tests / "test.sh"),
         (SHARED_DIR / "consult_lib.py", tests / "consult_lib.py"),
         (SHARED_DIR / "consult_rules.py", tests / "consult_rules.py"),
-        (SHARED_DIR / f"reward.{kind}.toml", tests / "reward.toml"),
+        (reward_toml(task, kind), tests / "reward.toml"),
         (judge_instruction(task, steps), tests / "judge" / "instruction.md"),
         *step_copies(task, steps),
     ]

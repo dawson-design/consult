@@ -6,8 +6,23 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- The eval's `lift.py` report has a cost and effort table: each arm's mean
+  output tokens, cost, agent seconds, turns, lines changed, and questions
+  asked, with the change between arms and a 90% bootstrap interval. Judge
+  bundle parsing moved from `rescore.py` to `eval/scripts/bundle.py` so both
+  scripts can read it.
+- `eval/scripts/reference_reads.py` reports, per eval job, the share of
+  trials that opened each skill reference file, as input to a reference
+  length audit.
+
 ### Fixed
 
+- Eval tasks that score no rules get a zero `rules` weight in their vendored
+  `reward.toml`. Their `rules` dimension is a placeholder that scores 1.0, so
+  any weight would have handed them a free point once rule checks count
+  toward the reward.
 - `AGENTS.md` names the directory `agy plugin install` actually writes,
   `~/.gemini/antigravity-cli/plugins/consult`, and says it copies the skills
   rather than linking them. The README and `setup.sh` already said so.
