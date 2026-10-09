@@ -6,6 +6,12 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- `AGENTS.md` names the directory `agy plugin install` actually writes,
+  `~/.gemini/antigravity-cli/plugins/consult`, and says it copies the skills
+  rather than linking them. The README and `setup.sh` already said so.
+
 ## [16.0.0] (2026-10-09)
 
 ### Removed

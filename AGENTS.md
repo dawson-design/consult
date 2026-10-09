@@ -49,9 +49,10 @@ skills but nothing measures them.
   MCP. Keep the Cursor
   marketplace and manifest in sync with Claude plugin packaging.
 - **Google Antigravity plugin package**: `plugin/plugin.json` is the
-  Antigravity marker for Consult. Local installs create an Antigravity plugin
-  directory that links only `plugin/plugin.json` and the generated
-  `plugin/skills/` mirror under `~/.gemini/config/plugins/consult`.
+  Antigravity marker for Consult. Local installs run
+  `agy plugin install <repo>/plugin`, which copies the generated
+  `plugin/skills/` mirror into `~/.gemini/antigravity-cli/plugins/consult`.
+  The copy goes stale until the command runs again.
 - **Install layout**: `agents/` is a GNU Stow package. `./setup.sh` is the
   one-click local installer: it explains the actions, asks for approval, runs
   Stow to link the shared skills under `~/.agents/`, fans those out to
