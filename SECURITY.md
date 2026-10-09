@@ -6,7 +6,7 @@ Please report security issues privately rather than in public issues
 or pull requests.
 
 **Preferred channel:** open a private vulnerability report on GitHub at
-<https://github.com/kreek/consult/security/advisories/new>.
+<https://github.com/dawson-design/consult/security/advisories/new>.
 
 Include:
 

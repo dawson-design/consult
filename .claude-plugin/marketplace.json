@@ -2,7 +2,7 @@
   "name": "consult",
   "owner": {
     "name": "Alastair Dawson",
-    "url": "https://github.com/kreek"
+    "url": "https://github.com/dawson-design"
   },
   "metadata": {
     "description": "Consult: collaborative engineering-discipline skills for Claude Code.",
@@ -17,7 +17,7 @@
       "author": {
         "name": "Alastair Dawson"
       },
-      "homepage": "https://github.com/kreek/consult",
+      "homepage": "https://github.com/dawson-design/consult",
       "license": "MIT",
       "source": "./plugin"
     }

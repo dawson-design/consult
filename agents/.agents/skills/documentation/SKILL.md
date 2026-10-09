@@ -20,7 +20,7 @@ description: "Only when asked to write or update docs for existing code: READMEs
 
 - Forward-looking documents: design docs, ADRs, RFCs, tech specs, PRDs,
   requirements, strategy. Consult does not cover these; use a dedicated
-  writing skill such as [Terse](https://github.com/kreek/terse).
+  writing skill such as [Terse](https://github.com/dawson-design/terse).
 - Ordinary implementation where docs were not requested, approved, or
   required by a validator. Name the possible gap in the final response
   instead of editing docs.

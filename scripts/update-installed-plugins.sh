@@ -124,14 +124,14 @@ This script does not copy skills or plugin files into cache directories.
 EOF
 
 echo ""
-run_best_effort_if_available "Claude Code marketplace" claude claude plugin marketplace add kreek/consult
+run_best_effort_if_available "Claude Code marketplace" claude claude plugin marketplace add dawson-design/consult
 run_if_available "Claude Code marketplace" claude claude plugin marketplace update consult
 run_best_effort_if_available "Claude Code plugin" claude claude plugin install consult@consult
 run_if_available "Claude Code plugin" claude claude plugin update consult@consult
 echo "Claude Code: restart Claude Code if prompted so the updated plugin is loaded."
 
 echo ""
-run_best_effort_if_available "Codex marketplace" codex codex plugin marketplace add kreek/consult
+run_best_effort_if_available "Codex marketplace" codex codex plugin marketplace add dawson-design/consult
 run_if_available "Codex" codex codex plugin marketplace upgrade consult
 run_if_available "Codex" codex codex plugin add consult@consult
 

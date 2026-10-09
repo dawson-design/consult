@@ -254,7 +254,7 @@ function makeCodexPluginPackage(
 
     const cursorMarketplace = {
       name: "consult",
-      owner: { name: "Alastair Dawson", url: "https://github.com/kreek" },
+      owner: { name: "Alastair Dawson", url: "https://github.com/dawson-design" },
       metadata: { version: claudeMarketplaceVersion },
       plugins: [{ name: "consult", version: claudeEntryVersion, source: "./plugin" }],
     };

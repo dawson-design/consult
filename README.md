@@ -56,7 +56,7 @@ when your tool does not support plugins.
 Inside Claude Code:
 
 ```text
-/plugin marketplace add kreek/consult
+/plugin marketplace add dawson-design/consult
 /plugin install consult@consult
 ```
 
@@ -73,7 +73,7 @@ that. If you added one, you can remove it.
 ### Codex
 
 ```sh
-codex plugin marketplace add kreek/consult
+codex plugin marketplace add dawson-design/consult
 codex plugin add consult@consult
 ```
 
@@ -150,7 +150,7 @@ dnf install stow    # Fedora/RHEL
 ```
 
 ```sh
-git clone https://github.com/kreek/consult.git
+git clone https://github.com/dawson-design/consult.git
 cd consult
 ./setup.sh
 ```
@@ -219,7 +219,7 @@ Shared language defaults are in
 
 Consult's `documentation` skill covers docs for existing code. For specs, ADRs,
 design docs, PR descriptions, and posts, use
-[Terse](https://github.com/kreek/terse), a companion plugin from the same
+[Terse](https://github.com/dawson-design/terse), a companion plugin from the same
 author. Terse pairs an offline style checker with skills to brainstorm,
 outline, draft, and edit, and it keeps the writer's voice. It needs Node.js 18
 or newer.
@@ -227,14 +227,14 @@ or newer.
 In Claude Code:
 
 ```text
-/plugin marketplace add kreek/terse
+/plugin marketplace add dawson-design/terse
 /plugin install terse@terse
 ```
 
 In Codex:
 
 ```sh
-codex plugin marketplace add kreek/terse
+codex plugin marketplace add dawson-design/terse
 codex plugin add terse@terse
 ```
 

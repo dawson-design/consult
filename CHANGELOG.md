@@ -28,6 +28,10 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   hosts with a fresh-context review mechanism.
 - `AGENTS.md` describes a single host posture: a person is present to answer
   in every session, and Consult ships no runtime enforcement.
+- Consult moved from the `kreek` GitHub account to the `dawson-design`
+  organization. Install commands, manifest homepage and repository URLs,
+  `scripts/update-installed-plugins.sh`, and the Terse links now use
+  `dawson-design`. GitHub redirects the old `kreek/consult` URLs.
 
 ## [15.3.0] (2026-10-02)
 
@@ -288,7 +292,7 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - `technical-writing` skill, including its `requirements-and-acceptance.md`,
   `system-analysis.md`, and `style-check.mjs` references. Prose and writing
-  guidance now lives in [Terse](https://github.com/kreek/terse), a standalone
+  guidance now lives in [Terse](https://github.com/dawson-design/terse), a standalone
   companion plugin. `workflow` no longer routes forward-looking documents to
   a bundled writing skill, and `documentation` and `specify` drop their
   `technical-writing` handoffs; `documentation` keeps the core voice rules
