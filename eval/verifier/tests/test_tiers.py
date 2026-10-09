@@ -67,7 +67,13 @@ class TierPlanTests(unittest.TestCase):
     def test_dropping_references_from_a_skill_without_any_is_rejected(self):
         with redirect_stderr(io.StringIO()) as err, self.assertRaises(SystemExit):
             parse(["--tier", "fast", "--drop-references", "debugging"])
-        self.assertIn("no references/ dir: debugging", err.getvalue())
+        self.assertIn("names no skill with a references/ dir: debugging", err.getvalue())
+
+    def test_a_skill_name_must_match_exactly(self):
+        """A case-insensitive file system would find Security/references, but the snapshot filter would drop nothing."""
+        for name in ("Security", "security/"):
+            with redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+                parse(["--tier", "fast", "--drop-references", name])
 
 
 class ArmConfigTests(unittest.TestCase):
@@ -84,6 +90,28 @@ class ArmConfigTests(unittest.TestCase):
 
     def agent(self, arm: str) -> dict:
         return run.build_job(JOB_ARGS, arm, "stamp", ["api-error-contract"], AGENT, HOOK, self.skills)["agents"][0]
+
+    def baseline_consult_job(self, skills_dir: str) -> dict:
+        trial = self.runs / "baseline-consult" / "api-error-contract__0"
+        trial.mkdir(parents=True)
+        (trial / "result.json").write_text(json.dumps({"config": {"agent": {"skills": [skills_dir]}}}))
+        return {"consult": str(trial.parent)}
+
+    def test_an_ablation_needs_a_reusable_baseline(self):
+        args = argparse.Namespace(drop_references=("security",))
+        with redirect_stderr(io.StringIO()):
+            self.assertEqual(run.ablation_gate(args, None), 2)
+
+    def test_an_ablation_runs_only_against_a_baseline_that_ran_todays_full_pack(self):
+        args = argparse.Namespace(drop_references=("security",))
+        self.assertIsNone(run.ablation_gate(args, self.baseline_consult_job(self.skills["consult"][0])))
+
+    def test_an_ablation_against_an_older_pack_stops(self):
+        """Skill edits since the baseline would be measured as part of the ablation."""
+        args = argparse.Namespace(drop_references=("security",))
+        with redirect_stderr(io.StringIO()) as err:
+            self.assertEqual(run.ablation_gate(args, self.baseline_consult_job(str(self.runs / "older-pack"))), 2)
+        self.assertIn("not today's full pack", err.getvalue())
 
     def test_dropped_references_leave_only_the_consult_arm(self):
         ablated = run.frozen_skills(("security",))

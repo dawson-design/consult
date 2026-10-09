@@ -98,10 +98,14 @@ resolve a suite lift of about 0.1.
 
 `--drop-references code-review,security` runs the consult arm without those
 skills' `references/` directories; the SKILL.md bodies still name the files.
-Run it on the fast tier, with `--suite` naming the tasks whose trials opened
-those references (`scripts/reference_reads.py` shows which). The lift report's
-comparison against the baseline's Consult arm is then the full pack against
-the ablation. An ablation never saves a baseline, and `run.py` refuses one.
+Write a suite file under `eval/suites/` listing the tasks whose trials opened
+those references (`scripts/reference_reads.py` shows which), then run it on
+the fast tier with `--suite`. `run.py` stops unless a reusable baseline's
+consult arm ran today's full pack, so the lift report's comparison against
+that arm measures the dropped references and no other skill edit. An ablation
+never saves a baseline. With 3 attempts and no judge, the fast tier resolves
+only large changes, so "no difference" is weak evidence that a reference is
+not needed.
 
 ### Stub arm
 

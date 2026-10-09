@@ -21,7 +21,8 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   labels, the input for giving the `rules` dimension a weight.
 - `eval/scripts/run.py --drop-references <skills>` runs the consult arm
   without those skills' `references/` directories, to measure what the
-  references add. An ablation never saves a baseline.
+  references add. It runs only against a saved baseline whose consult arm
+  ran the current full pack, and never saves a baseline itself.
 
 ### Fixed
 

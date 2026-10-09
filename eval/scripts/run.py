@@ -39,9 +39,10 @@ A baseline is reused only when agent, model, effort, CLI version, and every
 task dir match; otherwise the bare arm runs and the reason is printed.
 
 --drop-references code-review,security runs the consult arm without those
-skills' references/ dirs. With --tier fast, the lift report's comparison
-against the baseline's Consult arm is the full pack against the ablation. An
-ablation never saves a baseline.
+skills' references/ dirs. It needs --tier fast and a reusable baseline whose
+consult arm ran today's full pack, so the lift report's comparison against
+that arm is the full pack against the ablation and nothing else. An ablation
+never saves a baseline.
 """
 
 from __future__ import annotations
@@ -114,7 +115,7 @@ def frozen_skills(drop_references: tuple[str, ...] = ()) -> dict[str, list[str]]
     drop_references leaves those skills' references/ out of the consult arm only.
     """
     real = stub.snapshot(SKILLS_DIR, RUNS_DIR / "consult-skills")
-    consult = stub.snapshot(SKILLS_DIR, RUNS_DIR / "consult-skills", drop_references) if drop_references else real
+    consult = stub.snapshot(real, RUNS_DIR / "consult-skills", drop_references) if drop_references else real
     return {"bare": [], "stub": [str(stub.build(real, RUNS_DIR / "stub-skills"))], "consult": [str(consult)]}
 
 
@@ -260,11 +261,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--save-baseline", help="after the arms run, save them as runs/baselines/<name>.json")
     parser.add_argument("--changed-since", default="HEAD", help="fast tier: git ref to diff the skills against")
     parser.add_argument("--max-tasks", type=int, default=4, help="fast tier: most tasks to select")
+    parser.add_argument("--drop-references", default="",
+                        help="comma-separated skills whose references/ the consult arm leaves out (an ablation)")
     parser.add_argument("--skip-preflight", action="store_true", help="run the arms without the skill-loading preflight")
     parser.add_argument("--preflight-only", action="store_true", help="run the skill-loading preflight and stop")
     parser.add_argument("--preflight-attempts", type=int, default=1, help="preflight trials per task")
-    parser.add_argument("--drop-references", default="",
-                        help="comma-separated skills whose references/ the consult arm leaves out (an ablation)")
     parser.add_argument("--preflight-min", type=float, default=0.5,
                         help="minimum share of preflight trials that must load a Consult skill")
     parser.add_argument("harbor_args", nargs="*", help="extra args passed to `harbor run` after --")
@@ -284,11 +285,38 @@ def check_ablation(parser: argparse.ArgumentParser, args: argparse.Namespace) ->
     """An ablation names skills that have references and never replaces a baseline."""
     if not args.drop_references:
         return
-    unknown = [s for s in args.drop_references if not (SKILLS_DIR / s / "references").is_dir()]
+    with_references = {p.parent.name for p in SKILLS_DIR.glob("*/references") if p.is_dir()}
+    unknown = [s for s in args.drop_references if s not in with_references]
     if unknown:
-        parser.error(f"--drop-references names a skill with no references/ dir: {', '.join(unknown)}")
+        parser.error(f"--drop-references names no skill with a references/ dir: {', '.join(unknown)}")
     if args.save_baseline:
-        parser.error("an ablation never saves a baseline; use --tier fast or drop --save-baseline")
+        parser.error("an ablation never saves a baseline; run it with --tier fast, which reuses the saved one")
+
+
+def ablation_gate(args: argparse.Namespace, reuse: dict | None) -> int | None:
+    """Exit code that stops an ablation whose comparison would measure more than the dropped references."""
+    if not args.drop_references:
+        return None
+    if not reuse:
+        print("--drop-references compares against a saved baseline's consult arm, and none is reusable",
+              file=sys.stderr)
+        return 2
+    full_pack = str(stub.snapshot(SKILLS_DIR, RUNS_DIR / "consult-skills"))
+    baseline_pack = trial_skills_dir(Path(reuse["consult"]))
+    if baseline_pack != full_pack:
+        print(f"the baseline's consult arm ran {baseline_pack}, not today's full pack {full_pack}; the ablation "
+              "would also measure the skill edits since then", file=sys.stderr)
+        return 2
+    return None
+
+
+def trial_skills_dir(job_dir: Path) -> str | None:
+    """The skills dir a job's agent ran, from Harbor's record of its first trial's config."""
+    result = next(iter(sorted(job_dir.glob("*/result.json"))), None)
+    if result is None:
+        return None
+    skills = ((json.loads(result.read_text()).get("config") or {}).get("agent") or {}).get("skills") or []
+    return str(skills[0]) if skills else None
 
 
 def report(args, job_dirs: dict[str, Path], reuse: dict | None, key: dict) -> int:
@@ -346,6 +374,9 @@ def main() -> int:
     stamp = dt.datetime.now().strftime("%Y-%m-%dT%H-%M-%S")
     RUNS_DIR.mkdir(parents=True, exist_ok=True)
     skills = frozen_skills(args.drop_references)
+    stop = ablation_gate(args, reuse)
+    if stop is not None:
+        return stop
 
     if "consult" in arms and not (args.skip_preflight or args.install_only):
         stop = preflight_gate(args, run_preflight(args, stamp, tasks, agent, settings, host_env, skills))
