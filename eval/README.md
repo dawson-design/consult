@@ -290,8 +290,10 @@ or a per-task probe. A check that an idle agent would pass, such as
 `reward-details.json`. `rules` stays at weight 0 until a sample of hand
 ratings calibrates the checks. `scripts/rule_labels.py export <sheet.csv>
 <job>...` writes one row per rule verdict with the rule's text and the trial
-dir to read. A reviewer writes `pass` or `fail` in the `human` column, and
-`rule_labels.py agree <sheet.csv>` reports how often each check matched. Tasks
+dir to read; it leaves out sign-off rules and never overwrites a sheet. A
+reviewer writes `pass` or `fail` in the `human` column, and
+`rule_labels.py agree <sheet.csv>` reports how often each check matched, with
+its false passes and false fails. Tasks
 that score no rules get `rules = 0.0` in their `reward.toml`, so a calibrated
 weight reaches only the tasks that list rules.
 
