@@ -29,7 +29,7 @@ AGENT = {"name": "claude-code", "model_name": "anthropic/claude-sonnet-5",
          "kwargs": {"reasoning_effort": "medium", "version": "2.1.282"}}
 HOOK = {"hooks": {"SessionStart": [{"hooks": [{"type": "command", "command": "echo Consult is installed."}]}]}}
 JOB_ARGS = argparse.Namespace(suite="rules", tier=None, agent="claude-code", effort=None, attempts=1,
-                              concurrency=2, install_only=False)
+                              concurrency=2, install_only=False, drop_references=())
 
 
 def parse(argv: list[str]) -> argparse.Namespace:
@@ -54,6 +54,21 @@ class TierPlanTests(unittest.TestCase):
     def test_the_fast_tier_still_runs_the_consult_arm_only(self):
         self.assertEqual(parse(["--tier", "fast"]).arms, "consult")
 
+    def test_an_ablation_names_its_dropped_references_in_the_job_label(self):
+        args = parse(["--tier", "fast", "--drop-references", "security,code-review"])
+        self.assertIn("-norefs-code-review+security", run.job_label(args))
+
+    def test_an_ablation_cannot_save_a_baseline(self):
+        """The release tier saves one by default; an ablation saved there would replace the full pack's."""
+        with redirect_stderr(io.StringIO()) as err, self.assertRaises(SystemExit):
+            parse(["--tier", "release", "--agent", "claude-code", "--drop-references", "security"])
+        self.assertIn("an ablation never saves a baseline", err.getvalue())
+
+    def test_dropping_references_from_a_skill_without_any_is_rejected(self):
+        with redirect_stderr(io.StringIO()) as err, self.assertRaises(SystemExit):
+            parse(["--tier", "fast", "--drop-references", "debugging"])
+        self.assertIn("no references/ dir: debugging", err.getvalue())
+
 
 class ArmConfigTests(unittest.TestCase):
     def setUp(self) -> None:
@@ -69,6 +84,15 @@ class ArmConfigTests(unittest.TestCase):
 
     def agent(self, arm: str) -> dict:
         return run.build_job(JOB_ARGS, arm, "stamp", ["api-error-contract"], AGENT, HOOK, self.skills)["agents"][0]
+
+    def test_dropped_references_leave_only_the_consult_arm(self):
+        ablated = run.frozen_skills(("security",))
+        consult = stub.skill_files(Path(ablated["consult"][0]))
+        self.assertFalse([path for path in consult if path.startswith("security/references/")])
+        self.assertIn("security/SKILL.md", consult)
+        self.assertIn("api/references/pagination.md", consult)
+        self.assertEqual(ablated["stub"], self.skills["stub"])
+        self.assertNotEqual(ablated["consult"], self.skills["consult"])
 
     def test_the_stub_arm_installs_the_stub_skills_and_the_hook(self):
         agent = self.agent("stub")

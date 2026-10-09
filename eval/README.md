@@ -94,6 +94,15 @@ attempts per task and a per-task reward SD of about 0.15, it cannot resolve a
 change smaller than about 0.3. The release tier's 15 tasks at 3 attempts
 resolve a suite lift of about 0.1.
 
+### Reference ablation
+
+`--drop-references code-review,security` runs the consult arm without those
+skills' `references/` directories; the SKILL.md bodies still name the files.
+Run it on the fast tier, with `--suite` naming the tasks whose trials opened
+those references (`scripts/reference_reads.py` shows which). The lift report's
+comparison against the baseline's Consult arm is then the full pack against
+the ablation. An ablation never saves a baseline, and `run.py` refuses one.
+
 ### Stub arm
 
 The stub arm separates what the skills say from the fact that they are

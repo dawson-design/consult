@@ -37,6 +37,11 @@ Tiers are presets:
            small ones: read the intervals in the lift report.
 A baseline is reused only when agent, model, effort, CLI version, and every
 task dir match; otherwise the bare arm runs and the reason is printed.
+
+--drop-references code-review,security runs the consult arm without those
+skills' references/ dirs. With --tier fast, the lift report's comparison
+against the baseline's Consult arm is the full pack against the ablation. An
+ablation never saves a baseline.
 """
 
 from __future__ import annotations
@@ -103,10 +108,14 @@ def load_agent(name: str, model: str | None) -> tuple[dict, dict[str, str], dict
     return agent, host_env, settings
 
 
-def frozen_skills() -> dict[str, list[str]]:
-    """arm -> skills dirs it installs, from one snapshot of SKILLS_DIR taken now and read by every later trial."""
+def frozen_skills(drop_references: tuple[str, ...] = ()) -> dict[str, list[str]]:
+    """arm -> skills dirs it installs, from one snapshot of SKILLS_DIR taken now and read by every later trial.
+
+    drop_references leaves those skills' references/ out of the consult arm only.
+    """
     real = stub.snapshot(SKILLS_DIR, RUNS_DIR / "consult-skills")
-    return {"bare": [], "stub": [str(stub.build(real, RUNS_DIR / "stub-skills"))], "consult": [str(real)]}
+    consult = stub.snapshot(SKILLS_DIR, RUNS_DIR / "consult-skills", drop_references) if drop_references else real
+    return {"bare": [], "stub": [str(stub.build(real, RUNS_DIR / "stub-skills"))], "consult": [str(consult)]}
 
 
 def arm_agent(agent: dict, skills: list[str], settings: dict | None, effort: str | None) -> dict:
@@ -123,7 +132,8 @@ def arm_agent(agent: dict, skills: list[str], settings: dict | None, effort: str
 
 
 def job_label(args: argparse.Namespace) -> str:
-    return f"{args.suite or args.tier}-{args.agent}" + (f"-{args.effort}" if args.effort else "")
+    label = f"{args.suite or args.tier}-{args.agent}" + (f"-{args.effort}" if args.effort else "")
+    return label + (f"-norefs-{'+'.join(args.drop_references)}" if args.drop_references else "")
 
 
 def release_tasks() -> list[str]:
@@ -253,6 +263,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--skip-preflight", action="store_true", help="run the arms without the skill-loading preflight")
     parser.add_argument("--preflight-only", action="store_true", help="run the skill-loading preflight and stop")
     parser.add_argument("--preflight-attempts", type=int, default=1, help="preflight trials per task")
+    parser.add_argument("--drop-references", default="",
+                        help="comma-separated skills whose references/ the consult arm leaves out (an ablation)")
     parser.add_argument("--preflight-min", type=float, default=0.5,
                         help="minimum share of preflight trials that must load a Consult skill")
     parser.add_argument("harbor_args", nargs="*", help="extra args passed to `harbor run` after --")
@@ -263,7 +275,20 @@ def parse_args() -> argparse.Namespace:
         parser.error("--agent and one of --suite or --tier are required")
     args.user_harbor_args = list(args.harbor_args)
     apply_tier(args)
+    args.drop_references = tuple(sorted(s.strip() for s in args.drop_references.split(",") if s.strip()))
+    check_ablation(parser, args)
     return args
+
+
+def check_ablation(parser: argparse.ArgumentParser, args: argparse.Namespace) -> None:
+    """An ablation names skills that have references and never replaces a baseline."""
+    if not args.drop_references:
+        return
+    unknown = [s for s in args.drop_references if not (SKILLS_DIR / s / "references").is_dir()]
+    if unknown:
+        parser.error(f"--drop-references names a skill with no references/ dir: {', '.join(unknown)}")
+    if args.save_baseline:
+        parser.error("an ablation never saves a baseline; use --tier fast or drop --save-baseline")
 
 
 def report(args, job_dirs: dict[str, Path], reuse: dict | None, key: dict) -> int:
@@ -320,7 +345,7 @@ def main() -> int:
     arms = plan_arms(requested, reuse, needs_lift="consult" in requested and not (args.no_lift or args.install_only))
     stamp = dt.datetime.now().strftime("%Y-%m-%dT%H-%M-%S")
     RUNS_DIR.mkdir(parents=True, exist_ok=True)
-    skills = frozen_skills()
+    skills = frozen_skills(args.drop_references)
 
     if "consult" in arms and not (args.skip_preflight or args.install_only):
         stop = preflight_gate(args, run_preflight(args, stamp, tasks, agent, settings, host_env, skills))

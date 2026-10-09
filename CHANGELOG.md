@@ -19,6 +19,9 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `eval/scripts/rule_labels.py` exports each trial's rule verdicts to a CSV
   sheet for hand labelling and reports how often each check agreed with the
   labels, the input for giving the `rules` dimension a weight.
+- `eval/scripts/run.py --drop-references <skills>` runs the consult arm
+  without those skills' `references/` directories, to measure what the
+  references add. An ablation never saves a baseline.
 
 ### Fixed
 
