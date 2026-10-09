@@ -39,10 +39,11 @@ A baseline is reused only when agent, model, effort, CLI version, and every
 task dir match; otherwise the bare arm runs and the reason is printed.
 
 --drop-references code-review,security runs the consult arm without those
-skills' references/ dirs. It needs --tier fast and a reusable baseline whose
-consult arm ran today's full pack, so the lift report's comparison against
-that arm is the full pack against the ablation and nothing else. An ablation
-never saves a baseline.
+skills' references/ dirs. It needs a reusable baseline whose consult arm ran
+today's full pack (compared by the snapshot's content hash), so the lift
+report's comparison against that arm is the full pack against the ablation and
+nothing else. Any skill edit after that baseline blocks ablations until a fresh
+full-pack baseline is saved. An ablation never saves a baseline.
 """
 
 from __future__ import annotations
@@ -301,11 +302,12 @@ def ablation_gate(args: argparse.Namespace, reuse: dict | None) -> int | None:
         print("--drop-references compares against a saved baseline's consult arm, and none is reusable",
               file=sys.stderr)
         return 2
-    full_pack = str(stub.snapshot(SKILLS_DIR, RUNS_DIR / "consult-skills"))
-    baseline_pack = trial_skills_dir(Path(reuse["consult"]))
-    if baseline_pack != full_pack:
-        print(f"the baseline's consult arm ran {baseline_pack}, not today's full pack {full_pack}; the ablation "
-              "would also measure the skill edits since then", file=sys.stderr)
+    full_pack = stub.snapshot(SKILLS_DIR, RUNS_DIR / "consult-skills").name
+    ran = trial_skills_dir(Path(reuse["consult"]))
+    if ran is None or Path(ran).name != full_pack:
+        print(f"the baseline's consult arm ran skills {Path(ran).name if ran else '(no record)'}, not today's full "
+              f"pack {full_pack}; the ablation would also measure the skill edits since then. Save a fresh "
+              "baseline of the full pack (--save-baseline) on the same tasks first", file=sys.stderr)
         return 2
     return None
 
