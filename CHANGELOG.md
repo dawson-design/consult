@@ -23,6 +23,10 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   without those skills' `references/` directories, to measure what the
   references add. It runs only against a saved baseline whose consult arm
   ran the current full pack, and never saves a baseline itself.
+- `eval/scripts/charts.py` draws the release chart from a `lift.py`
+  summary: each scored task's reward for the bare and Consult arms, in light
+  and dark SVGs for the README, with the suite lift and any caveats lift.py
+  reported in the footer.
 
 ### Fixed
 

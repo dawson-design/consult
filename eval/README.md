@@ -325,6 +325,12 @@ After the lift and cost tables, `lift.py` prints two scorecards:
 that opened each skill reference file. A file nobody opened reads 0, which
 the reference audit weighs against its upkeep.
 
+`scripts/charts.py <summary.json> <out_dir> "<agent>"` draws the release
+chart from a `lift.py` summary: each scored task's reward for the bare and
+Consult arms, as `release-lift-<agent>-light.svg` and `-dark.svg`. Its footer
+notes any task left out, failed trial, or judge exclusion. Regenerate it from
+each release's summary instead of editing the SVGs.
+
 The judge receives the task instruction and a bundle with the git diff, new
 files, and the agent's final message. `consult_lib.py prepare` writes both
 into the prompt, so the `claude-code` judge scores in one turn at low effort
