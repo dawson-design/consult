@@ -1,4 +1,0 @@
-interface:
-  display_name: "Consult: Database"
-  short_description: "Review migrations and queries"
-  default_prompt: "Use $database to default storage choices to SQLite or Postgres, justify any document-store escape hatch, and review migrations for locking, rollout, and rollback risk."

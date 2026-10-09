@@ -57,8 +57,7 @@ the baseline without local knowledge.
 
 ## Workflow
 
-1. Detect language, framework, existing conventions, and git state. If Pi
-   offers `/consult:scaffold`, run it before presenting the gate.
+1. Detect language, framework, existing conventions, and git state.
 2. Present the Scaffold Decision Gate (Rule 1). Use
    `references/stacks/index.yaml` when a preset fits; otherwise
    `references/language-defaults.md` or official sources, naming the fallback.

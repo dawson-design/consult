@@ -1,13 +1,13 @@
 {
   "name": "consult",
-  "version": "15.3.0",
+  "version": "16.0.0",
   "description": "Consult (collaborative engineering-discipline skill pack): data, proof, security, design, and more.",
   "author": {
-    "name": "Alastair Dawson",
-    "url": "https://github.com/kreek"
+    "name": "Dawson Design Ltd.",
+    "url": "https://github.com/dawson-design"
   },
-  "homepage": "https://github.com/kreek/consult",
-  "repository": "https://github.com/kreek/consult",
+  "homepage": "https://github.com/dawson-design/consult",
+  "repository": "https://github.com/dawson-design/consult",
   "license": "MIT",
   "keywords": [
     "agent-skills",
@@ -22,13 +22,13 @@
     "displayName": "Consult",
     "shortDescription": "Collaborative engineering-discipline skills for coding agents.",
     "longDescription": "Consult helps coding agents produce simpler, safer, more correct, accessible, maintainable, and production-ready software while keeping humans involved in architecture, design, judgment, and acceptance.",
-    "developerName": "Alastair Dawson",
+    "developerName": "Dawson Design Ltd.",
     "category": "Coding",
     "capabilities": [
       "Read",
       "Write"
     ],
-    "websiteURL": "https://github.com/kreek/consult",
+    "websiteURL": "https://github.com/dawson-design/consult",
     "defaultPrompt": [
       "Use Consult workflow for this engineering task.",
       "Review this change with Consult code-review.",

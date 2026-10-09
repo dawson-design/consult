@@ -73,7 +73,7 @@ description: Reviewing a diff, branch, or PR for bugs, regressions, missing test
 ### Independent Review
 
 Code review runs in a fresh context: a subagent, review agent, fresh session,
-or host review command. Claude Code, Codex, Cursor, and Pi all have a
+or host review command. Claude Code, Codex, and Cursor all have a
 mechanism. Same-context review is not code review, only a labelled fallback
 when the host truly lacks one. The reviewer gets exactly these inputs:
 

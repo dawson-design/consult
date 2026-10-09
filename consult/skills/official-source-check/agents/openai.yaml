@@ -1,4 +1,0 @@
-interface:
-  display_name: "Consult: Official Source Check"
-  short_description: "Verify external behavior against official sources"
-  default_prompt: "Use Consult official-source-check to verify this version-sensitive behavior against official sources."

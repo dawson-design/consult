@@ -2,30 +2,13 @@
   "name": "consult-github",
   "version": "0.0.0",
   "private": true,
-  "description": "GitHub-installable Consult package for Pi.",
+  "description": "Maintainer tooling for the Consult skill pack.",
   "packageManager": "pnpm@10.33.0",
   "type": "module",
-  "pi": {
-    "extensions": [
-      "./consult/src/index.ts"
-    ],
-    "skills": [
-      "./consult/skills"
-    ]
-  },
   "scripts": {
     "check:links": "node scripts/validate-markdown-links.mjs",
     "test": "vitest run tests"
   },
-  "files": [
-    "consult/src",
-    "consult/extensions",
-    "consult/skills",
-    "consult/README.md",
-    "consult/LICENSE",
-    "README.md",
-    "LICENSE"
-  ],
   "devDependencies": {
     "remark-cli": "^12.0.1",
     "remark-validate-links": "^13.1.0",

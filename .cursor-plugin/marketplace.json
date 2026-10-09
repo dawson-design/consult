@@ -1,24 +1,24 @@
 {
   "name": "consult",
   "owner": {
-    "name": "Alastair Dawson",
-    "url": "https://github.com/kreek"
+    "name": "Dawson Design Ltd.",
+    "url": "https://github.com/dawson-design"
   },
   "metadata": {
     "description": "Consult: collaborative engineering-discipline skills for Cursor.",
-    "version": "15.3.0",
+    "version": "16.0.0",
     "license": "MIT"
   },
   "plugins": [
     {
       "name": "consult",
       "description": "Portable, collaborative engineering-discipline skill pack: data, proof, security, design, and more.",
-      "version": "15.3.0",
+      "version": "16.0.0",
       "author": {
-        "name": "Alastair Dawson"
+        "name": "Dawson Design Ltd."
       },
-      "homepage": "https://github.com/kreek/consult",
-      "repository": "https://github.com/kreek/consult",
+      "homepage": "https://github.com/dawson-design/consult",
+      "repository": "https://github.com/dawson-design/consult",
       "license": "MIT",
       "source": "./plugin"
     }

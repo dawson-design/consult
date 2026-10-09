@@ -340,8 +340,7 @@ function sameBytes(left, right) {
 
 // Every generated mirror, checked against the same canonical source. Reads the
 // list from the generator so a new destination cannot be added there and silently
-// escape validation -- which is exactly how the consult/skills Pi bundle went
-// unchecked while only plugin/skills was verified.
+// escape validation.
 export function validatePluginDrift(skillsDir) {
   const root = repoRootForSkillsDir(skillsDir);
   let drift = 0;
@@ -554,8 +553,8 @@ export function validateCursorPluginPackage(skillsDir) {
     if (marketplace.name !== "consult") problems.push(`${marketplacePath} name must be 'consult'`);
     if (!marketplace.owner || typeof marketplace.owner !== "object") {
       problems.push(`${marketplacePath} owner must be an object`);
-    } else if (marketplace.owner.name !== "Alastair Dawson") {
-      problems.push(`${marketplacePath} owner.name must be 'Alastair Dawson'`);
+    } else if (marketplace.owner.name !== "Dawson Design Ltd.") {
+      problems.push(`${marketplacePath} owner.name must be 'Dawson Design Ltd.'`);
     }
 
     const claudeVersion = (() => {

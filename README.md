@@ -56,7 +56,7 @@ when your tool does not support plugins.
 Inside Claude Code:
 
 ```text
-/plugin marketplace add kreek/consult
+/plugin marketplace add dawson-design/consult
 /plugin install consult@consult
 ```
 
@@ -73,7 +73,7 @@ that. If you added one, you can remove it.
 ### Codex
 
 ```sh
-codex plugin marketplace add kreek/consult
+codex plugin marketplace add dawson-design/consult
 codex plugin add consult@consult
 ```
 
@@ -120,13 +120,9 @@ Developing inside this repository with a local plugin copy also duplicates skill
 
 ### Pi
 
-```sh
-pi install git:github.com/kreek/consult
-```
-
-`github:` is not a Pi package source prefix; use `git:` for GitHub shorthand.
-After installing, run `/reload` inside Pi. Consult includes bundled skills plus
-runtime extensions for `/proof` and `/consult:self-review`.
+Pi has no Consult package. Use the
+[manual install](#manual-multi-agent-or-unsupported-plugins), which links the
+skills where Pi reads them.
 
 ### Google Antigravity
 
@@ -154,7 +150,7 @@ dnf install stow    # Fedora/RHEL
 ```
 
 ```sh
-git clone https://github.com/kreek/consult.git
+git clone https://github.com/dawson-design/consult.git
 cd consult
 ./setup.sh
 ```
@@ -167,8 +163,8 @@ are present. End-user installs do not need Python or uv.
 ### Do I need to add a routing line?
 
 Only the Claude Code and Codex plugins ship the SessionStart hook that tells
-the agent to load the `workflow` skill. Pi, Antigravity, and manual installs
-have no hook. Cursor finds the hook file, but we have not confirmed that it
+the agent to load the `workflow` skill. Antigravity and manual installs have
+no hook. Cursor finds the hook file, but we have not confirmed that it
 uses the output. On those hosts the agent picks skills from their descriptions
 alone. To route non-trivial code work through `workflow`, add this line to the
 host's instruction file, for example `AGENTS.md`:
@@ -223,7 +219,7 @@ Shared language defaults are in
 
 Consult's `documentation` skill covers docs for existing code. For specs, ADRs,
 design docs, PR descriptions, and posts, use
-[Terse](https://github.com/kreek/terse), a companion plugin from the same
+[Terse](https://github.com/dawson-design/terse), a companion plugin from the same
 author. Terse pairs an offline style checker with skills to brainstorm,
 outline, draft, and edit, and it keeps the writer's voice. It needs Node.js 18
 or newer.
@@ -231,14 +227,14 @@ or newer.
 In Claude Code:
 
 ```text
-/plugin marketplace add kreek/terse
+/plugin marketplace add dawson-design/terse
 /plugin install terse@terse
 ```
 
 In Codex:
 
 ```sh
-codex plugin marketplace add kreek/terse
+codex plugin marketplace add dawson-design/terse
 codex plugin add terse@terse
 ```
 
@@ -287,8 +283,7 @@ authoring rules and pack-versioning policy live in
 
 ## License
 
-MIT: see [`LICENSE`](LICENSE). Third-party/adapted extension notices are listed
-in [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
+MIT: see [`LICENSE`](LICENSE).
 
 ## Uninstall
 

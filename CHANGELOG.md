@@ -6,6 +6,37 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [16.0.0] (2026-10-09)
+
+### Removed
+
+- The Pi runtime package (`consult/`): the proof runtime, the independent
+  review runner, the self-review guard, the Consult header, and the Codex
+  fast-mode extension. `pi install git:github.com/kreek/consult` no longer
+  installs anything. Pi still reads the plain skills from `~/.agents/skills/`:
+  run `pi remove git:github.com/kreek/consult`, then use the manual install
+  (`./setup.sh`). To keep the runtime instead, pin the last commit that
+  shipped it, using the same URL so Pi moves the existing package:
+  `pi install git:github.com/kreek/consult@da74fc120323b5e758e27445398673990bda4983`.
+- The Pi tooling that served the package: `make pi-install-local`,
+  `make publish-pi`, the repo-local `/yeet` command, the `consult/skills`
+  mirror, the Pi CI step, and `THIRD_PARTY_NOTICES.md`, which covered only
+  the adapted Pi extensions.
+
+### Changed
+
+- `proof` no longer mentions the Pi `/proof` command, `scaffolding` no longer
+  mentions `/consult:scaffold`, and `code-review` no longer lists Pi among
+  hosts with a fresh-context review mechanism.
+- `AGENTS.md` describes a single host posture: a person is present to answer
+  in every session, and Consult ships no runtime enforcement.
+- Consult moved from the `kreek` GitHub account to the `dawson-design`
+  organization. Install commands, manifest homepage and repository URLs,
+  `scripts/update-installed-plugins.sh`, and the Terse links now use
+  `dawson-design`. GitHub redirects the old `kreek/consult` URLs.
+- The plugin manifests and marketplaces name Dawson Design Ltd. as owner and
+  author, matching the root `LICENSE`.
+
 ## [15.3.0] (2026-10-02)
 
 ### Added
@@ -265,7 +296,7 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - `technical-writing` skill, including its `requirements-and-acceptance.md`,
   `system-analysis.md`, and `style-check.mjs` references. Prose and writing
-  guidance now lives in [Terse](https://github.com/kreek/terse), a standalone
+  guidance now lives in [Terse](https://github.com/dawson-design/terse), a standalone
   companion plugin. `workflow` no longer routes forward-looking documents to
   a bundled writing skill, and `documentation` and `specify` drop their
   `technical-writing` handoffs; `documentation` keeps the core voice rules

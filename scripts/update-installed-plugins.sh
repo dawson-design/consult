@@ -124,22 +124,16 @@ This script does not copy skills or plugin files into cache directories.
 EOF
 
 echo ""
-run_best_effort_if_available "Claude Code marketplace" claude claude plugin marketplace add kreek/consult
+run_best_effort_if_available "Claude Code marketplace" claude claude plugin marketplace add dawson-design/consult
 run_if_available "Claude Code marketplace" claude claude plugin marketplace update consult
 run_best_effort_if_available "Claude Code plugin" claude claude plugin install consult@consult
 run_if_available "Claude Code plugin" claude claude plugin update consult@consult
 echo "Claude Code: restart Claude Code if prompted so the updated plugin is loaded."
 
 echo ""
-run_best_effort_if_available "Codex marketplace" codex codex plugin marketplace add kreek/consult
+run_best_effort_if_available "Codex marketplace" codex codex plugin marketplace add dawson-design/consult
 run_if_available "Codex" codex codex plugin marketplace upgrade consult
 run_if_available "Codex" codex codex plugin add consult@consult
-
-echo ""
-echo "Pi: no official remote-install path is wired up (the published 'consult' npm"
-echo "    name belongs to an unrelated package, and the repo root is not a Pi"
-echo "    package). Install the local Pi package with 'make pi-install-local',"
-echo "    then run /reload inside Pi."
 
 echo ""
 run_if_available "Google Antigravity" agy agy plugin install "$REPO_ROOT/plugin"

@@ -66,7 +66,7 @@ function syncEach(src, dest, root) {
 
 // Every committed copy of the canonical skills. Each is regenerated from
 // agents/.agents/skills so no mirror can silently drift.
-export const MIRROR_DESTS = ["plugin/skills", "consult/skills"];
+export const MIRROR_DESTS = ["plugin/skills"];
 
 export function syncPluginSymlinks(repoRoot = repoRootFromScript()) {
   const root = resolve(repoRoot);
@@ -94,8 +94,7 @@ export function main(argv = process.argv.slice(2)) {
   if (argv.includes("-h") || argv.includes("--help")) {
     console.log(`Usage: node scripts/generate-plugin-symlinks.mjs [repo_root]
 
-Sync every skill mirror (plugin/skills, consult/skills) from
-agents/.agents/skills.`);
+Sync every skill mirror (plugin/skills) from agents/.agents/skills.`);
     return 0;
   }
   const repoRoot = argv[0] ?? repoRootFromScript();
