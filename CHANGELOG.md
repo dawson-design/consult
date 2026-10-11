@@ -37,6 +37,9 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   rest as assumptions, so they are not settled silently in code. A new
   tripwire catches "the request didn't say, so any choice is fine".
   `refactoring` routes ports and rewrites to `specify` first.
+- `workflow` Rule 2 adds the hard-to-reverse choices the user left to the
+  agent to what it reports, so they are visible instead of buried in the
+  diff. Step 6 now points at Rule 2 instead of restating it.
 
 ### Fixed
 

@@ -25,9 +25,9 @@ description: Load before reading code for any feature, bug fix, refactor, test, 
 
 1. **Keep unrelated parts separate.** Make state and effects explicit. Keep the
    number of things a maintainer must understand together small.
-2. **Explain the change to the user.** Show what changed, why, and what
-   evidence supports it. If you cannot explain those points, clarify the work
-   before proceeding.
+2. **Explain the change to the user.** Show what changed, why, what
+   evidence supports it, and which hard-to-reverse choices the user left
+   to you. If you cannot explain these, clarify the work before proceeding.
 3. **Consult sets the engineering bar, and the host owns the mechanics.** When
    they conflict, Consult's bar wins, and the host decides how to meet it.
 4. **Build only what the user asked for.** Build the main behavior first unless
@@ -124,8 +124,8 @@ description: Load before reading code for any feature, bug fix, refactor, test, 
    diff. Fix findings and repeat until proof passes and the review is clean.
    Label a same-context review as a fallback. Finish documentation and release
    work afterward.
-6. Report what needs the user's attention first, then what changed, why it
-   is better, what proves it, and what remains unproven.
+6. Report what needs the user's attention first, then the Rule 2
+   explanation and what remains unproven.
 
 ## Tripwires
 
