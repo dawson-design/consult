@@ -28,6 +28,16 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   and dark SVGs for the README, with the suite lift and any caveats lift.py
   reported in the footer.
 
+### Changed
+
+- `specify` Rule 9 has the agent list the decisions a request leaves open
+  (compatibility, load shape, latency or throughput priority, resource
+  limits, durability and acceptable loss, overload behavior) before
+  building. It asks about the ones that are hard to reverse and states the
+  rest as assumptions, so they are not settled silently in code. A new
+  tripwire catches "the request didn't say, so any choice is fine".
+  `refactoring` routes ports and rewrites to `specify` first.
+
 ### Fixed
 
 - Reference files lost stale pointers and broken bytes: `code-review/sql.md`

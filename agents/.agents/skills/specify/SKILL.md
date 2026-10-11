@@ -56,6 +56,11 @@ description: A new service or feature from a brief, or a design choice with open
 8. Capture only what will be used, in the smallest useful form, in
    checked-in `docs/` when the team should keep it. Record what the user
    approved, not what was proposed.
+9. Before building, list which of these the request leaves open:
+   compatibility, load shape, latency or throughput priority, resource
+   limits, durability and acceptable loss, and overload behavior. A port or
+   rewrite leaves all of them open. Ask about hard-to-reverse ones under
+   Rule 5; state the rest as assumptions.
 
 ## Workflow
 
@@ -79,6 +84,7 @@ description: A new service or feature from a brief, or a design choice with open
 | "Ask about everything at once" | One recommended decision with notes. | None. |
 | "The human should come up with the design" | Propose concrete options; the human approves, revises, or rules out. | None. |
 | "Run the design gate alongside the host's plan mode" | Converge inside the host's planning surface. | The host has no plan or approval mode. |
+| "The request didn't say, so any choice is fine" | Ask, or state the assumption. | The choice is internal and cheap to reverse. |
 
 ## Handoffs
 

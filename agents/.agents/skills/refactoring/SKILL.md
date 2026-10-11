@@ -20,6 +20,8 @@ description: Restructuring or untangling code without changing behavior, or befo
 - Behavior-first feature work; use `proof`.
 - Commit grouping or history surgery after changes exist; use `commit` or
   `git-workflow`.
+- Ports or rewrites to a new language, runtime, or framework; use `specify`
+  first for the decisions they leave open.
 
 ## Rules
 
