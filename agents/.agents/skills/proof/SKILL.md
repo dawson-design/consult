@@ -34,16 +34,21 @@ wrong.
 1. Every non-trivial claim owes a check. If you cannot point to one, mark the
    claim `unproven` and say which evidence is missing. Silence is not proof.
 2. Match the proof to the claim: a behavior change needs a runnable check at
-   the boundary, a new endpoint a contract test, a bug fix a regression test
-   that fails before and passes after, a refactor the same behavior before
-   and after, a data claim an invariant.
-3. Test at boundaries, in the caller's words: where the data's shape, value,
-   state, or error visibly changes, and always at the outermost boundary the
-   caller sees (endpoint, CLI, UI, public API). Boundary tests survive
-   refactors; unit-test only non-trivial pure logic.
-4. One behavior per test. Real collaborators inside; mock only true system
-   edges (network, clock, filesystem) or write the reason. Never test the
-   framework, the language, or static text.
+   the boundary, a new endpoint a contract test, a refactor the same behavior
+   before and after, a data claim an invariant, and a bug fix a regression
+   test that fails before, passes after, and stays as a guard.
+3. Prefer black-box tests: feed fixed inputs through the outermost boundary
+   the caller uses (endpoint, CLI, UI, public API) and assert the whole
+   output, never the internals. Take expected outputs from the request,
+   issue, or spec, not from reading the code, because a test written from the
+   code asserts what the code does, bugs included. Integration tests cover
+   the code's real dependencies, such as the database and queue. Unit-test an
+   internal function only to guard a fixed bug that no boundary test
+   reproduces.
+4. One behavior per test, with real collaborators inside. Pin the clock,
+   randomness, and ID generation so the same input gives the same output.
+   Mock only true system edges (network, filesystem) or write the reason.
+   Never test the framework, the language, or static text.
 5. A flaky test is a bug in the test, the code, or the environment. Fix it.
    No sleeps, no retries.
 6. Red before green when the failing test is itself the evidence: a
@@ -52,19 +57,25 @@ wrong.
    as deliberately as the green.
 7. Prove artifacts the way the system uses them: run, load, parse, render, or
    inspect config, wiring, generated output, and documents. Never assert
-   literal text.
+   literal text in config or docs.
 8. For a removal, prove the behavior that remains and confirm the old code is
    gone with a search. Test the removal itself only when it now returns an
    explicit rejection (404, 410, deprecation error): that is new behavior.
-9. Narrowest check first: one test by name or line, then the file. Once a
-   failing test is known, iterate on that failure until it is green. Run the
-   whole package or suite after major changes, before completion or commit,
-   or when targeted green evidence suggests wider breakage. An unrelated broad
-   failure is reported separately, not treated as blocking.
+9. Narrowest check first: one test by name or line, then the file. Iterate on
+   a known failing test until it is green. Run the whole package or suite
+   after major changes, before completion or commit, or when targeted green
+   evidence suggests wider breakage. An unrelated broad failure is reported
+   separately, not treated as blocking.
 10. "Done" is a claim. Before saying it: re-read the latest request and any
     corrections, look at every named file as it stands after your last edit,
     run the chosen check fresh, and report proven, partly proven, blocked, or
     unproven. Smoke and helper-only checks are partial, not acceptance.
+11. Existing tests are the oracle. Before editing, run the ones that cover the
+    code you will change. Never edit, skip, weaken, or delete a test, golden
+    file, or snapshot to make a change pass. A failing existing test means a
+    bug in the change, a behavior change the user approves, or a test of
+    internals to replace with a black-box test of the same behavior and
+    report.
 
 ### Proof Contract
 
@@ -85,8 +96,8 @@ here expecting them.
 | Trigger | Do this instead | False alarm |
 |---|---|---|
 | "The suite is green, so the change is proven" | Run the check that would fail if this change were wrong; a green check that never touches the change is partial. | The green check enters at the changed boundary. |
-| "Run the whole suite for this one-line edit" | Run the relevant test or file first; widen after major changes, before commit, or when wider breakage is plausible. | The change is cross-cutting and no narrower check exists. |
-| "Add a unit test for every helper" | Test the contract at the boundary. | The helper has branching or state a boundary test cannot drive. |
+| "Add a unit test for every helper" | Test the contract black-box at the boundary. | It guards a fixed bug that no boundary test reproduces. |
+| "Update the test or snapshot so it passes" | Find out whether the change broke behavior. Change the test only for a behavior change the user approved. | The user approved the behavior change the test contradicts. |
 | "The types already prove it" | Check the invariant or behavior the types do not cover. | The claim is exactly what the type checker enforces. |
 | "There's no way to test this, so skip proof" | Record the manual check: command, output, and the claim it proves. | An existing check already loads or runs the artifact. |
 | "The test mentions the changed code, so it counts" | Rewrite or delete tests that assert how the code is built instead of what it does. | The asserted structure is itself a public contract. |
@@ -104,6 +115,9 @@ here expecting them.
 
 ## References
 
+- `references/black-box.md`: load when choosing test inputs or outputs, or
+  writing a black-box or integration test, a golden file, or a bug's
+  regression guard.
 - `references/data-shape-boundaries.md`: load when placing checks in
   pipelines, parsers, validators, middleware, or functional-core splits.
 - `references/recipes.md`: load when the proof shape is domain-specific.

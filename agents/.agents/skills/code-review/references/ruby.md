@@ -310,7 +310,7 @@ Decision matrix for where logic lives:
   calls `create` for associations: the trap that catches new users.
   CI Rake task running `FactoryBot.lint` catches factory rot.
 - 300+ system tests is a smell: pull variations down to
-  request/model specs and keep ~15-30 happy-path smoke tests at
+  request specs and keep ~15-30 happy-path smoke tests at
   system level. Cuprite (Ferrum/CDP) or
   capybara-playwright-driver (`:playwright`) over Selenium:
   faster and dramatically less flaky. Both expose race conditions
@@ -400,7 +400,7 @@ into RBS 4.0. Inline `#:` annotations work in both ecosystems.
 - `before(:all) { create(...) }` in specs.
 - `expect_any_instance_of(...)`.
 - `sleep` in system specs.
-- 300+ system tests (test-pyramid violation).
+- 300+ system tests (push variations to request specs).
 
 ## Sources
 

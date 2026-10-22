@@ -6,7 +6,7 @@ current public contract.
 
 | Trap | Do this instead | Exception |
 |---|---|---|
-| Unit test for every function in a transformation chain. | Keep boundary tests above and below the chain. Test an internal stage only when boundary assertions cannot drive its non-trivial branching or state. | The internal stage has multiple branches or accumulates state that boundary tests cannot drive. |
+| Unit test for every function in a transformation chain. | Keep black-box tests above and below the chain, with more input cases there when a stage has many branches. | The test guards a fixed bug in that stage that boundary assertions cannot reproduce. |
 | Error test only asserts that an error happens. | Assert the message, code, and structured fields the consumer observes at the outermost boundary. | The error path is purely internal and no consumer observes it. |
 | Test needs many mocks and deep setup. | Simplify the boundary: extract pure transforms and push effects to the edge before adding more mocks. | The test crosses a true system boundary such as clock, network, process, filesystem, or expensive infrastructure. |
 | Parameterized across every imagined input. | Cover behaviors named by the requirement and real boundary cases: security, data loss, parsing edges that exist in production data. | The function is a parser, validator, or security gate where input-space coverage is the contract. |

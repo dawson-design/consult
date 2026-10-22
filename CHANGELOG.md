@@ -28,6 +28,41 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   and dark SVGs for the README, with the suite lift and any caveats lift.py
   reported in the footer.
 
+### Changed
+
+- `proof` prefers black-box tests: fixed input through the outermost boundary
+  the caller uses, with the whole output asserted and no knowledge of
+  internals. Expected outputs come from the request, issue, or spec, never
+  from reading the code, because tests written from the code assert its bugs
+  too. Integration tests still cover real dependencies. A new unit test of an
+  internal function is only the guard for a fixed bug that no boundary test
+  reproduces, and every bug's regression test stays as a guard.
+- New `proof` Rule 11: existing tests are the oracle. Agents run the tests
+  that cover the code before editing it, and never edit, skip, weaken, or
+  delete a test, golden file, or snapshot to make a change pass. A failing
+  test means a bug in the change, a behavior change the user approves, or a
+  test of internals to replace with a black-box test of the same behavior.
+  Rule 4 pins the clock, randomness, and ID generation so the same input
+  gives the same output. Rule 7's literal-text ban now covers only config and
+  docs, so golden-file tests are allowed.
+- The new `proof/references/black-box.md` frames acceptance tests as proof in
+  the scientific method's terms. It covers choosing cases and expected
+  outputs from the spec with the standard test design techniques, keeping
+  tests and test-repair tools from weakening the oracle, repeatable output
+  with model calls faked and live-model checks run as evals, mutation
+  testing, property, metamorphic, and differential checks, golden files, and
+  bug guards. An agent's run through a live app counts as exploration until a
+  scripted test repeats it. The reference cites the recent research, test
+  design sources, and practitioner writing behind the change, including
+  where practitioners disagree about TDD. In `data-shape-boundaries.md` the
+  outermost boundary carries the test cases and the seams only choose them,
+  so an internal stage gets its own test only as a public surface or a bug
+  guard, never for complexity alone. The Ruby review reference pushes
+  system-test variations down to request specs, not model specs.
+- `proof`'s word budget rises from 950 to 1,050, and its tripwire about
+  running the whole suite for a one-line edit is gone because Rule 9 already
+  says it.
+
 ### Fixed
 
 - Reference files lost stale pointers and broken bytes: `code-review/sql.md`

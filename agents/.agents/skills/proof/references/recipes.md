@@ -5,8 +5,8 @@ evidence, and completion statement aligned; do not run every recipe by default.
 
 | Claim type | Good evidence | Insufficient evidence |
 |---|---|---|
-| Behavior change | Behavior test or executable scenario at the public boundary, plus the command run after the final edit. | Helper-only assertion, stale test output, or a passing unrelated suite. |
-| Bug fix/root cause | Reproduced failure or described root cause, regression check that fails before and passes after, and final command output. | Guessing at a cause, patching symptoms, or relying on manual inspection alone when a check is practical. |
+| Behavior change | Black-box test at the public boundary: fixed input, the whole output asserted, plus the command run after the final edit. | Helper-only assertion, stale test output, or a passing unrelated suite. |
+| Bug fix/root cause | Reproduced failure or described root cause. A regression check at the outermost boundary that reproduces the bug. It fails before, passes after, and stays as a guard. Final command output. | Guessing at a cause, patching symptoms, or relying on manual inspection alone when a check is practical. |
 | Refactor preservation | Before/after behavior check at the same boundary, or focused characterization tests around the moved behavior. | "No behavior change" stated without evidence, or tests that only cover new helper internals. |
 | Security/trust boundary | Negative abuse case, allowed-case check, and inspection of the input boundary, sink, logging, and auth/authz decision. | Lint/type checks, happy-path auth tests only, or a guard whose bypass cases were not exercised. |
 | Database/migration | Migration apply/rollback or dry-run evidence, relevant query plan or constraint validation, and production rollout/rollback note when data is live. | SQL syntax inspection only, local tests without migration execution, or an index/constraint claim without database acceptance evidence. |

@@ -1,52 +1,60 @@
 # Data-shape boundaries: worked examples
 
-This reference expands `proof` Rule 3, test at boundaries. The shared rule across all
-examples: **a boundary worth testing is a point where data shape or values
-change observably**. These shape-change points are component handoffs: the
-seams where production defects concentrate, and the primary proof target.
+This reference expands `proof` Rule 3, prefer black-box tests at boundaries.
+The shared rule across all examples: **a boundary worth testing is a point
+where data shape or values change observably**. These shape-change points
+are component handoffs: the seams where production defects concentrate.
 "Boundary" and "handoff" are used interchangeably here. HTTP, CLI, UI, and
 module facades are special cases of this: the shape change is "internal
 value -> external representation". Pipeline seams, parser edges, validator
 outputs, middleware boundaries, and sans-IO byte surfaces are the same kind
 of thing.
 
+Rule 3 puts the tests at the outermost boundary the caller uses. The seams
+inside show which cases those tests must cover: one case for each way the
+data can change shape at each seam. A seam gets tests of its own only when it
+is itself a public surface, or to guard a fixed bug.
+
 Test placement is also a code-organization signal. If a clean seam test is
 hard to write, the seam is wrong: simplify the code before piling on mocks.
 
 For each pattern below: the seam set, what to assert at the success
 envelope, what to assert at the error envelope, where the user-facing error
-*content* lives, when an internal-stage test is genuinely warranted, and the
-anti-pattern that signals over-testing or tangle.
+*content* lives, when to test an internal stage on its own, and the
+anti-pattern that signals over-testing or tangle. Under Rule 3, a test of
+an internal stage on its own guards a fixed bug that the outer tests cannot
+reproduce. A stage that is a public surface gets a black-box test at that
+surface instead.
 
 ## Pattern 1: ETL pipeline (extract, transform, load)
 
 **Seams:** extract output -> transform input; transform output -> load
 input; load output -> destination state.
 
-**Success-shape assertions:** at extract output, assert row count and schema
-match the source contract. At transform output, assert the per-record shape
-(field names, types, key invariants) and representative values produced from
-known inputs. At load output, assert the destination row count and content
-match the transformed shape.
+**Success-shape assertions:** run the pipeline from a fixed source and
+assert the destination state: row count, per-record shape (field names,
+types, key invariants), and the values produced from known inputs. Pick
+source rows that exercise each seam: the extract contract, each transform
+branch, and each load constraint.
 
-**Error-shape assertions:** at extract, assert the error envelope when the
-source is unreachable, malformed, or empty. At transform, assert the error
-envelope for unmappable records (e.g. dropped to a dead-letter shape, or
-surfaced as a typed `TransformError`). At load, assert the error envelope for
-constraint violations, partial writes, and rollback semantics.
+**Error-shape assertions:** from a source that is unreachable, malformed, or
+empty, assert what the runner reports. Feed records the transform cannot map
+and assert where they land, such as a dead-letter destination or a typed
+`TransformError` in the run report. Load rows that violate a constraint and
+assert the partial-write and rollback behavior in the destination.
 
 **User-facing error content:** if the pipeline is exposed via a runner that
 reports to a human or upstream system, assert the failure summary that
 runner produces (exit code, structured error log, dead-letter destination),
 not just that an exception was raised somewhere internal.
 
-**Internal-stage test warranted when:** a transform stage has non-trivial
-branching (multiple output shapes per input) or accumulates state (windowed
-aggregations, dedup, joins). Then test that stage in isolation against its
-contract, separately from the seam tests.
+**Test an internal stage on its own when:** a fixed bug lives in that stage
+and no pipeline run reproduces it. A stage with many branches or accumulated
+state (windowed aggregations, dedup, joins) gets more source cases through
+the pipeline run, not tests of its own.
 
-**Anti-pattern:** one unit test per pure mapping function. The seam tests
-above and below already exercise these.
+**Anti-pattern:** one unit test per pure mapping function. The pipeline runs
+already exercise these.
 
 ## Pattern 2: Parser (raw -> AST)
 
@@ -66,10 +74,10 @@ Cover at least: unexpected token, unterminated construct, ambiguous input
 A parser whose error messages are unhelpful is parser whose error contract is
 unproven.
 
-**Internal-stage test warranted when:** the parser composes sub-parsers that
-are independently reusable (e.g. an expression parser used by both a script
-mode and a REPL mode), or when one rule has subtle backtracking behavior the
-top-level tests cannot drive deterministically.
+**Test an internal stage on its own when:** a sub-parser is a public surface
+of its own, such as an expression parser the library exports. Test it
+black-box at that surface. Otherwise, test one rule on its own only
+to guard a fixed bug that no top-level input reproduces.
 
 **Anti-pattern:** unit tests per parser combinator function. They duplicate
 the seam coverage and break on internal refactors that preserve the public
@@ -95,10 +103,10 @@ test from `"Email format is invalid"`, and both are different from
 `"Validation failed"`. The point of validation is that the user can fix the
 input; that's a value claim at the seam.
 
-**Internal-stage test warranted when:** a non-trivial coercion or
-cross-field rule has many branches that the public-shape tests cannot
-all express compactly. Property-based testing over invariants often beats
-hand-rolled per-rule tests in this case.
+**Test an internal stage on its own when:** a fixed bug lives in one coercion
+or cross-field rule and the public-shape tests cannot reproduce it. For a
+rule with many branches, write property-based tests over invariants at the
+validator output instead of per-rule tests.
 
 **Anti-pattern:** one unit test per field validator predicate. The validator
 output already proves them.
@@ -108,10 +116,10 @@ output already proves them.
 **Seams:** request -> middleware-1 output -> middleware-2 output -> ... ->
 handler input -> handler output -> response.
 
-**Success-shape assertions:** at each shape change. If middleware enriches
-the request (auth context, parsed body, correlation ID), assert the enriched
-shape at the boundary it emerges from. The handler's input is itself a
-seam: assert what the handler sees, not what was sent over the wire.
+**Success-shape assertions:** at the response. If middleware enriches the
+request (auth context, parsed body, correlation ID), assert the effect the
+client sees, such as the response body or headers, or a captured log line.
+Do not assert the handler's input, which is internal to the chain.
 
 **Error-shape assertions:** at each seam where the chain can short-circuit
 (auth failure, rate limit, body too large, validation failure). Assert the
@@ -122,9 +130,10 @@ is a different proof than a 401 with body
 `{"code": "TOKEN_EXPIRED", "message": "Sign in again to continue"}`. The
 consumer-actionable form is the value claim.
 
-**Internal-stage test warranted when:** a middleware has non-trivial logic
-in isolation (e.g. token refresh with a clock dependency) and the chain
-tests cannot drive its edge cases compactly.
+**Test an internal stage on its own when:** a fixed bug lives in one
+middleware (e.g. token refresh around an expiry time) and the chain tests
+cannot reproduce it. Pin the clock at the system edge first. That lets the
+chain test reach most such cases.
 
 **Anti-pattern:** one assertion per middleware execution, in order, on every
 chain test. Test once per shape change, not once per call.
@@ -148,10 +157,10 @@ calling application (e.g. an HTTP-style error frame), assert the frame's
 structured fields. For protocols where errors close the connection, assert
 the closing frame and reason code.
 
-**Internal-stage test warranted when:** sub-state machines compose (e.g. a
-TLS handshake state machine inside a higher protocol). Test the inner state
-machine at its own public surface (bytes-in / bytes-out), not at the call
-graph level.
+**Test an internal stage on its own when:** an inner state machine is a
+public library of its own (e.g. a TLS handshake library inside a higher
+protocol). Test it black-box at its own public surface (bytes-in /
+bytes-out), not at the call graph level.
 
 **Anti-pattern:** mocking sockets and asserting `socket.send()` was called
 with specific bytes. The mock is the test; the test proves nothing about
@@ -163,28 +172,27 @@ the protocol's actual behavior.
 (values); core output (values, including `Result.Err`) -> shell action
 (write, send, render).
 
-**Success-shape assertions:** in the core, push representative values in,
-assert the value out. Many tests, fast, no mocks. At the shell, one or two
-integration tests per externally-observable behavior (HTTP endpoint
-returns expected response; CLI command writes expected file).
+**Success-shape assertions:** feed the table of representative cases
+through the shell, such as an in-process HTTP request or a CLI call, and
+assert the output. A thin shell keeps these tests fast: call it in process
+and pin the clock and other system edges.
 
-**Error-shape assertions:** in the core, push values that should produce
-`Result.Err`, assert the error variant and its content. At the shell, assert
-that a core `Result.Err` becomes the right user-facing error: HTTP status,
-CLI exit code, error message.
+**Error-shape assertions:** feed the shell inputs that should produce a core
+`Result.Err`, and assert the user-facing error: HTTP status, CLI exit code,
+error message.
 
 **User-facing error content:** the shell is where the message reaches the
-user. Assert the translated form there. The core's job is to name the error
-case; the shell's job is to render it; both seams need their own assertions.
+user. Assert the translated form there. The core names the error case and
+the shell renders it, so one assertion at the shell proves both.
 
-**Internal-stage test warranted when:** a core function has algorithmic
-complexity worth testing as a unit (sorting, pathfinding, dedup); even
-then, prefer testing it through the public function that uses it, unless
-that function obscures the cases.
+**Test an internal stage on its own when:** the core is a published API that
+code outside the project calls, or a fixed bug lives in one core function
+and no shell input reproduces it. Algorithmic code (sorting, pathfinding,
+dedup) gets its table of cases through the shell.
 
-**Anti-pattern:** integration tests for everything. The core is fast and
-deterministic; not exploiting that is leaving coverage on the table while
-slowing CI.
+**Anti-pattern:** one test per core function with a single shell smoke test.
+The core tests pin internal signatures that the next rewrite changes, and the
+smoke test leaves most behavior unproven at the boundary callers use.
 
 ## Cross-reference: error contracts
 
