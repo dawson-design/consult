@@ -6,6 +6,8 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [17.0.0] (2026-10-22)
+
 ### Added
 
 - The eval's `lift.py` report has a cost and effort table: each arm's mean
