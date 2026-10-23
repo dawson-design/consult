@@ -54,12 +54,15 @@ against it.
    what kind.
 9. Each non-trivial invariant or transition gets a Proof Contract (claim,
    data invariant, boundary, check, evidence) via `proof`.
-10. A core model, shared invariant, or state machine future work will bind to
-    is listed for approval before implementation; `contract-first` owns the
-    approval scope. Disposable or purely local shapes are not gated.
+10. Get approval before implementing a core model, shared invariant, state
+    machine, or glossary term future work will bind to; `contract-first` owns
+    the approval scope. Disposable or local shapes are not gated.
 11. Load `references/dates.md` whenever the diff stores, compares, formats,
     serializes, or computes on dates or times, and `references/money.md`
     whenever it does so on monetary amounts.
+12. Name domain concepts with the project glossary's terms, else the issue's
+    or spec's words. Use one term per concept in each bounded context. Record
+    approved terms in the glossary, asking to start one if none exists.
 
 ## Tripwires
 

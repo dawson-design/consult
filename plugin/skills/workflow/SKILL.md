@@ -55,7 +55,7 @@ description: Load before reading code for any feature, bug fix, refactor, test, 
    | --- | --- |
    | `specify` | the design direction |
    | `contract-first` | a caller-facing interface |
-   | `domain-modeling` | a core data shape or invariant future work binds to |
+   | `domain-modeling` | a core data shape, invariant, or glossary term future work binds to |
    | `database` | a migration or destructive data change |
    | `release` | a release artifact |
    | `git-workflow` | history-changing or destructive operations |

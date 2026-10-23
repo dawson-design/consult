@@ -6,6 +6,16 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- New `domain-modeling` Rule 12: agents name domain concepts with the project
+  glossary's terms, or with the issue's or spec's words when the glossary has
+  none, using one term per concept in each bounded context. Approved terms go
+  in the glossary, and the agent asks before starting one. Agents find code by
+  searching for names, so code named with the words in the issue and spec is
+  code they find. Rule 10 and the `workflow` sign-off table add glossary terms
+  future work will bind to.
+
 ## [17.0.0] (2026-10-22)
 
 ### Added
