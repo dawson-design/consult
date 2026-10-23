@@ -6,6 +6,8 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [18.0.0] (2026-10-23)
+
 ### Changed
 
 - New `domain-modeling` Rule 12: agents name domain concepts with the project
