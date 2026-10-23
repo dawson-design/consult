@@ -39,7 +39,8 @@ description: Before adding or changing a field, shape, signature, CLI flag, even
 3. Approval covers the named shape only. Compatibility (renames, removals,
    aliases, shims, deprecation paths) needs its own explicit decision.
 4. An approving design or RFC approves the direction, not the concrete shapes.
-   The list of proposed surfaces with evidence is the approval.
+   The list of proposed surfaces with evidence is the approval. Under
+   `workflow` Rule 10, it approves only shapes whose earlier stages exist.
 5. Silence is not approval. Wait for an explicit approve, revise, or reject.
    When no human can answer in this run (headless, scheduled, or delegated
    sessions), do not deadlock: build the most conservative version, mark the
@@ -65,7 +66,7 @@ description: Before adding or changing a field, shape, signature, CLI flag, even
 
 | Trigger | Do this instead | False alarm |
 |---|---|---|
-| "The design doc already covers this interface" | List each concrete surface with evidence and get one approve/revise/reject. | The exact signature, schema, or surface was itself listed and approved. |
+| "The design doc already covers this interface" | List each concrete surface with evidence and get one approve/revise/reject. | The exact signature, schema, or surface was itself listed and approved once its earlier `workflow` Rule 10 stages existed. |
 | "I'll implement it first and show the interface after" | Stop before implementation lands; propose the concrete shape and wait for the decision. | The surface is purely internal with no caller-facing or shared boundary. |
 | "No objection means it's approved" | Wait for an explicit approve, revise, or reject. | No human can answer in this run; the shape was built conservatively, marked provisional, and flagged. |
 | "The rename is implied by the approved shape" | Compatibility needs its own explicit decision. | The approval already named that compatibility path. |

@@ -50,7 +50,9 @@ description: A new service or feature from a brief, or a design choice with open
    as notes. Open questions that block the design are asked now, not left for
    code review.
 6. When a design artifact lists interfaces or domain shapes, mark each one
-   approved or proposed.
+   approved or proposed. Record a shape whose earlier `workflow` Rule 10
+   stages do not exist yet as pending its stage gate, even when the user
+   agreed to it.
 7. Spikes are disposable: ask first, keep them local and small, discard or
    rewrite after convergence.
 8. Capture only what will be used, in the smallest useful form, in
@@ -75,7 +77,7 @@ description: A new service or feature from a brief, or a design choice with open
 |---|---|---|
 | "I already know what the design should be" | Read and cite the current surface first. | Greenfield work with the adjacent convention named. |
 | "I'll build it to discover the shape" | Ask first; keep spikes local, small, and disposable. | The user approved a disposable spike. |
-| "The design file exists, so the contract is approved" | Get the explicit decision on each concrete surface. | The user explicitly approved those surfaces in the artifact. |
+| "The design file exists, so the contract is approved" | Get the explicit decision on each concrete surface. | The user explicitly approved those surfaces in the artifact once their earlier `workflow` Rule 10 stages existed. |
 | "Ask about everything at once" | One recommended decision with notes. | None. |
 | "The human should come up with the design" | Propose concrete options; the human approves, revises, or rules out. | None. |
 | "Run the design gate alongside the host's plan mode" | Converge inside the host's planning surface. | The host has no plan or approval mode. |

@@ -15,6 +15,21 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   searching for names, so code named with the words in the issue and spec is
   code they find. Rule 10 and the `workflow` sign-off table add glossary terms
   future work will bind to.
+- New `workflow` Rule 10: agents build in stages (data, then contracts with
+  the shell that parses input and renders output, then pure transformations)
+  and prove each stage before building the next. Before a stage that holds a
+  shape needing sign-off, the agent shows the earlier stages with their
+  evidence and gets sign-off on that stage's shapes. Sign-off given before
+  the earlier stages exist no longer counts, even when a plan, design, or
+  `contract-first` review named the exact shape. `workflow` Rules 7 and 9,
+  `contract-first` Rule 4, `specify` Rule 6, and one tripwire in each of
+  those two skills now keep later stages' shapes proposed until their gate.
+  Workflow steps 4 and 5 run once per stage, each review scoped to its
+  stage, and a stage goes to a subagent only after its gate clears. A new
+  `workflow/references/stages.md` sets each stage's proof and covers
+  behavior slices, removals, and renames. The long-runs reference now stops
+  at every stage gate. The `workflow` body budget rises from 1,135 to 1,356
+  words.
 
 ## [17.0.0] (2026-10-22)
 

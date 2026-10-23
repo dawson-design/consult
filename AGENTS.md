@@ -185,11 +185,12 @@ Every `SKILL.md` must have:
 - Required sections: `## When to Use`, `## When NOT to Use`, `## Rules`.
 - Body budget: 700 words after frontmatter. Raised for three skills, each
   with a reason recorded next to the constant: 950 for `code-review`, 1,050
-  for `proof`, and 1,135 for `workflow`, which carry the routing and sign-off
+  for `proof`, and 1,356 for `workflow`, which carry the routing and sign-off
   tables plus the host-harness, fresh-context-review, plan-handoff,
-  black-box testing, and test-oracle policy. Table pipes and separator rows
-  do not count. The budget is the regression guard for the knowledge-vs-policy
-  rule below. Raise a single skill's budget only with a stated reason.
+  build-stage, black-box testing, and test-oracle policy. Table pipes and
+  separator rows do not count. The budget is the regression guard for the
+  knowledge-vs-policy rule below. Raise a single skill's budget only with a
+  stated reason.
 - Optional section: `## Tripwires` when a skill has known agent failure modes.
   Table format only, at most 8 rows, with this header:
   `| Trigger | Do this instead | False alarm |`. Use them only for
