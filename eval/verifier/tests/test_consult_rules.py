@@ -263,6 +263,17 @@ class ApiTests(WorkspaceCase):
                           claude_write("c", "openapi.yaml"), claude_write("h", "src/server.js"))
         self.assertEqual(self.check("api.1", traj), 1.0)
 
+    def test_api_1_ignores_data_files_written_before_the_contract(self):
+        """workflow Rule 10 builds the data stage before the contract."""
+        traj = trajectory(claude_write("m", "db/migrations/001_links.js"), claude_write("s", "src/schema.js"),
+                          claude_write("d", "src/models/link.js"), claude_write("o", "src/link.model.ts"),
+                          claude_write("c", "openapi.yaml"), claude_write("h", "src/server.js"))
+        self.assertEqual(self.check("api.1", traj), 1.0)
+
+    def test_api_1_counts_a_file_that_only_resembles_a_data_name(self):
+        traj = trajectory(claude_write("h", "src/remodel.js"), claude_write("c", "openapi.yaml"))
+        self.assertEqual(self.check("api.1", traj), 0.0)
+
     def test_api_1_fails_when_the_handler_is_written_first(self):
         traj = trajectory(codex_patch("h", "Update File: src/routes.js"), codex_patch("c", "Update File: openapi.yaml"))
         self.assertEqual(self.check("api.1", traj), 0.0)

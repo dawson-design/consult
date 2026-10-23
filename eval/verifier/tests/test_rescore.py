@@ -127,6 +127,20 @@ class BundleTests(RescoreTestCase):
             rescore.reconstruct(other, rescore.parse_bundle(self.bundle))
 
 
+class TestDirTests(unittest.TestCase):
+    def dirs(self, steps: tuple[str, ...]) -> list[Path]:
+        trial = rescore.Trial(job=Path("job"), dir=Path("job/t"), task="money-field-change", steps=steps, result={})
+        return rescore.test_dirs(trial)
+
+    def test_a_trial_recorded_before_its_task_gained_a_step_gets_the_shared_tests(self):
+        """Its last step is now a middle step, whose own tests are an unscored placeholder."""
+        self.assertEqual(self.dirs(("brief", "approve")), [rescore.TASKS_DIR / "money-field-change" / "tests"])
+
+    def test_a_trial_that_ended_on_the_brief_step_keeps_its_sign_off_suite(self):
+        task = rescore.TASKS_DIR / "money-field-change"
+        self.assertEqual(self.dirs(("brief",)), [task / "tests", task / "steps" / "brief" / "tests"])
+
+
 class MergeTests(unittest.TestCase):
     def test_the_recorded_reward_is_the_weighted_mean_of_its_dimensions(self):
         recorded = {"change_quality": 1.0, "judge": 0.8355, "non_interruption": 1.0, "proof": 0.15, "rules": 1.0,

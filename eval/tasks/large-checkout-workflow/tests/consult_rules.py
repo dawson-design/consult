@@ -33,6 +33,8 @@ CONTRACT_RE = re.compile(r"(^|/)openapi\.(ya?ml|json)$")
 SCRATCH_RE = re.compile(r"(^|/)(repro|scratch|tmp|debug)[^/]*$|^/")
 CODE_RE = re.compile(r"\.[cm]?[jt]sx?$")
 CONFIG_CODE_RE = re.compile(r"(^|/)[^/]*\.config\.[cm]?[jt]s$")
+# Schema, migration, and model files: workflow Rule 10's data stage, built before the contract.
+DATA_RE = re.compile(r"(^|[/._-])(migrations?|models?|schemas?)([/._-]|$)", re.IGNORECASE)
 # Plans, ADRs, specs, and design notes: what workflow Rule 9 and specify Rule 8
 # ask an agent to write. Allowed before sign-off and not "docs" for documentation.1.
 PLAN_DOC_RE = re.compile(
@@ -185,11 +187,11 @@ def workflow_7(workspace: Path, trajectory: cl.Trajectory, meta: dict) -> float:
 
 
 def api_1(workspace: Path, trajectory: cl.Trajectory, meta: dict) -> float:
-    """The contract is sketched before handler code: first contract write precedes first source write."""
+    """The contract is sketched before handler code: first contract write precedes first non-data code write."""
     contract = cl.first_seq(trajectory, lambda c: writes_matching(c, lambda p: bool(CONTRACT_RE.search(p))))
     if contract is None:
         return 0.0
-    handler = cl.first_seq(trajectory, lambda c: writes_matching(c, is_code))
+    handler = cl.first_seq(trajectory, lambda c: writes_matching(c, lambda p: is_code(p) and not DATA_RE.search(p)))
     return 1.0 if handler is None or contract < handler else 0.0
 
 

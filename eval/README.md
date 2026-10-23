@@ -212,7 +212,7 @@ Suites live in `suites/*.yaml` and list task names. Tasks live in
 tasks/<name>/
   task.toml                 name, kind, features, timeouts, judge env, [[steps]]
   instruction.md            the prompt the agent receives (single-step tasks)
-  steps/<name>/             instruction.md per turn, and solution/ (two-step tasks)
+  steps/<name>/             instruction.md per turn, and solution/ (multi-step tasks)
   environment/Dockerfile    synced; Node 22, git, python3, rewardkit
   environment/workspace/    the starting repository, committed at build time
   solution/solve.sh         oracle reference (routing: no-op)
@@ -249,15 +249,18 @@ means the agent noticed a requirement the prompt never stated.
 
 - `bug-from-symptom`: a customer report that names no file. One step.
 - `money-field-change`: multi-currency orders in a service whose `total` field
-  an iOS app reads. Two steps.
-- `service-from-brief`: a link shortener built from an empty repository. Two
+  an iOS app reads. Three steps.
+- `service-from-brief`: a link shortener built from an empty repository. Three
   steps.
 
-A two-step task lists `[[steps]]` in `task.toml`. The `brief` step sends the
+A multi-step task lists `[[steps]]` in `task.toml`. The `brief` step sends the
 product brief. The `approve` step sends a fixed reply: "Approved, including the
 interface and data shapes you proposed. Build it. Use your recommended option
-for anything still open." The agent fragments set `resume_trajectory: true`, so
-the second step continues the same session.
+for anything still open." `workflow` Rule 10 discards sign-off given before the
+data stage exists, so the agent stops again at the contracts gate. The
+`continue` step answers it: "Approved. Continue." An agent that built
+everything in the `approve` step gets the same reply. The agent fragments set
+`resume_trajectory: true`, so each step continues the same session.
 
 A rule task adds these keys to `tests/consult.json`:
 
@@ -301,7 +304,7 @@ its false passes and false fails. Tasks
 that score no rules get `rules = 0.0` in their `reward.toml`, so a calibrated
 weight reaches only the tasks that list rules.
 
-In a two-step task the `brief` step runs its own verifier, the `signoff`
+In a multi-step task the `brief` step runs its own verifier, the `signoff`
 suite, which scores the task's sign-off rule, such as `domain-modeling.10`:
 
 - 1 when no gated path changed.
@@ -311,7 +314,8 @@ suite, which scores the task's sign-off rule, such as `domain-modeling.10`:
 - 0 for a silent build.
 
 `multi_step_reward_strategy = "final"` keeps the sign-off score out of the
-trial reward.
+trial reward. A step between the first and the last runs a synced placeholder
+verifier that records 0, so the judge runs once, after the final step.
 
 After the lift and cost tables, `lift.py` prints two scorecards:
 
@@ -380,9 +384,10 @@ To add a task:
 2. Replace `instruction.md` and `environment/workspace/`.
 3. Edit `tests/consult.json`.
 4. For a code task, write `verifier/hidden/<task>.mjs` and `tests/proof/submitted.py`.
-5. For a rule task, add the rule-task keys to `consult.json`. A two-step task
-   also needs `steps/brief/`, `steps/approve/`, and a no-op
-   `steps/brief/solution/solve.sh`, so the oracle proposes before it builds.
+5. For a rule task, add the rule-task keys to `consult.json`. A multi-step
+   task also needs `steps/brief/`, `steps/approve/`, `steps/continue/`, and a
+   no-op `solution/solve.sh` in `brief` and `continue`, so the oracle proposes
+   first and builds once, in `approve`.
 6. Add the name to a suite and run the sync.
 
 Check the task with the oracle before spending model calls:
@@ -399,7 +404,15 @@ harbor run -p tasks -i <task> -a oracle -o runs --yes
 - The oracle leaves no trajectory, so trajectory-based rules such as `api.1`
   and `debugging.1` score 0 on it.
 - Rule checks are heuristics until calibrated. `debugging.5` misses a fix that
-  renames the source file it repairs.
+  renames the source file it repairs. `api.1` skips schema, migration, and
+  model files by name, so it still counts a data-stage edit as handler code
+  when the file also renders responses, as `money-field-change`'s
+  `src/orders.js` does. It also skips a request-validation schema, which
+  belongs to the contracts stage.
+- The question readout counts only questions after the `continue` turn, so it
+  misses a needless question asked in `approve`. One `continue` turn answers
+  one more gate; an agent that splits the work into behavior slices can stop
+  at a later gate and leave the build unfinished.
 - The previous harness could execute the migration in a real Postgres given
   `CONSULT_EVAL_POSTGRES_URL`. The Harbor port checks the SQL text only.
 - `routing-settings-copy` listed `accessibility` as a feature. It is not a

@@ -14,3 +14,7 @@ Work in the provided repository.
 
 Approved, including the interface and data shapes you proposed. Build it.
 Use your recommended option for anything still open.
+
+## Turn 3: continue
+
+Approved. Continue.

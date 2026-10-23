@@ -4,7 +4,7 @@ multi_step_reward_strategy = "final"
 
 [task]
 name = "consult/money-field-change"
-description = "Change a shipped money field for multi-currency orders, with a scripted approval turn."
+description = "Change a shipped money field for multi-currency orders, with scripted approval turns."
 
 [metadata]
 kind = "code"
@@ -31,6 +31,13 @@ timeout_sec = 300.0
 
 [[steps]]
 name = "approve"
+[steps.agent]
+timeout_sec = 1200.0
+[steps.verifier]
+timeout_sec = 60.0
+
+[[steps]]
+name = "continue"
 [steps.agent]
 timeout_sec = 1200.0
 [steps.verifier]

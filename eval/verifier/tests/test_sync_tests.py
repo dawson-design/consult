@@ -60,5 +60,21 @@ class RewardWeightTests(unittest.TestCase):
             self.planned_reward_toml("proof-first-bugfix")
 
 
+class StepVerifierTests(unittest.TestCase):
+    def step_test_sources(self, task: str) -> dict[str, Path]:
+        pairs = sync_tests.planned_copies(sync_tests.TASKS_DIR / task)
+        return {dest.parts[-3]: src for src, dest in pairs if dest.parts[-4:-3] == ("steps",) and dest.name == "test.sh"}
+
+    def test_only_the_first_step_gets_the_sign_off_suite(self):
+        self.assertEqual(self.step_test_sources("money-field-change")["brief"], sync_tests.SHARED_DIR / "brief_test.sh")
+
+    def test_a_middle_step_gets_the_unscored_verifier(self):
+        """Without its own test.sh, Harbor would run the shared verifier and its judge after every gate."""
+        self.assertEqual(self.step_test_sources("money-field-change")["approve"], sync_tests.SHARED_DIR / "step_test.sh")
+
+    def test_the_final_step_keeps_the_shared_verifier(self):
+        self.assertNotIn("continue", self.step_test_sources("money-field-change"))
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -49,6 +49,7 @@ TASKS_DIR = EVAL_DIR / "tasks"
 sys.path.insert(0, str(EVAL_DIR / "scripts"))
 import lift  # noqa: E402
 from bundle import Bundle, RebuildError, parse_bundle  # noqa: E402
+from sync_tests import step_names  # noqa: E402
 
 HUNK_RE = re.compile(r"^@@ -\d+(?:,(\d+))? \+\d+(?:,(\d+))? @@")
 # Host git must ignore the user's config: a global diff or apply setting changes the result.
@@ -276,9 +277,16 @@ def build_scaffolds(tasks: list[str], root: Path) -> dict[str, Path]:
 
 
 def test_dirs(trial: Trial) -> list[Path]:
-    """Harbor uploads the task's tests/, then the final step's own tests/ over it."""
+    """Harbor uploads the task's tests/, then the final step's own tests/ over it.
+
+    A trial recorded before its task gained a step can end on what is now a
+    middle step, whose own tests are an unscored placeholder; it gets the
+    shared tests alone.
+    """
     task_dir = TASKS_DIR / trial.task
-    dirs = [task_dir / "tests", *([task_dir / "steps" / trial.steps[-1] / "tests"] if trial.steps else [])]
+    middle = step_names(task_dir)[1:-1]
+    final = [task_dir / "steps" / trial.steps[-1] / "tests"] if trial.steps and trial.steps[-1] not in middle else []
+    dirs = [task_dir / "tests", *final]
     return [d for d in dirs if d.is_dir()]
 
 

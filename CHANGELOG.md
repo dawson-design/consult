@@ -30,6 +30,14 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   behavior slices, removals, and renames. The long-runs reference now stops
   at every stage gate. The `workflow` body budget rises from 1,135 to 1,356
   words.
+- The eval's `money-field-change` and `service-from-brief` tasks add a third
+  turn, "Approved. Continue.", which answers the contracts-stage gate that
+  `workflow` Rule 10 adds. A step between the first and the last runs a synced
+  placeholder verifier, so the judge still runs once per trial, and
+  `rescore.py` skips that placeholder when rescoring older two-step trials.
+  The `api.1` check no longer counts schema, migration, or model files as
+  handler code written before the contract. Scores on both tasks are not
+  comparable with earlier baselines.
 
 ## [17.0.0] (2026-10-22)
 

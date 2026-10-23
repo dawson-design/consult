@@ -23,6 +23,8 @@ A multi-step task (task.toml [[steps]]) also gets its first step's verifier:
   steps/<first>/tests/test.sh                     from verifier/shared/brief_test.sh
   steps/<first>/tests/brief_suite/reward.toml     from verifier/shared/reward.brief.toml
   steps/<first>/tests/brief_suite/signoff/...     from verifier/shared/signoff/
+and an unscored verifier for each step between the first and the last:
+  steps/<middle>/tests/test.sh                    from verifier/shared/step_test.sh
 
 Per-task files it never touches: task.toml, instruction.md, steps/*/instruction.md,
 steps/*/solution/, environment/workspace, solution/, tests/consult.json,
@@ -115,7 +117,7 @@ def judge_instruction(task: Path, steps: list[str]) -> Path | bytes:
 
 
 def step_copies(task: Path, steps: list[str]) -> list[tuple[Path, Path]]:
-    """The first step's own verifier: a sign-off suite scored apart from the root tests."""
+    """The first step's sign-off suite, scored apart from the root tests, and a placeholder for middle steps."""
     if not steps:
         return []
     step_tests = task / "steps" / steps[0] / "tests"
@@ -124,6 +126,7 @@ def step_copies(task: Path, steps: list[str]) -> list[tuple[Path, Path]]:
         (SHARED_DIR / "brief_test.sh", step_tests / "test.sh"),
         (SHARED_DIR / "reward.brief.toml", suite / "reward.toml"),
         *dimension_copies("signoff", suite / "signoff"),
+        *[(SHARED_DIR / "step_test.sh", task / "steps" / name / "tests" / "test.sh") for name in steps[1:-1]],
     ]
 
 
