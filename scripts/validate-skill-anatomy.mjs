@@ -69,6 +69,9 @@ const MAX_DESCRIPTION_LENGTH = 120;
 const MAX_TOTAL_DESCRIPTION_LENGTH = 2400;
 
 const NAME_RE = /^name:\s+[a-z][a-z0-9-]*\s*$/m;
+// A skill that names a model switches the host's model when it loads, which
+// throws away the prompt cache and re-reads the whole session uncached.
+const MODEL_KEY_RE = /^model:/m;
 const ATTRIBUTION_RE = /\b[Pp]er\s+(?:[A-Z][a-z]+\s+)?[A-Z][a-z]+\b/;
 const EM_DASH = "—";
 // One authoritative phrasing of the direction-vs-shapes approval rule. Skills
@@ -196,6 +199,10 @@ export function validateSkillFile(path) {
   const problems = [];
 
   if (!NAME_RE.test(head)) problems.push("frontmatter missing name or not kebab-case");
+  const frontmatter = body.match(/^---\r?\n([\s\S]*?)\r?\n---/)?.[1] ?? "";
+  if (MODEL_KEY_RE.test(frontmatter)) {
+    problems.push("frontmatter sets model -- a skill-level model switch discards the host's prompt cache");
+  }
   const description = frontmatterDescription(head);
   if (description == null) {
     problems.push("frontmatter missing description");
@@ -758,6 +765,7 @@ export function runSelfTest() {
       join(tmp, "bad/SKILL.md"),
       `---
 name: bad
+model: haiku
 description: >-
   This description is intentionally much too long for the skill routing surface
   because Codex and other agents load all skill descriptions before deciding
@@ -931,6 +939,7 @@ description: ${longDescription}
     ].join("\n");
     for (const expected of [
       "bad/SKILL.md",
+      "frontmatter sets model",
       "When to Use",
       "missing section: ## Rules",
       "description too long",

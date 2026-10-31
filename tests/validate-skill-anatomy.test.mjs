@@ -389,6 +389,20 @@ describe("validate-skill-anatomy CLI", () => {
     expect(result.stdout).toMatch(/body too long \(\d+ > 700 words\)/);
   });
 
+  it("rejects a model key in skill frontmatter", () => {
+    tmp = makeTempDir();
+    const skillsDir = join(tmp, "agents/.agents/skills");
+    makeSkill(skillsDir, "pinned", GOOD_SKILL.replace("name: good\n", "name: pinned\nmodel: haiku\n"));
+    makeSkill(skillsDir, "mentions", GOOD_SKILL.replace("name: good\n", "name: mentions\n").replace("1. check", "1. check\n\nmodel: in the body is fine."));
+
+    const result = runScript(skillsDir);
+
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain("pinned/SKILL.md");
+    expect(result.stdout).toContain("frontmatter sets model");
+    expect(result.stdout).not.toContain("mentions/SKILL.md");
+  });
+
   it("rejects bullet-format tripwires sections", () => {
     tmp = makeTempDir();
     const skillsDir = join(tmp, "agents/.agents/skills");

@@ -182,6 +182,8 @@ Every `SKILL.md` must have:
   once the validator stopped truncating descriptions at their first inner
   colon and revealed the pack had been over the old limit all along. Raise it
   again only with a stated reason.
+- No `model:` key in frontmatter. A skill that names a model makes the host
+  switch models when it loads, which throws away the prompt cache.
 - Required sections: `## When to Use`, `## When NOT to Use`, `## Rules`.
 - Body budget: 700 words after frontmatter. Raised for four skills, each with
   a reason recorded next to the constant: 730 for `api`, whose REST

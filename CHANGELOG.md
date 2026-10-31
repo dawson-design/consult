@@ -134,6 +134,9 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   context, never by problem type. Workflow steps 3 and 5 stop restating
   Rule 7's approvals and the review inputs, which pays for part of the new
   words. The `workflow` word budget rises to 1,201.
+- The anatomy validator rejects a `model:` key in skill frontmatter, because
+  a skill that names a model makes the host switch models and throw away the
+  prompt cache.
 
 ## [18.0.0] (2026-10-23)
 
