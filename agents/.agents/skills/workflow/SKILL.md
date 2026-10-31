@@ -92,6 +92,19 @@ description: Load before reading code for any feature, bug fix, refactor, test, 
     pending gate blocks later stages; with no human to answer, take Rule 7's
     provisional path and mark later stages provisional. Delegate a stage to a
     subagent only after its gate clears, one stage per subagent.
+11. **Write code a reader can follow in one pass.** This covers code you
+    write or change; do not reshape untouched code to fit. Functions do one
+    thing and stay around 25-30 lines. Conditionals and loops stay under
+    three nesting levels; use guard clauses or extraction before adding
+    another nested branch. Name each extracted function for its one job. A
+    private function extracted this way is not an abstraction under Rule 4.
+    A condition that joins two or more checks with a logical and/or (`&&`,
+    `||`, `and`, `or`) gets a name that says what it means in plain English:
+    a predicate function when reused, or a named local when used once. Null
+    and bounds checks such as `items == null || items.length == 0` need no
+    name. Build behavior by composing functions and plain data. Use
+    inheritance only when a framework, a library, or the codebase's existing
+    pattern requires it.
 
 ## Workflow
 

@@ -8,6 +8,17 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- `workflow` Rule 11 holds the code-shape rules for code an agent writes or
+  changes: functions do one thing and stay around 25-30 lines, conditionals
+  and loops stay under three nesting levels, and a condition that joins two
+  or more checks with a logical and/or gets a plain-English name (a predicate
+  function when reused, a named local when used once). Behavior is built by
+  composing functions and plain data, with inheritance only where a
+  framework, library, or the codebase's existing pattern requires it. The
+  function-length and nesting rules move from `architecture` Rule 2, which
+  loaded only for boundary work, so they now apply to every task.
+  `architecture` Rules 3-8 become 2-7. The `workflow` word budget rises to
+  1,501.
 - `contract-first` uses plain, direct prose and one noun, "contract", in
   place of "shape" and "surface". Rule 1 defines a contract as an API,
   interface, schema, format, or module boundary that something outside the

@@ -15,7 +15,6 @@
   "architecture.5": "untested",
   "architecture.6": "untested",
   "architecture.7": "untested",
-  "architecture.8": "untested",
   "async-systems.1": "untested",
   "async-systems.2": "untested",
   "async-systems.3": "untested",
@@ -201,5 +200,6 @@
   "workflow.7": "check",
   "workflow.8": "untested",
   "workflow.9": "untested",
-  "workflow.10": "untested"
+  "workflow.10": "untested",
+  "workflow.11": "untested"
 }
