@@ -7,8 +7,8 @@ SHELL := /bin/bash
 # validator from reporting, since prose changes are the common case and the
 # validator is the check that covers them.
 test:
-	node scripts/validate-skill-anatomy.mjs
-	node scripts/validate-skill-anatomy.mjs --self-test
+	python3 scripts/validate_skill_anatomy.py
+	python3 scripts/validate_skill_anatomy.py --self-test
 	$(MAKE) --no-print-directory lint
 	pnpm run check:links
 	pnpm test

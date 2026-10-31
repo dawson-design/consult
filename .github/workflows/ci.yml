@@ -56,11 +56,11 @@ jobs:
       # cheap deterministic checks run first: skill prose is the common change,
       # and the validator is what covers it.
       - name: Skill anatomy and mirror drift
-        run: node scripts/validate-skill-anatomy.mjs
+        run: python3 scripts/validate_skill_anatomy.py
 
       - name: Validator self-test
         if: ${{ !cancelled() }}
-        run: node scripts/validate-skill-anatomy.mjs --self-test
+        run: python3 scripts/validate_skill_anatomy.py --self-test
 
       - name: Markdown links
         if: ${{ !cancelled() }}

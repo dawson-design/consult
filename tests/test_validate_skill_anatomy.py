@@ -15,9 +15,7 @@ from typing import Any
 
 from helpers import ROOT, TempDirTestCase, load_script, run
 
-# The implementation under test. Step 4 of docs/plans/python-only-tooling.md
-# switches this to the Python port.
-COMMAND = ["node", ROOT / "scripts/validate-skill-anatomy.mjs"]
+COMMAND = ["python3", ROOT / "scripts/validate_skill_anatomy.py"]
 
 generator = load_script("generate_plugin_symlinks")
 HOOK_SOURCE = generator.HOOK_SOURCE
@@ -430,13 +428,17 @@ class SkillAnatomyTests(ValidatorTestCase):
         (skill / "references").mkdir()
         (skill / "references/notes.md").write_text("A reference — with an em dash.\n", encoding="utf8")
 
+        result = self.validate()
+
         self.assert_fails_with(
-            self.validate(),
+            result,
             "dashy/SKILL.md",
-            "em dash found -- use a period, colon, comma, or parentheses instead",
             "dashy/references/notes.md",
             "'approving design or RFC' used without the canonical sentence",
         )
+        # One finding for the skill body and one for the reference file.
+        em_dash = "em dash found -- use a period, colon, comma, or parentheses instead"
+        self.assertEqual(result.stdout.count(em_dash), 2, result.stdout)
 
     def test_cross_checks_the_workflow_routing_table_against_the_skill_set(self) -> None:
         make_skill(self.skills_dir, "workflow", ROUTER_SKILL)
@@ -564,14 +566,17 @@ class PluginPackageTests(ValidatorTestCase):
             claude_versions={"marketplace": "2.1.0", "entry": "2.2.0", "manifest": "2.3.0"},
         )
 
-        self.assert_fails_with(
-            self.validate(),
-            "version must match",
-            "consult.version must match metadata.version",
-            "plugin/.codex-plugin/plugin.json",
-            "plugin/.claude-plugin/plugin.json",
-            "plugin/.cursor-plugin/plugin.json",
-        )
+        result = self.validate()
+
+        self.assert_fails_with(result, "consult.version must match metadata.version")
+        marketplace = r"\S*/\.claude-plugin/marketplace\.json metadata\.version"
+        for drift in [
+            rf"plugin/\.codex-plugin/plugin\.json version must match {marketplace}",
+            rf"plugin/\.claude-plugin/plugin\.json version must match {marketplace}",
+            rf"plugin/\.cursor-plugin/plugin\.json version must match {marketplace}",
+            r"plugin/\.codex-plugin/plugin\.json version must match \S*/plugin/\.claude-plugin/plugin\.json version",
+        ]:
+            self.assertRegex(result.stdout, drift)
 
     def test_reports_invalid_cursor_marketplace_and_manifest_fields(self) -> None:
         self.make_good_packaged_repo(manifest_skills_path="./wrong/")
