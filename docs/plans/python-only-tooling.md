@@ -2,7 +2,9 @@
 
 Status: approved 2026-10-31 with the recommended option for every decision.
 `refactor/always-on-core` merged as PR #15, and this branch is rebased onto
-it.
+it. Steps 0 to 8 are built; step 9 (review, then push with the maintainer's
+go-ahead) remains. "As built" notes below record where the build departed
+from the text.
 Branch to build on: `refactor/python-only-tooling`, cut from `main`.
 
 ## Intent
@@ -45,6 +47,8 @@ Node stays a runtime dependency of the eval suite only:
 3. `git grep -nE 'pnpm (test|run|install)|vitest|node scripts/'` matches
    nothing outside `CHANGELOG.md` history, skill content under
    `agents/.agents/skills/` and `plugin/skills/`, and eval fixtures.
+   As built: the eval verifier's transcript regexes in `eval/verifier/shared/`
+   also match, since they detect these commands in agent output.
 4. The Python anatomy validator produces byte-identical stdout and the same
    exit code as the JS validator on every golden scenario (see Proof).
 5. `ruff check` and `ruff format --check` pass over `scripts/`, `tests/`, and
@@ -114,12 +118,17 @@ the generator (`MIRROR_DESTS`).
    (`brew install lychee` locally, `lycheeverse/lychee-action` in CI), and its
    docs do not confirm that it matches local Markdown heading anchors, so the
    spike has to prove it. If the spike fails any criterion in step 6, write
-   `scripts/check_markdown_links.py` in stdlib Python instead.
+   `scripts/check_markdown_links.py` in stdlib Python instead. As built:
+   lychee passed every criterion. CI downloads the pinned lychee release and
+   checks its SHA-256 instead of using `lychee-action`, so CI runs the same
+   `make links` (a `git ls-files` pipeline) as a local checkout.
 3. **Pre-commit hook gains ruff.** When `.py` files are staged, the hook runs
    `uv run ruff check` and `uv run ruff format --check`, and skips with a
    message when `uv` is missing, the same way it handles a missing `pnpm`
    today. This is the only behavior change to existing tooling, and it gets
-   its own commit.
+   its own commit. As built: the hook never skipped a missing `pnpm`; it
+   reported `ERROR: missing required tool(s)` and failed. The ruff checks
+   follow that existing behavior, so a missing `uv` fails the commit.
 4. **Keep `--self-test`.** It overlaps with the unittest suite, but removing
    it would change behavior inside a port. Revisit separately if wanted.
 5. **Order against always-on-core.** Recommendation: merge always-on-core
