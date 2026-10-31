@@ -17,7 +17,7 @@ description: Adding or changing production logs, metrics, traces, health checks,
 
 ## When NOT to Use
 
-- Local-only scripts or libraries with no operational surface.
+- Local-only scripts or libraries with nothing to operate or monitor.
 - Error type design; use `error-handling`. Release sequencing; use `release`.
 
 ## Rules
@@ -60,7 +60,7 @@ description: Adding or changing production logs, metrics, traces, health checks,
 
 ## Handoffs
 
-- `documentation`: runbook shape.
+- `documentation`: runbook structure.
 - `async-systems`: stream lag, fanout, replay, delivery semantics.
 - `release`: rollout gates and production verification.
 - `performance`: target measure, baseline, and comparable result.

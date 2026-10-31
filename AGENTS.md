@@ -188,7 +188,7 @@ Every `SKILL.md` must have:
   compatibility rules are written as plain sentences; 950 for `code-review`,
   1,050 for `proof`, and 1,356 for `workflow`, which carry the routing and
   sign-off tables plus the host-harness, fresh-context-review, plan-handoff,
-  build-stage, black-box testing, and test-oracle policy. Table pipes and
+  build-stage, test-level, and test-oracle policy. Table pipes and
   separator rows do not count. The budget is the regression guard for the
   knowledge-vs-policy rule below. Raise a single skill's budget only with a
   stated reason.

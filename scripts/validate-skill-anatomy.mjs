@@ -36,7 +36,7 @@ const MAX_BODY_WORDS = 700;
 // rule: build data, then contracts, then transformations, with a sign-off
 // gate before each gated stage. No neighbouring skill can own the order,
 // because only workflow loads on every task. proof rose to 1,050 for the
-// black-box testing and test-oracle rules: expected outputs come from the
+// test-level and test-oracle rules: expected outputs come from the
 // spec, and agents never edit an existing test to make a change pass. api
 // rose to 730 so Rules 1 and 2 state its REST compatibility policy (which
 // changes need approval, who counts as an independent consumer, and what

@@ -17,7 +17,7 @@ description: "How code fails: error types, error messages and responses, validat
 
 ## When NOT to Use
 
-- Security-specific failure shape; pair with `security`.
+- Security-specific failure behavior; pair with `security`.
 - REST status codes or public API error schema; use `api`.
 - Error visibility in production; pair with `observability`.
 

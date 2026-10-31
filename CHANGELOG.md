@@ -84,6 +84,16 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `api` body budget rises from 700 to 730 words for the plain Rules 1 and 2.
   Unmeasured by the eval.
 - `domain-modeling` handoffs drop "durable" and "parse handoff".
+- The rest of the pack uses the same vocabulary: `debugging`, `performance`,
+  `official-source-check`, `observability`, `ui-design`, `git-workflow`,
+  `error-handling`, `async-systems`, `security`, `scaffolding`,
+  `documentation`, `database`, and `issue-tracking` name what they mean in
+  place of "claim", "surface", "shape", "artifact", and "durable", with the
+  same rules. Standard terms such as "attack surface", "release artifact",
+  and "durable publication" stay. Codex `openai.yaml` text and the README
+  skill list follow, and the `proof` budget note in `AGENTS.md` and the
+  validator now cites test-level policy instead of black-box testing.
+  Unmeasured by the eval.
 
 ## [18.0.0] (2026-10-23)
 

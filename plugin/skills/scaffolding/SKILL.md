@@ -40,9 +40,9 @@ the baseline without local knowledge.
    deployment assumption, framework/template, framework-local choices) and
    name the tradeoff. Fresh web apps default to a mature framework unless the
    user asks for smaller.
-4. Requested artifact names are literal. Create `tsconfig.json`,
-   `package.json`, `pyproject.toml`, CI, or README by name; substitute a
-   nearby config only with approval.
+4. Requested file, directory, script, and job names are literal. Create
+   `tsconfig.json`, `package.json`, `pyproject.toml`, CI, or README by name;
+   substitute a nearby config only with approval.
 5. Commands are the contract: `test`, `lint`, `format`, `typecheck`, and
    `coverage` where applicable, and CI runs the same checks developers run.
    Every added config is consumed by a standard command.
@@ -68,9 +68,9 @@ the baseline without local knowledge.
 
 | Trigger | Do this instead | False alarm |
 |---|---|---|
-| "A similar config file will do" | Use the requested artifact name, or ask before substituting. | The user approved the substitute. |
+| "A similar config file will do" | Use the requested name, or ask before substituting. | The user approved the substitute. |
 | "`node --check` counts as typecheck" | Wire `typecheck` to a real type checker. | The language has no type checker and the documented equivalent is used. |
-| "The command passed, so the scaffold works" | Verify the requirement, artifact, and command mapping, not only command success. | None. |
+| "The command passed, so the scaffold works" | Check that each requirement has the file, directory, or command it asked for, not only that commands succeed. | None. |
 | "Set up git later" | Initialize git and `.gitignore` before feature code. | The user or environment blocks repo creation and the skip is reported. |
 | "Approval would slow this down, just create the files" | Present Approve, Refine, and Cancel before scaffold mutation. | The request already specified every material setup choice. |
 | "I'll pick the framework/ORM myself" | Research candidates freely; get approval before selecting or installing one. | The user or selected stack already named the choice, or it is a small dev-only utility. |

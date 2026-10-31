@@ -31,7 +31,7 @@ description: Use to draft, split, or track tickets, issues, epics, and initiativ
 2. **Map the levels onto what the tracker already has.** Read its templates,
    types, and hierarchy, use its level names, and search for duplicates and
    the right parent. Prefer native types and parent links to labels or title
-   prefixes. New types, labels, fields, or hierarchy levels are durable shapes
+   prefixes. New types, labels, fields, or hierarchy levels need sign-off
    under `workflow` Rule 7.
 3. **Size by the team's sprint, not the agent's speed.** Read the sprint
    length from the tracker, or assume two weeks and say so. An Issue fits when
@@ -46,7 +46,7 @@ description: Use to draft, split, or track tickets, issues, epics, and initiativ
    body stays under 200 words, excluding code and logs, because developers
    skim longer ones. Link the Epic or Initiative instead of repeating its
    context. Criteria name observable results, not "tests written". Leave out
-   steps and pseudocode. A criterion that fixes a caller-facing shape stays
+   steps and pseudocode. A criterion that fixes a contract stays
    proposed until `contract-first` approves it. When a criterion proves wrong
    mid-build, propose an edit instead of rewriting it.
 6. **The team owns estimates, priority, sprint, assignee, and dates.** Leave

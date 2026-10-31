@@ -34,8 +34,8 @@ description: Is a library, framework, or runtime API current, deprecated, or ver
    smallest source-compatible implementation.
 4. When source guidance alone does not prove runtime behavior, prove it with
    `proof`.
-5. In the final claim, name the source checked, or mark the claim unverified
-   and say where you looked.
+5. In the final report, name the source checked, or mark the statement
+   unverified and say where you looked.
 
 ## Tripwires
 
