@@ -19,6 +19,11 @@ from helpers import ROOT, TempDirTestCase, run
 # switches this to the Python port.
 COMMAND = ["node", ROOT / "scripts/validate-skill-anatomy.mjs"]
 
+# Step 3 of the plan reads HOOK_SOURCE and render_session_start_hooks from
+# the Python generator instead.
+HOOK_SOURCE = "agents/.agents/skills/workflow/references/core.md"
+GENERATOR = ROOT / "scripts/generate-plugin-symlinks.mjs"
+
 GOOD_SKILL = """---
 name: good
 description: Good test skill
@@ -151,15 +156,43 @@ description: Router fixture
    | `ghost-skill` | never |
 """
 
-VALID_PLUGIN_HOOKS: dict[str, Any] = {
-    "hooks": {"SessionStart": [{"hooks": [{"type": "command", "command": "echo 'load the workflow skill'"}]}]}
-}
+HOOK_CORE = "Consult is installed. Load the consult:workflow skill.\n"
+
+# Passed as plugin_hooks to write the hook source and a hooks.json generated from it.
+GENERATED = "generated"
 
 
 def write_json(path: Path, value: Any) -> None:
     """Write `value` as JSON to `path`, creating parent directories."""
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(value), encoding="utf8")
+
+
+def render_session_start_hooks(core: str) -> str:
+    """Return the hooks.json text the generator renders for `core`."""
+    script = (
+        f"import {{ renderSessionStartHooks }} from {json.dumps(GENERATOR.as_uri())};"
+        "process.stdout.write(renderSessionStartHooks(process.argv[1]));"
+    )
+    result = run(["node", "--input-type=module", "-e", script, core])
+    if result.returncode != 0:
+        raise RuntimeError(result.stderr)
+    return result.stdout
+
+
+def write_hook_source(root: Path, text: str = HOOK_CORE) -> None:
+    """Write core.md and its plugin/skills mirror copy, so the fixture passes both drift checks."""
+    mirror_path = HOOK_SOURCE.replace("agents/.agents/skills/", "plugin/skills/")
+    for rel in [HOOK_SOURCE, mirror_path]:
+        (root / rel).parent.mkdir(parents=True, exist_ok=True)
+        (root / rel).write_text(text, encoding="utf8")
+
+
+def write_generated_hooks(root: Path, core: str = HOOK_CORE) -> None:
+    """Write plugin/hooks/hooks.json as the generator renders it for `core`."""
+    path = root / "plugin/hooks/hooks.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(render_session_start_hooks(core), encoding="utf8")
 
 
 def make_skill(skills_dir: Path, name: str, body: str = GOOD_SKILL) -> Path:
@@ -244,15 +277,20 @@ def make_plugin_packages(
     cursor_hooks: bool = False,
     codex_version: str = "2.0.0",
     claude_versions: dict[str, str] | None = None,
-    plugin_hooks: dict[str, Any] | None = VALID_PLUGIN_HOOKS,
+    plugin_hooks: dict[str, Any] | str | None = GENERATED,
 ) -> None:
     """Write the hooks file and the Codex, Claude, and Cursor plugin packages.
 
+    `plugin_hooks` is GENERATED (core.md plus the hooks.json rendered from
+    it), a dict written as hooks.json with no core.md, or None for neither.
     `claude_versions` sets the marketplace, entry, and manifest versions used
     by both the Claude and Cursor files (default: all "2.0.0").
     """
     versions = claude_versions or {"marketplace": "2.0.0", "entry": "2.0.0", "manifest": "2.0.0"}
-    if plugin_hooks is not None:
+    if plugin_hooks == GENERATED:
+        write_hook_source(root)
+        write_generated_hooks(root)
+    elif plugin_hooks is not None:
         write_json(root / "plugin/hooks/hooks.json", plugin_hooks)
     if include_marketplace:
         write_codex_marketplace(root, marketplace_source_path, include_policy, include_category)
@@ -499,6 +537,40 @@ class PluginPackageTests(ValidatorTestCase):
                 self.make_good_packaged_repo(plugin_hooks=plugin_hooks)
 
                 self.assert_fails_with(self.validate(), "1 plugin hook problem(s)", message)
+
+    def test_reports_a_hooks_file_that_no_longer_matches_its_core_md_source(self) -> None:
+        self.make_good_packaged_repo()
+        write_hook_source(self.tmp, "Consult is installed. Edited after generation.\n")
+
+        self.assert_fails_with(
+            self.validate(),
+            "1 plugin hook problem(s)",
+            f"plugin/hooks/hooks.json differs from {HOOK_SOURCE}",
+        )
+
+    def test_requires_a_rules_json_entry_for_each_numbered_core_md_rule(self) -> None:
+        self.make_good_packaged_repo()
+        core = "Consult is installed. Load the consult:workflow skill.\n\n## Rules\n\n1. One.\n2. Two.\n"
+        write_hook_source(self.tmp, core)
+        write_generated_hooks(self.tmp, core)
+        make_rule_coverage(self.tmp, {"good.1": "untested", "core.1": "untested", "core.3": "untested"})
+
+        result = self.validate()
+
+        self.assert_fails_with(
+            result,
+            "plugin hooks valid",
+            "rule core.2 has no entry in rules.json",
+            "rules.json names core.3, which is not a rule in its SKILL.md or core.md",
+        )
+        self.assertNotIn("rule core.1 has no entry", result.stdout)
+
+    def test_reports_a_hooks_file_whose_core_md_source_is_missing(self) -> None:
+        self.make_good_packaged_repo()
+        (self.tmp / HOOK_SOURCE).unlink()
+        (self.tmp / HOOK_SOURCE.replace("agents/.agents/skills/", "plugin/skills/")).unlink()
+
+        self.assert_fails_with(self.validate(), f"missing {HOOK_SOURCE}, the source of plugin/hooks/hooks.json")
 
     def test_reports_plugin_version_drift_across_claude_and_codex_manifests(self) -> None:
         self.make_good_packaged_repo(
