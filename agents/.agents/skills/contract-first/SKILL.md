@@ -1,6 +1,6 @@
 ---
 name: contract-first
-description: Before adding or changing a field, shape, signature, CLI flag, event, or schema that clients or other code read.
+description: Before adding or changing a field, signature, schema, CLI flag, event, or module boundary that callers rely on.
 ---
 
 # Contract First
@@ -28,48 +28,42 @@ description: Before adding or changing a field, shape, signature, CLI flag, even
 
 ## Rules
 
-1. A contract is any shape concrete enough that another caller, process,
-   service, user, migration step, package, or future module will depend on
-   it. An export with no caller outside the change is not yet a contract.
-   Working out the actual signatures, types, and shapes is this skill's job.
-2. The gate scales with reversal cost. Gate a shape when outside callers will
-   bind to it and changing it later means breakage or migration. An additive,
-   easily reversed change gets its shape stated in the close-out and
-   continues; do not stop the work for it.
-3. Approval covers the named shape only. Compatibility (renames, removals,
-   aliases, shims, deprecation paths) needs its own explicit decision.
+1. A contract is any API, interface, schema, format, or module boundary that
+   code, people, or processes outside the change will depend on. An export
+   with no outside caller is not a contract yet. This skill writes out the
+   exact signatures, types, and fields.
+2. Wait for approval when changing the contract later would break callers or
+   need a migration. If the change is additive and easy to undo, keep working
+   and describe the contract in the close-out.
+3. Approval covers the contract that was shown, nothing more. For a rename or
+   removal, get a separate decision on what happens to existing callers.
 4. An approving design or RFC approves the direction, not the concrete shapes.
-   The list of proposed surfaces with evidence is the approval. Under
-   `workflow` Rule 10, it approves only shapes whose earlier stages exist.
-5. Silence is not approval. Wait for an explicit approve, revise, or reject.
-   When no human can answer in this run (headless, scheduled, or delegated
-   sessions), do not deadlock: build the most conservative version, mark the
-   contract provisional, and flag the pending decision in the close-out.
-6. If implementation discovers a materially different contract, reopen the
-   gate.
+5. Silence is not approval. Wait for the person to approve, revise, or reject.
+   If nobody can answer in this run, follow `workflow` Rule 7.
+6. If you find while building that the approved contract must change, stop
+   and get approval for the new version.
 
 ## Workflow
 
-1. Stop before implementation lands. Do not write source, migrations, or
-   config that commit the boundary until approval is recorded.
-2. Name the current shape with file/line evidence, or state "new interface"
-   or "new structure" for greenfield work.
-3. Propose the new shape concretely enough for callers to bind to, and explain
-   the boundary: why it belongs here, what owns each side, the key tradeoff.
-4. For public renames or removals, ask which compatibility path applies:
-   breaking change, alias/shim, deprecation, or old surface retained.
-5. List each proposed surface with its evidence and compatibility impact, and
-   get one approve/revise/reject.
-6. Implement only the approved shape.
+1. Do not write code, migrations, or config that depend on the contract until
+   it is approved.
+2. For each contract, explain why it belongs here, which code owns each side,
+   and the main tradeoff.
+3. For a rename or removal, ask whether to break existing callers, add an
+   alias or shim, deprecate the old version, or keep it.
+4. For each contract, show where it is now (file and line, or new), the
+   proposed version, and what changes for callers. Then ask once: approve,
+   revise, or reject.
+5. Build the contract exactly as approved.
 
 ## Tripwires
 
 | Trigger | Do this instead | False alarm |
 |---|---|---|
-| "The design doc already covers this interface" | List each concrete surface with evidence and get one approve/revise/reject. | The exact signature, schema, or surface was itself listed and approved once its earlier `workflow` Rule 10 stages existed. |
-| "I'll implement it first and show the interface after" | Stop before implementation lands; propose the concrete shape and wait for the decision. | The surface is purely internal with no caller-facing or shared boundary. |
-| "No objection means it's approved" | Wait for an explicit approve, revise, or reject. | No human can answer in this run; the shape was built conservatively, marked provisional, and flagged. |
-| "The rename is implied by the approved shape" | Compatibility needs its own explicit decision. | The approval already named that compatibility path. |
+| "The design doc already covers this interface" | Follow Workflow step 4 for each contract. | The design listed this exact contract, and the person approved it. |
+| "I'll implement it first and show the interface after" | Show the contract first and wait for approval. | Nothing outside the change uses it yet (Rule 1), or the change is additive and easy to undo (Rule 2). |
+| "No objection means it's approved" | Wait for the person to approve, revise, or reject. | Nobody can answer in this run; follow `workflow` Rule 7. |
+| "The rename is implied by the approved contract" | Ask what happens to existing callers (Workflow step 3). | The approval already said what happens to existing callers. |
 
 ## Handoffs
 

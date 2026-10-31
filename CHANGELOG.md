@@ -6,6 +6,19 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- `contract-first` uses plain, direct prose and one noun, "contract", in
+  place of "shape" and "surface". Rule 1 defines a contract as an API,
+  interface, schema, format, or module boundary that something outside the
+  change depends on. Rule 4 keeps only the design-approval sentence, and
+  Rule 5 points to `workflow` Rule 7 for runs with nobody to answer, so
+  neither restates `workflow`. The Workflow folds "name the current shape"
+  into the approval step, which now shows each contract's current version,
+  proposed version, and what changes for callers before one approve, revise,
+  or reject. The "implement first" tripwire now lets additive, easily undone
+  changes through, matching Rule 2. The description names module boundaries.
+
 ## [18.0.0] (2026-10-23)
 
 ### Changed
