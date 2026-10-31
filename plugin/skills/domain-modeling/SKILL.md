@@ -79,10 +79,10 @@ against it.
 ## Handoffs
 
 - `specify`: contracts whose data shape is being modeled.
-- `contract-first`: approval of durable domain shapes.
+- `contract-first`: approval of domain shapes future work depends on.
 - `architecture`: module boundaries, locality, layering.
 - `database`: schema enforcement for invariants that race under concurrency.
-- `proof`: prove at the parse handoff where raw input becomes the typed
+- `proof`: checks at the parse step, where raw input becomes the typed
   domain shape.
 - `error-handling`: parse failures, Result/Either shape, error context.
 - `async-systems`: mutable places or ownership crossing task boundaries.

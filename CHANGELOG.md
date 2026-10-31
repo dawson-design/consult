@@ -83,6 +83,7 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   references call code that uses the API a "consumer", not a "caller". The
   `api` body budget rises from 700 to 730 words for the plain Rules 1 and 2.
   Unmeasured by the eval.
+- `domain-modeling` handoffs drop "durable" and "parse handoff".
 
 ## [18.0.0] (2026-10-23)
 
