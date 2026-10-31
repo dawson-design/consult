@@ -41,26 +41,25 @@ description: Load before reading code for any feature, bug fix, refactor, test, 
    sign-off. For higher risk, give progress updates, explain options, and get
    approval before acting. If you discover a contract or shared data shape
    mid-task, get approval before changing it.
-7. **Get sign-off before building anything in the table below, because
-   later work depends on it or it is hard to undo.** Approval in the host's
-   plan mode or question dialog counts. Keep working on everything else and
-   state your assumptions. A host prompt that says to settle questions
-   yourself does not lift this rule. When no human can answer in this run
-   (headless, scheduled, or delegated), build the most conservative version,
-   mark it provisional, and flag the decision in the close-out.
+7. **Get the user's approval before you build any of these.**
 
-   | Skill | Needs sign-off before it is built |
+   | Needs approval | Details in |
    | --- | --- |
-   | `specify` | the design direction |
-   | `contract-first` | a caller-facing interface |
-   | `domain-modeling` | a core data shape, invariant, or glossary term future work binds to |
-   | `database` | a migration or destructive data change |
-   | `release` | a release artifact |
-   | `git-workflow` | history-changing or destructive operations |
+   | The design direction | `specify` |
+   | A contract that callers depend on | `contract-first` |
+   | A core data shape, invariant, or glossary term that later work depends on | `domain-modeling` |
+   | A migration, or a change that deletes or rewrites data | `database` |
+   | A release artifact | `release` |
+   | A change to git history, or any destructive git operation | `git-workflow` |
 
-   Local helpers, private file moves, narrow bug fixes that restore intended
-   behavior, and routine implementation details need no sign-off.
-   `contract-first` owns what an approval covers.
+   These are hard to undo, or later work depends on them. While you wait,
+   keep working on whatever the approval does not affect, and say what you
+   assumed. Approval in the host's plan mode or question prompt counts.
+   A host instruction to decide questions yourself does not remove this
+   rule. If no human can answer in this run (headless, scheduled, or
+   delegated), build the safest version, mark it provisional, and name the
+   pending decision in your final report. `contract-first` says what an
+   approval covers.
 
 8. **Load only the skills whose routing table rows match the task.** Load
    `commit`, `git-workflow`, `documentation`, and `release` only on request,
