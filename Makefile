@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 .SHELLFLAGS := -euo pipefail -c
 
-.PHONY: test eval eval-fast eval-triggers smoke update-installed-plugins update-installed-plugins-dry-run
+.PHONY: test lint eval eval-fast eval-triggers smoke update-installed-plugins update-installed-plugins-dry-run
 
 # Cheap, deterministic checks first: a failing test suite must not stop the
 # validator from reporting, since prose changes are the common case and the
@@ -11,6 +11,13 @@ test:
 	node scripts/validate-skill-anatomy.mjs --self-test
 	pnpm run check:links
 	pnpm test
+
+# Lint and format checks for every repo-owned Python file, using the ruff
+# version pinned in the root pyproject.toml. `uv run ruff format` fixes the
+# formatting findings.
+lint:
+	uv run ruff check
+	uv run ruff format --check
 
 # Static checks for the Harbor eval suite: the vendored verifier copies match
 # their source, the rule checks pass their fixtures, and the smoke job config

@@ -1,0 +1,27 @@
+# Maintainer tooling for the Consult skill pack: the Python dev tools (ruff)
+# and the lint configuration for every repo-owned Python file. `eval/` is a
+# separate uv project with its own dependencies; ruff reads this file for
+# eval/ too, because eval/pyproject.toml has no [tool.ruff] section.
+
+[project]
+name = "consult-tooling"
+version = "0.0.0"
+description = "Maintainer tooling for the Consult skill pack."
+requires-python = ">=3.12"
+dependencies = []
+
+[dependency-groups]
+dev = ["ruff==0.17.2"]
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+line-length = 120
+# Vendored verifier copies are regenerated from eval/verifier/ by
+# eval/scripts/sync_tests.py, and fixtures are deliberate task content.
+extend-exclude = [
+  "eval/tasks",
+  "eval/triggers/fixtures",
+  "eval/verifier/tests/fixtures",
+]
