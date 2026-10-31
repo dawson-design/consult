@@ -20,13 +20,16 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   contract or data shape that was shown, so data shapes keep the same limit.
   Statements made twice are cut: Rule 2 takes the report order from
   Workflow step 6, which is removed; Rule 6 no longer repeats Rule 7 on
-  contracts found mid-task; Rule 8 keeps only the order to follow when
-  skills conflict, and Workflow step 2 says to load matching skills "and no
-  others". The `commit` and `git-workflow` routing rows now say they load
-  on request, as the `documentation` and `release` rows already did, so no
-  rule names a skill before the routing table. Rule 10 drops the removal-and-rename pointer the References
+  contracts found mid-task; Workflow step 2 says to load matching skills
+  "and no others". The `commit` and `git-workflow` routing rows now say
+  they load on request, as the `documentation` and `release` rows already
+  did, so no rule names a skill before the routing table. The skill-conflict
+  rule (old Rule 8) is deleted: the pack states each rule once, so a
+  conflict is a pack bug, and Rule 3 covers conflicts with the host. The
+  code-shape rule takes its number. Rule 10 drops the removal-and-rename pointer the References
   section already gives, and the pending-gate clause its gate implies.
-  Rule numbers are unchanged. The `workflow` word budget falls to 1,282.
+  Rules 9 and 10 keep their numbers. The `workflow` word budget falls to
+  1,269.
 - `workflow` Rule 7 reads "Get the user's approval before you build any of
   these:" and lists the six things that need approval, without naming the
   skills that hold the details, since the routing table loads them. It
@@ -37,7 +40,7 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `contract-first`). It replaces "Durable shapes need
   sign-off before they are built". Rules 9 and 10 and the workflow
   references call what Rule 7 gates "Rule 7 items" in place of "shapes".
-- `workflow` Rule 11 holds the code-shape rules for code an agent writes or
+- `workflow` Rule 8 holds the code-shape rules for code an agent writes or
   changes: functions do one thing and stay around 25-30 lines, conditionals
   and loops stay under three nesting levels, and a condition that joins two
   or more checks with a logical and/or gets a plain-English name (a predicate

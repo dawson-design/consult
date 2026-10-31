@@ -186,7 +186,7 @@ Every `SKILL.md` must have:
 - Body budget: 700 words after frontmatter. Raised for four skills, each with
   a reason recorded next to the constant: 730 for `api`, whose REST
   compatibility rules are written as plain sentences; 950 for `code-review`,
-  1,050 for `proof`, and 1,282 for `workflow`, which carry the routing
+  1,050 for `proof`, and 1,269 for `workflow`, which carry the routing
   table and sign-off list plus the host-harness, fresh-context-review,
   plan-handoff, build-stage, code-shape, test-level, and test-oracle policy.
   Table pipes and separator rows do not count. The budget is the regression guard for the
@@ -227,7 +227,7 @@ a junior engineer, keep one short "because" clause, not a paragraph.
 
 Workflow scope. `workflow` loads on every code task, so it holds only
 high-level guidance that applies to all code, plus routing to the other
-skills. Rules every code change needs, such as Rule 11's code-shape rules,
+skills. Rules every code change needs, such as Rule 8's code-shape rules,
 belong there with their thresholds. Process detail for narrower situations
 goes to the skill that owns it, or to a `workflow/references/` file that
 workflow's References section says when to load. Gate rules that eval checks
