@@ -66,9 +66,13 @@ built-in skills; `setup.sh` symlinks `~/.claude/skills` and registers bare
 names, so `code-review` and `security` become ambiguous with the built-ins of
 the same name. Running both also loads every skill twice. Pick one.
 
-The plugin ships a SessionStart hook that tells Claude to load the `workflow`
-skill before non-trivial code work. You do not need a line in `CLAUDE.md` for
-that. If you added one, you can remove it.
+The plugin ships a SessionStart hook that prints the Consult core into every
+session: the Iron Law and the rules every code change needs (simplicity,
+building only what was asked, code shape, backward compatibility, security),
+plus a line telling Claude to load the `workflow` skill before non-trivial
+code work. The core applies even when no skill loads, so it can replace the
+general coding rules in your own `CLAUDE.md`. You do not need a routing line
+there; if you added one, you can remove it.
 
 ### Codex
 
@@ -81,8 +85,9 @@ You can also install from `/plugins` inside Codex: find **Consult**, press
 Enter to open its details, and select `Install plugin`.
 
 Codex then asks you to review and trust Consult's SessionStart hook. The hook
-prints one line telling Codex to load the `workflow` skill before non-trivial
-code work. Until you trust it, Codex picks skills from their descriptions alone.
+prints the Consult core and a line telling Codex to load the `workflow` skill
+before non-trivial code work. Until you trust it, Codex picks skills from
+their descriptions alone and sees the core only once `workflow` loads.
 
 To update, refresh the marketplace and add the plugin again:
 
@@ -162,12 +167,15 @@ are present. End-user installs do not need Python or uv.
 
 ### Do I need to add a routing line?
 
-Only the Claude Code and Codex plugins ship the SessionStart hook that tells
-the agent to load the `workflow` skill. Antigravity and manual installs have
-no hook. Cursor finds the hook file, but we have not confirmed that it
-uses the output. On those hosts the agent picks skills from their descriptions
-alone. To route non-trivial code work through `workflow`, add this line to the
-host's instruction file, for example `AGENTS.md`:
+Only the Claude Code and Codex plugins ship the SessionStart hook that prints
+the Consult core and tells the agent to load the `workflow` skill.
+Antigravity and manual installs have no hook. Cursor finds the hook file, but
+we have not confirmed that it uses the output. On those hosts the agent picks
+skills from their descriptions alone and sees the core only once `workflow`
+loads. To route non-trivial code work through `workflow`, add this line to the
+host's instruction file, for example `AGENTS.md`. To keep the core always on
+as well, paste the rules from the `workflow` skill's `references/core.md`
+there too.
 
 ```text
 Before a non-trivial feature, fix, refactor, debugging task, test, or config change, load the Consult workflow skill and follow the narrower Consult skills it selects. Skip it for trivial edits and questions that involve no code change.

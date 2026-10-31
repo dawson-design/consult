@@ -3,8 +3,9 @@
 The stub arm installs these in place of the real skills, with the same hook.
 Each stub keeps its skill's SKILL.md frontmatter byte for byte, so the agent
 sees the same names and descriptions, but the body says nothing and no
-reference files ship. Consult minus stub is then the effect of skill content,
-and stub minus bare the effect of the listing and hook.
+reference files ship. Consult minus stub is then the effect of skill content
+beyond the Consult core, and stub minus bare the effect of the listing and the
+hook, which prints the core.
 
 snapshot freezes the real skills once per run. The consult arm reads that copy
 and the stubs are built from it, so both arms see the same listing however long

@@ -163,6 +163,12 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   Core rule 8: consider security even when the request does not mention
   it, and validate input where it crosses a trust boundary. The
   `workflow` word budget falls to 942.
+- `AGENTS.md` names Claude Code as the primary host, with Codex kept
+  working, and describes the hook as printing the Consult core. The README
+  explains that the core can replace general coding rules in a user's
+  `CLAUDE.md`, and how hosts without the hook can keep it always on. The
+  eval README and `stub.py` note that the stub arm now gets the core
+  through the hook.
 
 ## [18.0.0] (2026-10-23)
 
