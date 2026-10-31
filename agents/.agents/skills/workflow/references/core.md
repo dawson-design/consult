@@ -1,0 +1,1 @@
+Consult is installed. When a request will change code, tests, config, or git history, load the consult:workflow skill before you read any files, then load each Consult skill its routing table matches before your first edit or commit. Skip Consult for typo and wording fixes, one-line edits that change no behavior, and questions that ask for no change.

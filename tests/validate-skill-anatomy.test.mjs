@@ -1,8 +1,9 @@
-import { cpSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { cleanupTempDir, makeTempDir, ROOT, run } from "./helpers.mjs";
+import { HOOK_SOURCE, renderSessionStartHooks } from "../scripts/generate-plugin-symlinks.mjs";
 
 const SCRIPT = join(ROOT, "scripts/validate-skill-anatomy.mjs");
 
@@ -160,9 +161,17 @@ function makeSkill(skillsDir, name, body = GOOD_SKILL) {
   return skill;
 }
 
-const VALID_PLUGIN_HOOKS = {
-  hooks: { SessionStart: [{ hooks: [{ type: "command", command: "echo 'load the workflow skill'" }] }] },
-};
+const HOOK_CORE = "Consult is installed. Load the consult:workflow skill.\n";
+
+// Writes the hook source and its plugin/skills mirror copy, so the fixture
+// passes the mirror drift check as well as the hook drift check.
+function writeHookSource(root, text = HOOK_CORE) {
+  const mirrorPath = HOOK_SOURCE.replace("agents/.agents/skills/", "plugin/skills/");
+  for (const rel of [HOOK_SOURCE, mirrorPath]) {
+    mkdirSync(join(root, rel, ".."), { recursive: true });
+    writeFileSync(join(root, rel), text, "utf8");
+  }
+}
 
 function makeCodexPluginPackage(
   root,
@@ -180,10 +189,14 @@ function makeCodexPluginPackage(
     claudeMarketplaceVersion = "2.0.0",
     claudeEntryVersion = "2.0.0",
     claudeManifestVersion = "2.0.0",
-    pluginHooks = VALID_PLUGIN_HOOKS,
+    pluginHooks = "generated",
   } = {},
 ) {
-  if (pluginHooks) {
+  if (pluginHooks === "generated") {
+    writeHookSource(root);
+    mkdirSync(join(root, "plugin/hooks"), { recursive: true });
+    writeFileSync(join(root, "plugin/hooks/hooks.json"), renderSessionStartHooks(HOOK_CORE), "utf8");
+  } else if (pluginHooks) {
     mkdirSync(join(root, "plugin/hooks"), { recursive: true });
     writeFileSync(join(root, "plugin/hooks/hooks.json"), JSON.stringify(pluginHooks), "utf8");
   }
@@ -553,6 +566,39 @@ describe("validate-skill-anatomy CLI", () => {
     expect(result.status).toBe(1);
     expect(result.stdout).toContain("1 plugin hook problem(s)");
     expect(result.stdout).toContain(message);
+  });
+
+  function makeHookFixture() {
+    tmp = makeTempDir();
+    const skillsDir = join(tmp, "agents/.agents/skills");
+    makeSkill(skillsDir, "good");
+    mkdirSync(join(tmp, "plugin/skills"), { recursive: true });
+    cpSync(join(skillsDir, "good"), join(tmp, "plugin/skills/good"), { recursive: true });
+    makeCodexPluginPackage(tmp);
+    makeAntigravityPluginPackage(tmp);
+    return skillsDir;
+  }
+
+  it("reports a hooks file that no longer matches its core.md source", () => {
+    const skillsDir = makeHookFixture();
+    writeHookSource(tmp, "Consult is installed. Edited after generation.\n");
+
+    const result = runScript(skillsDir);
+
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain("1 plugin hook problem(s)");
+    expect(result.stdout).toContain("plugin/hooks/hooks.json differs from " + HOOK_SOURCE);
+  });
+
+  it("reports a hooks file whose core.md source is missing", () => {
+    const skillsDir = makeHookFixture();
+    rmSync(join(tmp, HOOK_SOURCE));
+    rmSync(join(tmp, HOOK_SOURCE.replace("agents/.agents/skills/", "plugin/skills/")));
+
+    const result = runScript(skillsDir);
+
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain(`missing ${HOOK_SOURCE}, the source of plugin/hooks/hooks.json`);
   });
 
   it("reports plugin version drift across Claude and Codex manifests", () => {

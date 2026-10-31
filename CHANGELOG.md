@@ -137,6 +137,10 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The anatomy validator rejects a `model:` key in skill frontmatter, because
   a skill that names a model makes the host switch models and throw away the
   prompt cache.
+- `plugin/hooks/hooks.json` is generated from the `workflow` skill's
+  `references/core.md` by `scripts/generate-plugin-symlinks.mjs`, and the
+  validator reports drift between them. The hook prints the same routing
+  line as before.
 
 ## [18.0.0] (2026-10-23)
 

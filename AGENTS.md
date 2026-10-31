@@ -36,11 +36,14 @@ skills but nothing measures them.
   the `plugin/` root, and `plugin/.codex-plugin/plugin.json` exposes the same
   generated skill mirror to Codex as a plugin. Keep the Codex marketplace and
   manifest in sync with Claude plugin packaging.
-- **Plugin SessionStart hook**: `plugin/hooks/hooks.json` is hand-written, not
-  generated. Claude Code and Codex discover it by convention, so no manifest
-  declares `hooks`. It holds exactly one SessionStart command that prints the
-  routing line, and the validator rejects anything more. Codex runs it only
-  after the user trusts it. Cursor and Antigravity also find the file:
+- **Plugin SessionStart hook**: `plugin/hooks/hooks.json` is generated from
+  `agents/.agents/skills/workflow/references/core.md` by
+  `scripts/generate-plugin-symlinks.mjs`. Edit `core.md`, never
+  `hooks.json`. Claude Code and Codex discover it by convention, so no
+  manifest declares `hooks`. It holds exactly one SessionStart command, a
+  heredoc that needs a POSIX `sh`, which prints `core.md` inline. The
+  validator rejects anything more, and any drift from `core.md`. Codex runs
+  it only after the user trusts it. Cursor and Antigravity also find the file:
   Antigravity cannot parse the Claude Code format and still loads the skills,
   and whether Cursor uses the plain-text output is unverified.
 - **Cursor plugin package**: `.cursor-plugin/marketplace.json` points Cursor at

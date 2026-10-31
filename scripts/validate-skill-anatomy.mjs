@@ -16,7 +16,13 @@ import { dirname, join, relative, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 
-import { MIRROR_DESTS } from "./generate-plugin-symlinks.mjs";
+import {
+  HOOK_DEST,
+  HOOK_SOURCE,
+  MIRROR_DESTS,
+  hookSourceProblem,
+  renderSessionStartHooks,
+} from "./generate-plugin-symlinks.mjs";
 
 const REQUIRED_SECTIONS = ["When to Use", "When NOT to Use", "Rules"];
 // Retired by the Rules-section anatomy. A skill that still carries one of
@@ -666,7 +672,8 @@ export function validateAntigravityPluginPackage(skillsDir) {
 
 // Claude Code and Codex both discover plugin/hooks/hooks.json by convention.
 // Consult ships exactly one hook there: a SessionStart command that prints the
-// routing line. Anything more would turn the pack into a host enforcement layer.
+// Consult core from the workflow skill. Anything more would turn the pack into
+// a host enforcement layer.
 function sessionStartHookProblem(hooksFile) {
   const onlyOne = "Consult ships exactly one SessionStart command hook";
   const keys = Object.keys(hooksFile);
@@ -687,11 +694,28 @@ function sessionStartHookProblem(hooksFile) {
   return null;
 }
 
+// hooks.json is generated from HOOK_SOURCE, so any difference is drift. CRs are
+// ignored so a CRLF checkout does not report drift that is not there.
+function sessionStartHookDriftProblem(root, hooksText) {
+  const sourcePath = join(root, HOOK_SOURCE);
+  if (!existsSync(sourcePath)) return `missing ${HOOK_SOURCE}, the source of ${HOOK_DEST}`;
+  const markdown = readFileSync(sourcePath, "utf8");
+  const sourceProblem = hookSourceProblem(markdown);
+  if (sourceProblem) return `${HOOK_SOURCE} ${sourceProblem}`;
+  if (hooksText.replaceAll("\r", "") !== renderSessionStartHooks(markdown)) {
+    return `${HOOK_DEST} differs from ${HOOK_SOURCE} -- run scripts/generate-plugin-symlinks.mjs`;
+  }
+  return null;
+}
+
 export function validatePluginHooks(skillsDir) {
-  const hooksPath = join(repoRootForSkillsDir(skillsDir), "plugin/hooks/hooks.json");
+  const root = repoRootForSkillsDir(skillsDir);
+  const hooksPath = join(root, HOOK_DEST);
   const [hooksFile, readProblem] = readJsonObject(hooksPath);
   const shapeProblem = hooksFile ? sessionStartHookProblem(hooksFile) : null;
-  const problems = [readProblem, shapeProblem && `${hooksPath} ${shapeProblem}`].filter(Boolean);
+  const driftProblem =
+    hooksFile && !shapeProblem ? sessionStartHookDriftProblem(root, readFileSync(hooksPath, "utf8")) : null;
+  const problems = [readProblem, shapeProblem && `${hooksPath} ${shapeProblem}`, driftProblem].filter(Boolean);
 
   if (problems.length > 0) {
     for (const problem of problems) console.log(`plugin hooks: ${problem}`);
