@@ -11,7 +11,6 @@ test:
 	python3 scripts/validate_skill_anatomy.py --self-test
 	$(MAKE) --no-print-directory lint
 	$(MAKE) --no-print-directory links
-	pnpm test
 	python3 -m unittest discover -s tests
 
 # Lint and format checks for every repo-owned Python file, using the ruff

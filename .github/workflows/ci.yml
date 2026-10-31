@@ -14,23 +14,17 @@ jobs:
       # Tcl expect drives the setup.sh confirmation tests. Without it those tests
       # skip, so install it here to make sure they actually run somewhere.
       #
-      # Do NOT install GNU Stow. tests/setup-sh.test.mjs asserts that setup.sh
+      # Do NOT install GNU Stow. tests/test_setup_sh.py asserts that setup.sh
       # refuses to run when stow is missing, using PATH=/usr/bin:/bin — a runner
       # with stow in /usr/bin breaks that test.
       - name: Install expect
         run: sudo apt-get update && sudo apt-get install -y expect
 
-      - uses: pnpm/action-setup@v4
-
+      # Node serves only eval/verifier/tests/test_hidden_checks.py, which runs
+      # the eval's JS hidden checks. The repo's own tooling is Python.
       - uses: actions/setup-node@v5
         with:
           node-version: 22
-          cache: pnpm
-
-      # `eval/` is a separate uv project, not a workspace package, so a plain
-      # install is expected to succeed here. If this step fails, the
-      # clean-clone contract is broken.
-      - run: pnpm install --frozen-lockfile
 
       # ruff is pinned in the root pyproject.toml and uv.lock. setup-uv
       # publishes no floating major tag, so pin the release.
@@ -77,30 +71,14 @@ jobs:
         if: ${{ !cancelled() }}
         run: make links
 
+      # The setup.sh confirmation tests skip without expect. They must not
+      # silently skip on CI, so a skip anywhere fails this step.
       - name: Repo tests
-        if: ${{ !cancelled() }}
-        run: pnpm test
-
-      # The unittest ports of the Vitest suites, run side by side until the
-      # Node tooling is removed (docs/plans/python-only-tooling.md).
-      - name: Repo tests (unittest)
         if: ${{ !cancelled() }}
         run: |
           set -o pipefail
           python3 -m unittest discover -s tests 2>&1 | tee "$RUNNER_TEMP/unittest.log"
           if grep -q 'skipped=' "$RUNNER_TEMP/unittest.log"; then
             echo "::error::unittest skipped tests on CI -- expect is probably missing"
-            exit 1
-          fi
-
-      # The confirmation tests must not silently skip on CI. If expect went
-      # missing, this catches it rather than letting coverage quietly drop.
-      - name: Assert setup.sh confirmation tests ran
-        if: ${{ !cancelled() }}
-        run: |
-          if ! pnpm test 2>&1 | tee /tmp/vitest.log; then exit 1; fi
-          if grep -qE '[0-9]+ skipped' /tmp/vitest.log; then
-            echo "::error::tests skipped on CI -- expect is probably missing"
-            grep -E 'skipped' /tmp/vitest.log
             exit 1
           fi
