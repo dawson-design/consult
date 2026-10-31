@@ -381,6 +381,16 @@ class SkillAnatomyTests(ValidatorTestCase):
             f"frontmatter description too long ({len(description)} > 120 characters)",
         )
 
+    def test_measures_description_length_in_utf16_code_units(self) -> None:
+        # Hosts measure in UTF-16 code units, where each emoji counts twice:
+        # 61 emoji are 122 units.
+        body = GOOD_SKILL.replace("description: Good test skill", "description: " + "\U0001f600" * 61)
+        make_skill(self.skills_dir, "emoji", body)
+
+        self.assert_fails_with(
+            self.validate(), "emoji/SKILL.md", "frontmatter description too long (122 > 120 characters)"
+        )
+
     def test_rejects_more_than_eight_tripwire_rows(self) -> None:
         make_skill(self.skills_dir, "long-tripwires", LONG_TRIPWIRES_SKILL)
 
@@ -577,6 +587,19 @@ class PluginPackageTests(ValidatorTestCase):
             r"plugin/\.codex-plugin/plugin\.json version must match \S*/plugin/\.claude-plugin/plugin\.json version",
         ]:
             self.assertRegex(result.stdout, drift)
+
+    def test_compares_versions_by_type_as_well_as_value(self) -> None:
+        cases = [
+            ("arrays are never equal", [1], {"marketplace": [1], "entry": [1], "manifest": [1]}),
+            ("true is not 1", True, {"marketplace": 1, "entry": 1, "manifest": 1}),
+        ]
+        for label, codex_version, claude_versions in cases:
+            with self.subTest(label):
+                shutil.rmtree(self.tmp / "agents", ignore_errors=True)
+                shutil.rmtree(self.tmp / "plugin", ignore_errors=True)
+                self.make_good_packaged_repo(codex_version=codex_version, claude_versions=claude_versions)
+
+                self.assert_fails_with(self.validate(), "plugin/.codex-plugin/plugin.json version must match")
 
     def test_reports_invalid_cursor_marketplace_and_manifest_fields(self) -> None:
         self.make_good_packaged_repo(manifest_skills_path="./wrong/")

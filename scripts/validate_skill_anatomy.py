@@ -9,8 +9,11 @@ runs with a bare python3.
 
 It replaced a JavaScript validator and keeps that validator's findings,
 messages, and exit codes, so a few helpers reproduce JavaScript semantics: lengths in
-UTF-16 code units, ASCII-only \\b and \\d, and JSON values where a missing
-field differs from null and an empty object counts as present.
+UTF-16 code units, ASCII-only \\b and \\d, strict
+equality, and JSON values where a missing field differs from null and an
+empty object counts as present. Two JavaScript behaviors are not reproduced,
+since they change only wording: integer-like JSON keys print in file order
+rather than first, and integers beyond 2**53 print exactly.
 """
 
 from __future__ import annotations
@@ -138,6 +141,19 @@ def field(value: Any, key: str) -> Any:
 def is_object(value: Any) -> bool:
     """Say whether JavaScript's `value && typeof value === "object"` holds (arrays included)."""
     return isinstance(value, (dict, list))
+
+
+def js_strict_equal(left: Any, right: Any) -> bool:
+    """Say whether JavaScript's `left === right` holds for two separately parsed JSON values.
+
+    Objects and arrays from different places are never identical, and a
+    boolean never equals a number.
+    """
+    if is_object(left) or is_object(right):
+        return False
+    if isinstance(left, bool) or isinstance(right, bool):
+        return type(left) is type(right) and left == right
+    return left == right
 
 
 def js_truthy(value: Any) -> bool:
@@ -608,7 +624,7 @@ def claude_marketplace_problems(manifest_path: str, manifest: dict[str, Any], pa
     """Check the Codex manifest version and the consult entry against the Claude marketplace."""
     problems = []
     claude_version = field(field(marketplace, "metadata"), "version")
-    if field(manifest, "version") != claude_version:
+    if not js_strict_equal(field(manifest, "version"), claude_version):
         problems.append(f"{manifest_path} version must match {path} metadata.version")
     entry = first_plugin_entry(marketplace)
     if entry is None:
@@ -616,7 +632,7 @@ def claude_marketplace_problems(manifest_path: str, manifest: dict[str, Any], pa
         return problems
     if field(entry, "source") != "./plugin":
         problems.append(f"{path} consult.source must be './plugin'")
-    if field(entry, "version") != claude_version:
+    if not js_strict_equal(field(entry, "version"), claude_version):
         problems.append(f"{path} consult.version must match metadata.version")
     return problems
 
@@ -632,13 +648,13 @@ def manifest_version_problems(root: str, manifest_path: str, manifest: dict[str,
         return []
     problems = []
     claude_version = field(field(marketplace, "metadata"), "version")
-    if field(claude_manifest, "version") != claude_version:
+    if not js_strict_equal(field(claude_manifest, "version"), claude_version):
         problems.append(f"{claude_path} version must match {marketplace_path} metadata.version")
-    if field(manifest, "version") != field(claude_manifest, "version"):
+    if not js_strict_equal(field(manifest, "version"), field(claude_manifest, "version")):
         problems.append(f"{manifest_path} version must match {claude_path} version")
     if "hooks" in claude_manifest:
         problems.append(f"{claude_path} {NO_MANIFEST_HOOKS}")
-    if cursor_manifest is not None and field(cursor_manifest, "version") != claude_version:
+    if cursor_manifest is not None and not js_strict_equal(field(cursor_manifest, "version"), claude_version):
         problems.append(f"{cursor_path} version must match {marketplace_path} metadata.version")
     return problems
 
@@ -692,7 +708,9 @@ def cursor_marketplace_problems(
         problems.append(f"{path} owner must be an object")
     elif field(owner, "name") != "Dawson Design Ltd.":
         problems.append(f"{path} owner.name must be 'Dawson Design Ltd.'")
-    if js_truthy(claude_version) and field(field(marketplace, "metadata"), "version") != claude_version:
+    if js_truthy(claude_version) and not js_strict_equal(
+        field(field(marketplace, "metadata"), "version"), claude_version
+    ):
         problems.append(f"{path} metadata.version must match {claude_path} metadata.version")
     entry = first_plugin_entry(marketplace)
     if entry is None:
@@ -700,7 +718,7 @@ def cursor_marketplace_problems(
         return problems
     if field(entry, "source") != "./plugin":
         problems.append(f"{path} consult.source must be './plugin'")
-    if js_truthy(claude_version) and field(entry, "version") != claude_version:
+    if js_truthy(claude_version) and not js_strict_equal(field(entry, "version"), claude_version):
         problems.append(f"{path} consult.version must match metadata.version")
     return problems
 
@@ -718,7 +736,7 @@ def cursor_manifest_problems(
         problems.append(f"{path} {NO_MANIFEST_HOOKS}")
     if claude_marketplace is not None:
         claude_version = field(field(claude_marketplace, "metadata"), "version")
-        if field(manifest, "version") != claude_version:
+        if not js_strict_equal(field(manifest, "version"), claude_version):
             problems.append(f"{path} version must match {claude_path} metadata.version")
     return problems
 
