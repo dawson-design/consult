@@ -1,9 +1,8 @@
 # Plan: Python-only maintainer tooling
 
 Status: approved 2026-10-31 with the recommended option for every decision.
-Steps 0 to 2 are built now. Steps 3 onward wait until
-`refactor/always-on-core` merges, then this branch rebases onto `main` and
-ports the merged JS.
+`refactor/always-on-core` merged as PR #15, and this branch is rebased onto
+it.
 Branch to build on: `refactor/python-only-tooling`, cut from `main`.
 
 ## Intent
@@ -183,7 +182,8 @@ committing.
      confirm the suite goes red.
 3. **Port the generator.** Write `scripts/generate_plugin_symlinks.py`, flip
    `COMMAND` in its test, and switch `setup.sh` (lines 190 and 416 to 422)
-   from `node` to `python3`. Delete the `.mjs` file and its Vitest test.
+   from `node` to `python3`. Delete its Vitest test, but keep the `.mjs`
+   generator until step 4: the JS validator imports from it.
    - In `test_generate_plugin_symlinks.py`, replace the local `MIRROR_DESTS`
      with the generator's and assert it equals `["plugin/skills"]`, restoring
      the Vitest guard against a dropped mirror destination.
@@ -193,7 +193,7 @@ committing.
    importing `MIRROR_DESTS` from the generator. Port faithfully, splitting
    functions over about 30 lines only where the split is mechanical. Run the
    golden comparison (Proof, P2) before flipping `COMMAND`. Delete the `.mjs`
-   file and its Vitest test.
+   validator, the `.mjs` generator, and their Vitest tests.
    - Check: `test_validate_skill_anatomy.py`, `--self-test`, golden diff.
 5. **Port the pre-commit script.** Write `scripts/pre_commit_acceptance.py`
    and update `.githooks/pre-commit`. The link-check entry keeps calling the
