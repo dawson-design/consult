@@ -366,7 +366,7 @@ def report(args, job_dirs: dict[str, Path], reuse: dict | None, key: dict) -> in
         cmd += ["--baseline-consult", reuse["consult"]]
     if "stub" in job_dirs:
         cmd += ["--stub", str(job_dirs["stub"])]
-    return subprocess.run(cmd).returncode
+    return subprocess.run(cmd, check=False).returncode
 
 
 def save_baseline(name: str, key: dict, job_dirs: dict[str, Path]) -> None:

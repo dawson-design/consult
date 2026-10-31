@@ -19,8 +19,7 @@ EVAL_DIR = Path(__file__).resolve().parents[2]
 SKILLS_DIR = EVAL_DIR.parent / "agents" / ".agents" / "skills"
 sys.path.insert(0, str(EVAL_DIR / "verifier" / "shared"))
 
-import consult_lib as cl  # noqa: E402
-
+import consult_lib as cl
 
 INSTALLED_SKILLS = "/logs/agent/sessions/skills"
 

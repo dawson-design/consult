@@ -199,8 +199,10 @@ def row(index: int, task: dict, layout: Layout, theme: dict) -> list[str]:
             anchor="end",
             css_class="task",
         ),
-        f'<line x1="{bare_x:.1f}" y1="{y}" x2="{consult_x:.1f}" y2="{y}" stroke="{theme["connector"]}" '
-        f'stroke-width="2"/>',
+        (
+            f'<line x1="{bare_x:.1f}" y1="{y}" x2="{consult_x:.1f}" y2="{y}" stroke="{theme["connector"]}" '
+            f'stroke-width="2"/>'
+        ),
         marker(consult_x, y, "consult", theme),
         marker(bare_x, y, "bare", theme),
     ]

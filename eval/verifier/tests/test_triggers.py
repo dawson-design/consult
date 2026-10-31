@@ -20,7 +20,7 @@ from unittest import mock
 EVAL_DIR = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(EVAL_DIR / "scripts"))
 
-import triggers  # noqa: E402
+import triggers
 
 try:
     import yaml
@@ -314,14 +314,15 @@ class StreamTests(unittest.TestCase):
             procs.append(popen(*args, **kwargs))
             return procs[-1]
 
-        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(triggers, "TRIAL_TIMEOUT_SEC", 0.5):
-            with (
-                mock.patch.object(triggers.subprocess, "Popen", side_effect=start),
-                mock.patch.object(triggers, "kill", side_effect=lambda _: procs[0].kill()) as kill,
-            ):
-                events, stopped, timed_out = triggers.stream_container(
-                    [sys.executable, "-c", child], "box", Path(tmp) / "t.jsonl", stop_at_write=True
-                )
+        with (
+            tempfile.TemporaryDirectory() as tmp,
+            mock.patch.object(triggers, "TRIAL_TIMEOUT_SEC", 0.5),
+            mock.patch.object(triggers.subprocess, "Popen", side_effect=start),
+            mock.patch.object(triggers, "kill", side_effect=lambda _: procs[0].kill()) as kill,
+        ):
+            events, stopped, timed_out = triggers.stream_container(
+                [sys.executable, "-c", child], "box", Path(tmp) / "t.jsonl", stop_at_write=True
+            )
         procs[0].stdout.close()
         kill.assert_called_once_with("box")
         self.assertTrue(timed_out)
@@ -573,9 +574,8 @@ class CliTests(unittest.TestCase):
         self.assertNotIn("--effort high", override)
 
     def test_a_run_without_a_token_fails_before_docker(self):
-        with mock.patch.object(triggers, "build_images") as build:
-            with self.assertRaises(SystemExit) as raised:
-                self.run_main(["--cases", "bug-from-symptom"], {})
+        with mock.patch.object(triggers, "build_images") as build, self.assertRaises(SystemExit) as raised:
+            self.run_main(["--cases", "bug-from-symptom"], {})
         build.assert_not_called()
         self.assertIn("CLAUDE_CODE_OAUTH_TOKEN is not set", str(raised.exception))
 

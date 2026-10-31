@@ -20,10 +20,10 @@ from unittest import mock
 EVAL_DIR = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(EVAL_DIR / "scripts"))
 
-import baseline  # noqa: E402
-import run  # noqa: E402
-import selection  # noqa: E402
-import stub  # noqa: E402
+import baseline
+import run
+import selection
+import stub
 
 AGENT = {
     "name": "claude-code",

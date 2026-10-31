@@ -19,7 +19,7 @@ from pathlib import Path
 EVAL_DIR = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(EVAL_DIR / "scripts"))
 
-import reference_reads  # noqa: E402
+import reference_reads
 
 CLAUDE_SKILLS = "/logs/agent/sessions/skills"
 CODEX_SKILLS = "/root/.agents/skills"

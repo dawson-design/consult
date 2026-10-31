@@ -244,8 +244,7 @@ def reported_exit_code(text: str) -> int | None:
 def normalize_path(path: str) -> str:
     path = path.strip().strip("'\"")
     for prefix in ("/app/", "./"):
-        if path.startswith(prefix):
-            path = path[len(prefix) :]
+        path = path.removeprefix(prefix)
     return path
 
 
@@ -603,7 +602,7 @@ def judge_credentials_present() -> bool:
     judge = os.environ.get("REWARDKIT_JUDGE", "claude-code")
     if judge.startswith("anthropic/") or judge.lower().startswith("claude"):
         return bool(os.environ.get("CLAUDE_CODE_OAUTH_TOKEN") or os.environ.get("ANTHROPIC_API_KEY"))
-    if judge.startswith("openai/") or judge.startswith("gpt"):
+    if judge.startswith(("openai/", "gpt")):
         return bool(os.environ.get("OPENAI_API_KEY"))
     return True
 

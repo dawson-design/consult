@@ -65,8 +65,8 @@ from pathlib import Path
 EVAL_DIR = Path(__file__).resolve().parent.parent
 TASKS_DIR = EVAL_DIR / "tasks"
 sys.path.insert(0, str(EVAL_DIR / "verifier" / "shared"))
-import consult_lib as cl  # noqa: E402
-from bundle import RebuildError, parse_bundle  # noqa: E402
+import consult_lib as cl
+from bundle import RebuildError, parse_bundle
 
 MODES = ("stopped", "provisional", "built")
 READOUTS = ("skill_triggering", "non_interruption")
@@ -472,8 +472,10 @@ def render_markdown(summary: dict, bare_dir: Path, consult_dir: Path) -> str:
     lines = [
         f"# Lift: {consult_dir.name} vs {bare_dir.name}",
         "",
-        "| task | bare | consult | lift | floor rate (bare / consult) | p25 (bare / consult) "
-        "| skill_triggering (consult) | non_interruption (bare / consult) |",
+        (
+            "| task | bare | consult | lift | floor rate (bare / consult) | p25 (bare / consult) "
+            "| skill_triggering (consult) | non_interruption (bare / consult) |"
+        ),
         "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
     ]
     for row in summary["tasks"]:
@@ -529,8 +531,10 @@ def render_cost_row(metric: str, result: dict) -> str:
 def render_comparison(result: dict, label: str, before: str = "the earlier job") -> list[str]:
     lines = [
         f"{label}: {result['reward']:+.3f} ({interval_text(result['reward_interval'], '+.3f')})",
-        f"Floor rate change: {result['floor_rate']:+.0%} ({interval_text(result['floor_rate_interval'], '+.0%')}). "
-        f"Below the floor means verification failed or reward < {FLOOR_REWARD}.",
+        (
+            f"Floor rate change: {result['floor_rate']:+.0%} ({interval_text(result['floor_rate_interval'], '+.0%')}). "
+            f"Below the floor means verification failed or reward < {FLOOR_REWARD}."
+        ),
     ]
     if result["missing"]:
         lines.append(f"Left out, no trials in {before}: {', '.join(result['missing'])}")

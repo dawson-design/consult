@@ -16,7 +16,7 @@ from unittest import mock
 EVAL_DIR = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(EVAL_DIR / "verifier" / "shared"))
 
-import consult_lib as cl  # noqa: E402
+import consult_lib as cl
 
 JUDGE_ENV = {"CLAUDE_CODE_OAUTH_TOKEN": "token", "REWARDKIT_JUDGE": "claude-code"}
 

@@ -33,8 +33,8 @@ from pathlib import Path
 EVAL_DIR = Path(__file__).resolve().parent.parent
 SKILLS_DIR = EVAL_DIR.parent / "agents" / ".agents" / "skills"
 sys.path.insert(0, str(EVAL_DIR / "scripts"))
-import lift  # noqa: E402
-import consult_rules as cr  # noqa: E402  (lift puts verifier/shared on the path)
+import consult_rules as cr  # lift puts verifier/shared on the path
+import lift
 
 COLUMNS = ("job", "trial", "task", "rule", "rule_text", "automated", "evidence_dir", "proposed", "human", "note")
 LABELS = ("pass", "fail")

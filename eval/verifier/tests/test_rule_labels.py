@@ -18,7 +18,7 @@ from unittest import mock
 EVAL_DIR = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(EVAL_DIR / "scripts"))
 
-import rule_labels  # noqa: E402
+import rule_labels
 
 
 def write_rule_trial(job: Path, task: str, n: int, rules: dict[str, float], steps: tuple[str, ...] = ()) -> Path:

@@ -47,9 +47,9 @@ from pathlib import Path
 EVAL_DIR = Path(__file__).resolve().parent.parent
 TASKS_DIR = EVAL_DIR / "tasks"
 sys.path.insert(0, str(EVAL_DIR / "scripts"))
-import lift  # noqa: E402
-from bundle import Bundle, RebuildError, parse_bundle  # noqa: E402
-from sync_tests import step_names  # noqa: E402
+import lift
+from bundle import Bundle, RebuildError, parse_bundle
+from sync_tests import step_names
 
 HUNK_RE = re.compile(r"^@@ -\d+(?:,(\d+))? \+\d+(?:,(\d+))? @@")
 # Host git must ignore the user's config: a global diff or apply setting changes the result.
@@ -179,10 +179,12 @@ def environment_flags(trial: Trial) -> list[str]:
         return ["result.json has no started_at: cannot tell whether the task environment changed since the run"]
     environment = TASKS_DIR / trial.task / "environment"
     newest = max(p.lstat().st_mtime for p in [environment, *environment.rglob("*")])
-    if newest > datetime.fromisoformat(started.replace("Z", "+00:00")).timestamp():
+    if newest > datetime.fromisoformat(started).timestamp():
         return [
-            f"tasks/{trial.task}/environment changed after the trial started: "
-            "the scaffold may not be the one the agent saw"
+            (
+                f"tasks/{trial.task}/environment changed after the trial started: "
+                "the scaffold may not be the one the agent saw"
+            )
         ]
     return []
 

@@ -17,7 +17,7 @@ import sys
 import tempfile
 import unittest
 from contextlib import redirect_stdout
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from unittest import mock
 
@@ -25,9 +25,9 @@ EVAL_DIR = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(EVAL_DIR / "scripts"))
 sys.path.insert(0, str(EVAL_DIR / "verifier" / "shared"))
 
-import consult_lib  # noqa: E402
-import lift  # noqa: E402
-import rescore  # noqa: E402
+import consult_lib
+import lift
+import rescore
 
 # zz-last.txt sorts last in the diff; its hunk ends in blank context lines that build_bundle strips.
 SCAFFOLD_FILES = {
@@ -96,7 +96,7 @@ def root_owned_verifier(trial: rescore.Trial, workspace: Path, final_dest: Path)
 
 
 def started_now() -> str:
-    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+    return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
 
 class RescoreTestCase(unittest.TestCase):

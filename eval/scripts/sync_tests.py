@@ -46,7 +46,7 @@ TASKS_DIR = EVAL_DIR / "tasks"
 SHARED_DIR = EVAL_DIR / "verifier" / "shared"
 HIDDEN_DIR = EVAL_DIR / "verifier" / "hidden"
 sys.path.insert(0, str(SHARED_DIR))
-from consult_rules import scored_rule_ids  # noqa: E402
+from consult_rules import scored_rule_ids
 
 # task.toml step names; a regex, not tomllib, so CI's and macOS's python3 both run this.
 STEP_NAME_RE = re.compile(r'^\[\[steps\]\]\s*\n\s*name\s*=\s*"([^"]+)"', re.MULTILINE)

@@ -68,11 +68,11 @@ import tempfile
 import threading
 import time
 from collections import Counter
+from collections.abc import Iterable
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from itertools import chain, dropwhile, product
 from pathlib import Path, PurePosixPath
-from typing import Iterable, Optional
 
 EVAL_DIR = Path(__file__).resolve().parent.parent
 REPO_DIR = EVAL_DIR.parent
@@ -161,7 +161,7 @@ class Suite:
 @dataclass(frozen=True)
 class RunConfig:
     model: str
-    effort: Optional[str]
+    effort: str | None
     max_turns: int
     max_budget_usd: float
     plugin_dir: Path
@@ -299,7 +299,7 @@ def task_prompt(task: str) -> str:
     return path.read_text()
 
 
-def load_suite(path: Path = CASES_PATH, names: Optional[frozenset] = None) -> Suite:
+def load_suite(path: Path = CASES_PATH, names: frozenset | None = None) -> Suite:
     import yaml  # the runner needs pyyaml; the scoring code and its tests do not
 
     doc = yaml.safe_load(path.read_text())
@@ -363,7 +363,7 @@ def edited_text(source: Path, edit: dict) -> str:
 # ------------------------------------------------------- transcript scoring
 
 
-def parse_line(line: str) -> Optional[dict]:
+def parse_line(line: str) -> dict | None:
     try:
         event = json.loads(line)
     except json.JSONDecodeError:
@@ -387,11 +387,11 @@ def tool_calls(events: list) -> list:
     return list(chain.from_iterable(map(event_tool_uses, events)))
 
 
-def first_event(events: list, kind: str, subtype: Optional[str] = None) -> Optional[dict]:
+def first_event(events: list, kind: str, subtype: str | None = None) -> dict | None:
     return next((e for e in events if e.get("type") == kind and subtype in (None, e.get("subtype"))), None)
 
 
-def last_event(events: list, kind: str) -> Optional[dict]:
+def last_event(events: list, kind: str) -> dict | None:
     return next((e for e in reversed(events) if e.get("type") == kind), None)
 
 
@@ -571,7 +571,7 @@ def trial_record(
 # ------------------------------------------------------------------ metrics
 
 
-def wilson(hits: int, n: int, confidence: float) -> Optional[tuple]:
+def wilson(hits: int, n: int, confidence: float) -> tuple | None:
     if n == 0:
         return None
     z = statistics.NormalDist().inv_cdf(0.5 + confidence / 2)
@@ -650,11 +650,11 @@ def overall_verdict(verdicts: list, failing_negative_cases: list) -> str:
 # ------------------------------------------------------------------- report
 
 
-def percent(value: Optional[float]) -> str:
+def percent(value: float | None) -> str:
     return "n/a" if value is None else f"{value:.0%}"
 
 
-def interval_text(bounds: Optional[tuple]) -> str:
+def interval_text(bounds: tuple | None) -> str:
     return "n/a" if bounds is None else f"{bounds[0]:.0%} to {bounds[1]:.0%}"
 
 
@@ -725,8 +725,10 @@ def render_arm(arm: str, trials: list, metrics: dict, confidence: float) -> list
     lines = [
         f"## Arm: {arm}",
         "",
-        f"Overall: **{metrics['overall']}**. Negative cases triggered in 2+ attempts: "
-        f"{failing}. Error trials excluded: {metrics['errors']}.",
+        (
+            f"Overall: **{metrics['overall']}**. Negative cases triggered in 2+ attempts: "
+            f"{failing}. Error trials excluded: {metrics['errors']}."
+        ),
         "",
     ]
     lines += metric_rows(metrics, confidence) + [""] + case_table(trials) + ["", cost_line(trials), ""]
@@ -738,11 +740,13 @@ def render_report(results: dict) -> str:
     header = [
         f"# Trigger suite: {run['label']}",
         "",
-        f"Model {run['model']}, effort {run['effort'] or 'CLI default'}, {run['attempts']} attempts, "
-        f"max turns {run['max_turns']}, budget ${run['max_budget_usd']} per trial. "
-        "Loads marked * came after the first write. The bare arm is the control; thresholds judge the Consult arms. "
-        "A verdict compares the point estimate with the threshold; the last column says whether the whole "
-        "Wilson interval also meets it.",
+        (
+            f"Model {run['model']}, effort {run['effort'] or 'CLI default'}, {run['attempts']} attempts, "
+            f"max turns {run['max_turns']}, budget ${run['max_budget_usd']} per trial. "
+            "Loads marked * came after the first write. The bare arm is the control; thresholds judge the Consult arms. "
+            "A verdict compares the point estimate with the threshold; the last column says whether the whole "
+            "Wilson interval also meets it."
+        ),
         "",
     ]
     body = [
@@ -813,7 +817,9 @@ def docker_argv(image: str, container: str, arm: str, run: RunConfig, prompt: st
 
 
 def docker_build(tag: str, context: Path) -> None:
-    proc = subprocess.run(["docker", "build", "-q", "-t", tag, str(context)], capture_output=True, text=True)
+    proc = subprocess.run(
+        ["docker", "build", "-q", "-t", tag, str(context)], capture_output=True, text=True, check=False
+    )
     if proc.returncode:
         raise SystemExit(f"docker build {tag} failed:\n{proc.stderr[-3000:]}")
 
@@ -836,7 +842,7 @@ def build_images(cases: Iterable[Case]) -> None:
 
 
 def kill(container: str) -> None:
-    subprocess.run(["docker", "kill", container], capture_output=True)
+    subprocess.run(["docker", "kill", container], capture_output=True, check=False)
 
 
 def pump(stdout, transcript, container: str, stop_at_write: bool) -> tuple:
@@ -937,7 +943,7 @@ def wiring_row(case: Case, arm: str, run: RunConfig, names: frozenset, stamp: st
     container = f"{IMAGE_PREFIX}-wiring-{stamp}-{os.getpid()}-{case.name}-{arm}"
     argv = docker_argv(image_tag(case), container, arm, run, case.prompt, with_token=False)
     try:
-        proc = subprocess.run(argv, capture_output=True, text=True, timeout=WIRING_TIMEOUT_SEC)
+        proc = subprocess.run(argv, capture_output=True, text=True, timeout=WIRING_TIMEOUT_SEC, check=False)
         events = parse_stream(proc.stdout.splitlines())
     except subprocess.TimeoutExpired:
         kill(container)
@@ -982,12 +988,12 @@ def agent_defaults() -> tuple:
 
     agent = yaml.safe_load(AGENT_CONFIG.read_text())
     model = str(agent.get("model_name") or "")
-    model = model[len("anthropic/") :] if model.startswith("anthropic/") else model
+    model = model.removeprefix("anthropic/")
     effort = (agent.get("kwargs") or {}).get("reasoning_effort")
     return model, effort, REPO_DIR / agent["consult_settings"]
 
 
-def select_cases(cases: tuple, patterns: Optional[str]) -> list:
+def select_cases(cases: tuple, patterns: str | None) -> list:
     if not patterns:
         return list(cases)
     wanted = [p.strip() for p in patterns.split(",") if p.strip()]
@@ -1005,7 +1011,7 @@ def parse_arms(value: str) -> list:
     return arms
 
 
-def parse_args(argv: Optional[list] = None) -> argparse.Namespace:
+def parse_args(argv: list | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--suite", type=Path, default=CASES_PATH, help="cases file (default: eval/triggers/cases.yaml)")
     parser.add_argument("--cases", help="comma-separated case names or globs (default: all)")
@@ -1096,7 +1102,7 @@ def run_suite(
     return 0 if all(metrics[a]["overall"] == "pass" for a in arms if a in CONSULT_ARMS) else 1
 
 
-def main(argv: Optional[list] = None) -> int:
+def main(argv: list | None = None) -> int:
     args = parse_args(argv)
     names = catalog()
     suite = load_suite(args.suite, names)

@@ -4,9 +4,9 @@ from pathlib import Path
 
 sys.path.insert(0, "/tests")
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import consult_lib as cl  # noqa: E402
-import submitted  # noqa: E402  (per-task: tests/proof/submitted.py)
-from rewardkit import criterion  # noqa: E402
+import consult_lib as cl
+import submitted  # per-task: tests/proof/submitted.py
+from rewardkit import criterion
 
 
 @criterion

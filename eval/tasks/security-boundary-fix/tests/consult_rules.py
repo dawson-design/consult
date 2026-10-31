@@ -29,7 +29,7 @@ from pathlib import Path
 # RewardKit imports every .py at the tests root, this one included, before any
 # dimension script has put /tests on sys.path.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import consult_lib as cl  # noqa: E402
+import consult_lib as cl
 
 CONTRACT_RE = re.compile(r"(^|/)openapi\.(ya?ml|json)$")
 SCRATCH_RE = re.compile(r"(^|/)(repro|scratch|tmp|debug)[^/]*$|^/")
@@ -63,12 +63,12 @@ SKIP_DIRS = {"node_modules", ".git"}
 # Shared evidence, computed once per verifier process.
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def verification_passed(workspace: Path) -> bool:
     return cl.visible_tests_pass(workspace, cl.load_task_meta()) and cl.hidden_check_passes(workspace)
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def probe_results(workspace: Path) -> dict:
     """Per-task runtime probe: tests/rules_probe.mjs prints {"<rule id>": 0|1} on its last line."""
     script = cl.TESTS_DIR / "rules_probe.mjs"

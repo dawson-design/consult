@@ -14,15 +14,14 @@ import json
 import subprocess
 import sys
 import tempfile
-import textwrap
 import unittest
 from pathlib import Path
 
 SHARED = Path(__file__).resolve().parent.parent / "shared"
 sys.path.insert(0, str(SHARED))
 
-import consult_lib as cl  # noqa: E402
-import consult_rules as cr  # noqa: E402
+import consult_lib as cl
+import consult_rules as cr
 
 
 def codex_command(call_id: str, cmd: str, exit_code: int) -> dict:

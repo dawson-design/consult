@@ -15,7 +15,7 @@ from unittest import mock
 EVAL_DIR = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(EVAL_DIR / "scripts"))
 
-import sync_tests  # noqa: E402
+import sync_tests
 
 WEIGHTS_LINE = (
     "weights = {{ verification = 0.275, proof = 0.1925, change_quality = 0.0825, judge = 0.45, "

@@ -18,7 +18,7 @@ from pathlib import Path
 
 EVAL_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(EVAL_DIR / "verifier" / "shared"))
-import consult_lib as cl  # noqa: E402
+import consult_lib as cl
 
 STEP_NAME_RE = re.compile(r'^\[\[steps\]\]\s*\n\s*name\s*=\s*"([^"]+)"', re.MULTILINE)
 

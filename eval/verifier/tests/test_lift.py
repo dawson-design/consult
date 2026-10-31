@@ -17,7 +17,7 @@ from unittest import mock
 EVAL_DIR = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(EVAL_DIR / "scripts"))
 
-import lift  # noqa: E402
+import lift
 
 
 def write_trial(job: Path, task: str, n: int, rewards: dict | None) -> None:
@@ -266,7 +266,7 @@ class LiftTests(unittest.TestCase):
             arm_rewards(0.3, 0.35, 0.4), arm_rewards(0.5, 0.55, 0.6, judge=None), arm_rewards(0.8, 0.85, 0.9)
         )
         content, listing = stub_sections(report)
-        self.assertIn(f"| consult/proof-first-bugfix | 1.000 | 1.000 | +0.000 |\n\nReward change", content)
+        self.assertIn("| consult/proof-first-bugfix | 1.000 | 1.000 | +0.000 |\n\nReward change", content)
         self.assertIn(lift.JUDGE_EXCLUDED_NOTE, content)
         self.assertIn(lift.JUDGE_EXCLUDED_NOTE, listing)
 

@@ -18,8 +18,8 @@ from pathlib import Path
 EVAL_DIR = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(EVAL_DIR / "scripts"))
 
-import charts  # noqa: E402
-import lift  # noqa: E402
+import charts
+import lift
 
 SVG = "{http://www.w3.org/2000/svg}"
 AGENT = "Claude Code"

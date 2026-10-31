@@ -15,7 +15,7 @@ from pathlib import Path
 EVAL_DIR = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(EVAL_DIR / "scripts"))
 
-import preflight  # noqa: E402
+import preflight
 
 
 def skill_load(skill: str) -> list[dict]:

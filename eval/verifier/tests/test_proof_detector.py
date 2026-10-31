@@ -17,7 +17,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "shared"))
 
-import consult_lib as cl  # noqa: E402
+import consult_lib as cl
 
 
 def bash(command: str) -> dict:

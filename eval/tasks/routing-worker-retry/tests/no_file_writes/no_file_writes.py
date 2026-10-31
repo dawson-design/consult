@@ -3,8 +3,8 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, "/tests")
-import consult_lib as cl  # noqa: E402
-from rewardkit import criterion  # noqa: E402
+import consult_lib as cl
+from rewardkit import criterion
 
 
 @criterion
