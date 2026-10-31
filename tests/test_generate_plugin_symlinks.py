@@ -121,6 +121,16 @@ class GeneratePluginSymlinksTests(TempDirTestCase):
         expected = "Consult is installed.\n\nKeep `$HOME`, \"quotes\", 'apostrophes', and \\n literal.\n"
         self.assertEqual(printed.stdout, expected)
 
+    def test_drops_a_byte_order_mark_from_the_hook_text(self) -> None:
+        make_skill(self.tmp, "workflow")
+        write_core(self.tmp, "\ufeffConsult is installed.\n")
+
+        result = self.generate()
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        printed = run(["sh", "-c", hook_command(self.tmp)], cwd=self.tmp)
+        self.assertEqual(printed.stdout, "Consult is installed.\n")
+
     def test_refuses_an_unusable_core_md_and_writes_no_hook(self) -> None:
         cases = [
             (

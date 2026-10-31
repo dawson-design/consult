@@ -9,7 +9,7 @@ runs with a bare python3.
 
 It replaced a JavaScript validator and keeps that validator's findings,
 messages, and exit codes, so a few helpers reproduce JavaScript semantics: lengths in
-UTF-16 code units, ASCII-only \\b and \\d, strict
+UTF-16 code units, trim()'s whitespace set, ASCII-only \\b and \\d, strict
 equality, and JSON values where a missing field differs from null and an
 empty object counts as present. Two JavaScript behaviors are not reproduced,
 since they change only wording: integer-like JSON keys print in file order
@@ -34,6 +34,7 @@ from generate_plugin_symlinks import (
     MIRROR_DESTS,
     hook_source_problem,
     js_length,
+    js_trim,
     render_session_start_hooks,
 )
 
@@ -257,7 +258,7 @@ def frontmatter_description(head: str) -> str | None:
     for line in lines_of(head):
         if line.startswith("description:"):
             in_description = True
-            value = line[len("description:") :].strip()
+            value = js_trim(line[len("description:") :])
             if value and value not in {">", ">-", "|", "|-"}:
                 description.append(value)
             continue
@@ -265,7 +266,7 @@ def frontmatter_description(head: str) -> str | None:
             continue
         if not line.startswith("  "):
             break
-        description.append(line.strip())
+        description.append(js_trim(line))
     if not in_description:
         return None
     return unquote_scalar(" ".join(description))
@@ -804,7 +805,7 @@ def session_start_hook_problem(hooks_file: dict[str, Any]) -> str | None:
     if not isinstance(handlers, list) or len(handlers) != 1:
         return f"SessionStart must hold one handler; {only_one}"
     command = field(handlers[0], "command")
-    if field(handlers[0], "type") != "command" or not isinstance(command, str) or not command.strip():
+    if field(handlers[0], "type") != "command" or not isinstance(command, str) or not js_trim(command):
         return "SessionStart handler must be { type: 'command', command: <non-empty string> }"
     return None
 

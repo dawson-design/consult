@@ -32,6 +32,9 @@ HOOK_DEST = "plugin/hooks/hooks.json"
 # at 10,000 characters), so the core stays well below that.
 MAX_HOOK_CHARS = 4000
 HEREDOC_END = "CONSULT_CORE"
+# What JavaScript's String.prototype.trim removes. Unlike Python's strip(), it
+# includes the byte-order mark and excludes U+001C to U+001F and U+0085.
+JS_WHITESPACE = "\t\n\v\f\r \u00a0\u1680\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u2028\u2029\u202f\u205f\u3000\ufeff"
 
 USAGE = """Usage: python3 scripts/generate_plugin_symlinks.py [repo_root]
 
@@ -108,9 +111,14 @@ def sync_each(src: str, dest: str, root: str) -> int:
     return 0
 
 
+def js_trim(text: str) -> str:
+    """Strip leading and trailing whitespace as JavaScript's trim() does."""
+    return text.strip(JS_WHITESPACE)
+
+
 def hook_text(markdown: str) -> str:
     """Return the text the hook prints for `markdown`: no CRs, no surrounding whitespace."""
-    return markdown.replace("\r", "").strip()
+    return js_trim(markdown.replace("\r", ""))
 
 
 def js_length(text: str) -> int:
