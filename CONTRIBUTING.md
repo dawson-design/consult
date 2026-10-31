@@ -11,7 +11,7 @@ need to know before opening a PR.
   `plugin/skills/` tree is a generated copy; edit the canonical copy only and
   regenerate with `./setup.sh`.
 - Each skill must conform to the anatomy enforced by
-  `scripts/validate-skill-anatomy.mjs`: frontmatter (name + description),
+  `scripts/validate_skill_anatomy.py`: frontmatter (name + description),
   `# Title`, `## When to Use`, `## When NOT to Use`, `## Rules`,
   optional `## Tripwires` (table, at most 8 rows), and a body budget of 700
   words. Use the section ownership and knowledge-versus-policy rules in
@@ -85,15 +85,16 @@ Run before opening a PR:
 
 ```sh
 make test
-pnpm run check:links
-node scripts/validate-skill-anatomy.mjs
 ```
 
-The validator checks every skill, the generated mirror, and
-the Codex plugin manifest in one pass.
+It runs the skill anatomy validator, ruff, the Markdown link check, and the
+repo tests. It needs `python3` 3.12 or newer, `uv`, and `lychee`
+(`brew install lychee`). The validator checks every skill, the generated
+mirror, and the plugin packages in one pass.
 
 The optional repo pre-commit hook is intentionally narrow: it checks staged
-whitespace and runs the Markdown validator for staged Markdown files.
+whitespace, runs the Markdown link check for staged Markdown files, and runs
+ruff for staged Python files.
 
 ```sh
 git config core.hooksPath .githooks

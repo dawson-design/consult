@@ -171,6 +171,16 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `CLAUDE.md`, and how hosts without the hook can keep it always on. The
   eval README and `stub.py` note that the stub arm now gets the core
   through the hook.
+- Maintainer tooling is Python only. The plugin generator, anatomy
+  validator, and pre-commit script are standard-library Python
+  (`scripts/generate_plugin_symlinks.py`, `scripts/validate_skill_anatomy.py`,
+  `scripts/pre_commit_acceptance.py`) with the same findings and exit codes,
+  and the Vitest suites are `unittest` suites under `tests/`. ruff lints and
+  formats every repo-owned Python file (`make lint`), in `make test`, CI, and
+  the pre-commit hook for staged Python. lychee replaces remark for local
+  Markdown links (`make links`). `package.json`, pnpm, and Vitest are gone;
+  Node remains only for the eval's hidden checks. The generator now removes
+  stale plugin symlinks it used to report removing but leave behind.
 
 ## [18.0.0] (2026-10-23)
 

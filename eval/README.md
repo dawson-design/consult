@@ -371,7 +371,7 @@ uv run scripts/sync_tests.py --check  # fail on drift; run in CI and `make eval`
 - `verifier/hidden/<task>.rules.mjs`: a runtime probe for rule checks. It
   prints `{"<rule id>": 0|1}` as its last line.
 - `verifier/rules.json`: every rule of every skill, marked `check`,
-  `judge-only`, or `untested`. `scripts/validate-skill-anatomy.mjs` fails when
+  `judge-only`, or `untested`. `scripts/validate_skill_anatomy.py` fails when
   a rule has no entry, an entry names a rule that no longer exists, or a
   `check` entry has no function in `consult_rules.py`. Renumbering a skill's
   rules therefore means updating this file.
