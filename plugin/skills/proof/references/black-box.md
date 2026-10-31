@@ -22,10 +22,10 @@ caller sees. The Canon section lists the studies.
 ## Tests as experiments
 
 Consult treats acceptance tests as proof, and the method is the scientific
-one. The claim under test is that the code maps these inputs to these
-outputs, as the spec says. The architecture is the mechanism behind the
-claim. Many mechanisms produce the same outputs, so a black-box test checks
-the claim without constraining the mechanism, which is why it survives
+one. The hypothesis under test is that the code maps these inputs to these
+outputs, as the spec says. The architecture is the mechanism. Many
+mechanisms produce the same outputs, so a black-box test checks the
+hypothesis without constraining the mechanism, which is why it survives
 refactors and rewrites.
 
 The method's rules apply to tests as they stand:
@@ -39,15 +39,15 @@ The method's rules apply to tests as they stand:
   pass changes the measurement to fit the theory (`proof` Rule 9).
 - Treat a passing suite as corroboration, not proof of correctness. The code
   survived every check that could have failed it. One reliable failure
-  refutes the claim, and no number of passes rules out a bug.
+  refutes the hypothesis, and no number of passes rules out a bug.
 
 ## Kinds of test
 
 | Kind | Enters at | Use for |
 |---|---|---|
-| Black-box | The outermost boundary the caller uses: endpoint, CLI, UI, or public API | Every behavior a caller depends on. This is the default. |
+| Black-box | The outermost boundary the caller uses: endpoint, CLI, UI, or public API | Behavior that crosses the system. Every acceptance criterion needs at least one check here (`proof` Iron Law). |
 | Integration | The code's adapter to a real dependency: database, queue, cache, or another service | Queries, transactions, serialization, and wire formats that only the real dependency can check. |
-| Unit | One internal function or class | Only the regression guard for a fixed bug that no black-box or integration test reproduces. |
+| Unit | One internal function or class | Pure domain logic: calculations and business rules, especially ones with many cases. Also the regression guard for a fixed bug that no black-box or integration test reproduces. |
 
 A test of a function through its signature is black-box only when the
 function is a public API that code outside the project calls, such as a
@@ -62,8 +62,8 @@ structure are internals.
 
 Keep the existing tests a change touches, and run them before editing: an
 agent told which existing tests cover its change causes far fewer
-regressions. Replace a test of internals only with a black-box test of the
-same behavior, and say so.
+regressions. Replace a test of internals only with a test of the same rule,
+and say so.
 
 ## Take expected outputs from outside the code
 
@@ -77,7 +77,7 @@ same behavior, and say so.
   behavior has not changed. Use one to pin existing behavior before a
   refactor, and report it as that, never as proof the behavior is right.
 - When the host can run a second agent, have one context write the
-  black-box tests from the spec and another write the code.
+  tests from the spec and another write the code.
 
 ## Choose the cases from the spec
 
@@ -200,8 +200,8 @@ running whatever reads them.
    behavior, and link the issue when there is one.
 
 Use an integration test when the bug needs a real dependency to appear. Use a
-unit test only when neither can reproduce it, such as a race inside one data
-structure.
+unit test when the bug is in pure domain logic, or when neither can reproduce
+it, such as a race inside one data structure.
 
 ## Integration tests
 

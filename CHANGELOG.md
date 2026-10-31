@@ -38,6 +38,16 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The Proof Contract is removed; `proof` Rule 11's per-criterion list
   replaces it. `domain-modeling` Rule 9 and `refactoring` Rule 3 point at
   `proof`'s rules instead.
+- `proof` references match the new Rule 3 and drop "claim" and "surface".
+  `black-box.md` no longer makes black-box tests the default: unit tests
+  cover pure domain logic as well as bug guards, and a test of internals may
+  be replaced by a test of the same rule at any level. In
+  `data-shape-boundaries.md`, a stage that holds a business rule gets tests
+  of its own, and a functional core's table of cases goes in unit tests of
+  its public functions, with one shell test per acceptance criterion.
+  `recipes.md` asks for a check where the caller sees the result plus tests
+  of each rule at the right level. `test-theater.md` flags unit tests only
+  for chain functions that hold no business rule. Unmeasured by the eval.
 
 ## [18.0.0] (2026-10-23)
 
