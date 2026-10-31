@@ -3,7 +3,7 @@
 // the SessionStart hook in plugin/hooks/hooks.json. validate-skill-anatomy.mjs
 // imports the exports below to check that neither has drifted.
 
-import { cpSync, existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
 import { dirname, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -25,6 +25,12 @@ function display(path, root) {
   return rel && !rel.startsWith("..") ? rel : path;
 }
 
+// rmSync with force silently skips a dangling symlink, so unlink links directly.
+function removeGenerated(path) {
+  if (lstatSync(path).isSymbolicLink()) unlinkSync(path);
+  else rmSync(path, { recursive: true, force: true });
+}
+
 function pruneDest(dest, src, root) {
   if (!existsSync(dest)) return;
 
@@ -35,7 +41,7 @@ function pruneDest(dest, src, root) {
 
     const stat = lstatSync(entry);
     if (stat.isSymbolicLink() || stat.isDirectory()) {
-      rmSync(entry, { recursive: true, force: true });
+      removeGenerated(entry);
       console.log(`removed stale plugin entry: ${display(entry, root)}`);
       continue;
     }
@@ -53,7 +59,7 @@ function syncEach(src, dest, root) {
     if (pathExists(target)) {
       const stat = lstatSync(target);
       if (stat.isSymbolicLink() || stat.isDirectory()) {
-        rmSync(target, { recursive: true, force: true });
+        removeGenerated(target);
       } else {
         console.error(`ERROR: ${display(target, root)} exists as a real file/dir; remove it first`);
         return 1;

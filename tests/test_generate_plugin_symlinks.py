@@ -7,6 +7,7 @@ agents/.agents/skills and runs the generator against it.
 from __future__ import annotations
 
 import json
+import os
 import unittest
 from pathlib import Path
 
@@ -81,6 +82,7 @@ class GeneratePluginSymlinksTests(TempDirTestCase):
 
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("removed stale plugin entry: plugin/skills/old", result.stdout)
+        self.assertFalse(os.path.lexists(plugin_skills / "old"))
         self.assertIn("plugin/skills/local-note is not a generated directory", result.stderr)
         self.assertEqual((plugin_skills / "local-note").read_text(encoding="utf8"), "keep me\n")
 
