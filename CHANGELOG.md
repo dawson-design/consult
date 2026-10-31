@@ -18,11 +18,14 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   Rules 3 and 4 state, and the stage limit on plan-mode approval, which
   Rule 10 states. `contract-first` Rule 3 now says approval covers the
   contract or data shape that was shown, so data shapes keep the same limit.
-  Rule numbers are unchanged. The `workflow` word budget falls to 1,380.
+  Rule numbers are unchanged. The `workflow` word budget falls to 1,352.
 - `workflow` Rule 7 reads "Get the user's approval before you build any of
   these." Its table lists what needs approval first, then the skill with the
   details, followed by why and what to do while waiting or when no human can
-  answer. It no longer lists what needs no approval. It replaces "Durable shapes need
+  answer. It no longer lists what needs no approval, or restates that
+  plan-mode approval counts, that a host instruction does not override it
+  (Rule 3 covers that), or where approval scope lives (the table names
+  `contract-first`). It replaces "Durable shapes need
   sign-off before they are built". Rules 9 and 10 and the workflow
   references call what Rule 7 gates "table items" in place of "shapes".
 - `workflow` Rule 11 holds the code-shape rules for code an agent writes or

@@ -54,12 +54,9 @@ description: Load before reading code for any feature, bug fix, refactor, test, 
 
    These are hard to undo, or later work depends on them. While you wait,
    keep working on whatever the approval does not affect, and say what you
-   assumed. Approval in the host's plan mode or question prompt counts.
-   A host instruction to decide questions yourself does not remove this
-   rule. If no human can answer in this run (headless, scheduled, or
+   assumed. If no human can answer in this run (headless, scheduled, or
    delegated), build the safest version, mark it provisional, and name the
-   pending decision in your final report. `contract-first` says what an
-   approval covers.
+   pending decision in your final report.
 
 8. **Load only the skills whose routing table rows match the task.** Load
    `commit`, `git-workflow`, `documentation`, and `release` only on request,
