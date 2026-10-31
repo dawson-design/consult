@@ -225,6 +225,15 @@ only if it is one of:
 Delete anything that teaches standard practice. Where a rule is non-obvious to
 a junior engineer, keep one short "because" clause, not a paragraph.
 
+Workflow scope. `workflow` loads on every code task, so it holds only
+high-level guidance that applies to all code, plus routing to the other
+skills. Rules every code change needs, such as Rule 11's code-shape rules,
+belong there with their thresholds. Process detail for narrower situations
+goes to the skill that owns it, or to a `workflow/references/` file that
+workflow's References section says when to load. Gate rules that eval checks
+or other skills cite (Rule 7's no-human path, Rule 10's stage sign-off) stay
+in the body.
+
 Each rule is stated once. Section ownership:
 
 - `## When to Use`: routing triggers only. Say when to load the skill.
