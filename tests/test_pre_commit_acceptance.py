@@ -7,6 +7,7 @@ internals.
 
 from __future__ import annotations
 
+import os
 import unittest
 from pathlib import Path
 
@@ -17,9 +18,18 @@ from helpers import ROOT, TempDirTestCase, run
 COMMAND = ["node", ROOT / "scripts/pre-commit-acceptance.mjs"]
 
 
+def clean_env() -> dict[str, str]:
+    """This process's environment without GIT_* variables.
+
+    Inside a git hook, GIT_DIR and GIT_INDEX_FILE point at the real repo, and
+    the scratch-repo commands below would act on it instead.
+    """
+    return {key: value for key, value in os.environ.items() if not key.startswith("GIT_")}
+
+
 def git(repo: Path, *args: str) -> None:
     """Run a git command in `repo`, failing the test setup if it fails."""
-    result = run(["git", *args], cwd=repo)
+    result = run(["git", *args], cwd=repo, env=clean_env())
     if result.returncode != 0:
         raise RuntimeError(result.stderr)
 
@@ -30,7 +40,7 @@ class CheckSelectionTests(TempDirTestCase):
         for name in names:
             (self.tmp / name).write_text("text\n", encoding="utf8")
         git(self.tmp, "add", *names)
-        result = run([*COMMAND, "--repo-root", self.tmp, "--dry-run"])
+        result = run([*COMMAND, "--repo-root", self.tmp, "--dry-run"], env=clean_env())
         self.assertEqual(result.returncode, 0, result.stderr)
         return result.stdout
 
@@ -48,7 +58,7 @@ class PreCommitCliTests(TempDirTestCase):
     def test_allows_dry_run_checks_on_main(self) -> None:
         git(self.tmp, "init", "-q", "-b", "main")
 
-        result = run([*COMMAND, "--repo-root", self.tmp, "--dry-run"])
+        result = run([*COMMAND, "--repo-root", self.tmp, "--dry-run"], env=clean_env())
 
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("No staged files; nothing to validate.", result.stdout)
@@ -56,7 +66,7 @@ class PreCommitCliTests(TempDirTestCase):
     def test_reports_no_staged_files_on_topic_branches(self) -> None:
         git(self.tmp, "init", "-q", "-b", "chore/test")
 
-        result = run([*COMMAND, "--repo-root", self.tmp, "--dry-run"])
+        result = run([*COMMAND, "--repo-root", self.tmp, "--dry-run"], env=clean_env())
 
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("No staged files; nothing to validate.", result.stdout)
