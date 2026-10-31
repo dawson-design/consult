@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 .SHELLFLAGS := -euo pipefail -c
 
-.PHONY: test lint eval eval-fast eval-triggers smoke update-installed-plugins update-installed-plugins-dry-run
+.PHONY: test lint links eval eval-fast eval-triggers smoke update-installed-plugins update-installed-plugins-dry-run
 
 # Cheap, deterministic checks first: a failing test suite must not stop the
 # validator from reporting, since prose changes are the common case and the
@@ -10,7 +10,7 @@ test:
 	python3 scripts/validate_skill_anatomy.py
 	python3 scripts/validate_skill_anatomy.py --self-test
 	$(MAKE) --no-print-directory lint
-	pnpm run check:links
+	$(MAKE) --no-print-directory links
 	pnpm test
 	python3 -m unittest discover -s tests
 
@@ -20,6 +20,12 @@ test:
 lint:
 	uv run --locked ruff check
 	uv run --locked ruff format --check
+
+# Local links and heading anchors in every tracked Markdown file. --offline
+# skips remote URLs, so the check is deterministic and makes no network
+# calls. Install lychee with `brew install lychee`.
+links:
+	git ls-files -z -- '*.md' | xargs -0 lychee --offline --include-fragments --no-progress
 
 # Static checks for the Harbor eval suite: the vendored verifier copies match
 # their source, the rule checks pass their fixtures, and the smoke job config

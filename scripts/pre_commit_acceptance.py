@@ -71,7 +71,7 @@ def select_checks(paths: list[str]) -> list[Check]:
     """
     checks = [Check("staged diff has no whitespace errors", ["git", "diff", "--cached", "--check"])]
     if any(path.endswith(".md") for path in paths):
-        checks.append(Check("Markdown parses and local links resolve", ["pnpm", "run", "check:links"], ("pnpm",)))
+        checks.append(Check("local Markdown links and anchors resolve", ["make", "links"], ("make", "lychee")))
     if any(path.endswith(".py") for path in paths):
         checks.append(Check("Python passes ruff lint", ["uv", "run", "--locked", "ruff", "check"], ("uv",)))
         checks.append(

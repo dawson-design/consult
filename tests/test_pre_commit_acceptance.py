@@ -46,10 +46,10 @@ class CheckSelectionTests(TempDirTestCase):
         self.assertIn("==> git diff --cached --check", self.dry_run_with_staged("notes.txt"))
 
     def test_checks_markdown_when_markdown_files_are_staged(self) -> None:
-        self.assertIn("==> pnpm run check:links", self.dry_run_with_staged("README.md"))
+        self.assertIn("==> make links", self.dry_run_with_staged("README.md"))
 
     def test_skips_the_markdown_check_when_no_markdown_is_staged(self) -> None:
-        self.assertNotIn("check:links", self.dry_run_with_staged("notes.txt"))
+        self.assertNotIn("make links", self.dry_run_with_staged("notes.txt"))
 
     def test_lints_and_format_checks_python_when_python_files_are_staged(self) -> None:
         output = self.dry_run_with_staged("tool.py")

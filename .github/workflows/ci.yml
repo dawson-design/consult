@@ -36,6 +36,17 @@ jobs:
       # publishes no floating major tag, so pin the release.
       - uses: astral-sh/setup-uv@v10.3.0
 
+      # lychee checks local Markdown links and anchors (make links), and the
+      # pre-commit tests expect it on PATH. Pinned release binary, verified
+      # against its published SHA-256.
+      - name: Install lychee
+        run: |
+          curl -sSfL -o "$RUNNER_TEMP/lychee.tar.gz" \
+            https://github.com/lycheeverse/lychee/releases/download/lychee-v0.24.2/lychee-x86_64-unknown-linux-gnu.tar.gz
+          echo "1f4e0ef7f6554a6ed33dd7ac144fb2e1bbed98598e7af973042fc5cd43951c9a  $RUNNER_TEMP/lychee.tar.gz" | sha256sum -c -
+          tar xzf "$RUNNER_TEMP/lychee.tar.gz" -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/lychee-x86_64-unknown-linux-gnu" >> "$GITHUB_PATH"
+
       - name: Python lint and format
         if: ${{ !cancelled() }}
         run: make lint
@@ -64,7 +75,7 @@ jobs:
 
       - name: Markdown links
         if: ${{ !cancelled() }}
-        run: pnpm run check:links
+        run: make links
 
       - name: Repo tests
         if: ${{ !cancelled() }}
