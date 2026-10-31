@@ -32,6 +32,14 @@ jobs:
       # clean-clone contract is broken.
       - run: pnpm install --frozen-lockfile
 
+      # ruff is pinned in the root pyproject.toml and uv.lock. setup-uv
+      # publishes no floating major tag, so pin the release.
+      - uses: astral-sh/setup-uv@v10.3.0
+
+      - name: Python lint and format
+        if: ${{ !cancelled() }}
+        run: make lint
+
       # The Harbor verifier is vendored into every eval task; this fails when a
       # copy drifts from eval/verifier/. Standard library only, no Docker.
       - name: Eval verifier sync

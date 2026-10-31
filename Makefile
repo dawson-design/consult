@@ -9,6 +9,7 @@ SHELL := /bin/bash
 test:
 	node scripts/validate-skill-anatomy.mjs
 	node scripts/validate-skill-anatomy.mjs --self-test
+	$(MAKE) --no-print-directory lint
 	pnpm run check:links
 	pnpm test
 
@@ -16,8 +17,8 @@ test:
 # version pinned in the root pyproject.toml. `uv run ruff format` fixes the
 # formatting findings.
 lint:
-	uv run ruff check
-	uv run ruff format --check
+	uv run --locked ruff check
+	uv run --locked ruff format --check
 
 # Static checks for the Harbor eval suite: the vendored verifier copies match
 # their source, the rule checks pass their fixtures, and the smoke job config
