@@ -48,6 +48,15 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `recipes.md` asks for a check where the caller sees the result plus tests
   of each rule at the right level. `test-theater.md` flags unit tests only
   for chain functions that hold no business rule. Unmeasured by the eval.
+- `specify` uses plain prose and the pack's vocabulary: "design",
+  "contract", and "design doc" in place of "shape", "surface", and
+  "artifact", with the same policy. The Iron Law
+  reads "Read the code, propose a design, and get agreement before
+  building." The old Rule 1, which defined "design-partner mode", merges into
+  the asking rule (now Rule 4), so Rules 2 to 8 become 1 to 7. Rule 2 points
+  at `contract-first` Rule 1 for what a contract is, instead of keeping its
+  own list. The Codex short description reads "Agree on a design before
+  building". Unmeasured by the eval.
 
 ## [18.0.0] (2026-10-23)
 

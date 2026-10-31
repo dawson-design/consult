@@ -35,7 +35,7 @@ CODE_RE = re.compile(r"\.[cm]?[jt]sx?$")
 CONFIG_CODE_RE = re.compile(r"(^|/)[^/]*\.config\.[cm]?[jt]s$")
 # Schema, migration, and model files: workflow Rule 10's data stage, built before the contract.
 DATA_RE = re.compile(r"(^|[/._-])(migrations?|models?|schemas?)([/._-]|$)", re.IGNORECASE)
-# Plans, ADRs, specs, and design notes: what workflow Rule 9 and specify Rule 8
+# Plans, ADRs, specs, and design notes: what workflow Rule 9 and specify Rule 7
 # ask an agent to write. Allowed before sign-off and not "docs" for documentation.1.
 PLAN_DOC_RE = re.compile(
     r"(^|/)docs/(plans|adr|decisions|specs?|design)/|(^|/)(PLAN|NOTES)\.md$|(spec|design|plan|adr|decision)[^/]*\.md$",
