@@ -13,9 +13,7 @@ from pathlib import Path
 
 from helpers import ROOT, TempDirTestCase, run
 
-# The implementation under test. Step 5 of docs/plans/python-only-tooling.md
-# switches this to the Python port.
-COMMAND = ["node", ROOT / "scripts/pre-commit-acceptance.mjs"]
+COMMAND = ["python3", ROOT / "scripts/pre_commit_acceptance.py"]
 
 
 def clean_env() -> dict[str, str]:
