@@ -1,6 +1,6 @@
 """The verifier's prepare step: judge inputs inlined, or the judge dropped.
 
-  python3 -m unittest discover eval/verifier/tests
+python3 -m unittest discover eval/verifier/tests
 """
 
 from __future__ import annotations

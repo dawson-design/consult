@@ -1,6 +1,6 @@
 """Tier arm plans, arm job configs, fast-tier task selection, and baselines.
 
-  python3 -m unittest discover eval/verifier/tests
+python3 -m unittest discover eval/verifier/tests
 """
 
 from __future__ import annotations
@@ -25,11 +25,22 @@ import run  # noqa: E402
 import selection  # noqa: E402
 import stub  # noqa: E402
 
-AGENT = {"name": "claude-code", "model_name": "anthropic/claude-sonnet-5",
-         "kwargs": {"reasoning_effort": "medium", "version": "2.1.282"}}
+AGENT = {
+    "name": "claude-code",
+    "model_name": "anthropic/claude-sonnet-5",
+    "kwargs": {"reasoning_effort": "medium", "version": "2.1.282"},
+}
 HOOK = {"hooks": {"SessionStart": [{"hooks": [{"type": "command", "command": "echo Consult is installed."}]}]}}
-JOB_ARGS = argparse.Namespace(suite="rules", tier=None, agent="claude-code", effort=None, attempts=1,
-                              concurrency=2, install_only=False, drop_references=())
+JOB_ARGS = argparse.Namespace(
+    suite="rules",
+    tier=None,
+    agent="claude-code",
+    effort=None,
+    attempts=1,
+    concurrency=2,
+    install_only=False,
+    drop_references=(),
+)
 
 
 def parse(argv: list[str]) -> argparse.Namespace:
@@ -219,14 +230,33 @@ class SkillSnapshotTests(unittest.TestCase):
         return config["agents"][0]["skills"][0]
 
     def test_a_skill_edit_during_the_run_reaches_neither_arm(self):
-        argv = ["run.py", "--suite", "rules", "--agent", "claude-code", "--arms", "bare,stub,consult",
-                "--skip-preflight", "--no-lift"]
-        with mock.patch.multiple(run, SKILLS_DIR=self.source, RUNS_DIR=self.root / "runs",
-                                 tier_tasks=lambda args: ["api-error-contract"],
-                                 load_agent=lambda name, model: (AGENT, {}, HOOK), start_job=self.fake_harbor), \
-                mock.patch.object(sys, "argv", argv), redirect_stdout(io.StringIO()):
+        argv = [
+            "run.py",
+            "--suite",
+            "rules",
+            "--agent",
+            "claude-code",
+            "--arms",
+            "bare,stub,consult",
+            "--skip-preflight",
+            "--no-lift",
+        ]
+        with (
+            mock.patch.multiple(
+                run,
+                SKILLS_DIR=self.source,
+                RUNS_DIR=self.root / "runs",
+                tier_tasks=lambda args: ["api-error-contract"],
+                load_agent=lambda name, model: (AGENT, {}, HOOK),
+                start_job=self.fake_harbor,
+            ),
+            mock.patch.object(sys, "argv", argv),
+            redirect_stdout(io.StringIO()),
+        ):
             run.main()
-        self.assertEqual(frontmatter(self.arm_skills("consult"), "proof"), frontmatter(self.arm_skills("stub"), "proof"))
+        self.assertEqual(
+            frontmatter(self.arm_skills("consult"), "proof"), frontmatter(self.arm_skills("stub"), "proof")
+        )
 
 
 class SelectionTests(unittest.TestCase):
@@ -235,7 +265,9 @@ class SelectionTests(unittest.TestCase):
         self.assertIsNone(selection.skill_name("agents/.agents/README.md"))
 
     def test_tasks_where_the_skill_is_most_central_come_first(self):
-        tasks = selection.select_tasks({"ui-design"}, ["service-from-brief", "accessible-ui-state", "api-error-contract"], 4)
+        tasks = selection.select_tasks(
+            {"ui-design"}, ["service-from-brief", "accessible-ui-state", "api-error-contract"], 4
+        )
         self.assertEqual(tasks, ["accessible-ui-state", "service-from-brief"])
 
     def test_a_task_that_only_scores_the_skill_rules_is_selected(self):
@@ -261,7 +293,9 @@ class BaselineTests(unittest.TestCase):
 
     def test_a_different_model_is_not_reusable(self):
         stored = baseline.baseline_key(AGENT, None, ["api-error-contract"])
-        current = baseline.baseline_key({**AGENT, "model_name": "anthropic/claude-haiku-4-5"}, None, ["api-error-contract"])
+        current = baseline.baseline_key(
+            {**AGENT, "model_name": "anthropic/claude-haiku-4-5"}, None, ["api-error-contract"]
+        )
         self.assertIn("model differs", baseline.mismatch(stored, current))
 
     def test_a_task_the_baseline_never_ran_is_not_reusable(self):
@@ -274,7 +308,9 @@ class BaselineTests(unittest.TestCase):
             job = Path(tmp)
             for name, rewards in (("ok__1", {"reward": 0.7}), ("failed__1", None)):
                 (job / name).mkdir()
-                (job / name / "result.json").write_text(json.dumps({"verifier_result": rewards and {"rewards": rewards}}))
+                (job / name / "result.json").write_text(
+                    json.dumps({"verifier_result": rewards and {"rewards": rewards}})
+                )
             self.assertEqual(baseline.unrewarded_trials(job), ["failed__1"])
 
     def test_editing_any_task_file_changes_its_hash(self):

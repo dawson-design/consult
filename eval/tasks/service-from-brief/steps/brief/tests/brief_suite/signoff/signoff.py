@@ -1,5 +1,6 @@
 # Synced from eval/verifier/shared/signoff/signoff.py. Do not edit in tests/.
 """Step-1 sign-off: one criterion per sign-off rule the task lists, plus zero-weight mode flags."""
+
 import sys
 from pathlib import Path
 

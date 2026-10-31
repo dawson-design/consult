@@ -64,7 +64,10 @@ class SkillDetectionTests(unittest.TestCase):
         self.assertEqual(skills_read(step), [])
 
     def test_an_installed_skill_that_claude_code_loaded_is_counted(self):
-        steps = [*skill_file_load("workflow", f"{INSTALLED_SKILLS}/workflow"), *skill_file_load("debugging", f"{INSTALLED_SKILLS}/debugging")]
+        steps = [
+            *skill_file_load("workflow", f"{INSTALLED_SKILLS}/workflow"),
+            *skill_file_load("debugging", f"{INSTALLED_SKILLS}/debugging"),
+        ]
         self.assertEqual(skills_read(*steps), ["debugging", "workflow"])
 
     def test_a_consult_plugin_skill_load_is_counted(self):

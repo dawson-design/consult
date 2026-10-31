@@ -38,7 +38,8 @@ import consult_lib as cl  # noqa: E402
 
 REFERENCE_SUFFIXES = (".md", ".yaml", ".yml")
 REFERENCE_PATH_RE = re.compile(
-    r"skills/([a-z][a-z0-9-]*/references/[\w./-]+\.(?:" + "|".join(s[1:] for s in REFERENCE_SUFFIXES) + "))")
+    r"skills/([a-z][a-z0-9-]*/references/[\w./-]+\.(?:" + "|".join(s[1:] for s in REFERENCE_SUFFIXES) + "))"
+)
 
 
 def trial_references(trial_dir: Path) -> set[str]:

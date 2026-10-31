@@ -55,8 +55,12 @@ def loading_rows(job_dir: Path) -> list[dict]:
     for trial_dir in sorted(p.parent for p in job_dir.glob("*/result.json")):
         by_task.setdefault(trial_task(trial_dir), []).append(trial_skills(trial_dir))
     return [
-        {"task": task, "trials": len(runs), "loaded": sum(1 for skills in runs if skills),
-         "skills": Counter(chain.from_iterable(runs))}
+        {
+            "task": task,
+            "trials": len(runs),
+            "loaded": sum(1 for skills in runs if skills),
+            "skills": Counter(chain.from_iterable(runs)),
+        }
         for task, runs in sorted(by_task.items())
     ]
 

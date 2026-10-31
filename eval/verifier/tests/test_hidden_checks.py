@@ -41,7 +41,10 @@ class HiddenCheckCase(unittest.TestCase):
         script = (HIDDEN / f"{self.task}.mjs").read_text()
         return subprocess.run(
             ["node", "--input-type=module", "-e", script],
-            cwd=workspace, capture_output=True, text=True, timeout=120,
+            cwd=workspace,
+            capture_output=True,
+            text=True,
+            timeout=120,
         )
 
     def assertPasses(self, *edits: Edit) -> None:
@@ -103,7 +106,7 @@ class ApiErrorContractTests(HiddenCheckCase):
         self.assertPasses(("src/users.js", self.FLAT, "body: { error: { code, message } }"))
 
     def test_problem_details_passes(self) -> None:
-        self.assertPasses(("src/users.js", self.FLAT, 'body: { type: code, title: message, status }'))
+        self.assertPasses(("src/users.js", self.FLAT, "body: { type: code, title: message, status }"))
 
     def test_ok_for_a_missing_id_fails(self) -> None:
         self.assertFails(
@@ -144,12 +147,18 @@ class DatabaseReleaseSafetyTests(HiddenCheckCase):
 
     def test_unique_constraint_that_builds_its_own_index_fails(self) -> None:
         self.assertFails(
-            ("migrations/003_customer_email_unique_constraint.sql", "UNIQUE USING INDEX customers_email_idx", "UNIQUE (email)"),
+            (
+                "migrations/003_customer_email_unique_constraint.sql",
+                "UNIQUE USING INDEX customers_email_idx",
+                "UNIQUE (email)",
+            ),
             reason="no UNIQUE or PRIMARY KEY constraint that builds its own index",
         )
 
     def test_not_null_column_with_a_default_passes(self) -> None:
-        self.assertPasses(self.after_column("ALTER TABLE customers ADD COLUMN email_verified boolean NOT NULL DEFAULT false;"))
+        self.assertPasses(
+            self.after_column("ALTER TABLE customers ADD COLUMN email_verified boolean NOT NULL DEFAULT false;")
+        )
 
     def test_not_null_column_without_a_default_fails(self) -> None:
         self.assertFails(
@@ -158,10 +167,12 @@ class DatabaseReleaseSafetyTests(HiddenCheckCase):
         )
 
     def test_check_constraint_added_not_valid_then_validated_passes(self) -> None:
-        self.assertPasses(self.after_column(
-            f"ALTER TABLE customers ADD CONSTRAINT {self.LOWER} NOT VALID;\n"
-            "ALTER TABLE customers VALIDATE CONSTRAINT customers_email_lower;"
-        ))
+        self.assertPasses(
+            self.after_column(
+                f"ALTER TABLE customers ADD CONSTRAINT {self.LOWER} NOT VALID;\n"
+                "ALTER TABLE customers VALIDATE CONSTRAINT customers_email_lower;"
+            )
+        )
 
     def test_check_constraint_validated_under_lock_fails(self) -> None:
         self.assertFails(
@@ -171,7 +182,9 @@ class DatabaseReleaseSafetyTests(HiddenCheckCase):
 
     def test_foreign_key_validated_under_lock_fails(self) -> None:
         self.assertFails(
-            self.after_column("ALTER TABLE customers ADD CONSTRAINT customers_org_fk FOREIGN KEY (org_id) REFERENCES orgs (id);"),
+            self.after_column(
+                "ALTER TABLE customers ADD CONSTRAINT customers_org_fk FOREIGN KEY (org_id) REFERENCES orgs (id);"
+            ),
             reason="no CHECK or FOREIGN KEY constraint added without NOT VALID",
         )
 
@@ -200,7 +213,13 @@ class DatabaseReleaseSafetyTests(HiddenCheckCase):
         )
 
     def test_validation_notes_under_the_instruction_wording_pass(self) -> None:
-        self.assertPasses((self.DOCS, self.VALIDATE, "## Validation\n\nConfirm `customers_email_idx` has `indisvalid = true` before running 003."))
+        self.assertPasses(
+            (
+                self.DOCS,
+                self.VALIDATE,
+                "## Validation\n\nConfirm `customers_email_idx` has `indisvalid = true` before running 003.",
+            )
+        )
 
     def test_notes_without_validation_fail(self) -> None:
         self.assertFails((self.DOCS, self.VALIDATE, ""), reason="documents validation")
@@ -211,7 +230,7 @@ class DatabaseReleaseSafetyTests(HiddenCheckCase):
 
 class SecurityBoundaryFixTests(HiddenCheckCase):
     task = "security-boundary-fix"
-    ORIGIN_CHECK = "return url.origin === TRUSTED_ORIGIN && !url.username && !url.password ? target : \"/\";"
+    ORIGIN_CHECK = 'return url.origin === TRUSTED_ORIGIN && !url.username && !url.password ? target : "/";'
 
     def test_trusted_host_named_only_in_the_workspace_passes(self) -> None:
         self.assertPasses()
@@ -229,7 +248,9 @@ class SecurityBoundaryFixTests(HiddenCheckCase):
         )
 
     def test_suffix_match_on_the_trusted_host_fails(self) -> None:
-        suffix = 'return url.protocol === "https:" && url.hostname.endsWith("example.com") && !url.username ? target : "/";'
+        suffix = (
+            'return url.protocol === "https:" && url.hostname.endsWith("example.com") && !url.username ? target : "/";'
+        )
         self.assertFails(
             ("src/redirect.js", self.ORIGIN_CHECK, suffix),
             reason="https://evilapp.example.com/x is not the trusted HTTPS host",

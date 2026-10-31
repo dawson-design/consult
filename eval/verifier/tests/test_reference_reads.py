@@ -63,14 +63,19 @@ class ReferenceReadsTests(unittest.TestCase):
         return trial
 
     def test_a_reference_read_twice_counts_once_and_a_failed_read_not_at_all(self):
-        trial = self.trial("consult", "t__0",
-                           claude_read(f"{CLAUDE_SKILLS}/api/references/rest-error-status-codes.md"),
-                           claude_read(f"{CLAUDE_SKILLS}/api/references/rest-error-status-codes.md"),
-                           claude_read(f"{CLAUDE_SKILLS}/api/references/pagination.md", error=True))
+        trial = self.trial(
+            "consult",
+            "t__0",
+            claude_read(f"{CLAUDE_SKILLS}/api/references/rest-error-status-codes.md"),
+            claude_read(f"{CLAUDE_SKILLS}/api/references/rest-error-status-codes.md"),
+            claude_read(f"{CLAUDE_SKILLS}/api/references/pagination.md", error=True),
+        )
         self.assertEqual(reference_reads.trial_references(trial), {"api/references/rest-error-status-codes.md"})
 
     def test_a_codex_shell_read_counts(self):
-        trial = self.trial("consult", "t__0", codex_exec(f"sed -n 1,200p {CODEX_SKILLS}/security/references/secrets.md"))
+        trial = self.trial(
+            "consult", "t__0", codex_exec(f"sed -n 1,200p {CODEX_SKILLS}/security/references/secrets.md")
+        )
         self.assertEqual(reference_reads.trial_references(trial), {"security/references/secrets.md"})
 
     def test_a_listing_that_shows_reference_paths_is_not_a_read(self):
@@ -80,12 +85,18 @@ class ReferenceReadsTests(unittest.TestCase):
 
     def test_every_step_trajectory_of_a_multi_step_trial_counts(self):
         trial = self.trial("consult", "t__0")
-        write_trajectory(trial / "steps" / "brief" / "agent" / "trajectory.json",
-                         claude_read(f"{CLAUDE_SKILLS}/domain-modeling/references/money.md"))
-        write_trajectory(trial / "steps" / "build" / "agent" / "trajectory.json",
-                         claude_read(f"{CLAUDE_SKILLS}/proof/references/test-theater.md"))
-        self.assertEqual(reference_reads.trial_references(trial),
-                         {"domain-modeling/references/money.md", "proof/references/test-theater.md"})
+        write_trajectory(
+            trial / "steps" / "brief" / "agent" / "trajectory.json",
+            claude_read(f"{CLAUDE_SKILLS}/domain-modeling/references/money.md"),
+        )
+        write_trajectory(
+            trial / "steps" / "build" / "agent" / "trajectory.json",
+            claude_read(f"{CLAUDE_SKILLS}/proof/references/test-theater.md"),
+        )
+        self.assertEqual(
+            reference_reads.trial_references(trial),
+            {"domain-modeling/references/money.md", "proof/references/test-theater.md"},
+        )
 
     def test_the_report_shows_each_reference_per_job_including_ones_nobody_opened(self):
         self.trial("bare", "t__0")

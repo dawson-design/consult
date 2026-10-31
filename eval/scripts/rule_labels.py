@@ -44,17 +44,30 @@ RULE_ITEM_RE = re.compile(r"^(\d+)\.\s", re.MULTILINE)
 
 def export_rows(job_dir: Path) -> list[dict]:
     """One row per scored rule verdict in each trial of the job, sorted by trial then rule."""
-    trials = sorted(((task, e) for task, entries in lift.load_trials(job_dir).items() for e in entries),
-                    key=lambda pair: pair[1]["trial"])
-    return [verdict_row(job_dir, task, entry, rule)
-            for task, entry in trials for rule in cr.scored_rule_ids(sorted(entry["rules"]))]
+    trials = sorted(
+        ((task, e) for task, entries in lift.load_trials(job_dir).items() for e in entries),
+        key=lambda pair: pair[1]["trial"],
+    )
+    return [
+        verdict_row(job_dir, task, entry, rule)
+        for task, entry in trials
+        for rule in cr.scored_rule_ids(sorted(entry["rules"]))
+    ]
 
 
 def verdict_row(job_dir: Path, task: str, entry: dict, rule: str) -> dict:
-    return {"job": job_dir.name, "trial": entry["trial"], "task": task.split("/")[-1], "rule": rule,
-            "rule_text": rule_text(rule), "automated": entry["rules"][rule],
-            "evidence_dir": str(evidence_dir(job_dir.resolve() / entry["trial"])),
-            "proposed": "", "human": "", "note": ""}
+    return {
+        "job": job_dir.name,
+        "trial": entry["trial"],
+        "task": task.split("/")[-1],
+        "rule": rule,
+        "rule_text": rule_text(rule),
+        "automated": entry["rules"][rule],
+        "evidence_dir": str(evidence_dir(job_dir.resolve() / entry["trial"])),
+        "proposed": "",
+        "human": "",
+        "note": "",
+    }
 
 
 def evidence_dir(trial_dir: Path) -> Path:
@@ -137,9 +150,15 @@ def agreement(rows: list[dict]) -> dict[str, dict[str, int]]:
 
 
 def render_agreement(result: dict[str, dict[str, int]]) -> str:
-    lines = ["| rule | labelled | agree | false pass | false fail | agreement |", "| --- | ---: | ---: | ---: | ---: | ---: |"]
-    lines += [f"| {rule} | {t['labelled']} | {t['agree']} | {t['false_pass']} | {t['false_fail']} "
-              f"| {t['agree'] / t['labelled']:.0%} |" for rule, t in result.items()]
+    lines = [
+        "| rule | labelled | agree | false pass | false fail | agreement |",
+        "| --- | ---: | ---: | ---: | ---: | ---: |",
+    ]
+    lines += [
+        f"| {rule} | {t['labelled']} | {t['agree']} | {t['false_pass']} | {t['false_fail']} "
+        f"| {t['agree'] / t['labelled']:.0%} |"
+        for rule, t in result.items()
+    ]
     return "\n".join(lines) + "\n"
 
 

@@ -83,9 +83,13 @@ class WorkspaceWriteTests(unittest.TestCase):
         self.assertFalse(proved(step(FIX), step(TEST), step(bash("perl -0pi -e 's/a/b/' src/cart.js"))))
 
     def test_a_heredoc_body_is_not_shell_syntax(self):
-        scratch = bash("cat > /tmp/probe.mjs <<'EOF'\nconst ok = a > b;\necho x > src/cart.js\nEOF\nnode /tmp/probe.mjs")
+        scratch = bash(
+            "cat > /tmp/probe.mjs <<'EOF'\nconst ok = a > b;\necho x > src/cart.js\nEOF\nnode /tmp/probe.mjs"
+        )
         self.assertTrue(proved(step(FIX), step(TEST), step(scratch)))
-        self.assertFalse(proved(step(FIX), step(TEST), step(bash("cat >> /app/test/cart.test.js <<'EOF'\ntest();\nEOF"))))
+        self.assertFalse(
+            proved(step(FIX), step(TEST), step(bash("cat >> /app/test/cart.test.js <<'EOF'\ntest();\nEOF")))
+        )
 
     def test_an_inline_script_that_writes_a_file_is_an_edit(self):
         reader = bash("python3 - <<'EOF'\nprint(open('src/cart.js').read())\nEOF")
@@ -157,7 +161,7 @@ class MutationRunTests(unittest.TestCase):
     def test_a_test_run_inside_a_shell_function_counts_where_the_function_is_called(self):
         define = "cp src/cart.js /tmp/cart.bak\nrun() { node --test 2>&1 | grep fail; cp /tmp/cart.bak src/cart.js; }\n"
         mutate = "sed -i 's/>=/>/' src/cart.js"
-        for call in ("run \"boundary\"", "echo \"[$(run)]\""):
+        for call in ('run "boundary"', 'echo "[$(run)]"'):
             self.assertTrue(proved(step(FIX), step(TEST), step(bash(f"{define}{mutate}; {call}"))), call)
         self.assertFalse(proved(step(FIX), step(TEST), step(bash(f"{define}run; {mutate}"))))
 

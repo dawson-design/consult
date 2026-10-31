@@ -1,5 +1,6 @@
 # Synced from eval/verifier/shared/rules/rules.py. Do not edit in tests/.
 """One criterion per rule id in consult.json `rules`, named by the id. Zero-weight readout."""
+
 import sys
 from pathlib import Path
 

@@ -1,6 +1,6 @@
 """Stub skills: the real frontmatter, a neutral body, and nothing else.
 
-  python3 -m unittest discover eval/verifier/tests
+python3 -m unittest discover eval/verifier/tests
 """
 
 from __future__ import annotations

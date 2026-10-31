@@ -149,8 +149,11 @@ def tier_tasks(args: argparse.Namespace) -> list[str]:
         skills = selection.changed_skills(args.changed_since)
         candidates = release_tasks()
         tasks = selection.select_tasks(skills, candidates, args.max_tasks)
-        print(f"fast tier: skills changed since {args.changed_since}: {', '.join(sorted(skills)) or 'none'}; "
-              f"tasks: {', '.join(tasks) or 'none, using the core suite'}", flush=True)
+        print(
+            f"fast tier: skills changed since {args.changed_since}: {', '.join(sorted(skills)) or 'none'}; "
+            f"tasks: {', '.join(tasks) or 'none, using the core suite'}",
+            flush=True,
+        )
         return tasks or load_suite("core")
     return load_suite(args.suite)
 
@@ -191,8 +194,15 @@ def plan_arms(requested: list[str], reuse: dict | None, needs_lift: bool) -> lis
     return requested
 
 
-def build_job(args: argparse.Namespace, arm: str, stamp: str, tasks: list[str], agent: dict, settings: dict | None,
-              skills: dict[str, list[str]]) -> dict:
+def build_job(
+    args: argparse.Namespace,
+    arm: str,
+    stamp: str,
+    tasks: list[str],
+    agent: dict,
+    settings: dict | None,
+    skills: dict[str, list[str]],
+) -> dict:
     return {
         "job_name": f"{stamp}-{job_label(args)}-{arm}",
         "jobs_dir": str(RUNS_DIR),
@@ -204,8 +214,9 @@ def build_job(args: argparse.Namespace, arm: str, stamp: str, tasks: list[str], 
     }
 
 
-def run_preflight(args, stamp: str, tasks: list[str], agent: dict, settings: dict | None, host_env: dict,
-                  skills: dict[str, list[str]]) -> float:
+def run_preflight(
+    args, stamp: str, tasks: list[str], agent: dict, settings: dict | None, host_env: dict, skills: dict[str, list[str]]
+) -> float:
     """Consult arm, first turn of each task, no verification; returns the share of trials that loaded a skill."""
     task_root = RUNS_DIR / "preflight-tasks" / stamp
     for task in tasks:
@@ -231,8 +242,11 @@ def preflight_gate(args: argparse.Namespace, rate: float) -> int | None:
     if args.preflight_only:
         return 0
     if rate < args.preflight_min:
-        print(f"preflight: loading rate {rate:.0%} is below --preflight-min {args.preflight_min:.0%}; "
-              "not running the arms (pass --skip-preflight to override)", file=sys.stderr)
+        print(
+            f"preflight: loading rate {rate:.0%} is below --preflight-min {args.preflight_min:.0%}; "
+            "not running the arms (pass --skip-preflight to override)",
+            file=sys.stderr,
+        )
         return 3
     return None
 
@@ -250,25 +264,39 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--suite", help="name of a file under eval/suites/; required without --tier")
     parser.add_argument("--agent", help="name of a file under eval/agents/; the fast tier defaults to claude-code")
     parser.add_argument("--tier", choices=("fast", "release"), help="preset run shape; see the tiers above")
-    parser.add_argument("--arms", help="subset of bare,stub,consult (default bare,consult, all three for --tier release)")
+    parser.add_argument(
+        "--arms", help="subset of bare,stub,consult (default bare,consult, all three for --tier release)"
+    )
     parser.add_argument("--model", help="override the agent fragment's model_name")
     parser.add_argument("--attempts", type=int, help="Harbor n_attempts per task (default 1, or 3 with --tier)")
     parser.add_argument("--concurrency", type=int, default=2, help="Harbor n_concurrent_trials")
     parser.add_argument("--install-only", action="store_true", help="agent setup only; proves wiring and auth")
     parser.add_argument("--no-lift", action="store_true", help="skip the lift report")
-    parser.add_argument("--effort", choices=("low", "medium", "high", "xhigh", "max"),
-                        help="override the agent fragment's reasoning_effort")
+    parser.add_argument(
+        "--effort",
+        choices=("low", "medium", "high", "xhigh", "max"),
+        help="override the agent fragment's reasoning_effort",
+    )
     parser.add_argument("--baseline", help="reuse the bare arm of runs/baselines/<name>.json when it matches")
     parser.add_argument("--save-baseline", help="after the arms run, save them as runs/baselines/<name>.json")
     parser.add_argument("--changed-since", default="HEAD", help="fast tier: git ref to diff the skills against")
     parser.add_argument("--max-tasks", type=int, default=4, help="fast tier: most tasks to select")
-    parser.add_argument("--drop-references", default="",
-                        help="comma-separated skills whose references/ the consult arm leaves out (an ablation)")
-    parser.add_argument("--skip-preflight", action="store_true", help="run the arms without the skill-loading preflight")
+    parser.add_argument(
+        "--drop-references",
+        default="",
+        help="comma-separated skills whose references/ the consult arm leaves out (an ablation)",
+    )
+    parser.add_argument(
+        "--skip-preflight", action="store_true", help="run the arms without the skill-loading preflight"
+    )
     parser.add_argument("--preflight-only", action="store_true", help="run the skill-loading preflight and stop")
     parser.add_argument("--preflight-attempts", type=int, default=1, help="preflight trials per task")
-    parser.add_argument("--preflight-min", type=float, default=0.5,
-                        help="minimum share of preflight trials that must load a Consult skill")
+    parser.add_argument(
+        "--preflight-min",
+        type=float,
+        default=0.5,
+        help="minimum share of preflight trials that must load a Consult skill",
+    )
     parser.add_argument("harbor_args", nargs="*", help="extra args passed to `harbor run` after --")
     args = parser.parse_args()
     if args.tier == "fast":
@@ -299,15 +327,19 @@ def ablation_gate(args: argparse.Namespace, reuse: dict | None) -> int | None:
     if not args.drop_references:
         return None
     if not reuse:
-        print("--drop-references compares against a saved baseline's consult arm, and none is reusable",
-              file=sys.stderr)
+        print(
+            "--drop-references compares against a saved baseline's consult arm, and none is reusable", file=sys.stderr
+        )
         return 2
     full_pack = stub.snapshot(SKILLS_DIR, RUNS_DIR / "consult-skills").name
     ran = trial_skills_dir(Path(reuse["consult"]))
     if ran is None or Path(ran).name != full_pack:
-        print(f"the baseline's consult arm ran skills {Path(ran).name if ran else '(no record)'}, not today's full "
-              f"pack {full_pack}; the ablation would also measure the skill edits since then. Save a fresh "
-              "baseline of the full pack (--save-baseline) on the same tasks first", file=sys.stderr)
+        print(
+            f"the baseline's consult arm ran skills {Path(ran).name if ran else '(no record)'}, not today's full "
+            f"pack {full_pack}; the ablation would also measure the skill edits since then. Save a fresh "
+            "baseline of the full pack (--save-baseline) on the same tasks first",
+            file=sys.stderr,
+        )
         return 2
     return None
 

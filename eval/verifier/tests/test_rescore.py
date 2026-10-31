@@ -38,8 +38,15 @@ SCAFFOLD_FILES = {
 OLD_REWARDS = {"verification": 0.0, "proof": 0.15, "change_quality": 1.0, "judge": 1.0, "reward": 0.3}
 NEW_REWARDS = {"verification": 1.0, "proof": 1.0, "change_quality": 1.0, "rules": 1.0, "reward": 1.0}
 NEW_DETAILS = {"rules": {"score": 1.0, "criteria": [{"name": "api.1", "value": 1.0}]}}
-CODE_WEIGHTS = {"verification": 0.275, "proof": 0.1925, "change_quality": 0.0825, "judge": 0.45,
-                "skill_triggering": 0.0, "non_interruption": 0.0, "rules": 0.0}
+CODE_WEIGHTS = {
+    "verification": 0.275,
+    "proof": 0.1925,
+    "change_quality": 0.0825,
+    "judge": 0.45,
+    "skill_triggering": 0.0,
+    "non_interruption": 0.0,
+    "rules": 0.0,
+}
 
 
 def git(repo: Path, *args: str) -> None:
@@ -143,8 +150,15 @@ class TestDirTests(unittest.TestCase):
 
 class MergeTests(unittest.TestCase):
     def test_the_recorded_reward_is_the_weighted_mean_of_its_dimensions(self):
-        recorded = {"change_quality": 1.0, "judge": 0.8355, "non_interruption": 1.0, "proof": 0.15, "rules": 1.0,
-                    "skill_triggering": 0.5, "verification": 0.0}
+        recorded = {
+            "change_quality": 1.0,
+            "judge": 0.8355,
+            "non_interruption": 1.0,
+            "proof": 0.15,
+            "rules": 1.0,
+            "skill_triggering": 0.5,
+            "verification": 0.0,
+        }
         self.assertEqual(rescore.weighted_reward(recorded, CODE_WEIGHTS), 0.4874)
 
     def test_the_merged_reward_keeps_the_original_judge_score(self):
@@ -173,8 +187,12 @@ class RescoredJobTests(RescoreTestCase):
         (trial / "agent" / "trajectory.json").write_text(json.dumps({"steps": []}))
         (trial / "verifier" / "judge-bundle.md").write_text(bundle)
         (trial / "verifier" / "reward-details.json").write_text(json.dumps({"judge": {"score": 1.0}}))
-        result = {"task_name": "consult/api-error-contract", "verifier_result": {"rewards": OLD_REWARDS},
-                  "started_at": started_now(), **result_fields}
+        result = {
+            "task_name": "consult/api-error-contract",
+            "verifier_result": {"rewards": OLD_REWARDS},
+            "started_at": started_now(),
+            **result_fields,
+        }
         (trial / "result.json").write_text(json.dumps(result))
 
     def multi_step(self, name: str) -> None:
@@ -185,19 +203,27 @@ class RescoredJobTests(RescoreTestCase):
         brief = {"signoff": {"criteria": [{"name": "mode_built", "value": 1.0}]}}
         (trial / "steps" / "brief" / "verifier" / "reward-details.json").write_text(json.dumps(brief))
         (trial / "steps" / "approve" / "verifier" / "judge-bundle.md").write_text(self.bundle)
-        steps = [{"step_name": "brief", "verifier_result": {"rewards": {"signoff": 1.0, "reward": 1.0}}},
-                 {"step_name": "approve", "verifier_result": {"rewards": OLD_REWARDS}}]
-        result = {"task_name": "consult/money-field-change", "verifier_result": {"rewards": OLD_REWARDS},
-                  "started_at": started_now(), "step_results": steps}
+        steps = [
+            {"step_name": "brief", "verifier_result": {"rewards": {"signoff": 1.0, "reward": 1.0}}},
+            {"step_name": "approve", "verifier_result": {"rewards": OLD_REWARDS}},
+        ]
+        result = {
+            "task_name": "consult/money-field-change",
+            "verifier_result": {"rewards": OLD_REWARDS},
+            "started_at": started_now(),
+            "step_results": steps,
+        }
         (trial / "result.json").write_text(json.dumps(result))
 
     def copy_scaffold(self, task: str, dest: Path) -> Path:
         return Path(shutil.copytree(self.scaffold, dest))
 
     def run_cli(self, *extra: str, verifier=fake_verifier) -> int:
-        with mock.patch.object(rescore, "build_scaffold", self.copy_scaffold), \
-                mock.patch.object(rescore, "run_container", side_effect=verifier) as container, \
-                redirect_stdout(io.StringIO()):
+        with (
+            mock.patch.object(rescore, "build_scaffold", self.copy_scaffold),
+            mock.patch.object(rescore, "run_container", side_effect=verifier) as container,
+            redirect_stdout(io.StringIO()),
+        ):
             code = rescore.main(["rescore.py", str(self.job), *extra])
         self.container = container
         return code

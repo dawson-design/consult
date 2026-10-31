@@ -1,6 +1,6 @@
 """The vendored verifier copies: which reward weights each task's tests/reward.toml gets.
 
-  python3 -m unittest discover eval/verifier/tests
+python3 -m unittest discover eval/verifier/tests
 """
 
 from __future__ import annotations
@@ -17,8 +17,10 @@ sys.path.insert(0, str(EVAL_DIR / "scripts"))
 
 import sync_tests  # noqa: E402
 
-WEIGHTS_LINE = ("weights = {{ verification = 0.275, proof = 0.1925, change_quality = 0.0825, judge = 0.45, "
-                "skill_triggering = 0.0, non_interruption = 0.0, rules = {rules} }}")
+WEIGHTS_LINE = (
+    "weights = {{ verification = 0.275, proof = 0.1925, change_quality = 0.0825, judge = 0.45, "
+    "skill_triggering = 0.0, non_interruption = 0.0, rules = {rules} }}"
+)
 
 
 class RewardWeightTests(unittest.TestCase):
@@ -63,14 +65,18 @@ class RewardWeightTests(unittest.TestCase):
 class StepVerifierTests(unittest.TestCase):
     def step_test_sources(self, task: str) -> dict[str, Path]:
         pairs = sync_tests.planned_copies(sync_tests.TASKS_DIR / task)
-        return {dest.parts[-3]: src for src, dest in pairs if dest.parts[-4:-3] == ("steps",) and dest.name == "test.sh"}
+        return {
+            dest.parts[-3]: src for src, dest in pairs if dest.parts[-4:-3] == ("steps",) and dest.name == "test.sh"
+        }
 
     def test_only_the_first_step_gets_the_sign_off_suite(self):
         self.assertEqual(self.step_test_sources("money-field-change")["brief"], sync_tests.SHARED_DIR / "brief_test.sh")
 
     def test_a_middle_step_gets_the_unscored_verifier(self):
         """Without its own test.sh, Harbor would run the shared verifier and its judge after every gate."""
-        self.assertEqual(self.step_test_sources("money-field-change")["approve"], sync_tests.SHARED_DIR / "step_test.sh")
+        self.assertEqual(
+            self.step_test_sources("money-field-change")["approve"], sync_tests.SHARED_DIR / "step_test.sh"
+        )
 
     def test_the_final_step_keeps_the_shared_verifier(self):
         self.assertNotIn("continue", self.step_test_sources("money-field-change"))

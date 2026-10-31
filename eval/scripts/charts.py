@@ -30,10 +30,26 @@ from dataclasses import dataclass
 from html import escape
 from pathlib import Path
 
-LIGHT = {"name": "light", "surface": "#ffffff", "primary": "#0b0b0b", "secondary": "#52514e",
-         "grid": "#e1e0d9", "connector": "#c3c2b7", "bare": "#898781", "consult": "#e8592f"}
-DARK = {"name": "dark", "surface": "#0d1117", "primary": "#ffffff", "secondary": "#c3c2b7",
-        "grid": "#2c2c2a", "connector": "#4a4a46", "bare": "#898781", "consult": "#e8592f"}
+LIGHT = {
+    "name": "light",
+    "surface": "#ffffff",
+    "primary": "#0b0b0b",
+    "secondary": "#52514e",
+    "grid": "#e1e0d9",
+    "connector": "#c3c2b7",
+    "bare": "#898781",
+    "consult": "#e8592f",
+}
+DARK = {
+    "name": "dark",
+    "surface": "#0d1117",
+    "primary": "#ffffff",
+    "secondary": "#c3c2b7",
+    "grid": "#2c2c2a",
+    "connector": "#4a4a46",
+    "bare": "#898781",
+    "consult": "#e8592f",
+}
 FONT = "-apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif"
 LABEL_SIZE, EM_PER_CHAR = 13, 0.62  # a wide estimate, so labels fit fonts wider than Helvetica
 MARGIN, PLOT_WIDTH, RIGHT_MARGIN = 16, 480, 48
@@ -113,32 +129,48 @@ def footnotes(summary: dict, rows: list[dict]) -> list[str]:
     return notes
 
 
-def text(x: float, y: float, content: str, fill: str, size: int = LABEL_SIZE, anchor: str = "start",
-         css_class: str = "", weight: int = 400) -> str:
+def text(
+    x: float,
+    y: float,
+    content: str,
+    fill: str,
+    size: int = LABEL_SIZE,
+    anchor: str = "start",
+    css_class: str = "",
+    weight: int = 400,
+) -> str:
     """An SVG text element with its content escaped."""
     attrs = f' class="{css_class}"' if css_class else ""
-    return (f'<text{attrs} x="{x:.1f}" y="{y:.1f}" fill="{fill}" font-size="{size}" font-weight="{weight}" '
-            f'text-anchor="{anchor}">{escape(content)}</text>')
+    return (
+        f'<text{attrs} x="{x:.1f}" y="{y:.1f}" fill="{fill}" font-size="{size}" font-weight="{weight}" '
+        f'text-anchor="{anchor}">{escape(content)}</text>'
+    )
 
 
 def marker(x: float, y: float, arm: str, theme: dict, css_class: str = "") -> str:
     """A hollow ring for bare, a filled dot for Consult; the surface ring keeps overlapping dots apart."""
     css = css_class or arm
     if arm == "bare":
-        return (f'<circle class="{css}" cx="{x:.1f}" cy="{y:.1f}" r="{MARKER_RADIUS + 1}" fill="none" '
-                f'stroke="{theme["bare"]}" stroke-width="2"/>')
-    return (f'<circle class="{css}" cx="{x:.1f}" cy="{y:.1f}" r="{MARKER_RADIUS}" fill="{theme["consult"]}" '
-            f'stroke="{theme["surface"]}" stroke-width="2"/>')
+        return (
+            f'<circle class="{css}" cx="{x:.1f}" cy="{y:.1f}" r="{MARKER_RADIUS + 1}" fill="none" '
+            f'stroke="{theme["bare"]}" stroke-width="2"/>'
+        )
+    return (
+        f'<circle class="{css}" cx="{x:.1f}" cy="{y:.1f}" r="{MARKER_RADIUS}" fill="{theme["consult"]}" '
+        f'stroke="{theme["surface"]}" stroke-width="2"/>'
+    )
 
 
 def header(title: str, theme: dict) -> list[str]:
     """Title and legend; the legend markers match the plot's."""
     legend_y = 50
-    return [text(MARGIN, 26, title, theme["primary"], size=16, weight=600),
-            marker(22, legend_y - 4, "bare", theme, css_class="legend"),
-            text(34, legend_y, "Bare", theme["secondary"]),
-            marker(92, legend_y - 4, "consult", theme, css_class="legend"),
-            text(104, legend_y, "Consult", theme["secondary"])]
+    return [
+        text(MARGIN, 26, title, theme["primary"], size=16, weight=600),
+        marker(22, legend_y - 4, "bare", theme, css_class="legend"),
+        text(34, legend_y, "Bare", theme["secondary"]),
+        marker(92, legend_y - 4, "consult", theme, css_class="legend"),
+        text(104, legend_y, "Consult", theme["secondary"]),
+    ]
 
 
 def grid(layout: Layout, theme: dict) -> list[str]:
@@ -146,8 +178,10 @@ def grid(layout: Layout, theme: dict) -> list[str]:
     lines = []
     for tick in TICKS:
         x = layout.x(tick)
-        lines.append(f'<line x1="{x:.1f}" y1="{TOP - 12}" x2="{x:.1f}" y2="{layout.bottom:.1f}" '
-                     f'stroke="{theme["grid"]}" stroke-width="1"/>')
+        lines.append(
+            f'<line x1="{x:.1f}" y1="{TOP - 12}" x2="{x:.1f}" y2="{layout.bottom:.1f}" '
+            f'stroke="{theme["grid"]}" stroke-width="1"/>'
+        )
         lines.append(text(x, layout.bottom + 16, f"{tick:g}", theme["secondary"], size=12, anchor="middle"))
     return lines
 
@@ -156,11 +190,20 @@ def row(index: int, task: dict, layout: Layout, theme: dict) -> list[str]:
     """One task: its label, the connector, then the Consult dot under the bare ring, so a tie shows both."""
     y = TOP + index * ROW_HEIGHT
     bare_x, consult_x = layout.x(task["bare"]), layout.x(task["consult"])
-    return [text(layout.plot_left - MARGIN, y + 4, task_name(task["task"]), theme["secondary"], anchor="end",
-                 css_class="task"),
-            f'<line x1="{bare_x:.1f}" y1="{y}" x2="{consult_x:.1f}" y2="{y}" stroke="{theme["connector"]}" '
-            f'stroke-width="2"/>',
-            marker(consult_x, y, "consult", theme), marker(bare_x, y, "bare", theme)]
+    return [
+        text(
+            layout.plot_left - MARGIN,
+            y + 4,
+            task_name(task["task"]),
+            theme["secondary"],
+            anchor="end",
+            css_class="task",
+        ),
+        f'<line x1="{bare_x:.1f}" y1="{y}" x2="{consult_x:.1f}" y2="{y}" stroke="{theme["connector"]}" '
+        f'stroke-width="2"/>',
+        marker(consult_x, y, "consult", theme),
+        marker(bare_x, y, "bare", theme),
+    ]
 
 
 def direct_labels(task: dict, layout: Layout, theme: dict) -> list[str]:
@@ -169,8 +212,10 @@ def direct_labels(task: dict, layout: Layout, theme: dict) -> list[str]:
     if abs(consult_x - bare_x) < LABEL_GAP:
         return []
     y = TOP - 12
-    return [text(bare_x, y, "Bare", theme["secondary"], size=12, anchor="middle", css_class="direct-label"),
-            text(consult_x, y, "Consult", theme["secondary"], size=12, anchor="middle", css_class="direct-label")]
+    return [
+        text(bare_x, y, "Bare", theme["secondary"], size=12, anchor="middle", css_class="direct-label"),
+        text(consult_x, y, "Consult", theme["secondary"], size=12, anchor="middle", css_class="direct-label"),
+    ]
 
 
 def dumbbell_svg(summary: dict, theme: dict, agent: str) -> str:
@@ -180,17 +225,24 @@ def dumbbell_svg(summary: dict, theme: dict, agent: str) -> str:
     title = f"Reward per task on {agent}: bare agent vs Consult"
     lines = [caption(summary), *footnotes(summary, rows)]
     height = layout.bottom + 40 + 20 * len(lines)
-    body = [f'<rect width="100%" height="100%" fill="{theme["surface"]}"/>', *header(title, theme),
-            *grid(layout, theme)]
+    body = [
+        f'<rect width="100%" height="100%" fill="{theme["surface"]}"/>',
+        *header(title, theme),
+        *grid(layout, theme),
+    ]
     for index, task in enumerate(rows):
         body += row(index, task, layout, theme)
     body += direct_labels(rows[0], layout, theme)
-    body += [text(MARGIN, layout.bottom + 48 + 20 * i, line, theme["secondary"], css_class="footer")
-             for i, line in enumerate(lines)]
-    return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {layout.width:.0f} {height:.0f}" '
-            f'width="{layout.width:.0f}" height="{height:.0f}" role="img" aria-labelledby="title desc" '
-            f'font-family="{FONT}">\n<title id="title">{escape(title)}</title>\n'
-            f'<desc id="desc">{escape(". ".join(lines))}</desc>\n' + "\n".join(body) + "\n</svg>\n")
+    body += [
+        text(MARGIN, layout.bottom + 48 + 20 * i, line, theme["secondary"], css_class="footer")
+        for i, line in enumerate(lines)
+    ]
+    return (
+        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {layout.width:.0f} {height:.0f}" '
+        f'width="{layout.width:.0f}" height="{height:.0f}" role="img" aria-labelledby="title desc" '
+        f'font-family="{FONT}">\n<title id="title">{escape(title)}</title>\n'
+        f'<desc id="desc">{escape(". ".join(lines))}</desc>\n' + "\n".join(body) + "\n</svg>\n"
+    )
 
 
 def slug(agent: str) -> str:
@@ -205,7 +257,7 @@ def main(argv: list[str]) -> int:
     summary = json.loads(Path(argv[1]).read_text())
     out_dir, agent = Path(argv[2]), argv[3].strip()
     if not slug(agent):
-        print("the agent name needs a letter or digit, e.g. \"Claude Code\"", file=sys.stderr)
+        print('the agent name needs a letter or digit, e.g. "Claude Code"', file=sys.stderr)
         return 2
     out_dir.mkdir(parents=True, exist_ok=True)
     for theme in (LIGHT, DARK):
