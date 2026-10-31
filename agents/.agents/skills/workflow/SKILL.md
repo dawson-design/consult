@@ -110,15 +110,14 @@ description: Load before reading code for any feature, bug fix, refactor, test, 
    | `issue-tracking` | Drafting, splitting, or tracking initiatives, epics, or issues, or a task citing one. |
    | `release` | Release prep is requested or a validator requires artifact sync. |
 
-3. Apply Rule 6. Then, for each Rule 9 stage in order, get its Rule 7
-   approvals and run steps 4 and 5 before the next.
+3. Apply Rule 6, then run steps 4 and 5 for each Rule 9 stage in order,
+   finishing both before the next.
 4. Make changes small enough to review. If a change grows too large for one
    focused review, split the rest into reviewable plan steps and continue.
 5. Prove each behavior with `proof`. Then run a fresh-context `code-review`
-   with only the intent, acceptance criteria, constraints, proof evidence, and
-   diff. Fix findings and repeat until proof passes and the review is clean.
-   Label a same-context review as a fallback. Finish documentation and release
-   work afterward.
+   with its Independent Review inputs plus the proof evidence. Fix findings
+   and repeat until proof passes and the review is clean. Finish
+   documentation and release work afterward.
 
 ## Tripwires
 
