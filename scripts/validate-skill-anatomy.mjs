@@ -49,13 +49,15 @@ const MAX_BODY_WORDS = 700;
 // steps were merged or cut, the Rules stopped naming skills before the
 // routing table introduces them, the skill-conflict rule was deleted, and
 // Rule 7 dropped its no-human path.
+// It rose to 1,201 for Rule 8's delegated-model sentence, after trimming
+// restated Workflow steps 3 and 5 paid for part of it.
 // proof rose to 1,050 for the
 // test-level and test-oracle rules: expected outputs come from the
 // spec, and agents never edit an existing test to make a change pass. api
 // rose to 730 so Rules 1 and 2 state its REST compatibility policy (which
 // changes need approval, who counts as an independent consumer, and what
 // needs a successor) in plain sentences instead of dense ones.
-const BODY_WORD_EXCEPTIONS = { workflow: 1181, proof: 1050, "code-review": 950, api: 730 };
+const BODY_WORD_EXCEPTIONS = { workflow: 1201, proof: 1050, "code-review": 950, api: 730 };
 const MAX_TRIPWIRE_ROWS = 8;
 const MAX_DESCRIPTION_LENGTH = 120;
 // ~600 tokens of routing surface that every host loads before picking a skill.

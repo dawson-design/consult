@@ -49,7 +49,11 @@ description: Load before reading code for any feature, bug fix, refactor, test, 
 8. **Plan with the strongest model, and save the plan so a cheaper one can
    build it.** When Rule 6 calls for approval before building, save the
    approved plan as `references/plans.md` describes. When building from a
-   plan, follow it, and stop to ask when it is wrong or incomplete.
+   plan, follow it, and stop to ask when it is wrong or incomplete. When you
+   delegate, give read-only search and tool-verified mechanical fixes the
+   host's cheapest capable model and the fresh-context review its
+   strongest; never set effort below the host default for work that needs
+   reasoning.
 9. **Build in stages, and prove each before building the next.** Order:
     data (records, relationships, invariants, schema); contracts
     (caller-facing boundaries and the shell that parses input, reads and

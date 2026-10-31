@@ -126,6 +126,14 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   skill list follow, and the `proof` budget note in `AGENTS.md` and the
   validator now cites test-level policy instead of black-box testing.
   Unmeasured by the eval.
+- `workflow` Rule 8 now says which model delegated work runs on: when an
+  agent delegates, read-only search and tool-verified mechanical fixes get
+  the host's cheapest capable model, the fresh-context review gets its
+  strongest, and effort never drops below the host default for work that
+  needs reasoning. The `long-runs` reference splits delegated work by
+  context, never by problem type. Workflow steps 3 and 5 stop restating
+  Rule 7's approvals and the review inputs, which pays for part of the new
+  words. The `workflow` word budget rises to 1,201.
 
 ## [18.0.0] (2026-10-23)
 
