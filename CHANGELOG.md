@@ -145,6 +145,17 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   validator requires a `rules.json` entry for each, `rule_labels.py` reads
   their text from `core.md`, and fast-tier selection treats them as
   `workflow` rules.
+- The Consult core is always on. The plugin's SessionStart hook now prints
+  `workflow/references/core.md`: the Iron Law and six rules moved verbatim
+  from `workflow` (old Rules 3, 1, 4, 5, 10 and 2 become core rules 1-6),
+  so they apply in every session, not only once `workflow` loads. Readers
+  without the hook (subagents, Codex before trusting it, manual installs)
+  are pointed at `core.md` from `workflow` and `references/long-runs.md`.
+  `workflow` keeps its gates, process, and routing, renumbered: old Rules
+  6-9 become 1-4, and every skill that cites them follows. The eval
+  check for "a narrow bug fix needs no sign-off" moves from `workflow.7`
+  to `workflow.1`, the rule it tests. The `workflow` word budget falls to
+  947.
 
 ## [18.0.0] (2026-10-23)
 

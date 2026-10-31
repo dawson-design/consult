@@ -191,10 +191,10 @@ Every `SKILL.md` must have:
 - Body budget: 700 words after frontmatter. Raised for four skills, each with
   a reason recorded next to the constant: 730 for `api`, whose REST
   compatibility rules are written as plain sentences; 950 for `code-review`,
-  1,050 for `proof`, and 1,201 for `workflow`, which carry the routing
-  table and sign-off list plus the host-harness, fresh-context-review,
-  plan-handoff, delegated-model, build-stage, code-shape, test-level, and test-oracle policy.
-  Table pipes and separator rows do not count. The budget is the regression guard for the
+  1,050 for `proof`, and 947 for `workflow`, which carry the routing table
+  and sign-off list plus the fresh-context-review, plan-handoff,
+  delegated-model, build-stage, test-level, and test-oracle policy. Table
+  pipes and separator rows do not count. The budget is the regression guard for the
   knowledge-vs-policy rule below. Raise a single skill's budget only with a
   stated reason.
 - Optional section: `## Tripwires` when a skill has known agent failure modes.
@@ -230,14 +230,16 @@ only if it is one of:
 Delete anything that teaches standard practice. Where a rule is non-obvious to
 a junior engineer, keep one short "because" clause, not a paragraph.
 
-Workflow scope. `workflow` loads on every code task, so it holds only
-high-level guidance that applies to all code, plus routing to the other
-skills. Rules every code change needs, such as Rule 10's code-shape rules,
-belong there with their thresholds. Process detail for narrower situations
-goes to the skill that owns it, or to a `workflow/references/` file that
-workflow's References section says when to load. Gate rules that eval checks
-or other skills cite (Rule 7's approval list, Rule 9's stage sign-off) stay
-in the body.
+Core and workflow scope. `workflow/references/core.md` is the Consult core:
+the plugin's SessionStart hook prints it into every session, so it holds the
+rules every code change needs, such as core rule 5's code-shape thresholds,
+whether or not a skill loads. Its numbered rules have eval ids `core.<n>`.
+`workflow` loads on non-trivial code tasks, so it holds the gates, the
+process, and routing to the other skills. Process detail for narrower
+situations goes to the skill that owns it, or to a `workflow/references/`
+file that workflow's References section says when to load. Gate rules that
+eval checks or other skills cite (Rule 2's approval list, Rule 4's stage
+sign-off) stay in the workflow body.
 
 Each rule is stated once. Section ownership:
 

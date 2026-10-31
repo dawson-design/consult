@@ -19,7 +19,7 @@ v2.94.0, recheck with `official-source-check`.
 - **Issue types are per organization.** Organization owners define up to 25.
   The defaults are task, bug, and feature, and each can be edited or disabled.
   Adding Initiative or Epic types is an organization change: propose it under
-  `workflow` Rule 7. With only the default types, propose an `initiative`
+  `workflow` Rule 2. With only the default types, propose an `initiative`
   label for Initiatives, as for personal repositories, and offer new types as
   a separate proposal. Read a repository's available types with
   `gh api repos/OWNER/REPO/issue-types`.

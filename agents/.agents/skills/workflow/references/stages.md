@@ -1,6 +1,6 @@
 # Build Stages
 
-Use this when a change spans more than one `workflow` Rule 9 stage,
+Use this when a change spans more than one `workflow` Rule 4 stage,
 behavior slices, a removal or rename, or a phased schema rollout.
 
 ## Scope

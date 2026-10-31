@@ -20,7 +20,7 @@ description: Use to draft, split, or track tickets, issues, epics, and initiativ
 ## When NOT to Use
 
 - Deciding what to build. Use `specify` first.
-- Planning one change's steps. Use the `workflow` Rule 8 plan file.
+- Planning one change's steps. Use the `workflow` Rule 3 plan file.
 
 ## Rules
 
@@ -32,7 +32,7 @@ description: Use to draft, split, or track tickets, issues, epics, and initiativ
    types, and hierarchy, use its level names, and search for duplicates and
    the right parent. Prefer native types and parent links to labels or title
    prefixes. New types, labels, fields, or hierarchy levels need sign-off
-   under `workflow` Rule 7.
+   under `workflow` Rule 2.
 3. **Size by the team's sprint, not the agent's speed.** Read the sprint
    length from the tracker, or assume two weeks and say so. An Issue fits when
    one engineer can finish it, review included, within half a sprint, with at

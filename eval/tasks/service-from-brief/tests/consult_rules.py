@@ -1,13 +1,15 @@
-"""Rule checks for Consult skills, keyed by `<skill>.<rule number>`.
+"""Rule checks for Consult skills, keyed by `<skill>.<rule number>` (or
+`core.<rule number>` for the workflow skill's references/core.md).
 
 Synced from eval/verifier/shared/consult_rules.py into every task's tests/ by
 eval/scripts/sync_tests.py. Do not edit the copy under tests/.
 
 Each check is a function (workspace, trajectory, meta) -> float in [0, 1] that
-tests one numbered rule of one SKILL.md. The `rules` dimension scores the ids a
-task lists in consult.json `rules`; the step-1 `signoff` suite scores the ids in
-SIGNOFF_RULES. `score()` never raises: a crashing check scores 0 and logs why,
-because one exception in a RewardKit criterion discards the whole reward.
+tests one numbered rule of one SKILL.md or of core.md. The `rules` dimension
+scores the ids a task lists in consult.json `rules`; the step-1 `signoff` suite
+scores the ids in SIGNOFF_RULES. `score()` never raises: a crashing check
+scores 0 and logs why, because one exception in a RewardKit criterion discards
+the whole reward.
 eval/verifier/rules.json records which rules have a check here.
 """
 
@@ -33,9 +35,9 @@ CONTRACT_RE = re.compile(r"(^|/)openapi\.(ya?ml|json)$")
 SCRATCH_RE = re.compile(r"(^|/)(repro|scratch|tmp|debug)[^/]*$|^/")
 CODE_RE = re.compile(r"\.[cm]?[jt]sx?$")
 CONFIG_CODE_RE = re.compile(r"(^|/)[^/]*\.config\.[cm]?[jt]s$")
-# Schema, migration, and model files: workflow Rule 9's data stage, built before the contract.
+# Schema, migration, and model files: workflow Rule 4's data stage, built before the contract.
 DATA_RE = re.compile(r"(^|[/._-])(migrations?|models?|schemas?)([/._-]|$)", re.IGNORECASE)
-# Plans, ADRs, specs, and design notes: what workflow Rule 8 and specify Rule 7
+# Plans, ADRs, specs, and design notes: what workflow Rule 3 and specify Rule 7
 # ask an agent to write. Allowed before sign-off and not "docs" for documentation.1.
 PLAN_DOC_RE = re.compile(
     r"(^|/)docs/(plans|adr|decisions|specs?|design)/|(^|/)(PLAN|NOTES)\.md$|(spec|design|plan|adr|decision)[^/]*\.md$",
@@ -170,7 +172,7 @@ def documentation_1(workspace: Path, trajectory: cl.Trajectory, meta: dict) -> f
 # workflow
 
 
-def workflow_7(workspace: Path, trajectory: cl.Trajectory, meta: dict) -> float:
+def workflow_1(workspace: Path, trajectory: cl.Trajectory, meta: dict) -> float:
     """A narrow bug fix needs no sign-off: the one-turn task ends fixed, with a test, instead of stopping to ask.
 
     A closing offer ("want me to also...?") after finished work is not a stop, so
@@ -278,7 +280,7 @@ def signoff_mode(workspace: Path, trajectory: cl.Trajectory, meta: dict) -> str:
 
 
 def signoff_score(workspace: Path, trajectory: cl.Trajectory, meta: dict) -> float:
-    """workflow Rule 7: stop at the gate; a build flagged provisional also passes, since a headless agent cannot know a reply is coming."""
+    """workflow Rule 2: stop at the gate; a build flagged provisional also passes, since a headless agent cannot know a reply is coming."""
     return 0.0 if signoff_mode(workspace, trajectory, meta) == "built" else 1.0
 
 
@@ -303,7 +305,7 @@ CHECKS = {
     "scaffolding.5": scaffolding_5,
     "scaffolding.6": scaffolding_6,
     "scaffolding.7": scaffolding_7,
-    "workflow.7": workflow_7,
+    "workflow.1": workflow_1,
 }
 SIGNOFF_RULES = {"scaffolding.1", "domain-modeling.10"}
 

@@ -51,11 +51,11 @@ class ExportTests(unittest.TestCase):
             return list(csv.DictReader(handle))
 
     def test_export_writes_one_row_per_rule_verdict_with_the_rule_text_and_evidence(self):
-        trial = write_rule_trial(self.root / "bare", "bug-from-symptom", 0, {"workflow.7": 0.0, "debugging.1": 1.0})
+        trial = write_rule_trial(self.root / "bare", "bug-from-symptom", 0, {"workflow.1": 0.0, "debugging.1": 1.0})
         rows = self.export(self.root / "bare")
         self.assertEqual([(r["job"], r["rule"], r["automated"]) for r in rows],
-                         [("bare", "debugging.1", "1.0"), ("bare", "workflow.7", "0.0")])
-        self.assertTrue(rows[1]["rule_text"].startswith("Get the user's approval before you build any of these:"))
+                         [("bare", "debugging.1", "1.0"), ("bare", "workflow.1", "0.0")])
+        self.assertTrue(rows[1]["rule_text"].startswith("Ask more of the user when changes affect more code"))
         self.assertEqual(rows[0]["evidence_dir"], str(trial.resolve()))
         self.assertEqual((rows[0]["proposed"], rows[0]["human"]), ("", ""))
 
@@ -124,10 +124,10 @@ class AgreementTests(unittest.TestCase):
     def test_agreement_counts_matches_false_passes_and_false_fails(self):
         rows = rule_labels.read_sheet(self.sheet([("api.1", "1.0", "pass"), ("api.1", "0.0", "fail"),
                                                   ("api.1", "1.0", "fail"), ("api.1", "0.0", "Pass"),
-                                                  ("api.1", "1.0", ""), ("workflow.7", "0.0", "fail")]))
+                                                  ("api.1", "1.0", ""), ("workflow.1", "0.0", "fail")]))
         result = rule_labels.agreement(rows)
         self.assertEqual(result["api.1"], {"labelled": 4, "agree": 2, "false_pass": 1, "false_fail": 1})
-        self.assertEqual(result["workflow.7"]["agree"], 1)
+        self.assertEqual(result["workflow.1"]["agree"], 1)
 
     def test_a_score_of_one_half_counts_as_a_pass(self):
         rows = rule_labels.read_sheet(self.sheet([("api.1", "0.5", "pass")]))

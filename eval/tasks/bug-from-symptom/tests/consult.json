@@ -6,7 +6,7 @@
     "contract-first", "specify", "scaffolding", "documentation", "api",
     "database", "observability", "release", "async-systems", "performance"
   ],
-  "rules": ["debugging.1", "debugging.5", "documentation.1", "workflow.7"],
+  "rules": ["debugging.1", "debugging.5", "documentation.1", "workflow.1"],
   "visible_test_cmd": "npm test",
   "test_file_cmd": "node --test {files}"
 }

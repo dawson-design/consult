@@ -240,17 +240,17 @@ class DocumentationAndWorkflowTests(WorkspaceCase):
         (self.tests / "hidden.mjs").write_text("process.exit(1);\n")
         self.assertEqual(self.check("documentation.1"), 0.0)
 
-    def test_workflow_7_passes_on_a_one_turn_fix_with_tests(self):
+    def test_workflow_1_passes_on_a_one_turn_fix_with_tests(self):
         self.write_files({"src/a.js": "export const a = 2;\n", "test/a.test.js": "//\n"})
-        self.assertEqual(self.check("workflow.7", trajectory(user("fix"), agent("Fixed and tested."))), 1.0)
+        self.assertEqual(self.check("workflow.1", trajectory(user("fix"), agent("Fixed and tested."))), 1.0)
 
-    def test_workflow_7_accepts_a_closing_offer_after_finished_work(self):
+    def test_workflow_1_accepts_a_closing_offer_after_finished_work(self):
         self.write_files({"src/a.js": "export const a = 2;\n", "test/a.test.js": "//\n"})
-        self.assertEqual(self.check("workflow.7", trajectory(user("fix"), agent("Fixed. Want me to also update b?"))), 1.0)
+        self.assertEqual(self.check("workflow.1", trajectory(user("fix"), agent("Fixed. Want me to also update b?"))), 1.0)
 
-    def test_workflow_7_fails_when_the_agent_stops_to_ask(self):
+    def test_workflow_1_fails_when_the_agent_stops_to_ask(self):
         traj = trajectory(user("fix"), agent("Should I change the serializer or the editor?"))
-        self.assertEqual(self.check("workflow.7", traj), 0.0)
+        self.assertEqual(self.check("workflow.1", traj), 0.0)
 
 
 class ApiTests(WorkspaceCase):
@@ -264,7 +264,7 @@ class ApiTests(WorkspaceCase):
         self.assertEqual(self.check("api.1", traj), 1.0)
 
     def test_api_1_ignores_data_files_written_before_the_contract(self):
-        """workflow Rule 9 builds the data stage before the contract."""
+        """workflow Rule 4 builds the data stage before the contract."""
         traj = trajectory(claude_write("m", "db/migrations/001_links.js"), claude_write("s", "src/schema.js"),
                           claude_write("d", "src/models/link.js"), claude_write("o", "src/link.model.ts"),
                           claude_write("c", "openapi.yaml"), claude_write("h", "src/server.js"))

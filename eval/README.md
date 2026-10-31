@@ -256,7 +256,7 @@ means the agent noticed a requirement the prompt never stated.
 A multi-step task lists `[[steps]]` in `task.toml`. The `brief` step sends the
 product brief. The `approve` step sends a fixed reply: "Approved, including the
 interface and data shapes you proposed. Build it. Use your recommended option
-for anything still open." `workflow` Rule 9 discards sign-off given before the
+for anything still open." `workflow` Rule 4 discards sign-off given before the
 data stage exists, so the agent stops again at the contracts gate. The
 `continue` step answers it: "Approved. Continue." An agent that built
 everything in the `approve` step gets the same reply. The agent fragments set
