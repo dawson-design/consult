@@ -22,9 +22,13 @@ lint:
 
 # Local links and heading anchors in every tracked Markdown file. --offline
 # skips remote URLs, so the check is deterministic and makes no network
-# calls. Install lychee with `brew install lychee`.
+# calls. Files deleted but not yet staged are skipped, since lychee aborts on
+# a missing input; links to them still fail. Install lychee with
+# `brew install lychee`.
 links:
-	git ls-files -z -- '*.md' | xargs -0 lychee --offline --include-fragments --no-progress
+	git ls-files -z -- '*.md' \
+		| while IFS= read -r -d '' file; do [ -e "$$file" ] && printf '%s\0' "$$file"; done \
+		| xargs -0 lychee --offline --include-fragments --no-progress
 
 # Static checks for the Harbor eval suite: the vendored verifier copies match
 # their source, the rule checks pass their fixtures, and the smoke job config
