@@ -157,11 +157,14 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   to `workflow.1`, the rule it tests. The `workflow` word budget falls to
   947.
 - Two new core rules. Core rule 7: ask whether backward compatibility is
-  required when a change alters behavior that callers or stored data
-  depend on, and add no compatibility shim until the user answers. This
-  replaces `workflow` step 1's "ask before adding compatibility shims".
-  Core rule 8: consider security even when the request does not mention
-  it, and validate input where it crosses a trust boundary. The
+  required when a change alters behavior that callers outside the change,
+  or stored data, depend on, and add no compatibility shim until the user
+  answers. A fix that restores intended behavior needs no question, and a
+  loaded skill's policy (such as `api` Rule 2) takes precedence. This
+  replaces `workflow` step 1's "ask before adding compatibility shims", and
+  `refactoring` Rule 4 cites it instead of restating it. Core rule 8: treat
+  input that crosses a trust boundary as untrusted, even when the request
+  does not mention security, and parse or validate it before use. The
   `workflow` word budget falls to 942.
 - `AGENTS.md` names Claude Code as the primary host, with Codex kept
   working, and describes the hook as printing the Consult core. The README

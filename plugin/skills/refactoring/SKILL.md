@@ -32,8 +32,8 @@ description: Restructuring or untangling code without changing behavior, or befo
    Rule 2). Add characterization tests where coverage is missing. An
    unproven refactor is reported as unproven.
 4. For public interfaces, use parallel change: expand, migrate callers,
-   contract. Ask which callers, data, and releases must keep working before
-   adding shims, dual paths, or migration machinery.
+   contract. Settle which callers, data, and releases must keep working
+   (core rule 7) before adding shims, dual paths, or migration machinery.
 5. Delete old paths only when verification proves callers and traffic have
    moved. Leftover migration or deletion work has an owner and a deadline.
 6. For broad renames, write a rename map first, separating private symbols,
