@@ -139,8 +139,7 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   prompt cache.
 - `plugin/hooks/hooks.json` is generated from the `workflow` skill's
   `references/core.md` by `scripts/generate-plugin-symlinks.mjs`, and the
-  validator reports drift between them. The hook prints the same routing
-  line as before.
+  validator reports drift between them.
 - Numbered rules under `## Rules` in `core.md` get eval ids `core.<n>`: the
   validator requires a `rules.json` entry for each, `rule_labels.py` reads
   their text from `core.md`, and fast-tier selection treats them as
