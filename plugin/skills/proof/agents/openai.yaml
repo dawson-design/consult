@@ -1,4 +1,4 @@
 interface:
   display_name: "Consult: Proof"
-  short_description: "Prove claims with checks and tests"
-  default_prompt: "Use Consult proof to turn these claims into proof contracts and behavior-focused tests."
+  short_description: "Prove acceptance criteria with tests and checks"
+  default_prompt: "Use Consult proof to check each acceptance criterion with a test that fails when it is not met."

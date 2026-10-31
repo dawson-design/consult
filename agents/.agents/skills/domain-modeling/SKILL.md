@@ -52,8 +52,8 @@ against it.
    `settleInvoice` or `expireHold`, not `process`, `handle`, or `execute`. A
    suffix like `Service` or `Manager` is fine only with a domain word saying
    what kind.
-9. Each non-trivial invariant or transition gets a Proof Contract (claim,
-   data invariant, boundary, check, evidence) via `proof`.
+9. Each non-trivial invariant or transition gets a check and evidence via
+   `proof`.
 10. Get approval before implementing a core model, shared invariant, state
     machine, or glossary term future work will bind to; `contract-first` owns
     the approval scope. Disposable or local shapes are not gated.

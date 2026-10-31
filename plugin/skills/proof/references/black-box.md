@@ -36,7 +36,7 @@ The method's rules apply to tests as they stand:
   failure is the evidence (`proof` Rule 6), and use mutation testing to check
   that the suite notices broken code.
 - Never adjust the results after the fact. Editing a test to make a change
-  pass changes the measurement to fit the theory (`proof` Rule 11).
+  pass changes the measurement to fit the theory (`proof` Rule 9).
 - Treat a passing suite as corroboration, not proof of correctness. The code
   survived every check that could have failed it. One reliable failure
   refutes the claim, and no number of passes rules out a bug.

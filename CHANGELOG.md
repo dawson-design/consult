@@ -22,6 +22,22 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   config key) in place of "caller-facing interface or shared structure".
   The Iron Law reads "Get approval for a contract before writing code that
   depends on it."
+- `proof` proves acceptance criteria in place of "claims". The Iron Law
+  requires a check for every acceptance criterion that fails when the
+  criterion is not met, with at least one check where the caller sees the
+  result. Criteria come from a ticket, a spec, or a one-line prompt; when none
+  are written down, the agent lists them first. Tests may come before or
+  after the code: Rule 6 requires seeing each new test fail once, by running
+  it first or by reverting the change. Rule 3 no longer defaults to
+  black-box tests: each test asserts a business rule, a test that would pass
+  with the rule wrong proves nothing, and the agent picks unit, integration,
+  or black-box level per rule and says why. The done report lists each
+  criterion with its check and result. Rules 9 to 11 now follow working
+  order (existing tests, work outward, before saying done). A new tripwire
+  catches "the test passed first time".
+- The Proof Contract is removed; `proof` Rule 11's per-criterion list
+  replaces it. `domain-modeling` Rule 9 and `refactoring` Rule 3 point at
+  `proof`'s rules instead.
 
 ## [18.0.0] (2026-10-23)
 

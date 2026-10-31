@@ -231,8 +231,8 @@ Each rule is stated once. Section ownership:
   neighboring skill owns the work instead.
 - `## Iron Law`: one non-negotiable rule, only when the skill has one.
 - `## Rules`: the single statement of each policy rule, numbered, in checkable
-  form. Named sub-sections are fine for reusable contracts (the Proof
-  Contract, the Independent Review block). No ordered steps, no examples that
+  form. Named sub-sections are fine for reusable contracts (the Independent
+  Review block). No ordered steps, no examples that
   belong in references. Each rule's number is its eval id (`api.1`), so adding,
   removing, or renumbering a rule means updating `eval/verifier/rules.json`;
   the validator fails until you do.
