@@ -7,16 +7,14 @@ description: Before adding or changing a field, signature, schema, CLI flag, eve
 
 ## Iron Law
 
-`CALLER-FACING INTERFACES AND SHARED STRUCTURE MUST BE APPROVED BEFORE IMPLEMENTATION.`
+`GET APPROVAL FOR A CONTRACT BEFORE WRITING CODE THAT DEPENDS ON IT.`
 
 ## When to Use
 
-- A task defines or materially changes a caller-facing interface or shared
-  structure: exported function, public type, HTTP endpoint, CLI/env/config
-  surface, event payload, file format, database schema, migration step,
-  package/module boundary, project layout, or the public surface of a
-  significant new module.
-- Reviewing whether implementation started before contract approval.
+- A task adds or changes a contract: an exported function, public type, HTTP
+  endpoint, CLI flag, environment variable, config key, event payload, file
+  format, database schema, migration, module boundary, or project layout.
+- Checking whether code was written before its contract was approved.
 
 ## When NOT to Use
 

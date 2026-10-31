@@ -17,7 +17,11 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   into the approval step, which now shows each contract's current version,
   proposed version, and what changes for callers before one approve, revise,
   or reject. The "implement first" tripwire now lets additive, easily undone
-  changes through, matching Rule 2. The description names module boundaries.
+  changes through, matching Rule 2. The description names module boundaries,
+  and When to Use lists concrete triggers (CLI flag, environment variable,
+  config key) in place of "caller-facing interface or shared structure".
+  The Iron Law reads "Get approval for a contract before writing code that
+  depends on it."
 
 ## [18.0.0] (2026-10-23)
 
