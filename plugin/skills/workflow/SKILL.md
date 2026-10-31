@@ -38,9 +38,9 @@ description: Load before reading code for any feature, bug fix, refactor, test, 
 5. **Check existing tools before building one.** Look for a maintained library
    before writing code for a solved problem. Ask before adding a dependency.
 6. **Ask more of the user when changes affect more code or are harder to
-   undo.** If both risks are low, do the work and prove it with `proof` without
-   sign-off. For higher risk, give progress updates, explain options, and get
-   approval before acting.
+   undo.** If both risks are low, do the work and prove it without sign-off.
+   For higher risk, give progress updates, explain options, and get approval
+   before acting.
 7. **Get the user's approval before you build any of these:**
    - the design direction
    - a contract that callers depend on
@@ -55,10 +55,8 @@ description: Load before reading code for any feature, bug fix, refactor, test, 
    delegated), build the safest version, mark it provisional, and name the
    pending decision in your final report.
 
-8. **Load `commit`, `git-workflow`, `documentation`, and `release` only
-   when needed:** on request, when a project check requires them, or for
-   approved work that needs them. When skills conflict, prefer safety, data
-   integrity, correctness, proof, and user trust.
+8. **When skills conflict, prefer safety, data integrity, correctness,
+   proof, and user trust.**
 9. **Plan with the strongest model, and save the plan so a cheaper one can
    build it.** When Rule 6 calls for approval before building, save the
    approved plan as `references/plans.md` describes. When building from a
@@ -120,8 +118,8 @@ description: Load before reading code for any feature, bug fix, refactor, test, 
    | `official-source-check` | External framework, library, runtime, or platform behavior must be verified. |
    | `proof` | Any non-trivial change. |
    | `code-review` | A review is requested, or the change is non-trivial. |
-   | `commit` | Staging reviewed files, splitting commits, writing messages. |
-   | `git-workflow` | Branches, conflicts, rebases, recovery, force-push, GitHub access. |
+   | `commit` | The user asks to commit: staging, splitting commits, writing messages. |
+   | `git-workflow` | The user asks for branches, conflicts, rebases, recovery, force-push, or GitHub access, or approved work needs them. |
    | `issue-tracking` | Drafting, splitting, or tracking initiatives, epics, or issues, or a task citing one. |
    | `release` | Release prep is requested or a validator requires artifact sync. |
 

@@ -20,11 +20,13 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   contract or data shape that was shown, so data shapes keep the same limit.
   Statements made twice are cut: Rule 2 takes the report order from
   Workflow step 6, which is removed; Rule 6 no longer repeats Rule 7 on
-  contracts found mid-task; Rule 8 keeps only the on-request skills and the
-  conflict order, and Workflow step 2 says to load matching skills "and no
-  others"; Rule 10 drops the removal-and-rename pointer the References
+  contracts found mid-task; Rule 8 keeps only the order to follow when
+  skills conflict, and Workflow step 2 says to load matching skills "and no
+  others". The `commit` and `git-workflow` routing rows now say they load
+  on request, as the `documentation` and `release` rows already did, so no
+  rule names a skill before the routing table. Rule 10 drops the removal-and-rename pointer the References
   section already gives, and the pending-gate clause its gate implies.
-  Rule numbers are unchanged. The `workflow` word budget falls to 1,295.
+  Rule numbers are unchanged. The `workflow` word budget falls to 1,282.
 - `workflow` Rule 7 reads "Get the user's approval before you build any of
   these:" and lists the six things that need approval, without naming the
   skills that hold the details, since the routing table loads them. It

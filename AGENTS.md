@@ -186,7 +186,7 @@ Every `SKILL.md` must have:
 - Body budget: 700 words after frontmatter. Raised for four skills, each with
   a reason recorded next to the constant: 730 for `api`, whose REST
   compatibility rules are written as plain sentences; 950 for `code-review`,
-  1,050 for `proof`, and 1,295 for `workflow`, which carry the routing
+  1,050 for `proof`, and 1,282 for `workflow`, which carry the routing
   table and sign-off list plus the host-harness, fresh-context-review,
   plan-handoff, build-stage, code-shape, test-level, and test-oracle policy.
   Table pipes and separator rows do not count. The budget is the regression guard for the

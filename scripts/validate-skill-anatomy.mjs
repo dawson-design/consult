@@ -45,15 +45,16 @@ const MAX_BODY_WORDS = 700;
 // per-stage review scope moved to workflow references and Rule 7 shrank to
 // the gate, its list, and the no-human path
 // (AGENTS.md: workflow holds only guidance for all code plus routing),
-// then to 1,295 when duplicated statements across Rules 2, 6, 8, and 10 and
-// Workflow steps 2 and 6 were merged or cut.
+// then to 1,282 when duplicated statements across Rules 2, 6, 8, and 10 and
+// Workflow steps 2 and 6 were merged or cut, and the Rules stopped naming
+// skills before the routing table introduces them.
 // proof rose to 1,050 for the
 // test-level and test-oracle rules: expected outputs come from the
 // spec, and agents never edit an existing test to make a change pass. api
 // rose to 730 so Rules 1 and 2 state its REST compatibility policy (which
 // changes need approval, who counts as an independent consumer, and what
 // needs a successor) in plain sentences instead of dense ones.
-const BODY_WORD_EXCEPTIONS = { workflow: 1295, proof: 1050, "code-review": 950, api: 730 };
+const BODY_WORD_EXCEPTIONS = { workflow: 1282, proof: 1050, "code-review": 950, api: 730 };
 const MAX_TRIPWIRE_ROWS = 8;
 const MAX_DESCRIPTION_LENGTH = 120;
 // ~600 tokens of routing surface that every host loads before picking a skill.
