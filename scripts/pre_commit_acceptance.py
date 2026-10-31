@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run deterministic Consult pre-commit checks for staged diffs and Markdown changes.
+"""Run deterministic Consult pre-commit checks for staged diffs, Markdown, and Python.
 
 .githooks/pre-commit runs this script. It picks checks from the staged file
 list, so a commit pays only for the checks its files need. Stdlib only, so it
@@ -64,10 +64,19 @@ def staged_paths(root: str) -> list[str]:
 
 
 def select_checks(paths: list[str]) -> list[Check]:
-    """Return the checks the staged `paths` need: always whitespace, links when Markdown changed."""
+    """Return the checks the staged `paths` need.
+
+    The whitespace check always runs. Markdown adds the link check, and Python
+    adds ruff's lint and format checks (the same commands as `make lint`).
+    """
     checks = [Check("staged diff has no whitespace errors", ["git", "diff", "--cached", "--check"])]
     if any(path.endswith(".md") for path in paths):
         checks.append(Check("Markdown parses and local links resolve", ["pnpm", "run", "check:links"], ("pnpm",)))
+    if any(path.endswith(".py") for path in paths):
+        checks.append(Check("Python passes ruff lint", ["uv", "run", "--locked", "ruff", "check"], ("uv",)))
+        checks.append(
+            Check("Python is ruff-formatted", ["uv", "run", "--locked", "ruff", "format", "--check"], ("uv",))
+        )
     return checks
 
 

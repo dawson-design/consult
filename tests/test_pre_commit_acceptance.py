@@ -51,6 +51,15 @@ class CheckSelectionTests(TempDirTestCase):
     def test_skips_the_markdown_check_when_no_markdown_is_staged(self) -> None:
         self.assertNotIn("check:links", self.dry_run_with_staged("notes.txt"))
 
+    def test_lints_and_format_checks_python_when_python_files_are_staged(self) -> None:
+        output = self.dry_run_with_staged("tool.py")
+
+        self.assertIn("==> uv run --locked ruff check", output)
+        self.assertIn("==> uv run --locked ruff format --check", output)
+
+    def test_skips_the_python_checks_when_no_python_is_staged(self) -> None:
+        self.assertNotIn("ruff", self.dry_run_with_staged("README.md"))
+
 
 class PreCommitCliTests(TempDirTestCase):
     def test_allows_dry_run_checks_on_main(self) -> None:
