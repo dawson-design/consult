@@ -8,6 +8,12 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- `workflow` Rule 7 opens with what needs sign-off and why: "Get sign-off
+  before building anything in the table below, because later work depends
+  on it or it is hard to undo." It replaces "Durable shapes need sign-off
+  before they are built". Rules 9 and 10 and `references/long-runs.md` call
+  what Rule 7 gates "table items" in place of "shapes". The `workflow` word
+  budget rises to 1,518.
 - `workflow` Rule 11 holds the code-shape rules for code an agent writes or
   changes: functions do one thing and stay around 25-30 lines, conditionals
   and loops stay under three nesting levels, and a condition that joins two

@@ -54,7 +54,7 @@ class ExportTests(unittest.TestCase):
         rows = self.export(self.root / "bare")
         self.assertEqual([(r["job"], r["rule"], r["automated"]) for r in rows],
                          [("bare", "debugging.1", "1.0"), ("bare", "workflow.7", "0.0")])
-        self.assertTrue(rows[1]["rule_text"].startswith("Durable shapes need sign-off before they are built."))
+        self.assertTrue(rows[1]["rule_text"].startswith("Get sign-off before building anything in the table below, because later work depends on it or it is hard to undo."))
         self.assertEqual(rows[0]["evidence_dir"], str(trial.resolve()))
         self.assertEqual((rows[0]["proposed"], rows[0]["human"]), ("", ""))
 

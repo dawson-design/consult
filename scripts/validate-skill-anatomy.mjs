@@ -39,13 +39,15 @@ const MAX_BODY_WORDS = 700;
 // code-shape rule (function length, nesting depth, named compound
 // conditions, composition over inheritance), moved from architecture
 // because it applies to every function an agent writes and architecture
-// loads only for boundary work. proof rose to 1,050 for the
+// loads only for boundary work, and to 1,518 when the sign-off rule (Rule 7)
+// replaced "durable shapes" with a plain statement of what needs sign-off
+// and why. proof rose to 1,050 for the
 // test-level and test-oracle rules: expected outputs come from the
 // spec, and agents never edit an existing test to make a change pass. api
 // rose to 730 so Rules 1 and 2 state its REST compatibility policy (which
 // changes need approval, who counts as an independent consumer, and what
 // needs a successor) in plain sentences instead of dense ones.
-const BODY_WORD_EXCEPTIONS = { workflow: 1501, proof: 1050, "code-review": 950, api: 730 };
+const BODY_WORD_EXCEPTIONS = { workflow: 1518, proof: 1050, "code-review": 950, api: 730 };
 const MAX_TRIPWIRE_ROWS = 8;
 const MAX_DESCRIPTION_LENGTH = 120;
 // ~600 tokens of routing surface that every host loads before picking a skill.

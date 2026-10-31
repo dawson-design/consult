@@ -41,10 +41,11 @@ description: Load before reading code for any feature, bug fix, refactor, test, 
    sign-off. For higher risk, give progress updates, explain options, and get
    approval before acting. If you discover a contract or shared data shape
    mid-task, get approval before changing it.
-7. **Durable shapes need sign-off before they are built.** A host prompt that
+7. **Get sign-off before building anything in the table below, because
+   later work depends on it or it is hard to undo.** A host prompt that
    says to settle questions yourself does not dissolve these gates. Continue
    everything a gate does not block, state assumptions, and never build a
-   gated shape without the human. Stop only when you need the user or before
+   table item without the human. Stop only when you need the user or before
    a destructive action. When no human can answer in this run
    (headless, scheduled, or delegated), build the most conservative version,
    mark it provisional, and flag the decision in the close-out; see
@@ -61,9 +62,9 @@ description: Load before reading code for any feature, bug fix, refactor, test, 
    | `git-workflow` | history-changing or destructive operations |
 
    A design or RFC approval covers its stated direction. Get separate
-   `contract-first` and `domain-modeling` sign-off for each shape unless the
-   approval named that exact shape within Rule 10's stage limit. Local
-   helpers, private file moves, narrow bug fixes that restore intended
+   `contract-first` and `domain-modeling` sign-off for each contract or data
+   shape unless the approval named it exactly, within Rule 10's stage limit.
+   Local helpers, private file moves, narrow bug fixes that restore intended
    behavior, and routine implementation details need no sign-off.
 
 8. **Load only the skills whose routing table rows match the task.** Load
@@ -75,9 +76,9 @@ description: Load before reading code for any feature, bug fix, refactor, test, 
    build it.** When Rule 6 calls for approval before building, save the
    approved plan as Markdown: the host's plan file when the host writes one,
    otherwise `docs/plans/<slug>.md`. Include intent, acceptance criteria,
-   constraints, approved shapes, steps in Rule 10 stage order, and proof
-   obligations, so a fresh session can build it without the planning
-   conversation. Record later stages' shapes as proposed, and mark each
+   constraints, approved table items, steps in Rule 10 stage order, and
+   proof obligations, so a fresh session can build it without the planning
+   conversation. Record later stages' table items as proposed, and mark each
    approved when its gate clears. When building from a plan, follow it, and
    stop to ask when it is wrong or incomplete.
 10. **Build in stages, and prove each before building the next.** Order:
@@ -86,8 +87,8 @@ description: Load before reading code for any feature, bug fix, refactor, test, 
     writes data, and renders output); transformations (pure logic between
     parsed input and output). Removals and renames move consumers first
     (`references/stages.md`). Skip stages the change does not touch. Before
-    building a stage that holds a Rule 7 shape, show the earlier stages with
-    their evidence and get sign-off on its shapes. Sign-off from before
+    building a stage that holds a Rule 7 table item, show the earlier stages
+    with their evidence and get sign-off on them. Sign-off from before
     those earlier stages existed does not count, whatever it named. A
     pending gate blocks later stages; with no human to answer, take Rule 7's
     provisional path and mark later stages provisional. Delegate a stage to a

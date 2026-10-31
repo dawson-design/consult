@@ -22,8 +22,8 @@ plan file tracks progress, so the run needs no other stop to report it.
    it the intent, acceptance criteria, constraints, and the unit's scope.
 5. The parent checks each unit's evidence before ticking it. A subagent's
    claim that it finished is not proof.
-6. A unit that would change a Rule 7 shape still needs sign-off. Delegation
-   does not move the gate.
+6. A unit that would change a Rule 7 table item still needs sign-off.
+   Delegation does not move the gate.
 7. Send short progress updates while working. Between gates, do not stop to
    ask whether to continue.
 8. Before closing, check every "Done means" item against evidence. Report
