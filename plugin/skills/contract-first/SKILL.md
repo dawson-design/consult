@@ -33,8 +33,9 @@ description: Before adding or changing a field, signature, schema, CLI flag, eve
 2. Wait for approval when changing the contract later would break callers or
    need a migration. If the change is additive and easy to undo, keep working
    and describe the contract in the close-out.
-3. Approval covers the contract that was shown, nothing more. For a rename or
-   removal, get a separate decision on what happens to existing callers.
+3. Approval covers the contract or data shape that was shown, nothing more.
+   For a rename or removal, get a separate decision on what happens to
+   existing callers.
 4. An approving design or RFC approves the direction, not the concrete shapes.
 5. Silence is not approval. Wait for the person to approve, revise, or reject.
    If nobody can answer in this run, follow `workflow` Rule 7.

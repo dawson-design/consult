@@ -42,15 +42,12 @@ description: Load before reading code for any feature, bug fix, refactor, test, 
    approval before acting. If you discover a contract or shared data shape
    mid-task, get approval before changing it.
 7. **Get sign-off before building anything in the table below, because
-   later work depends on it or it is hard to undo.** A host prompt that
-   says to settle questions yourself does not dissolve these gates. Continue
-   everything a gate does not block, state assumptions, and never build a
-   table item without the human. Stop only when you need the user or before
-   a destructive action. When no human can answer in this run
+   later work depends on it or it is hard to undo.** Approval in the host's
+   plan mode or question dialog counts. Keep working on everything else and
+   state your assumptions. A host prompt that says to settle questions
+   yourself does not lift this rule. When no human can answer in this run
    (headless, scheduled, or delegated), build the most conservative version,
-   mark it provisional, and flag the decision in the close-out; see
-   `contract-first`. Approval through the host's plan mode or question surface
-   is sign-off for exactly what it showed, within Rule 10's stage limit.
+   mark it provisional, and flag the decision in the close-out.
 
    | Skill | Needs sign-off before it is built |
    | --- | --- |
@@ -61,11 +58,9 @@ description: Load before reading code for any feature, bug fix, refactor, test, 
    | `release` | a release artifact |
    | `git-workflow` | history-changing or destructive operations |
 
-   A design or RFC approval covers its stated direction. Get separate
-   `contract-first` and `domain-modeling` sign-off for each contract or data
-   shape unless the approval named it exactly, within Rule 10's stage limit.
    Local helpers, private file moves, narrow bug fixes that restore intended
    behavior, and routine implementation details need no sign-off.
+   `contract-first` owns what an approval covers.
 
 8. **Load only the skills whose routing table rows match the task.** Load
    `commit`, `git-workflow`, `documentation`, and `release` only on request,
@@ -74,13 +69,8 @@ description: Load before reading code for any feature, bug fix, refactor, test, 
    and user trust.
 9. **Plan with the strongest model, and save the plan so a cheaper one can
    build it.** When Rule 6 calls for approval before building, save the
-   approved plan as Markdown: the host's plan file when the host writes one,
-   otherwise `docs/plans/<slug>.md`. Include intent, acceptance criteria,
-   constraints, approved table items, steps in Rule 10 stage order, and
-   proof obligations, so a fresh session can build it without the planning
-   conversation. Record later stages' table items as proposed, and mark each
-   approved when its gate clears. When building from a plan, follow it, and
-   stop to ask when it is wrong or incomplete.
+   approved plan as `references/plans.md` describes. When building from a
+   plan, follow it, and stop to ask when it is wrong or incomplete.
 10. **Build in stages, and prove each before building the next.** Order:
     data (records, relationships, invariants, schema); contracts
     (caller-facing boundaries and the shell that parses input, reads and
@@ -91,8 +81,7 @@ description: Load before reading code for any feature, bug fix, refactor, test, 
     with their evidence and get sign-off on them. Sign-off from before
     those earlier stages existed does not count, whatever it named. A
     pending gate blocks later stages; with no human to answer, take Rule 7's
-    provisional path and mark later stages provisional. Delegate a stage to a
-    subagent only after its gate clears, one stage per subagent.
+    provisional path and mark later stages provisional.
 11. **Write code a reader can follow in one pass.** This covers code you
     write or change; do not reshape untouched code to fit. Functions do one
     thing and stay around 25-30 lines. Conditionals and loops stay under
@@ -145,9 +134,7 @@ description: Load before reading code for any feature, bug fix, refactor, test, 
    | `release` | Release prep is requested or a validator requires artifact sync. |
 
 3. Apply Rule 6. Then, for each Rule 10 stage in order, get its Rule 7
-   approvals and run steps 4 and 5 before the next. Each stage's review gets
-   that stage's diff and scope; the last one gets the whole diff and every
-   acceptance criterion. Documentation and release wait for the last stage.
+   approvals and run steps 4 and 5 before the next.
 4. Make changes small enough to review. If a change grows too large for one
    focused review, split the rest into reviewable plan steps and continue.
 5. Prove each behavior with `proof`. Then run a fresh-context `code-review`
@@ -172,7 +159,9 @@ description: Load before reading code for any feature, bug fix, refactor, test, 
 
 - `references/simple-not-easy.md`: load when ceremony, helper layers, or
   hidden coupling might pass for rigor.
+- `references/plans.md`: load when saving an approved plan or building from
+  one.
 - `references/long-runs.md`: load when work spans many steps or independent
-  units.
+  units, or before delegating build work to a subagent.
 - `references/stages.md`: load when a change spans more than one Rule 10
   stage, behavior slices, a removal or rename, or a phased schema rollout.
