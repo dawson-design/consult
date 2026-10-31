@@ -57,10 +57,10 @@ major version only if `GET /claims` does not silently become paged.
 
 ## Versioning Strategies
 
-When a shipped contract with independent callers cannot be evolved in place,
+When a shipped contract with independent consumers cannot be evolved in place,
 ship the successor under a new version. An explicitly unstable contract may
-change in place. So may one whose change no running caller can observe. Open
-browser tabs and installed apps are independent running callers that keep
+change in place. So may one whose change no running consumer can observe. Open
+browser tabs and installed apps are independent running consumers that keep
 running old client code after a deploy, so shipping server and client in one
 deploy does not by itself qualify.
 Pick one versioning strategy per service and apply it consistently:
@@ -82,7 +82,7 @@ strategy in the API reference and stick to it.
 
 ## Bumping
 
-- Bump the major version when a shipped contract with independent callers
+- Bump the major version when a shipped contract with independent consumers
   needs a breaking successor under the Evolutionary/Breaking rules above.
 - Compatible additive changes never re-version; the same major can
   carry many minor additions.
@@ -91,7 +91,7 @@ strategy in the API reference and stick to it.
 
 ## Overlap Windows and Sunset
 
-Every retired version with independent callers needs an overlap window during
+Every retired version with independent consumers needs an overlap window during
 which both versions serve traffic:
 
 - Announce deprecation in API docs, response headers (`Deprecation`,

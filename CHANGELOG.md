@@ -73,6 +73,16 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `contract-first`. The "another layer" tripwire points at Rule 3's list of
   boundaries instead of adding "independent change axis", which Rule 3 does
   not list. Unmeasured by the eval.
+- `api` is scoped to REST/HTTP APIs: the Iron Law reads "Write the OpenAPI
+  spec first", and When to Use no longer lists SDK boundaries or other
+  integration contracts, which `contract-first` owns. Rules 1 and 2 say the
+  same thing in plain sentences: sketch any consumer-visible change in the
+  spec before handler code, and keep shipped contracts working for
+  independent consumers (ones you cannot update in the same release,
+  including open browser tabs and installed apps). The skill and its
+  references call code that uses the API a "consumer", not a "caller". The
+  `api` body budget rises from 700 to 730 words for the plain Rules 1 and 2.
+  Unmeasured by the eval.
 
 ## [18.0.0] (2026-10-23)
 

@@ -1,22 +1,23 @@
 # REST Error Status Codes
 
 Use this decision tree when choosing HTTP status codes for REST API errors.
-Choose by whether the failure is a caller-side condition or a valid request
+Choose by whether the failure is a consumer-side condition or a valid request
 failed in the service or a dependency. Then translate to a stable public error
 contract. Never pass raw upstream or internal errors through to consumers.
 
 ## Request-Origin Errors
 
-Use `4xx` for caller-side conditions such as invalid input, missing resources,
+Use `4xx` for consumer-side conditions such as invalid input, missing resources,
 authorization, or rate limits.
 
-- `401 Unauthorized`: the caller is not authenticated or the credentials are
+- `401 Unauthorized`: the consumer is not authenticated or the credentials are
   missing, expired, malformed, or invalid.
-- `403 Forbidden`: the caller is authenticated but is not allowed to perform the
-  action or access the resource.
-- `429 Too Many Requests`: the caller exceeded a documented rate or quota limit.
+- `403 Forbidden`: the consumer is authenticated but is not allowed to perform
+  the action or access the resource.
+- `429 Too Many Requests`: the consumer exceeded a documented rate or quota
+  limit.
 - `404 Not Found`: the requested resource does not exist or must not be
-  disclosed to this caller.
+  disclosed to this consumer.
 - `400 Bad Request`: the request syntax, envelope, query syntax, media type, or
   general request shape is malformed.
 - `422 Unprocessable Entity`: the request is syntactically valid, but one or

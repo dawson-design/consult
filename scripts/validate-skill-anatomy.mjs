@@ -37,8 +37,11 @@ const MAX_BODY_WORDS = 700;
 // gate before each gated stage. No neighbouring skill can own the order,
 // because only workflow loads on every task. proof rose to 1,050 for the
 // black-box testing and test-oracle rules: expected outputs come from the
-// spec, and agents never edit an existing test to make a change pass.
-const BODY_WORD_EXCEPTIONS = { workflow: 1356, proof: 1050, "code-review": 950 };
+// spec, and agents never edit an existing test to make a change pass. api
+// rose to 730 so Rules 1 and 2 state its REST compatibility policy (which
+// changes need approval, who counts as an independent consumer, and what
+// needs a successor) in plain sentences instead of dense ones.
+const BODY_WORD_EXCEPTIONS = { workflow: 1356, proof: 1050, "code-review": 950, api: 730 };
 const MAX_TRIPWIRE_ROWS = 8;
 const MAX_DESCRIPTION_LENGTH = 120;
 // ~600 tokens of routing surface that every host loads before picking a skill.
