@@ -12,6 +12,7 @@ test:
 	$(MAKE) --no-print-directory lint
 	pnpm run check:links
 	pnpm test
+	python3 -m unittest discover -s tests
 
 # Lint and format checks for every repo-owned Python file, using the ruff
 # version pinned in the root pyproject.toml. `uv run ruff format` fixes the

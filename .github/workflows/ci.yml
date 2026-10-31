@@ -70,6 +70,12 @@ jobs:
         if: ${{ !cancelled() }}
         run: pnpm test
 
+      # The unittest ports of the Vitest suites, run side by side until the
+      # Node tooling is removed (docs/plans/python-only-tooling.md).
+      - name: Repo tests (unittest)
+        if: ${{ !cancelled() }}
+        run: python3 -m unittest discover -s tests
+
       # The confirmation tests must not silently skip on CI. If expect went
       # missing, this catches it rather than letting coverage quietly drop.
       - name: Assert setup.sh confirmation tests ran
