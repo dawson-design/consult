@@ -71,6 +71,15 @@ class GeneratePluginSymlinksTests(TempDirTestCase):
         self.assertFalse(copy.is_symlink())
         self.assertEqual((copy / "SKILL.md").read_text(encoding="utf8"), self.canonical("code-review"))
 
+    def test_copies_a_symlinked_skill_as_the_same_symlink(self) -> None:
+        make_skill(self.tmp, "code-review")
+        (self.tmp / "agents/.agents/skills/review").symlink_to("code-review")
+
+        result = self.generate()
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(os.readlink(self.tmp / "plugin/skills/review"), "code-review")
+
     def test_removes_stale_generated_entries_without_removing_real_files(self) -> None:
         make_skill(self.tmp, "code-review")
         plugin_skills = self.tmp / "plugin/skills"
