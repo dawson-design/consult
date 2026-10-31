@@ -590,6 +590,22 @@ describe("validate-skill-anatomy CLI", () => {
     expect(result.stdout).toContain("plugin/hooks/hooks.json differs from " + HOOK_SOURCE);
   });
 
+  it("requires a rules.json entry for each numbered core.md rule", () => {
+    const skillsDir = makeHookFixture();
+    const core = "Consult is installed. Load the consult:workflow skill.\n\n## Rules\n\n1. One.\n2. Two.\n";
+    writeHookSource(tmp, core);
+    writeFileSync(join(tmp, "plugin/hooks/hooks.json"), renderSessionStartHooks(core), "utf8");
+    makeRuleCoverage(tmp, { "good.1": "untested", "core.1": "untested", "core.3": "untested" });
+
+    const result = runScript(skillsDir);
+
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain("plugin hooks valid");
+    expect(result.stdout).toContain("rule core.2 has no entry in rules.json");
+    expect(result.stdout).toContain("rules.json names core.3, which is not a rule in its SKILL.md or core.md");
+    expect(result.stdout).not.toContain("rule core.1 has no entry");
+  });
+
   it("reports a hooks file whose core.md source is missing", () => {
     const skillsDir = makeHookFixture();
     rmSync(join(tmp, HOOK_SOURCE));

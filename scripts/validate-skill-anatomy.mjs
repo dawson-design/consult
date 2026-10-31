@@ -729,14 +729,21 @@ export function validatePluginHooks(skillsDir) {
 
 const RULE_STATUSES = new Set(["check", "judge-only", "untested"]);
 
+// The Consult core (the SessionStart hook's source) numbers its rules under
+// `## Rules` like a SKILL.md, and its eval ids are `core.<n>`.
+const CORE_RULES_FILE = HOOK_SOURCE.replace("agents/.agents/skills/", "");
+
 function skillRuleIds(skillsDir) {
-  return readdirSync(skillsDir)
+  const skillIds = readdirSync(skillsDir)
     .filter((name) => existsSync(join(skillsDir, name, "SKILL.md")))
     .sort()
     .flatMap((name) => ruleNumbers(readFileSync(join(skillsDir, name, "SKILL.md"), "utf8")).map((n) => `${name}.${n}`));
+  const corePath = join(skillsDir, CORE_RULES_FILE);
+  const coreIds = existsSync(corePath) ? ruleNumbers(readFileSync(corePath, "utf8")).map((n) => `core.${n}`) : [];
+  return [...skillIds, ...coreIds];
 }
 
-// Every rule of every skill must appear in rules.json with a status, no entry may
+// Every rule of every skill and of the core must appear in rules.json with a status, no entry may
 // name a rule that no longer exists (a renumbered skill), and every "check" entry
 // must have a function in consult_rules.py's CHECKS table.
 export function ruleCoverageProblems(skillsDir, coverage, checksSource) {
@@ -745,7 +752,7 @@ export function ruleCoverageProblems(skillsDir, coverage, checksSource) {
   const missing = expected.filter((id) => !(id in coverage)).map((id) => `rule ${id} has no entry in rules.json`);
   const stale = Object.keys(coverage)
     .filter((id) => !known.has(id))
-    .map((id) => `rules.json names ${id}, which is not a rule in its SKILL.md`);
+    .map((id) => `rules.json names ${id}, which is not a rule in its SKILL.md or core.md`);
   const invalid = Object.entries(coverage)
     .filter(([, status]) => !RULE_STATUSES.has(status))
     .map(([id, status]) => `rules.json ${id} has unknown status ${JSON.stringify(status)}`);

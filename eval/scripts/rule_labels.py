@@ -9,7 +9,7 @@ agree with a person. export writes one CSV row per rule verdict in each trial
 of the given jobs, read the way lift.py reads them. Sign-off rules are left
 out: they score in the brief step's suite, never in the rules dimension. Each
 row carries the job, trial, task, rule id, the rule's text from its SKILL.md
-as it reads at export time, the automated score, and evidence_dir, the dir
+(or workflow's references/core.md for core.<n>) as it reads at export time, the automated score, and evidence_dir, the dir
 that holds the final step's agent/trajectory.json and verifier/judge-bundle.md.
 The proposed, human, and note columns start empty: a draft label can go in
 proposed, and the reviewer writes pass or fail in human. export refuses to
@@ -64,10 +64,21 @@ def evidence_dir(trial_dir: Path) -> Path:
     return trial_dir / "steps" / steps[-1] if steps else trial_dir
 
 
+def rule_source(prefix: str) -> Path:
+    """The file whose ## Rules section numbers the rules with this id prefix.
+
+    core.<n> rules live in the workflow skill's references/core.md, which the
+    plugin's SessionStart hook prints; every other prefix names a skill.
+    """
+    if prefix == "core":
+        return SKILLS_DIR / "workflow" / "references" / "core.md"
+    return SKILLS_DIR / prefix / "SKILL.md"
+
+
 def rule_text(rule_id: str) -> str:
-    """The numbered rule's text from its skill's ## Rules section, tables dropped; empty when not found."""
+    """The numbered rule's text from its source's ## Rules section, tables dropped; empty when not found."""
     skill, number = rule_id.rsplit(".", 1)
-    path = SKILLS_DIR / skill / "SKILL.md"
+    path = rule_source(skill)
     if not path.is_file():
         return ""
     _, found, rest = path.read_text().partition("\n## Rules\n")

@@ -13,6 +13,7 @@ import tempfile
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
+from unittest import mock
 
 EVAL_DIR = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(EVAL_DIR / "scripts"))
@@ -62,6 +63,14 @@ class ExportTests(unittest.TestCase):
         """code-review.2 holds the severity table; a reviewer needs the rule, not the table rows."""
         self.assertNotIn("|", rule_labels.rule_text("code-review.2"))
         self.assertIn("findings first by severity", rule_labels.rule_text("code-review.2"))
+
+    def test_a_core_rule_text_comes_from_workflows_core_md(self):
+        core = self.root / "workflow" / "references" / "core.md"
+        core.parent.mkdir(parents=True)
+        core.write_text("Consult is installed.\n\n## Rules\n\n1. **First.** One.\n2. Second\n   rule.\n")
+        with mock.patch.object(rule_labels, "SKILLS_DIR", self.root):
+            self.assertEqual(rule_labels.rule_text("core.2"), "Second rule.")
+            self.assertEqual(rule_labels.rule_text("core.1"), "First. One.")
 
     def test_a_multi_step_trial_points_at_its_final_steps_evidence(self):
         trial = write_rule_trial(self.root / "consult", "money-field-change", 0, {"api.1": 1.0}, ("brief", "build"))
