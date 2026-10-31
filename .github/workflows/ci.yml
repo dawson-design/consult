@@ -74,7 +74,13 @@ jobs:
       # Node tooling is removed (docs/plans/python-only-tooling.md).
       - name: Repo tests (unittest)
         if: ${{ !cancelled() }}
-        run: python3 -m unittest discover -s tests
+        run: |
+          set -o pipefail
+          python3 -m unittest discover -s tests 2>&1 | tee "$RUNNER_TEMP/unittest.log"
+          if grep -q 'skipped=' "$RUNNER_TEMP/unittest.log"; then
+            echo "::error::unittest skipped tests on CI -- expect is probably missing"
+            exit 1
+          fi
 
       # The confirmation tests must not silently skip on CI. If expect went
       # missing, this catches it rather than letting coverage quietly drop.
