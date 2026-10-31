@@ -247,16 +247,16 @@ result.
 The agent asks for sign-off before it builds any of these:
 
 - the design direction
-- a caller-facing interface
-- a core data shape that future work binds to
-- a migration or destructive data change
+- a contract that callers depend on
+- a core data shape, invariant, or glossary term later work depends on
+- a migration, or a change that deletes or rewrites data
 - a release artifact
-- a history-changing or destructive git operation
+- a change to git history, or any destructive git operation
 
 Local helpers, private file moves, and narrow bug fixes that restore intended
 behavior never need sign-off. Some runs have no human to answer, such as
-headless or scheduled runs. There the agent builds the most conservative
-version, marks it provisional, and flags the decision.
+headless or scheduled runs. There the agent stops at the gate and reports
+what needs approval.
 
 When work needs approval before building, the agent saves the approved plan as
 Markdown. A fresh session, or a cheaper model, can then build from the plan

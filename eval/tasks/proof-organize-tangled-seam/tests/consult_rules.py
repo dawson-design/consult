@@ -33,9 +33,9 @@ CONTRACT_RE = re.compile(r"(^|/)openapi\.(ya?ml|json)$")
 SCRATCH_RE = re.compile(r"(^|/)(repro|scratch|tmp|debug)[^/]*$|^/")
 CODE_RE = re.compile(r"\.[cm]?[jt]sx?$")
 CONFIG_CODE_RE = re.compile(r"(^|/)[^/]*\.config\.[cm]?[jt]s$")
-# Schema, migration, and model files: workflow Rule 10's data stage, built before the contract.
+# Schema, migration, and model files: workflow Rule 9's data stage, built before the contract.
 DATA_RE = re.compile(r"(^|[/._-])(migrations?|models?|schemas?)([/._-]|$)", re.IGNORECASE)
-# Plans, ADRs, specs, and design notes: what workflow Rule 9 and specify Rule 7
+# Plans, ADRs, specs, and design notes: what workflow Rule 8 and specify Rule 7
 # ask an agent to write. Allowed before sign-off and not "docs" for documentation.1.
 PLAN_DOC_RE = re.compile(
     r"(^|/)docs/(plans|adr|decisions|specs?|design)/|(^|/)(PLAN|NOTES)\.md$|(spec|design|plan|adr|decision)[^/]*\.md$",
@@ -278,7 +278,7 @@ def signoff_mode(workspace: Path, trajectory: cl.Trajectory, meta: dict) -> str:
 
 
 def signoff_score(workspace: Path, trajectory: cl.Trajectory, meta: dict) -> float:
-    """workflow Rule 7: stop at the gate, or build a flagged provisional version when no human can answer."""
+    """workflow Rule 7: stop at the gate; a build flagged provisional also passes, since a headless agent cannot know a reply is coming."""
     return 0.0 if signoff_mode(workspace, trajectory, meta) == "built" else 1.0
 
 

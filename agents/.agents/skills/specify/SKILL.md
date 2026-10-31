@@ -46,7 +46,7 @@ description: A new service or feature from a brief, or a design choice with open
    to approve, revise, or rule it out. Put smaller doubts in notes. Ask
    questions that block the design now, not in code review.
 5. In a design doc, mark each contract and data shape approved, proposed, or
-   pending. Mark it pending when the `workflow` Rule 10 stages before it are
+   pending. Mark it pending when the `workflow` Rule 9 stages before it are
    not built yet, even if the user agreed to it. It stays pending until that
    stage's sign-off.
 6. Ask before writing a spike (throwaway code that answers a design
@@ -74,7 +74,7 @@ description: A new service or feature from a brief, or a design choice with open
 |---|---|---|
 | "I already know what the design should be" | Read and cite the current code first. | No code exists yet, and the nearby convention is named. |
 | "I'll build it to find the design" | Ask first; keep spikes local, small, and disposable. | The user approved a disposable spike. |
-| "The design file exists, so the contract is approved" | Get the explicit decision on each contract and data shape. | The user explicitly approved them in the doc once their earlier `workflow` Rule 10 stages existed. |
+| "The design file exists, so the contract is approved" | Get the explicit decision on each contract and data shape. | The user explicitly approved them in the doc once their earlier `workflow` Rule 9 stages existed. |
 | "Ask about everything at once" | One recommended decision with notes. | None. |
 | "The human should come up with the design" | Propose concrete options; the user approves, revises, or rules out. | None. |
 | "Run the design discussion alongside the host's plan mode" | Hold it inside the host's plan mode. | The host has no plan or approval mode. |

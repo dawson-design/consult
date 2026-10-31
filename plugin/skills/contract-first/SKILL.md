@@ -38,7 +38,7 @@ description: Before adding or changing a field, signature, schema, CLI flag, eve
    existing callers.
 4. An approving design or RFC approves the direction, not the concrete shapes.
 5. Silence is not approval. Wait for the person to approve, revise, or reject.
-   If nobody can answer in this run, follow `workflow` Rule 7.
+   If nobody can answer in this run, stop and report what needs approval.
 6. If you find while building that the approved contract must change, stop
    and get approval for the new version.
 
@@ -61,7 +61,7 @@ description: Before adding or changing a field, signature, schema, CLI flag, eve
 |---|---|---|
 | "The design doc already covers this interface" | Follow Workflow step 4 for each contract. | The design listed this exact contract, and the person approved it. |
 | "I'll implement it first and show the interface after" | Show the contract first and wait for approval. | Nothing outside the change uses it yet (Rule 1), or the change is additive and easy to undo (Rule 2). |
-| "No objection means it's approved" | Wait for the person to approve, revise, or reject. | Nobody can answer in this run; follow `workflow` Rule 7. |
+| "No objection means it's approved" | Wait for the person to approve, revise, or reject. | The person approved this contract in words. |
 | "The rename is implied by the approved contract" | Ask what happens to existing callers (Workflow step 3). | The approval already said what happens to existing callers. |
 
 ## Handoffs

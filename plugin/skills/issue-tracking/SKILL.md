@@ -20,7 +20,7 @@ description: Use to draft, split, or track tickets, issues, epics, and initiativ
 ## When NOT to Use
 
 - Deciding what to build. Use `specify` first.
-- Planning one change's steps. Use the `workflow` Rule 9 plan file.
+- Planning one change's steps. Use the `workflow` Rule 8 plan file.
 
 ## Rules
 

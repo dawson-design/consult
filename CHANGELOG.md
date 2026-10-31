@@ -9,38 +9,28 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Changed
 
 - `workflow` holds only guidance that applies to all code, plus routing.
-  Rule 9 keeps the plan-with-the-strongest-model rule and points to a new
-  `references/plans.md` for where the plan goes and what it holds. Stage
-  delegation moves from Rule 10 to `references/long-runs.md`, and per-stage
-  review scope moves from Workflow step 3 to `references/stages.md`. Rule 7
-  keeps the gate, its list, and the no-human path.
-  It drops what a design or RFC approval covers, which `contract-first`
-  Rules 3 and 4 state, and the stage limit on plan-mode approval, which
-  Rule 10 states. `contract-first` Rule 3 now says approval covers the
-  contract or data shape that was shown, so data shapes keep the same limit.
-  Statements made twice are cut: Rule 2 takes the report order from
-  Workflow step 6, which is removed; Rule 6 no longer repeats Rule 7 on
-  contracts found mid-task; Workflow step 2 says to load matching skills
-  "and no others". The `commit` and `git-workflow` routing rows now say
-  they load on request, as the `documentation` and `release` rows already
-  did, so no rule names a skill before the routing table. The skill-conflict
-  rule (old Rule 8) is deleted: the pack states each rule once, so a
+  Plan-file detail moves to a new `references/plans.md`, stage delegation to
+  `references/long-runs.md`, and per-stage review scope to
+  `references/stages.md`. Statements made twice are cut. Rule 2 keeps only
+  the report order, taken from Workflow step 6, which is removed. Rule 4
+  drops "similar syntax alone is not enough". Rule 6 no longer repeats
+  Rule 7 on contracts found mid-task. Workflow step 2 says to load matching
+  skills "and no others", and the `commit` and `git-workflow` routing rows
+  say they load on request, as the `documentation` and `release` rows
+  already did, so no rule names a skill before the routing table. The
+  skill-conflict rule is deleted: the pack states each rule once, so a
   conflict is a pack bug, and Rule 3 covers conflicts with the host. The
-  code-shape rule takes its number. Rule 10 drops the removal-and-rename pointer the References
-  section already gives, and the pending-gate clause its gate implies.
-  Rules 9 and 10 keep their numbers. The `workflow` word budget falls to
-  1,269.
+  plan rule is now Rule 8, build stages Rule 9, and the code-shape rules
+  Rule 10. The `workflow` word budget falls to 1,181.
 - `workflow` Rule 7 reads "Get the user's approval before you build any of
-  these:" and lists the six things that need approval, without naming the
-  skills that hold the details, since the routing table loads them. It
-  follows with why and what to do while waiting or when no human can
-  answer. It no longer lists what needs no approval, or restates that
-  plan-mode approval counts, that a host instruction does not override it
-  (Rule 3 covers that), or where approval scope lives (the table names
-  `contract-first`). It replaces "Durable shapes need
-  sign-off before they are built". Rules 9 and 10 and the workflow
-  references call what Rule 7 gates "Rule 7 items" in place of "shapes".
-- `workflow` Rule 8 holds the code-shape rules for code an agent writes or
+  these:" followed by six items, without naming skills. It replaces
+  "Durable shapes need sign-off before they are built". The no-human path
+  is removed: a run with nobody to answer stops at the gate and reports
+  what needs approval (`contract-first` Rule 5, `AGENTS.md` host posture).
+  What an approval covers stays with `contract-first`, whose Rule 3 now
+  covers data shapes too. Rule 9 and the workflow references call what
+  Rule 7 gates "Rule 7 items".
+- `workflow` Rule 10 holds the code-shape rules for code an agent writes or
   changes: functions do one thing and stay around 25-30 lines, conditionals
   and loops stay under three nesting levels, and a condition that joins two
   or more checks with a logical and/or gets a plain-English name (a predicate
@@ -49,14 +39,13 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   framework, library, or the codebase's existing pattern requires it. The
   function-length and nesting rules move from `architecture` Rule 2, which
   loaded only for boundary work, so they now apply to every task.
-  `architecture` Rules 3-8 become 2-7. The `workflow` word budget rises to
-  1,501.
+  `architecture` Rules 3-8 become 2-7.
 - `contract-first` uses plain, direct prose and one noun, "contract", in
   place of "shape" and "surface". Rule 1 defines a contract as an API,
   interface, schema, format, or module boundary that something outside the
-  change depends on. Rule 4 keeps only the design-approval sentence, and
-  Rule 5 points to `workflow` Rule 7 for runs with nobody to answer, so
-  neither restates `workflow`. The Workflow folds "name the current shape"
+  change depends on. Rule 4 keeps only the design-approval sentence.
+  Rule 5 says that with nobody to answer, the agent stops and reports what
+  needs approval. The Workflow folds "name the current shape"
   into the approval step, which now shows each contract's current version,
   proposed version, and what changes for callers before one approve, revise,
   or reject. The "implement first" tripwire now lets additive, easily undone
