@@ -25,8 +25,9 @@ description: Load before reading code for any feature, bug fix, refactor, test, 
 
 1. **Keep unrelated parts separate.** Make state and effects explicit. Keep the
    number of things a maintainer must understand together small.
-2. **Explain the change to the user.** Show what changed, why, and what
-   evidence supports it. If you cannot explain those points, clarify the work
+2. **Explain the change to the user.** Report what needs their attention
+   first, then what changed, why it is better, what proves it, and what
+   remains unproven. If you cannot explain those points, clarify the work
    before proceeding.
 3. **Consult sets the engineering bar, and the host owns the mechanics.** When
    they conflict, Consult's bar wins, and the host decides how to meet it.
@@ -39,8 +40,7 @@ description: Load before reading code for any feature, bug fix, refactor, test, 
 6. **Ask more of the user when changes affect more code or are harder to
    undo.** If both risks are low, do the work and prove it with `proof` without
    sign-off. For higher risk, give progress updates, explain options, and get
-   approval before acting. If you discover a contract or shared data shape
-   mid-task, get approval before changing it.
+   approval before acting.
 7. **Get the user's approval before you build any of these:**
    - the design direction
    - a contract that callers depend on
@@ -55,11 +55,10 @@ description: Load before reading code for any feature, bug fix, refactor, test, 
    delegated), build the safest version, mark it provisional, and name the
    pending decision in your final report.
 
-8. **Load only the skills whose routing table rows match the task.** Load
-   `commit`, `git-workflow`, `documentation`, and `release` only on request,
-   when a project check requires them, or for approved work that needs them.
-   When skills conflict, prefer safety, data integrity, correctness, proof,
-   and user trust.
+8. **Load `commit`, `git-workflow`, `documentation`, and `release` only
+   when needed:** on request, when a project check requires them, or for
+   approved work that needs them. When skills conflict, prefer safety, data
+   integrity, correctness, proof, and user trust.
 9. **Plan with the strongest model, and save the plan so a cheaper one can
    build it.** When Rule 6 calls for approval before building, save the
    approved plan as `references/plans.md` describes. When building from a
@@ -68,13 +67,12 @@ description: Load before reading code for any feature, bug fix, refactor, test, 
     data (records, relationships, invariants, schema); contracts
     (caller-facing boundaries and the shell that parses input, reads and
     writes data, and renders output); transformations (pure logic between
-    parsed input and output). Removals and renames move consumers first
-    (`references/stages.md`). Skip stages the change does not touch. Before
+    parsed input and output). Skip stages the change does not touch. Before
     building a stage that holds a Rule 7 item, show the earlier stages with
-    their evidence and get sign-off on them. Sign-off from before
-    those earlier stages existed does not count, whatever it named. A
-    pending gate blocks later stages; with no human to answer, take Rule 7's
-    provisional path and mark later stages provisional.
+    their evidence and get sign-off on them. Sign-off from before those
+    earlier stages existed does not count, whatever it named. With no human
+    to answer, take Rule 7's provisional path and mark later stages
+    provisional.
 11. **Write code a reader can follow in one pass.** This covers code you
     write or change; do not reshape untouched code to fit. Functions do one
     thing and stay around 25-30 lines. Conditionals and loops stay under
@@ -96,9 +94,10 @@ description: Load before reading code for any feature, bug fix, refactor, test, 
    criteria and ask one question at a time. Ask before adding compatibility
    shims.
 2. **Before your first edit, load every skill whose row in this routing table
-   matches the task.** Its checks apply even when the fix looks obvious. Match
-   the request first, then the code you read. Load `code-review` at step 5.
-   Prefer Consult skills to same-named host skills.
+   matches the task, and no others.** Its checks apply even when the fix
+   looks obvious. Match the request first, then the code you read. Load
+   `code-review` at step 5. Prefer Consult skills to same-named host
+   skills.
 
    | Skill | Load when |
    | --- | --- |
@@ -135,8 +134,6 @@ description: Load before reading code for any feature, bug fix, refactor, test, 
    diff. Fix findings and repeat until proof passes and the review is clean.
    Label a same-context review as a fallback. Finish documentation and release
    work afterward.
-6. Report what needs the user's attention first, then what changed, why it
-   is better, what proves it, and what remains unproven.
 
 ## Tripwires
 
