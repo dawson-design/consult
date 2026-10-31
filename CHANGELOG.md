@@ -156,6 +156,13 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   check for "a narrow bug fix needs no sign-off" moves from `workflow.7`
   to `workflow.1`, the rule it tests. The `workflow` word budget falls to
   947.
+- Two new core rules. Core rule 7: ask whether backward compatibility is
+  required when a change alters behavior that callers or stored data
+  depend on, and add no compatibility shim until the user answers. This
+  replaces `workflow` step 1's "ask before adding compatibility shims".
+  Core rule 8: consider security even when the request does not mention
+  it, and validate input where it crosses a trust boundary. The
+  `workflow` word budget falls to 942.
 
 ## [18.0.0] (2026-10-23)
 

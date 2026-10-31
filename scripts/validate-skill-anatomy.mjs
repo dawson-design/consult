@@ -59,13 +59,14 @@ const MAX_BODY_WORDS = 700;
 // restated Workflow steps 3 and 5 paid for part of it, then fell to 947 when
 // the rules every code change needs (the Iron Law and old Rules 1-5 and 10)
 // moved to the always-on core in references/core.md.
+// It fell to 942 when step 1's compatibility-shim clause became core rule 7.
 // proof rose to 1,050 for the
 // test-level and test-oracle rules: expected outputs come from the
 // spec, and agents never edit an existing test to make a change pass. api
 // rose to 730 so Rules 1 and 2 state its REST compatibility policy (which
 // changes need approval, who counts as an independent consumer, and what
 // needs a successor) in plain sentences instead of dense ones.
-const BODY_WORD_EXCEPTIONS = { workflow: 947, proof: 1050, "code-review": 950, api: 730 };
+const BODY_WORD_EXCEPTIONS = { workflow: 942, proof: 1050, "code-review": 950, api: 730 };
 const MAX_TRIPWIRE_ROWS = 8;
 const MAX_DESCRIPTION_LENGTH = 120;
 // ~600 tokens of routing surface that every host loads before picking a skill.

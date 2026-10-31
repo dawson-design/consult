@@ -55,8 +55,7 @@ file before your first edit.
 
 1. State what should change, who it affects, how you will check it, and what
    else it may affect. If the desired result is unclear, propose acceptance
-   criteria and ask one question at a time. Ask before adding compatibility
-   shims.
+   criteria and ask one question at a time.
 2. **Before your first edit, load every skill whose row in this routing table
    matches the task, and no others.** Its checks apply even when the fix
    looks obvious. Match the request first, then the code you read. Load

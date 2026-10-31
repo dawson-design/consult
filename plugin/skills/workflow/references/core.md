@@ -40,3 +40,8 @@ loaded. Skills cite them as core rules.
 6. **Explain the change to the user.** Report what needs their attention
    first, then what changed, why it is better, what proves it, and what
    remains unproven.
+7. **Ask whether backward compatibility is required** when a change alters
+   behavior that callers or stored data depend on. Do not assume it is, and
+   add no compatibility shim until the user answers.
+8. **Consider security even when the request does not mention it.** Validate
+   input where it crosses a trust boundary.
