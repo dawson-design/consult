@@ -22,6 +22,10 @@ plan file tracks progress, so the run needs no other stop to report it.
    clears, one stage per subagent. When a stage splits into independent units
    (services, modules, packages), give each unit its own subagent. Pass it
    the intent, acceptance criteria, constraints, and the unit's scope.
+   Split by context (independent units, exploration, verification), never by
+   problem type (such as one security agent and one performance agent), and
+   never run work that shares state in parallel subagents, because each
+   handoff loses detail.
 5. The parent checks each unit's evidence before ticking it. A subagent's
    claim that it finished is not proof.
 6. A unit that would change a Rule 7 item still needs sign-off. Delegation

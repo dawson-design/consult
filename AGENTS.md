@@ -182,13 +182,15 @@ Every `SKILL.md` must have:
   once the validator stopped truncating descriptions at their first inner
   colon and revealed the pack had been over the old limit all along. Raise it
   again only with a stated reason.
+- No `model:` key in frontmatter. A skill that names a model makes the host
+  switch models when it loads, which throws away the prompt cache.
 - Required sections: `## When to Use`, `## When NOT to Use`, `## Rules`.
 - Body budget: 700 words after frontmatter. Raised for four skills, each with
   a reason recorded next to the constant: 730 for `api`, whose REST
   compatibility rules are written as plain sentences; 950 for `code-review`,
-  1,050 for `proof`, and 1,181 for `workflow`, which carry the routing
+  1,050 for `proof`, and 1,201 for `workflow`, which carry the routing
   table and sign-off list plus the host-harness, fresh-context-review,
-  plan-handoff, build-stage, code-shape, test-level, and test-oracle policy.
+  plan-handoff, delegated-model, build-stage, code-shape, test-level, and test-oracle policy.
   Table pipes and separator rows do not count. The budget is the regression guard for the
   knowledge-vs-policy rule below. Raise a single skill's budget only with a
   stated reason.
