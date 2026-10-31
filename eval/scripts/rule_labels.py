@@ -32,8 +32,11 @@ from pathlib import Path
 
 EVAL_DIR = Path(__file__).resolve().parent.parent
 SKILLS_DIR = EVAL_DIR.parent / "agents" / ".agents" / "skills"
+# Both directories go on the path here, so the imports below work in any
+# order (an import sorter may reorder them).
 sys.path.insert(0, str(EVAL_DIR / "scripts"))
-import consult_rules as cr  # lift puts verifier/shared on the path
+sys.path.insert(0, str(EVAL_DIR / "verifier" / "shared"))
+import consult_rules as cr
 import lift
 
 COLUMNS = ("job", "trial", "task", "rule", "rule_text", "automated", "evidence_dir", "proposed", "human", "note")
