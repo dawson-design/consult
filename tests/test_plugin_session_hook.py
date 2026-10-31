@@ -10,12 +10,11 @@ import json
 import re
 import unittest
 
-from helpers import ROOT, run
+from helpers import ROOT, load_script, run
 
-# Step 3 of docs/plans/python-only-tooling.md reads these from the Python
-# generator instead.
-HOOK_SOURCE = "agents/.agents/skills/workflow/references/core.md"
-HOOK_DEST = "plugin/hooks/hooks.json"
+generator = load_script("generate_plugin_symlinks")
+HOOK_SOURCE = generator.HOOK_SOURCE
+HOOK_DEST = generator.HOOK_DEST
 
 # The routing paragraph comes first so it survives if a host truncates hook
 # output; keeping it short keeps that guarantee cheap.

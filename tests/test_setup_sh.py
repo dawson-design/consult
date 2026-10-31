@@ -35,6 +35,13 @@ printf '%s\\n' '---' 'name: testing' '---' > "$target/.agents/skills/testing/SKI
 echo "LINK: .agents => test fixture"
 """
 
+# setup.sh ends by running the plugin generator on this checkout. The fake
+# records the call instead, so the tests never rewrite the real plugin/ tree.
+FAKE_PYTHON = """#!/bin/sh
+echo "$@" >> "$HOME/python3-invocations.log"
+exit 0
+"""
+
 FAKE_AGY = """#!/bin/sh
 echo "$@" >> "$HOME/agy-invocations.log"
 exit 0
@@ -107,6 +114,7 @@ class SetupConfirmationTests(TempDirTestCase):
     def setUp(self) -> None:
         super().setUp()
         write_executable(self.tmp / "bin" / "stow", FAKE_STOW)
+        write_executable(self.tmp / "bin" / "python3", FAKE_PYTHON)
 
     def test_links_skills_and_installs_the_antigravity_plugin_after_confirmation(self) -> None:
         write_executable(self.tmp / "bin" / "agy", FAKE_AGY)
@@ -121,6 +129,8 @@ class SetupConfirmationTests(TempDirTestCase):
         log = (self.tmp / "agy-invocations.log").read_text(encoding="utf8")
         self.assertEqual(log, f"plugin install {ROOT / 'plugin'}\n")
         self.assertFalse((self.tmp / ".codex/config.toml").exists())
+        generator_calls = (self.tmp / "python3-invocations.log").read_text(encoding="utf8")
+        self.assertEqual(generator_calls, f"{ROOT / 'scripts/generate_plugin_symlinks.py'} {ROOT}\n")
 
     def test_does_not_replace_conflicting_symlinks_without_interactive_confirmation(self) -> None:
         other = self.tmp / "other-skills/testing"

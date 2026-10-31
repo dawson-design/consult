@@ -11,15 +11,13 @@ import os
 import unittest
 from pathlib import Path
 
-from helpers import ROOT, TempDirTestCase, run
+from helpers import ROOT, TempDirTestCase, load_script, run
 
-# The implementation under test. Step 3 of docs/plans/python-only-tooling.md
-# switches this to the Python port and reads these constants from it.
-COMMAND = ["node", ROOT / "scripts/generate-plugin-symlinks.mjs"]
-MIRROR_DESTS = ["plugin/skills"]
-HOOK_SOURCE = "agents/.agents/skills/workflow/references/core.md"
-HOOK_DEST = "plugin/hooks/hooks.json"
-MAX_HOOK_CHARS = 4000
+COMMAND = ["python3", ROOT / "scripts/generate_plugin_symlinks.py"]
+generator = load_script("generate_plugin_symlinks")
+HOOK_SOURCE = generator.HOOK_SOURCE
+HOOK_DEST = generator.HOOK_DEST
+MAX_HOOK_CHARS = generator.MAX_HOOK_CHARS
 
 
 def make_skill(root: Path, name: str) -> Path:
@@ -51,12 +49,15 @@ class GeneratePluginSymlinksTests(TempDirTestCase):
         return (self.tmp / "agents/.agents/skills" / name / "SKILL.md").read_text(encoding="utf8")
 
     def test_writes_every_declared_mirror_destination(self) -> None:
+        # The validator reads this list to find mirrors to check, so dropping
+        # a destination would silently stop its drift check.
+        self.assertEqual(generator.MIRROR_DESTS, ["plugin/skills"])
         make_skill(self.tmp, "code-review")
 
         result = self.generate()
 
         self.assertEqual(result.returncode, 0, result.stderr)
-        for dest in MIRROR_DESTS:
+        for dest in generator.MIRROR_DESTS:
             copy = (self.tmp / dest / "code-review/SKILL.md").read_text(encoding="utf8")
             self.assertEqual(copy, self.canonical("code-review"))
 

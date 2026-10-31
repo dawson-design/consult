@@ -7,13 +7,26 @@ tests describe what a maintainer sees rather than how the script is built.
 
 from __future__ import annotations
 
+import importlib.util
 import os
 import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+from types import ModuleType
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def load_script(name: str) -> ModuleType:
+    """Import scripts/<name>.py as a module, so tests share the script's constants.
+
+    Loading by path keeps scripts/ off sys.path, so no import order matters.
+    """
+    spec = importlib.util.spec_from_file_location(name, ROOT / "scripts" / f"{name}.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def run(

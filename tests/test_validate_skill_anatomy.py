@@ -13,16 +13,14 @@ import unittest
 from pathlib import Path
 from typing import Any
 
-from helpers import ROOT, TempDirTestCase, run
+from helpers import ROOT, TempDirTestCase, load_script, run
 
 # The implementation under test. Step 4 of docs/plans/python-only-tooling.md
 # switches this to the Python port.
 COMMAND = ["node", ROOT / "scripts/validate-skill-anatomy.mjs"]
 
-# Step 3 of the plan reads HOOK_SOURCE and render_session_start_hooks from
-# the Python generator instead.
-HOOK_SOURCE = "agents/.agents/skills/workflow/references/core.md"
-GENERATOR = ROOT / "scripts/generate-plugin-symlinks.mjs"
+generator = load_script("generate_plugin_symlinks")
+HOOK_SOURCE = generator.HOOK_SOURCE
 
 GOOD_SKILL = """---
 name: good
@@ -168,18 +166,6 @@ def write_json(path: Path, value: Any) -> None:
     path.write_text(json.dumps(value), encoding="utf8")
 
 
-def render_session_start_hooks(core: str) -> str:
-    """Return the hooks.json text the generator renders for `core`."""
-    script = (
-        f"import {{ renderSessionStartHooks }} from {json.dumps(GENERATOR.as_uri())};"
-        "process.stdout.write(renderSessionStartHooks(process.argv[1]));"
-    )
-    result = run(["node", "--input-type=module", "-e", script, core])
-    if result.returncode != 0:
-        raise RuntimeError(result.stderr)
-    return result.stdout
-
-
 def write_hook_source(root: Path, text: str = HOOK_CORE) -> None:
     """Write core.md and its plugin/skills mirror copy, so the fixture passes both drift checks."""
     mirror_path = HOOK_SOURCE.replace("agents/.agents/skills/", "plugin/skills/")
@@ -192,7 +178,7 @@ def write_generated_hooks(root: Path, core: str = HOOK_CORE) -> None:
     """Write plugin/hooks/hooks.json as the generator renders it for `core`."""
     path = root / "plugin/hooks/hooks.json"
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(render_session_start_hooks(core), encoding="utf8")
+    path.write_text(generator.render_session_start_hooks(core), encoding="utf8")
 
 
 def make_skill(skills_dir: Path, name: str, body: str = GOOD_SKILL) -> Path:
