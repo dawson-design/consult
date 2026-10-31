@@ -57,6 +57,15 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   at `contract-first` Rule 1 for what a contract is, instead of keeping its
   own list. The Codex short description reads "Agree on a design before
   building". Unmeasured by the eval.
+- `code-review` uses plain prose. The Iron Law blocks on "missing proof" in
+  place of "unproven claims". Rule 1 no longer repeats Rule 3's proof pass,
+  which now checks that each acceptance criterion has a check that fails when
+  it is not met, matching `proof`'s Iron Law. When to Use and the
+  Independent Review block each drop a sentence that restated the block's
+  own rule. Jargon such as "dead surface", "comprehension debt",
+  "pre-flight", and "requiredness" gives way to plain words, and the
+  test-theater tripwire names `proof`'s `references/test-theater.md`.
+  Unmeasured by the eval.
 
 ## [18.0.0] (2026-10-23)
 
