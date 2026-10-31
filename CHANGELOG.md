@@ -137,6 +137,40 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The anatomy validator rejects a `model:` key in skill frontmatter, because
   a skill that names a model makes the host switch models and throw away the
   prompt cache.
+- `plugin/hooks/hooks.json` is generated from the `workflow` skill's
+  `references/core.md` by `scripts/generate-plugin-symlinks.mjs`, and the
+  validator reports drift between them.
+- Numbered rules under `## Rules` in `core.md` get eval ids `core.<n>`: the
+  validator requires a `rules.json` entry for each, `rule_labels.py` reads
+  their text from `core.md`, and fast-tier selection treats them as
+  `workflow` rules.
+- The Consult core is always on. The plugin's SessionStart hook now prints
+  `workflow/references/core.md`: the Iron Law and six rules moved verbatim
+  from `workflow` (old Rules 3, 1, 4, 5, 10 and 2 become core rules 1-6),
+  so they apply in every session, not only once `workflow` loads. Readers
+  without the hook (subagents, Codex before trusting it, manual installs)
+  are pointed at `core.md` from `workflow` and `references/long-runs.md`.
+  `workflow` keeps its gates, process, and routing, renumbered: old Rules
+  6-9 become 1-4, and every skill that cites them follows. The eval
+  check for "a narrow bug fix needs no sign-off" moves from `workflow.7`
+  to `workflow.1`, the rule it tests. The `workflow` word budget falls to
+  947.
+- Two new core rules. Core rule 7: ask whether backward compatibility is
+  required when a change alters behavior that callers outside the change,
+  or stored data, depend on, and add no compatibility shim until the user
+  answers. A fix that restores intended behavior needs no question, and a
+  loaded skill's policy (such as `api` Rule 2) takes precedence. This
+  replaces `workflow` step 1's "ask before adding compatibility shims", and
+  `refactoring` Rule 4 cites it instead of restating it. Core rule 8: treat
+  input that crosses a trust boundary as untrusted, even when the request
+  does not mention security, and parse or validate it before use. The
+  `workflow` word budget falls to 942.
+- `AGENTS.md` names Claude Code as the primary host, with Codex kept
+  working, and describes the hook as printing the Consult core. The README
+  explains that the core can replace general coding rules in a user's
+  `CLAUDE.md`, and how hosts without the hook can keep it always on. The
+  eval README and `stub.py` note that the stub arm now gets the core
+  through the hook.
 
 ## [18.0.0] (2026-10-23)
 

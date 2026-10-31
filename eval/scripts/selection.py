@@ -15,6 +15,9 @@ from pathlib import Path
 EVAL_DIR = Path(__file__).resolve().parent.parent
 REPO_DIR = EVAL_DIR.parent
 SKILLS_PATH = "agents/.agents/skills"
+# Rule id prefixes that are not skill names, mapped to the skill whose files
+# hold those rules. core.<n> rules live in workflow's references/core.md.
+RULE_PREFIX_SKILLS = {"core": "workflow"}
 
 
 def changed_skills(ref: str) -> set[str]:
@@ -36,7 +39,8 @@ def skill_name(path: str) -> str | None:
 def task_skills(task: str) -> tuple[set[str], set[str]]:
     """(intended skills, skills whose rules the task scores)."""
     meta = json.loads((EVAL_DIR / "tasks" / task / "tests" / "consult.json").read_text())
-    rules = {r.split(".")[0] for r in meta.get("rules") or []}
+    prefixes = {r.split(".")[0] for r in meta.get("rules") or []}
+    rules = {RULE_PREFIX_SKILLS.get(p, p) for p in prefixes}
     return set(meta.get("intended_skills") or []), rules
 
 

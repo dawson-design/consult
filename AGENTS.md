@@ -13,9 +13,11 @@ Most edits are to skill bodies, the top-level `AGENTS.md`, or the
 `README.md`. There is no application build or service to run; tests cover
 repo maintenance helpers and plugin packaging.
 
-Claude Code and Codex are the hosts the maintainer uses and the eval
-measures. Check behavior changes on those first; the other hosts load the same
-skills but nothing measures them.
+Claude Code is the primary host: the maintainer and their workplace use it,
+so design for how Claude Code works and check behavior changes there first.
+Codex must keep working, and the eval measures both. The other hosts load the
+same skills, but nothing measures them, and Claude Code mechanisms such as
+the SessionStart hook are acceptable even where those hosts lack them.
 
 ## Source of truth and mirrors
 
@@ -25,8 +27,9 @@ skills but nothing measures them.
   the repo. `CLAUDE.md` imports it with `@AGENTS.md`, because Claude Code reads
   `CLAUDE.md` but not `AGENTS.md`. Normal Consult use relies on skill
   frontmatter, plugin metadata, the `workflow` skill, and the plugin
-  SessionStart hook that tells the agent to load `workflow` before non-trivial
-  code work; users do not need to install or merge system instruction files.
+  SessionStart hook, which prints the Consult core (always-on rules) and
+  tells the agent to load `workflow` before non-trivial code work; users do
+  not need to install or merge system instruction files.
 - **Claude Code plugin mirror**: `plugin/skills/<name>` contains generated
   copies of canonical skills from `agents/.agents/skills/<name>`.
   `.claude-plugin/marketplace.json` points Claude Code at the `plugin/` root,
@@ -36,11 +39,14 @@ skills but nothing measures them.
   the `plugin/` root, and `plugin/.codex-plugin/plugin.json` exposes the same
   generated skill mirror to Codex as a plugin. Keep the Codex marketplace and
   manifest in sync with Claude plugin packaging.
-- **Plugin SessionStart hook**: `plugin/hooks/hooks.json` is hand-written, not
-  generated. Claude Code and Codex discover it by convention, so no manifest
-  declares `hooks`. It holds exactly one SessionStart command that prints the
-  routing line, and the validator rejects anything more. Codex runs it only
-  after the user trusts it. Cursor and Antigravity also find the file:
+- **Plugin SessionStart hook**: `plugin/hooks/hooks.json` is generated from
+  `agents/.agents/skills/workflow/references/core.md` by
+  `scripts/generate-plugin-symlinks.mjs`. Edit `core.md`, never
+  `hooks.json`. Claude Code and Codex discover it by convention, so no
+  manifest declares `hooks`. It holds exactly one SessionStart command, a
+  heredoc that needs a POSIX `sh`, which prints `core.md` inline. The
+  validator rejects anything more, and any drift from `core.md`. Codex runs
+  it only after the user trusts it. Cursor and Antigravity also find the file:
   Antigravity cannot parse the Claude Code format and still loads the skills,
   and whether Cursor uses the plain-text output is unverified.
 - **Cursor plugin package**: `.cursor-plugin/marketplace.json` points Cursor at
@@ -78,9 +84,10 @@ Consequences for anyone editing this repo:
 - Do not add host-specific enforcement primitives, blocking gates, or hook
   configuration to shared skill bodies. The absence of those is the design.
   Skill prose stays portable and host-neutral.
-- The plugin SessionStart hook is context, not enforcement. It prints one
-  routing line and blocks nothing. Keep it that way: a hook that gates or
-  checks work is the host-specific enforcement Consult leaves out.
+- The plugin SessionStart hook is context, not enforcement. It prints the
+  Consult core (`workflow/references/core.md`) and blocks nothing. Keep it
+  that way: a hook that gates or checks work is the host-specific
+  enforcement Consult leaves out.
 - When a skill body says to get approval, it is addressing the person in the
   session. Keep that phrasing about the *decision* that needs a human, not
   about the mechanism a particular host would use to block on it.
@@ -188,10 +195,10 @@ Every `SKILL.md` must have:
 - Body budget: 700 words after frontmatter. Raised for four skills, each with
   a reason recorded next to the constant: 730 for `api`, whose REST
   compatibility rules are written as plain sentences; 950 for `code-review`,
-  1,050 for `proof`, and 1,201 for `workflow`, which carry the routing
-  table and sign-off list plus the host-harness, fresh-context-review,
-  plan-handoff, delegated-model, build-stage, code-shape, test-level, and test-oracle policy.
-  Table pipes and separator rows do not count. The budget is the regression guard for the
+  1,050 for `proof`, and 942 for `workflow`, which carry the routing table
+  and sign-off list plus the fresh-context-review, plan-handoff,
+  delegated-model, build-stage, test-level, and test-oracle policy. Table
+  pipes and separator rows do not count. The budget is the regression guard for the
   knowledge-vs-policy rule below. Raise a single skill's budget only with a
   stated reason.
 - Optional section: `## Tripwires` when a skill has known agent failure modes.
@@ -227,14 +234,16 @@ only if it is one of:
 Delete anything that teaches standard practice. Where a rule is non-obvious to
 a junior engineer, keep one short "because" clause, not a paragraph.
 
-Workflow scope. `workflow` loads on every code task, so it holds only
-high-level guidance that applies to all code, plus routing to the other
-skills. Rules every code change needs, such as Rule 10's code-shape rules,
-belong there with their thresholds. Process detail for narrower situations
-goes to the skill that owns it, or to a `workflow/references/` file that
-workflow's References section says when to load. Gate rules that eval checks
-or other skills cite (Rule 7's approval list, Rule 9's stage sign-off) stay
-in the body.
+Core and workflow scope. `workflow/references/core.md` is the Consult core:
+the plugin's SessionStart hook prints it into every session, so it holds the
+rules every code change needs, such as core rule 5's code-shape thresholds,
+whether or not a skill loads. Its numbered rules have eval ids `core.<n>`.
+`workflow` loads on non-trivial code tasks, so it holds the gates, the
+process, and routing to the other skills. Process detail for narrower
+situations goes to the skill that owns it, or to a `workflow/references/`
+file that workflow's References section says when to load. Gate rules that
+eval checks or other skills cite (Rule 2's approval list, Rule 4's stage
+sign-off) stay in the workflow body.
 
 Each rule is stated once. Section ownership:
 
@@ -294,7 +303,8 @@ Adding or renaming a skill needs five updates, in order:
    `agents/openai.yaml` with the Codex display name, short description, and
    default prompt. Nothing validates `openai.yaml`, so copy a neighbour's
    shape. A new description must fit the pack-wide description ceiling.
-2. `eval/verifier/rules.json`: one entry per numbered rule (`<name>.<n>`)
+2. `eval/verifier/rules.json`: one entry per numbered rule (`<name>.<n>`,
+   or `core.<n>` for a rule in `workflow/references/core.md`)
    with status `check`, `judge-only`, or `untested`. The validator fails until
    every rule has one and no entry names a missing rule.
 3. `README.md`: add or rename the skill in the grouped list under `## Skills`.

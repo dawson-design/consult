@@ -16,7 +16,13 @@ import { dirname, join, relative, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 
-import { MIRROR_DESTS } from "./generate-plugin-symlinks.mjs";
+import {
+  HOOK_DEST,
+  HOOK_SOURCE,
+  MIRROR_DESTS,
+  hookSourceProblem,
+  renderSessionStartHooks,
+} from "./generate-plugin-symlinks.mjs";
 
 const REQUIRED_SECTIONS = ["When to Use", "When NOT to Use", "Rules"];
 // Retired by the Rules-section anatomy. A skill that still carries one of
@@ -50,14 +56,17 @@ const MAX_BODY_WORDS = 700;
 // routing table introduces them, the skill-conflict rule was deleted, and
 // Rule 7 dropped its no-human path.
 // It rose to 1,201 for Rule 8's delegated-model sentence, after trimming
-// restated Workflow steps 3 and 5 paid for part of it.
+// restated Workflow steps 3 and 5 paid for part of it, then fell to 947 when
+// the rules every code change needs (the Iron Law and old Rules 1-5 and 10)
+// moved to the always-on core in references/core.md.
+// It fell to 942 when step 1's compatibility-shim clause became core rule 7.
 // proof rose to 1,050 for the
 // test-level and test-oracle rules: expected outputs come from the
 // spec, and agents never edit an existing test to make a change pass. api
 // rose to 730 so Rules 1 and 2 state its REST compatibility policy (which
 // changes need approval, who counts as an independent consumer, and what
 // needs a successor) in plain sentences instead of dense ones.
-const BODY_WORD_EXCEPTIONS = { workflow: 1201, proof: 1050, "code-review": 950, api: 730 };
+const BODY_WORD_EXCEPTIONS = { workflow: 942, proof: 1050, "code-review": 950, api: 730 };
 const MAX_TRIPWIRE_ROWS = 8;
 const MAX_DESCRIPTION_LENGTH = 120;
 // ~600 tokens of routing surface that every host loads before picking a skill.
@@ -666,7 +675,8 @@ export function validateAntigravityPluginPackage(skillsDir) {
 
 // Claude Code and Codex both discover plugin/hooks/hooks.json by convention.
 // Consult ships exactly one hook there: a SessionStart command that prints the
-// routing line. Anything more would turn the pack into a host enforcement layer.
+// Consult core from the workflow skill. Anything more would turn the pack into
+// a host enforcement layer.
 function sessionStartHookProblem(hooksFile) {
   const onlyOne = "Consult ships exactly one SessionStart command hook";
   const keys = Object.keys(hooksFile);
@@ -687,11 +697,28 @@ function sessionStartHookProblem(hooksFile) {
   return null;
 }
 
+// hooks.json is generated from HOOK_SOURCE, so any difference is drift. CRs are
+// ignored so a CRLF checkout does not report drift that is not there.
+function sessionStartHookDriftProblem(root, hooksText) {
+  const sourcePath = join(root, HOOK_SOURCE);
+  if (!existsSync(sourcePath)) return `missing ${HOOK_SOURCE}, the source of ${HOOK_DEST}`;
+  const markdown = readFileSync(sourcePath, "utf8");
+  const sourceProblem = hookSourceProblem(markdown);
+  if (sourceProblem) return `${HOOK_SOURCE} ${sourceProblem}`;
+  if (hooksText.replaceAll("\r", "") !== renderSessionStartHooks(markdown)) {
+    return `${HOOK_DEST} differs from ${HOOK_SOURCE} -- run scripts/generate-plugin-symlinks.mjs`;
+  }
+  return null;
+}
+
 export function validatePluginHooks(skillsDir) {
-  const hooksPath = join(repoRootForSkillsDir(skillsDir), "plugin/hooks/hooks.json");
+  const root = repoRootForSkillsDir(skillsDir);
+  const hooksPath = join(root, HOOK_DEST);
   const [hooksFile, readProblem] = readJsonObject(hooksPath);
   const shapeProblem = hooksFile ? sessionStartHookProblem(hooksFile) : null;
-  const problems = [readProblem, shapeProblem && `${hooksPath} ${shapeProblem}`].filter(Boolean);
+  const driftProblem =
+    hooksFile && !shapeProblem ? sessionStartHookDriftProblem(root, readFileSync(hooksPath, "utf8")) : null;
+  const problems = [readProblem, shapeProblem && `${hooksPath} ${shapeProblem}`, driftProblem].filter(Boolean);
 
   if (problems.length > 0) {
     for (const problem of problems) console.log(`plugin hooks: ${problem}`);
@@ -705,14 +732,21 @@ export function validatePluginHooks(skillsDir) {
 
 const RULE_STATUSES = new Set(["check", "judge-only", "untested"]);
 
+// The Consult core (the SessionStart hook's source) numbers its rules under
+// `## Rules` like a SKILL.md, and its eval ids are `core.<n>`.
+const CORE_RULES_FILE = HOOK_SOURCE.replace("agents/.agents/skills/", "");
+
 function skillRuleIds(skillsDir) {
-  return readdirSync(skillsDir)
+  const skillIds = readdirSync(skillsDir)
     .filter((name) => existsSync(join(skillsDir, name, "SKILL.md")))
     .sort()
     .flatMap((name) => ruleNumbers(readFileSync(join(skillsDir, name, "SKILL.md"), "utf8")).map((n) => `${name}.${n}`));
+  const corePath = join(skillsDir, CORE_RULES_FILE);
+  const coreIds = existsSync(corePath) ? ruleNumbers(readFileSync(corePath, "utf8")).map((n) => `core.${n}`) : [];
+  return [...skillIds, ...coreIds];
 }
 
-// Every rule of every skill must appear in rules.json with a status, no entry may
+// Every rule of every skill and of the core must appear in rules.json with a status, no entry may
 // name a rule that no longer exists (a renumbered skill), and every "check" entry
 // must have a function in consult_rules.py's CHECKS table.
 export function ruleCoverageProblems(skillsDir, coverage, checksSource) {
@@ -721,7 +755,7 @@ export function ruleCoverageProblems(skillsDir, coverage, checksSource) {
   const missing = expected.filter((id) => !(id in coverage)).map((id) => `rule ${id} has no entry in rules.json`);
   const stale = Object.keys(coverage)
     .filter((id) => !known.has(id))
-    .map((id) => `rules.json names ${id}, which is not a rule in its SKILL.md`);
+    .map((id) => `rules.json names ${id}, which is not a rule in its SKILL.md or core.md`);
   const invalid = Object.entries(coverage)
     .filter(([, status]) => !RULE_STATUSES.has(status))
     .map(([id, status]) => `rules.json ${id} has unknown status ${JSON.stringify(status)}`);

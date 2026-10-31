@@ -13,6 +13,7 @@ import tempfile
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
+from unittest import mock
 
 EVAL_DIR = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(EVAL_DIR / "scripts"))
@@ -50,11 +51,11 @@ class ExportTests(unittest.TestCase):
             return list(csv.DictReader(handle))
 
     def test_export_writes_one_row_per_rule_verdict_with_the_rule_text_and_evidence(self):
-        trial = write_rule_trial(self.root / "bare", "bug-from-symptom", 0, {"workflow.7": 0.0, "debugging.1": 1.0})
+        trial = write_rule_trial(self.root / "bare", "bug-from-symptom", 0, {"workflow.1": 0.0, "debugging.1": 1.0})
         rows = self.export(self.root / "bare")
         self.assertEqual([(r["job"], r["rule"], r["automated"]) for r in rows],
-                         [("bare", "debugging.1", "1.0"), ("bare", "workflow.7", "0.0")])
-        self.assertTrue(rows[1]["rule_text"].startswith("Get the user's approval before you build any of these:"))
+                         [("bare", "debugging.1", "1.0"), ("bare", "workflow.1", "0.0")])
+        self.assertTrue(rows[1]["rule_text"].startswith("Ask more of the user when changes affect more code"))
         self.assertEqual(rows[0]["evidence_dir"], str(trial.resolve()))
         self.assertEqual((rows[0]["proposed"], rows[0]["human"]), ("", ""))
 
@@ -62,6 +63,14 @@ class ExportTests(unittest.TestCase):
         """code-review.2 holds the severity table; a reviewer needs the rule, not the table rows."""
         self.assertNotIn("|", rule_labels.rule_text("code-review.2"))
         self.assertIn("findings first by severity", rule_labels.rule_text("code-review.2"))
+
+    def test_a_core_rule_text_comes_from_workflows_core_md(self):
+        core = self.root / "workflow" / "references" / "core.md"
+        core.parent.mkdir(parents=True)
+        core.write_text("Consult is installed.\n\n## Rules\n\n1. **First.** One.\n2. Second\n   rule.\n")
+        with mock.patch.object(rule_labels, "SKILLS_DIR", self.root):
+            self.assertEqual(rule_labels.rule_text("core.2"), "Second rule.")
+            self.assertEqual(rule_labels.rule_text("core.1"), "First. One.")
 
     def test_a_multi_step_trial_points_at_its_final_steps_evidence(self):
         trial = write_rule_trial(self.root / "consult", "money-field-change", 0, {"api.1": 1.0}, ("brief", "build"))
@@ -115,10 +124,10 @@ class AgreementTests(unittest.TestCase):
     def test_agreement_counts_matches_false_passes_and_false_fails(self):
         rows = rule_labels.read_sheet(self.sheet([("api.1", "1.0", "pass"), ("api.1", "0.0", "fail"),
                                                   ("api.1", "1.0", "fail"), ("api.1", "0.0", "Pass"),
-                                                  ("api.1", "1.0", ""), ("workflow.7", "0.0", "fail")]))
+                                                  ("api.1", "1.0", ""), ("workflow.1", "0.0", "fail")]))
         result = rule_labels.agreement(rows)
         self.assertEqual(result["api.1"], {"labelled": 4, "agree": 2, "false_pass": 1, "false_fail": 1})
-        self.assertEqual(result["workflow.7"]["agree"], 1)
+        self.assertEqual(result["workflow.1"]["agree"], 1)
 
     def test_a_score_of_one_half_counts_as_a_pass(self):
         rows = rule_labels.read_sheet(self.sheet([("api.1", "0.5", "pass")]))

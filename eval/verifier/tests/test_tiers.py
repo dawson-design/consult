@@ -241,6 +241,14 @@ class SelectionTests(unittest.TestCase):
     def test_a_task_that_only_scores_the_skill_rules_is_selected(self):
         self.assertEqual(selection.select_tasks({"documentation"}, ["bug-from-symptom"], 4), ["bug-from-symptom"])
 
+    def test_a_task_that_scores_core_rules_is_selected_for_workflow(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            meta = Path(tmp) / "tasks" / "core-task" / "tests" / "consult.json"
+            meta.parent.mkdir(parents=True)
+            meta.write_text(json.dumps({"intended_skills": ["proof"], "rules": ["core.3"]}))
+            with mock.patch.object(selection, "EVAL_DIR", Path(tmp)):
+                self.assertEqual(selection.select_tasks({"workflow"}, ["core-task"], 4), ["core-task"])
+
     def test_selection_stops_at_the_limit(self):
         candidates = ["proof-first-bugfix", "proof-pipeline-shape", "proof-validator-error-content"]
         self.assertEqual(len(selection.select_tasks({"proof"}, candidates, 2)), 2)

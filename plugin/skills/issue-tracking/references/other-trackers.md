@@ -45,7 +45,7 @@ State the mapping once in every draft.
 - Tasks sit below the Issue level, and Rule 1 leaves them out.
 - The Basic process has one portfolio level. An Initiative needs a custom
   portfolio backlog level, which can only be added at the top. Process
-  changes are a `workflow` Rule 7 proposal for a process administrator.
+  changes are a `workflow` Rule 2 proposal for a process administrator.
 - Each team decides whether bugs appear with requirements, with tasks, or
   not on backlogs. Follow the team's setting.
 - Hierarchy uses the Parent-Child link, with one parent per item.

@@ -27,7 +27,7 @@ Epic, and Issue once.
   creates the work type, adds it to the work type scheme, then adds the level
   under Settings > Work items > Work type hierarchy. The change applies to
   every company-managed space and plan on the site. It can break existing
-  parent links and cannot be undone. Treat it as a `workflow` Rule 7 proposal
+  parent links and cannot be undone. Treat it as a `workflow` Rule 2 proposal
   for the admin, never an agent action.
 - **Team-managed spaces** cannot add levels of their own. On Premium and
   Enterprise, a team-managed Epic can still take a company-managed Initiative

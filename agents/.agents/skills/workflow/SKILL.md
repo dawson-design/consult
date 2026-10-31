@@ -5,10 +5,6 @@ description: Load before reading code for any feature, bug fix, refactor, test, 
 
 # Workflow
 
-## Iron Law
-
-`COMPLEXITY IS THE ENEMY: KEEP SOFTWARE SIMPLE ENOUGH TO UNDERSTAND, CHANGE, AND PROVE.`
-
 ## When to Use
 
 - Use first for features, fixes, refactors, debugging, and tests.
@@ -23,65 +19,43 @@ description: Load before reading code for any feature, bug fix, refactor, test, 
 
 ## Rules
 
-1. **Keep unrelated parts separate.** Make state and effects explicit. Keep the
-   number of things a maintainer must understand together small.
-2. **Explain the change to the user.** Report what needs their attention
-   first, then what changed, why it is better, what proves it, and what
-   remains unproven.
-3. **Consult sets the engineering bar, and the host owns the mechanics.** When
-   they conflict, Consult's bar wins, and the host decides how to meet it.
-4. **Build only what the user asked for.** Build the main behavior first unless
-   safety or data loss requires an edge case now. Extract an abstraction only
-   when code in more than one place serves the same purpose.
-5. **Check existing tools before building one.** Look for a maintained library
-   before writing code for a solved problem. Ask before adding a dependency.
-6. **Ask more of the user when changes affect more code or are harder to
+The Consult core in `references/core.md` applies with these rules. If the
+block that starts "Consult is installed." is not in your context, read that
+file before your first edit.
+
+1. **Ask more of the user when changes affect more code or are harder to
    undo.** If both risks are low, do the work and prove it without sign-off.
    For higher risk, give progress updates, explain options, and get approval
    before acting.
-7. **Get the user's approval before you build any of these:**
+2. **Get the user's approval before you build any of these:**
    - the design direction
    - a contract that callers depend on
    - a core data shape, invariant, or glossary term later work depends on
    - a migration, or a change that deletes or rewrites data
    - a release artifact
    - a change to git history, or any destructive git operation
-8. **Plan with the strongest model, and save the plan so a cheaper one can
-   build it.** When Rule 6 calls for approval before building, save the
+3. **Plan with the strongest model, and save the plan so a cheaper one can
+   build it.** When Rule 1 calls for approval before building, save the
    approved plan as `references/plans.md` describes. When building from a
    plan, follow it, and stop to ask when it is wrong or incomplete. When you
    delegate, give read-only search and tool-verified mechanical fixes the
    host's cheapest capable model and the fresh-context review its
    strongest; never set effort below the host default for work that needs
    reasoning.
-9. **Build in stages, and prove each before building the next.** Order:
-    data (records, relationships, invariants, schema); contracts
-    (caller-facing boundaries and the shell that parses input, reads and
-    writes data, and renders output); transformations (pure logic between
-    parsed input and output). Skip stages the change does not touch. Before
-    building a stage that holds a Rule 7 item, show the earlier stages with
-    their evidence and get sign-off on them. Sign-off from before those
-    earlier stages existed does not count, whatever it named.
-10. **Write code a reader can follow in one pass.** This covers code you
-   write or change; do not reshape untouched code to fit. Functions do one
-   thing and stay around 25-30 lines. Conditionals and loops stay under
-   three nesting levels; use guard clauses or extraction before adding
-   another nested branch. Name each extracted function for its one job. A
-   private function extracted this way is not an abstraction under Rule 4.
-   A condition that joins two or more checks with a logical and/or (`&&`,
-   `||`, `and`, `or`) gets a name that says what it means in plain English:
-   a predicate function when reused, or a named local when used once. Null
-   and bounds checks such as `items == null || items.length == 0` need no
-   name. Build behavior by composing functions and plain data. Use
-   inheritance only when a framework, a library, or the codebase's existing
-   pattern requires it.
+4. **Build in stages, and prove each before building the next.** Order:
+   data (records, relationships, invariants, schema); contracts
+   (caller-facing boundaries and the shell that parses input, reads and
+   writes data, and renders output); transformations (pure logic between
+   parsed input and output). Skip stages the change does not touch. Before
+   building a stage that holds a Rule 2 item, show the earlier stages with
+   their evidence and get sign-off on them. Sign-off from before those
+   earlier stages existed does not count, whatever it named.
 
 ## Workflow
 
 1. State what should change, who it affects, how you will check it, and what
    else it may affect. If the desired result is unclear, propose acceptance
-   criteria and ask one question at a time. Ask before adding compatibility
-   shims.
+   criteria and ask one question at a time.
 2. **Before your first edit, load every skill whose row in this routing table
    matches the task, and no others.** Its checks apply even when the fix
    looks obvious. Match the request first, then the code you read. Load
@@ -114,7 +88,7 @@ description: Load before reading code for any feature, bug fix, refactor, test, 
    | `issue-tracking` | Drafting, splitting, or tracking initiatives, epics, or issues, or a task citing one. |
    | `release` | Release prep is requested or a validator requires artifact sync. |
 
-3. Apply Rule 6, then run steps 4 and 5 for each Rule 9 stage in order,
+3. Apply Rule 1, then run steps 4 and 5 for each Rule 4 stage in order,
    finishing both before the next.
 4. Make changes small enough to review. If a change grows too large for one
    focused review, split the rest into reviewable plan steps and continue.
@@ -135,11 +109,13 @@ description: Load before reading code for any feature, bug fix, refactor, test, 
 
 ## References
 
+- `references/core.md`: the always-on Consult core; load it as the note
+  under Rules says.
 - `references/simple-not-easy.md`: load when ceremony, helper layers, or
   hidden coupling might pass for rigor.
 - `references/plans.md`: load when saving an approved plan or building from
   one.
 - `references/long-runs.md`: load when work spans many steps or independent
   units, or before delegating build work to a subagent.
-- `references/stages.md`: load when a change spans more than one Rule 9
+- `references/stages.md`: load when a change spans more than one Rule 4
   stage, behavior slices, a removal or rename, or a phased schema rollout.

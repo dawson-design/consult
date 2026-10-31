@@ -114,8 +114,12 @@ installed. It gets the consult arm's hook and the same skill names and
 descriptions, but every skill body reads "This skill has no further
 guidance." `scripts/stub.py` builds it under `runs/stub-skills/`.
 
-- Stub minus bare: what the listing and the hook change on their own.
-- Consult minus stub: what the skill bodies add.
+- Stub minus bare: what the listing and the hook change on their own. The
+  hook prints the Consult core (`workflow/references/core.md`), so this
+  includes the always-on core rules.
+- Consult minus stub: what the skill bodies add beyond the core. Codex arms
+  get no hook, so on Codex the core arrives only when the agent loads
+  `workflow` and reads `references/core.md`.
 
 Both arms read one snapshot of `agents/.agents/skills` taken when the run
 starts, so an edit made mid-run reaches neither.
@@ -256,7 +260,7 @@ means the agent noticed a requirement the prompt never stated.
 A multi-step task lists `[[steps]]` in `task.toml`. The `brief` step sends the
 product brief. The `approve` step sends a fixed reply: "Approved, including the
 interface and data shapes you proposed. Build it. Use your recommended option
-for anything still open." `workflow` Rule 9 discards sign-off given before the
+for anything still open." `workflow` Rule 4 discards sign-off given before the
 data stage exists, so the agent stops again at the contracts gate. The
 `continue` step answers it: "Approved. Continue." An agent that built
 everything in the `approve` step gets the same reply. The agent fragments set
@@ -427,7 +431,8 @@ harbor run -p tasks -i <task> -a oracle -o runs --yes
   consult-arm trials on the `rules` suite (2026-09-24), and in 6 of 9 at high
   effort. The +0.141 lift from those runs came with almost no skill loaded, so
   it measures the listing and the hook. The agent fragment now runs Opus 5.5
-  at `xhigh`.
+  at `xhigh`. Those runs predate the always-on core: the hook then printed
+  only a routing line, so later results are not comparable on this point.
 - Harbor's Codex agent takes the newest session file as the trajectory and
   resumes the next step with `--last`. Both pick a subagent when Codex spawns
   one, so `agents/codex.yaml` turns `multi_agent` off. Codex's consult arm
