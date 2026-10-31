@@ -66,6 +66,13 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   "pre-flight", and "requiredness" gives way to plain words, and the
   test-theater tripwire names `proof`'s `references/test-theater.md`.
   Unmeasured by the eval.
+- `architecture` uses the pack vocabulary: "contract" and "structure" in
+  place of "surface" and "shape", with the same policy. Rule 7 calls project
+  layout, module boundaries, public library APIs, and cross-component
+  ownership contracts and leaves when they need approval to
+  `contract-first`. The "another layer" tripwire points at Rule 3's list of
+  boundaries instead of adding "independent change axis", which Rule 3 does
+  not list. Unmeasured by the eval.
 
 ## [18.0.0] (2026-10-23)
 
