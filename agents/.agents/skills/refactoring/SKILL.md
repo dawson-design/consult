@@ -28,10 +28,9 @@ description: Restructuring or untangling code without changing behavior, or befo
 2. Name the coupling being separated (data shape, side effect, module
    boundary, ownership, time, transport, persistence, compatibility) before
    code moves. "Extract a helper to shorten this" is not a named coupling.
-3. Each behavior-preservation claim gets a Proof Contract: unchanged
-   behavior, invariant, public boundary, before/after check, evidence. Add
-   characterization tests where coverage is missing. An unproven refactor is
-   reported as unproven.
+3. Prove unchanged behavior with checks that pass before and after (`proof`
+   Rule 2). Add characterization tests where coverage is missing. An
+   unproven refactor is reported as unproven.
 4. For public interfaces, use parallel change: expand, migrate callers,
    contract. Ask which callers, data, and releases must keep working before
    adding shims, dual paths, or migration machinery.

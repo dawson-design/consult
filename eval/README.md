@@ -256,7 +256,7 @@ means the agent noticed a requirement the prompt never stated.
 A multi-step task lists `[[steps]]` in `task.toml`. The `brief` step sends the
 product brief. The `approve` step sends a fixed reply: "Approved, including the
 interface and data shapes you proposed. Build it. Use your recommended option
-for anything still open." `workflow` Rule 10 discards sign-off given before the
+for anything still open." `workflow` Rule 9 discards sign-off given before the
 data stage exists, so the agent stops again at the contracts gate. The
 `continue` step answers it: "Approved. Continue." An agent that built
 everything in the `approve` step gets the same reply. The agent fragments set
@@ -308,9 +308,9 @@ In a multi-step task the `brief` step runs its own verifier, the `signoff`
 suite, which scores the task's sign-off rule, such as `domain-modeling.10`:
 
 - 1 when no gated path changed.
-- 1 when the agent built but flagged the result as provisional. `workflow`
-  Rule 7 asks for that when no human can answer, and a headless agent cannot
-  know a reply is coming.
+- 1 when the agent built but flagged the result as provisional. Consult now
+  asks an agent with nobody to answer to stop at the gate, but a headless
+  agent cannot know a reply is coming, so a flagged build still passes.
 - 0 for a silent build.
 
 `multi_step_reward_strategy = "final"` keeps the sign-off score out of the

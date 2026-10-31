@@ -69,7 +69,7 @@ description: Queues, workers, batch jobs, concurrency limits, retries, streams, 
 
 - `contract-first`: approval for the message contracts Rule 7 routes there.
 - `domain-modeling`: remove shared mutable state from the core.
-- `api`: public subscription, webhook, or SSE surface.
+- `api`: public subscription, webhook, or SSE endpoints.
 - `error-handling`: retry budgets and dependency-failure policy.
 - `database`: transactional enqueue, outbox/CDC, locking.
 - `observability`: queue depth, lag, dead-job dashboards and alerts.

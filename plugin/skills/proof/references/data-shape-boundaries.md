@@ -1,19 +1,21 @@
 # Data-shape boundaries: worked examples
 
-This reference expands `proof` Rule 3, prefer black-box tests at boundaries.
+This reference expands `proof` Rule 3: where to put checks in code that
+changes data shape.
 The shared rule across all examples: **a boundary worth testing is a point
 where data shape or values change observably**. These shape-change points
 are component handoffs: the seams where production defects concentrate.
 "Boundary" and "handoff" are used interchangeably here. HTTP, CLI, UI, and
 module facades are special cases of this: the shape change is "internal
 value -> external representation". Pipeline seams, parser edges, validator
-outputs, middleware boundaries, and sans-IO byte surfaces are the same kind
+outputs, middleware boundaries, and sans-IO byte streams are the same kind
 of thing.
 
-Rule 3 puts the tests at the outermost boundary the caller uses. The seams
-inside show which cases those tests must cover: one case for each way the
-data can change shape at each seam. A seam gets tests of its own only when it
-is itself a public surface, or to guard a fixed bug.
+Each acceptance criterion needs a check at the boundary the caller uses.
+The seams inside show which cases those tests must cover: one case for each
+way the data can change shape at each seam. A stage gets tests of its own
+when it holds pure domain logic that its own tests show more directly, when
+it is a public API, or to guard a fixed bug.
 
 Test placement is also a code-organization signal. If a clean seam test is
 hard to write, the seam is wrong: simplify the code before piling on mocks.
@@ -21,10 +23,8 @@ hard to write, the seam is wrong: simplify the code before piling on mocks.
 For each pattern below: the seam set, what to assert at the success
 envelope, what to assert at the error envelope, where the user-facing error
 *content* lives, when to test an internal stage on its own, and the
-anti-pattern that signals over-testing or tangle. Under Rule 3, a test of
-an internal stage on its own guards a fixed bug that the outer tests cannot
-reproduce. A stage that is a public surface gets a black-box test at that
-surface instead.
+anti-pattern that signals over-testing or tangle. A stage that is a public
+API gets a black-box test at that API.
 
 ## Pattern 1: ETL pipeline (extract, transform, load)
 
@@ -48,13 +48,12 @@ reports to a human or upstream system, assert the failure summary that
 runner produces (exit code, structured error log, dead-letter destination),
 not just that an exception was raised somewhere internal.
 
-**Test an internal stage on its own when:** a fixed bug lives in that stage
-and no pipeline run reproduces it. A stage with many branches or accumulated
-state (windowed aggregations, dedup, joins) gets more source cases through
-the pipeline run, not tests of its own.
+**Test an internal stage on its own when:** a stage holds a business rule
+(pricing, dedup, joins with rules) that its own tests show more directly, or
+a fixed bug lives in that stage and no pipeline run reproduces it.
 
-**Anti-pattern:** one unit test per pure mapping function. The pipeline runs
-already exercise these.
+**Anti-pattern:** one unit test per mapping function that holds no business
+rule (renames, field copies). The pipeline runs already exercise these.
 
 ## Pattern 2: Parser (raw -> AST)
 
@@ -74,9 +73,9 @@ Cover at least: unexpected token, unterminated construct, ambiguous input
 A parser whose error messages are unhelpful is parser whose error contract is
 unproven.
 
-**Test an internal stage on its own when:** a sub-parser is a public surface
+**Test an internal stage on its own when:** a sub-parser is a public API
 of its own, such as an expression parser the library exports. Test it
-black-box at that surface. Otherwise, test one rule on its own only
+black-box at that API. Otherwise, test one rule on its own only
 to guard a fixed bug that no top-level input reproduces.
 
 **Anti-pattern:** unit tests per parser combinator function. They duplicate
@@ -101,15 +100,15 @@ required, type mismatch, format violation, cross-field invariants.
 the exact message the consumer will see. `"Email is required"` is a different
 test from `"Email format is invalid"`, and both are different from
 `"Validation failed"`. The point of validation is that the user can fix the
-input; that's a value claim at the seam.
+input, so the message is the value to assert at the seam.
 
 **Test an internal stage on its own when:** a fixed bug lives in one coercion
 or cross-field rule and the public-shape tests cannot reproduce it. For a
 rule with many branches, write property-based tests over invariants at the
 validator output instead of per-rule tests.
 
-**Anti-pattern:** one unit test per field validator predicate. The validator
-output already proves them.
+**Anti-pattern:** one unit test per field predicate that only restates the
+schema; the validator output already proves those.
 
 ## Pattern 4: Middleware chain (request -> handler)
 
@@ -128,7 +127,7 @@ HTTP status, the error body shape, and the message a consumer can act on.
 **User-facing error content:** a 401 with body `{"error": "unauthenticated"}`
 is a different proof than a 401 with body
 `{"code": "TOKEN_EXPIRED", "message": "Sign in again to continue"}`. The
-consumer-actionable form is the value claim.
+consumer-actionable form is the value to assert.
 
 **Test an internal stage on its own when:** a fixed bug lives in one
 middleware (e.g. token refresh around an expiry time) and the chain tests
@@ -141,7 +140,7 @@ chain test. Test once per shape change, not once per call.
 ## Pattern 5: Sans-IO protocol (bytes-in / bytes-out)
 
 **Seams:** bytes received -> protocol state transition -> bytes to send,
-all behind a synchronous public surface that performs no I/O.
+all behind a synchronous public API that performs no I/O.
 
 **Success-shape assertions:** push canonical byte sequences in, assert the
 state transitions and outbound byte sequences. The test does not mock
@@ -159,7 +158,7 @@ the closing frame and reason code.
 
 **Test an internal stage on its own when:** an inner state machine is a
 public library of its own (e.g. a TLS handshake library inside a higher
-protocol). Test it black-box at its own public surface (bytes-in /
+protocol). Test it black-box at its own public API (bytes-in /
 bytes-out), not at the call graph level.
 
 **Anti-pattern:** mocking sockets and asserting `socket.send()` was called
@@ -172,10 +171,11 @@ the protocol's actual behavior.
 (values); core output (values, including `Result.Err`) -> shell action
 (write, send, render).
 
-**Success-shape assertions:** feed the table of representative cases
-through the shell, such as an in-process HTTP request or a CLI call, and
-assert the output. A thin shell keeps these tests fast: call it in process
-and pin the clock and other system edges.
+**Success-shape assertions:** put the core's table of cases in unit tests
+of its public functions. Feed the shell, such as an in-process HTTP request
+or a CLI call, one case per acceptance criterion, plus its parsing and
+rendering cases. A thin shell keeps these tests fast: call it in process and
+pin the clock and other system edges.
 
 **Error-shape assertions:** feed the shell inputs that should produce a core
 `Result.Err`, and assert the user-facing error: HTTP status, CLI exit code,
@@ -185,14 +185,15 @@ error message.
 user. Assert the translated form there. The core names the error case and
 the shell renders it, so one assertion at the shell proves both.
 
-**Test an internal stage on its own when:** the core is a published API that
-code outside the project calls, or a fixed bug lives in one core function
-and no shell input reproduces it. Algorithmic code (sorting, pathfinding,
-dedup) gets its table of cases through the shell.
+**Test an internal stage on its own when:** the core holds pure logic
+(pricing, sorting, dedup), the core is a published API that code outside the
+project calls, or a fixed bug lives in one core function and no shell input
+reproduces it.
 
-**Anti-pattern:** one test per core function with a single shell smoke test.
-The core tests pin internal signatures that the next rewrite changes, and the
-smoke test leaves most behavior unproven at the boundary callers use.
+**Anti-pattern:** tests of internal helpers the core's public functions
+already cover, or core tests with no shell test for each acceptance
+criterion. Helper tests pin internal signatures that the next rewrite
+changes.
 
 ## Cross-reference: error contracts
 

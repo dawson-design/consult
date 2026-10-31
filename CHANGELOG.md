@@ -6,6 +6,127 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- `workflow` holds only guidance that applies to all code, plus routing.
+  Plan-file detail moves to a new `references/plans.md`, stage delegation to
+  `references/long-runs.md`, and per-stage review scope to
+  `references/stages.md`. Statements made twice are cut. Rule 2 keeps only
+  the report order, taken from Workflow step 6, which is removed. Rule 4
+  drops "similar syntax alone is not enough". Rule 6 no longer repeats
+  Rule 7 on contracts found mid-task. Workflow step 2 says to load matching
+  skills "and no others", and the `commit` and `git-workflow` routing rows
+  say they load on request, as the `documentation` and `release` rows
+  already did, so no rule names a skill before the routing table. The
+  skill-conflict rule is deleted: the pack states each rule once, so a
+  conflict is a pack bug, and Rule 3 covers conflicts with the host. The
+  plan rule is now Rule 8, build stages Rule 9, and the code-shape rules
+  Rule 10. The `workflow` word budget falls to 1,181.
+- `workflow` Rule 7 reads "Get the user's approval before you build any of
+  these:" followed by six items, without naming skills. It replaces
+  "Durable shapes need sign-off before they are built". The no-human path
+  is removed: a run with nobody to answer stops at the gate and reports
+  what needs approval (`contract-first` Rule 5, `AGENTS.md` host posture).
+  What an approval covers stays with `contract-first`, whose Rule 3 now
+  covers data shapes too. Rule 9 and the workflow references call what
+  Rule 7 gates "Rule 7 items".
+- `workflow` Rule 10 holds the code-shape rules for code an agent writes or
+  changes: functions do one thing and stay around 25-30 lines, conditionals
+  and loops stay under three nesting levels, and a condition that joins two
+  or more checks with a logical and/or gets a plain-English name (a predicate
+  function when reused, a named local when used once). Behavior is built by
+  composing functions and plain data, with inheritance only where a
+  framework, library, or the codebase's existing pattern requires it. The
+  function-length and nesting rules move from `architecture` Rule 2, which
+  loaded only for boundary work, so they now apply to every task.
+  `architecture` Rules 3-8 become 2-7.
+- `contract-first` uses plain, direct prose and one noun, "contract", in
+  place of "shape" and "surface". Rule 1 defines a contract as an API,
+  interface, schema, format, or module boundary that something outside the
+  change depends on. Rule 4 keeps only the design-approval sentence.
+  Rule 5 says that with nobody to answer, the agent stops and reports what
+  needs approval. The Workflow folds "name the current shape"
+  into the approval step, which now shows each contract's current version,
+  proposed version, and what changes for callers before one approve, revise,
+  or reject. The "implement first" tripwire now lets additive, easily undone
+  changes through, matching Rule 2. The description names module boundaries,
+  and When to Use lists concrete triggers (CLI flag, environment variable,
+  config key) in place of "caller-facing interface or shared structure".
+  The Iron Law reads "Get approval for a contract before writing code that
+  depends on it."
+- `proof` proves acceptance criteria in place of "claims". The Iron Law
+  requires a check for every acceptance criterion that fails when the
+  criterion is not met, with at least one check where the caller sees the
+  result. Criteria come from a ticket, a spec, or a one-line prompt; when none
+  are written down, the agent lists them first. Tests may come before or
+  after the code: Rule 6 requires seeing each new test fail once, by running
+  it first or by reverting the change. Rule 3 no longer defaults to
+  black-box tests: each test asserts a business rule, a test that would pass
+  with the rule wrong proves nothing, and the agent picks unit, integration,
+  or black-box level per rule and says why. The done report lists each
+  criterion with its check and result. Rules 9 to 11 now follow working
+  order (existing tests, work outward, before saying done). A new tripwire
+  catches "the test passed first time".
+- The Proof Contract is removed; `proof` Rule 11's per-criterion list
+  replaces it. `domain-modeling` Rule 9 and `refactoring` Rule 3 point at
+  `proof`'s rules instead.
+- `proof` references match the new Rule 3 and drop "claim" and "surface".
+  `black-box.md` no longer makes black-box tests the default: unit tests
+  cover pure domain logic as well as bug guards, and a test of internals may
+  be replaced by a test of the same rule at any level. In
+  `data-shape-boundaries.md`, a stage that holds a business rule gets tests
+  of its own, and a functional core's table of cases goes in unit tests of
+  its public functions, with one shell test per acceptance criterion.
+  `recipes.md` asks for a check where the caller sees the result plus tests
+  of each rule at the right level. `test-theater.md` flags unit tests only
+  for chain functions that hold no business rule. Unmeasured by the eval.
+- `specify` uses plain prose and the pack's vocabulary: "design",
+  "contract", and "design doc" in place of "shape", "surface", and
+  "artifact", with the same policy. The Iron Law
+  reads "Read the code, propose a design, and get agreement before
+  building." The old Rule 1, which defined "design-partner mode", merges into
+  the asking rule (now Rule 4), so Rules 2 to 8 become 1 to 7. Rule 2 points
+  at `contract-first` Rule 1 for what a contract is, instead of keeping its
+  own list. The Codex short description reads "Agree on a design before
+  building". Unmeasured by the eval.
+- `code-review` uses plain prose. The Iron Law blocks on "missing proof" in
+  place of "unproven claims". Rule 1 no longer repeats Rule 3's proof pass,
+  which now checks that each acceptance criterion has a check that fails when
+  it is not met, matching `proof`'s Iron Law. When to Use and the
+  Independent Review block each drop a sentence that restated the block's
+  own rule. Jargon such as "dead surface", "comprehension debt",
+  "pre-flight", and "requiredness" gives way to plain words, and the
+  test-theater tripwire names `proof`'s `references/test-theater.md`.
+  Unmeasured by the eval.
+- `architecture` uses the pack vocabulary: "contract" and "structure" in
+  place of "surface" and "shape", with the same policy. Rule 7 calls project
+  layout, module boundaries, public library APIs, and cross-component
+  ownership contracts and leaves when they need approval to
+  `contract-first`. The "another layer" tripwire points at Rule 3's list of
+  boundaries instead of adding "independent change axis", which Rule 3 does
+  not list. Unmeasured by the eval.
+- `api` is scoped to REST/HTTP APIs: the Iron Law reads "Write the OpenAPI
+  spec first", and When to Use no longer lists SDK boundaries or other
+  integration contracts, which `contract-first` owns. Rules 1 and 2 say the
+  same thing in plain sentences: sketch any consumer-visible change in the
+  spec before handler code, and keep shipped contracts working for
+  independent consumers (ones you cannot update in the same release,
+  including open browser tabs and installed apps). The skill and its
+  references call code that uses the API a "consumer", not a "caller". The
+  `api` body budget rises from 700 to 730 words for the plain Rules 1 and 2.
+  Unmeasured by the eval.
+- `domain-modeling` handoffs drop "durable" and "parse handoff".
+- The rest of the pack uses the same vocabulary: `debugging`, `performance`,
+  `official-source-check`, `observability`, `ui-design`, `git-workflow`,
+  `error-handling`, `async-systems`, `security`, `scaffolding`,
+  `documentation`, `database`, and `issue-tracking` name what they mean in
+  place of "claim", "surface", "shape", "artifact", and "durable", with the
+  same rules. Standard terms such as "attack surface", "release artifact",
+  and "durable publication" stay. Codex `openai.yaml` text and the README
+  skill list follow, and the `proof` budget note in `AGENTS.md` and the
+  validator now cites test-level policy instead of black-box testing.
+  Unmeasured by the eval.
+
 ## [18.0.0] (2026-10-23)
 
 ### Changed

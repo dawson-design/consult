@@ -35,10 +35,27 @@ const MAX_BODY_WORDS = 700;
 // routing row the router cross-check requires, and to 1,356 for the build-stage
 // rule: build data, then contracts, then transformations, with a sign-off
 // gate before each gated stage. No neighbouring skill can own the order,
-// because only workflow loads on every task. proof rose to 1,050 for the
-// black-box testing and test-oracle rules: expected outputs come from the
-// spec, and agents never edit an existing test to make a change pass.
-const BODY_WORD_EXCEPTIONS = { workflow: 1356, proof: 1050, "code-review": 950 };
+// because only workflow loads on every task. workflow rose to 1,501 for the
+// code-shape rule (function length, nesting depth, named compound
+// conditions, composition over inheritance), moved from architecture
+// because it applies to every function an agent writes and architecture
+// loads only for boundary work, and to 1,518 when the sign-off rule (Rule 7)
+// replaced "durable shapes" with a plain statement of what needs sign-off
+// and why. It fell to 1,340 when plan-file detail, stage delegation, and
+// per-stage review scope moved to workflow references and Rule 7 shrank to
+// the gate, its list, and the no-human path
+// (AGENTS.md: workflow holds only guidance for all code plus routing),
+// then to 1,181 when duplicated statements across the Rules and Workflow
+// steps were merged or cut, the Rules stopped naming skills before the
+// routing table introduces them, the skill-conflict rule was deleted, and
+// Rule 7 dropped its no-human path.
+// proof rose to 1,050 for the
+// test-level and test-oracle rules: expected outputs come from the
+// spec, and agents never edit an existing test to make a change pass. api
+// rose to 730 so Rules 1 and 2 state its REST compatibility policy (which
+// changes need approval, who counts as an independent consumer, and what
+// needs a successor) in plain sentences instead of dense ones.
+const BODY_WORD_EXCEPTIONS = { workflow: 1181, proof: 1050, "code-review": 950, api: 730 };
 const MAX_TRIPWIRE_ROWS = 8;
 const MAX_DESCRIPTION_LENGTH = 120;
 // ~600 tokens of routing surface that every host loads before picking a skill.

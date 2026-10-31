@@ -180,12 +180,12 @@ sets.
 
 - Routing and proof:
   - [`workflow`](agents/.agents/skills/workflow/SKILL.md): Loads first for non-trivial code changes to choose skills, sign-off gates, and checks.
-  - [`proof`](agents/.agents/skills/proof/SKILL.md): Tests, claims, invariants, behavior specs, edge cases, and evidence.
-  - [`contract-first`](agents/.agents/skills/contract-first/SKILL.md): Approve caller-facing interfaces or shared structure before implementation.
+  - [`proof`](agents/.agents/skills/proof/SKILL.md): Tests and checks that prove acceptance criteria, edge cases, and invariants.
+  - [`contract-first`](agents/.agents/skills/contract-first/SKILL.md): Approve contracts (APIs, schemas, formats, module boundaries) before implementation.
 - Design:
-  - [`specify`](agents/.agents/skills/specify/SKILL.md): Design-partner mode for discovery, tradeoffs, decisions, and design artifacts.
+  - [`specify`](agents/.agents/skills/specify/SKILL.md): Read the code, propose a design, and agree on it before building: tradeoffs, decisions, and design docs.
   - [`domain-modeling`](agents/.agents/skills/domain-modeling/SKILL.md): Data shapes, invariants, state transitions, parsing, and effects.
-  - [`architecture`](agents/.agents/skills/architecture/SKILL.md): Architecture decisions, module boundaries, coupling, layering, and system shape.
+  - [`architecture`](agents/.agents/skills/architecture/SKILL.md): Architecture decisions, module boundaries, coupling, layering, and system structure.
 - Correctness and change:
   - [`code-review`](agents/.agents/skills/code-review/SKILL.md): Review diffs and PRs for bugs, regressions, edge cases, and merge readiness.
   - [`debugging`](agents/.agents/skills/debugging/SKILL.md): Reproduce symptoms, isolate causes, inspect evidence, and fix bugs.
@@ -196,7 +196,7 @@ sets.
   - [`security`](agents/.agents/skills/security/SKILL.md): Auth, secrets, crypto, input validation, dependency risk, and trust boundaries.
   - [`database`](agents/.agents/skills/database/SKILL.md): Schemas, migrations, indexes, transactions, query plans, and locking.
   - [`release`](agents/.agents/skills/release/SKILL.md): Release prep and release-artifact sync, on request or approval.
-- Public surfaces:
+- Public-facing:
   - [`api`](agents/.agents/skills/api/SKILL.md): REST API contracts: endpoints, fields, evolution, status codes, errors, pagination, idempotency.
   - [`documentation`](agents/.agents/skills/documentation/SKILL.md): READMEs, runbooks, API docs, module docs, and comments for existing code.
   - [`ui-design`](agents/.agents/skills/ui-design/SKILL.md): Frontend UI, layouts, components, responsive behavior, accessibility, WCAG, keyboard, and focus.
@@ -247,16 +247,16 @@ result.
 The agent asks for sign-off before it builds any of these:
 
 - the design direction
-- a caller-facing interface
-- a core data shape that future work binds to
-- a migration or destructive data change
+- a contract that callers depend on
+- a core data shape, invariant, or glossary term later work depends on
+- a migration, or a change that deletes or rewrites data
 - a release artifact
-- a history-changing or destructive git operation
+- a change to git history, or any destructive git operation
 
 Local helpers, private file moves, and narrow bug fixes that restore intended
 behavior never need sign-off. Some runs have no human to answer, such as
-headless or scheduled runs. There the agent builds the most conservative
-version, marks it provisional, and flags the decision.
+headless or scheduled runs. There the agent stops at the gate and reports
+what needs approval.
 
 When work needs approval before building, the agent saves the approved plan as
 Markdown. A fresh session, or a cheaper model, can then build from the plan

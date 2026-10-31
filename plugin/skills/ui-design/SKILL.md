@@ -11,7 +11,7 @@ description: "Frontend UI: forms, components, layout, styling, accessibility, ke
 
 ## When to Use
 
-- Building, changing, or reviewing any user-facing UI surface: layout,
+- Building, changing, or reviewing any user-facing UI: layout,
   components, design systems, typography, color, motion, responsive
   behavior, forms, navigation, modals, custom controls, interactive states.
   Simple forms, single-page apps, and "just basic styling" all qualify; the
@@ -21,7 +21,7 @@ description: "Frontend UI: forms, components, layout, styling, accessibility, ke
 
 ## When NOT to Use
 
-- Backend API shape; use `api`.
+- Backend API contracts; use `api`.
 - Frontend runtime debugging or tests only; pair with `proof` and browser
   tooling.
 - Performance profiling beyond UI design choices; use `performance`.

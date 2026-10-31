@@ -1,4 +1,4 @@
 interface:
   display_name: "Consult: Contract First"
-  short_description: "Approve durable interfaces before implementation"
-  default_prompt: "Use Consult contract-first to define and approve this durable interface before implementation."
+  short_description: "Approve contracts before implementation"
+  default_prompt: "Use Consult contract-first to define and approve this contract before implementation."

@@ -70,8 +70,8 @@ Consult assumes a person is watching the session and answering as it runs.
 That person *is* the gate, so skills carry high-level guidance and ask for
 sign-off in prose. Consultation works because someone is present to consult.
 Consult ships no runtime enforcement. A run with nobody to answer (headless,
-scheduled, or delegated) follows the `workflow` skill's sign-off rule: build
-the most conservative version, mark it provisional, and flag the decision.
+scheduled, or delegated) stops at each sign-off gate and reports what needs
+approval. A delegated subagent hands the question back to its parent.
 
 Consequences for anyone editing this repo:
 
@@ -183,12 +183,13 @@ Every `SKILL.md` must have:
   colon and revealed the pack had been over the old limit all along. Raise it
   again only with a stated reason.
 - Required sections: `## When to Use`, `## When NOT to Use`, `## Rules`.
-- Body budget: 700 words after frontmatter. Raised for three skills, each
-  with a reason recorded next to the constant: 950 for `code-review`, 1,050
-  for `proof`, and 1,356 for `workflow`, which carry the routing and sign-off
-  tables plus the host-harness, fresh-context-review, plan-handoff,
-  build-stage, black-box testing, and test-oracle policy. Table pipes and
-  separator rows do not count. The budget is the regression guard for the
+- Body budget: 700 words after frontmatter. Raised for four skills, each with
+  a reason recorded next to the constant: 730 for `api`, whose REST
+  compatibility rules are written as plain sentences; 950 for `code-review`,
+  1,050 for `proof`, and 1,181 for `workflow`, which carry the routing
+  table and sign-off list plus the host-harness, fresh-context-review,
+  plan-handoff, build-stage, code-shape, test-level, and test-oracle policy.
+  Table pipes and separator rows do not count. The budget is the regression guard for the
   knowledge-vs-policy rule below. Raise a single skill's budget only with a
   stated reason.
 - Optional section: `## Tripwires` when a skill has known agent failure modes.
@@ -224,6 +225,15 @@ only if it is one of:
 Delete anything that teaches standard practice. Where a rule is non-obvious to
 a junior engineer, keep one short "because" clause, not a paragraph.
 
+Workflow scope. `workflow` loads on every code task, so it holds only
+high-level guidance that applies to all code, plus routing to the other
+skills. Rules every code change needs, such as Rule 10's code-shape rules,
+belong there with their thresholds. Process detail for narrower situations
+goes to the skill that owns it, or to a `workflow/references/` file that
+workflow's References section says when to load. Gate rules that eval checks
+or other skills cite (Rule 7's approval list, Rule 9's stage sign-off) stay
+in the body.
+
 Each rule is stated once. Section ownership:
 
 - `## When to Use`: routing triggers only. Say when to load the skill.
@@ -231,8 +241,8 @@ Each rule is stated once. Section ownership:
   neighboring skill owns the work instead.
 - `## Iron Law`: one non-negotiable rule, only when the skill has one.
 - `## Rules`: the single statement of each policy rule, numbered, in checkable
-  form. Named sub-sections are fine for reusable contracts (the Proof
-  Contract, the Independent Review block). No ordered steps, no examples that
+  form. Named sub-sections are fine for reusable contracts (the Independent
+  Review block). No ordered steps, no examples that
   belong in references. Each rule's number is its eval id (`api.1`), so adding,
   removing, or renumbering a rule means updating `eval/verifier/rules.json`;
   the validator fails until you do.

@@ -34,8 +34,9 @@ gates: recoverability and approval of published text.
    calls and `gh` under the user's account, so do not add a second chat-level
    ask on top of an approval the host granted. Reserve your own questions for
    writes that publish user-owned text and for destructive operations.
-   Identify the surface first (`gh` CLI, GitHub MCP, or host tools); `gh` is
-   absent from some sandboxes, which does not mean GitHub is out of reach.
+   First find which GitHub tool is available (`gh` CLI, GitHub MCP, or host
+   tools); `gh` is absent from some sandboxes, which does not mean GitHub is
+   out of reach.
 3. Humans approve PR and issue text before it is published. Draft the title
    and body locally, show them, and get approval of that exact text. Never
    let a tool open an editor or send unreviewed text.
@@ -60,7 +61,7 @@ gates: recoverability and approval of published text.
 | "Rewrite this shared branch" | Stop and ask for explicit approval plus a recovery point. | The branch is confirmed local and unpublished. |
 | "Resolve conflict by taking ours/theirs" | Preserve intent from both sides, then run checks. | A generated file regenerated after the source conflict is resolved. |
 | "The host approved `gh` once, so publish freely" | Host permission covers access; publishing user-owned text still needs the user's approval of that text. | The user already approved that exact text and operation. |
-| "`gh` isn't installed, so GitHub is out of reach" | Check for a GitHub MCP server or host tools and go through the host's permission flow. | The host exposes no GitHub surface. |
+| "`gh` isn't installed, so GitHub is out of reach" | Check for a GitHub MCP server or host tools and go through the host's permission flow. | The host exposes no GitHub tools. |
 | "Just open the PR with a quick title" | Draft title and body, get approval, then create it. | The user already approved that exact title and body. |
 
 ## Handoffs

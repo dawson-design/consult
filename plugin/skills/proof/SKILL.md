@@ -1,113 +1,99 @@
 ---
 name: proof
-description: "Writing or changing tests, or proving a change works: edge cases, invariants, behavior specs, evidence."
+description: "Writing or changing tests, or proving a change meets its acceptance criteria: edge cases, invariants."
 ---
 
 # Proof
 
 ## Iron Law
 
-`NO ENGINEERING CLAIM WITHOUT A NAMED PROOF.`
+`EVERY ACCEPTANCE CRITERION NEEDS A CHECK THAT FAILS WHEN THE CRITERION IS NOT MET.`
 
-A proof is a named check that would fail if the claim were false. "The tests
-pass" does not count until you can say which test would break if you were
-wrong.
+Acceptance criteria are the results the request asks for, whether they come
+from a ticket, a spec, or a one-line prompt. If none are written down, list
+them from the request in a sentence or two before choosing checks. A check is
+a test, or a command you run and read. Each criterion needs at least one
+check where the caller would see the result: the endpoint, CLI, UI, or public
+API. Rule 3 says which other tests fit below that. Write checks before or
+after the code; Rule 6 says how to see each one fail. "The tests pass" does
+not count until you can say which criterion each test proves.
 
 ## When to Use
 
-- As the completion gate before any reply that says or implies the work is
-  done, fixed, ready to commit, ready for a PR, or passing.
+- Before any reply that says or implies the work is done, fixed, ready to
+  commit, ready for a PR, or passing.
 - Writing or reviewing behavior tests for any change or flaky test.
-- Turning an agreed spec, model, contract, or root cause into Proof
-  Contracts and runnable checks.
+- Turning an agreed spec, model, or root cause into acceptance criteria and
+  checks.
 
 ## When NOT to Use
 
-- Edits with no behavior surface: formatting, typos, comments, renames and
-  moves that tooling already confirms.
+- Edits that change no behavior: formatting, typos, comments, and renames or
+  moves that tooling confirms.
 - A bug whose cause is not pinned down: `debugging` first.
 - Design, naming, structure: `code-review`. Benchmarks: `performance`. Test
   runner setup: `scaffolding`.
 
 ## Rules
 
-1. Every non-trivial claim owes a check. If you cannot point to one, mark the
-   claim `unproven` and say which evidence is missing. Silence is not proof.
-2. Match the proof to the claim: a behavior change needs a runnable check at
-   the boundary, a new endpoint a contract test, a refactor the same behavior
-   before and after, a data claim an invariant, and a bug fix a regression
-   test that fails before, passes after, and stays as a guard.
-3. Prefer black-box tests: feed fixed inputs through the outermost boundary
-   the caller uses (endpoint, CLI, UI, public API) and assert the whole
-   output, never the internals. Take expected outputs from the request,
-   issue, or spec, not from reading the code, because a test written from the
-   code asserts what the code does, bugs included. Integration tests cover
-   the code's real dependencies, such as the database and queue. Unit-test an
-   internal function only to guard a fixed bug that no boundary test
-   reproduces.
-4. One behavior per test, with real collaborators inside. Pin the clock,
-   randomness, and ID generation so the same input gives the same output.
-   Mock only true system edges (network, filesystem) or write the reason.
-   Never test the framework, the language, or static text.
-5. A flaky test is a bug in the test, the code, or the environment. Fix it.
-   No sleeps, no retries.
-6. Red before green when the failing test is itself the evidence: a
-   reproducible bug, a behavior change with a clear observable, a contract
-   change. A test that passes on its first run proves nothing; verify the red
-   as deliberately as the green.
-7. Prove artifacts the way the system uses them: run, load, parse, render, or
-   inspect config, wiring, generated output, and documents. Never assert
-   literal text in config or docs.
-8. For a removal, prove the behavior that remains and confirm the old code is
-   gone with a search. Test the removal itself only when it now returns an
-   explicit rejection (404, 410, deprecation error): that is new behavior.
-9. Narrowest check first: one test by name or line, then the file. Iterate on
-   a known failing test until it is green. Run the whole package or suite
-   after major changes, before completion or commit, or when targeted green
-   evidence suggests wider breakage. An unrelated broad failure is reported
-   separately, not treated as blocking.
-10. "Done" is a claim. Before saying it: re-read the latest request and any
-    corrections, look at every named file as it stands after your last edit,
-    run the chosen check fresh, and report proven, partly proven, blocked, or
-    unproven. Smoke and helper-only checks are partial, not acceptance.
-11. Existing tests are the oracle. Before editing, run the ones that cover the
-    code you will change. Never edit, skip, weaken, or delete a test, golden
-    file, or snapshot to make a change pass. A failing existing test means a
-    bug in the change, a behavior change the user approves, or a test of
-    internals to replace with a black-box test of the same behavior and
-    report.
-
-### Proof Contract
-
-Fill these five fields for each non-trivial claim. Other skills hand work
-here expecting them.
-
-- **Claim**: the behavior, invariant, contract, or root cause you assert.
-- **Data invariant**: the shape, state rule, or type that makes bad states
-  impossible, or at least visible.
-- **Boundary**: where the claim becomes observable, so where the check enters.
-- **Check**: the runnable test or command that would fail if the claim were
-  false.
-- **Evidence**: the command and output, the test name and result, the
-  artifact inspected, or why you could not run it.
+1. Anything else you report as true, such as a root cause, an invariant, or
+   unchanged behavior, also needs a check. Report anything without one as
+   `unproven` and name the missing evidence.
+2. A bug fix needs a regression test that fails before the fix, passes
+   after, and stays in the suite. A refactor needs the same checks passing
+   before and after.
+3. Each test asserts a business rule from the acceptance criteria or spec,
+   with expected values taken from there, not from the code. A test that
+   would still pass if the rule were wrong proves nothing, such as one that
+   checks only for no error, a 200, or that a field exists. For each rule,
+   choose the level that shows it most directly (unit for pure domain logic,
+   integration for real dependencies, black-box for behavior across the
+   system) and say why.
+4. Use the real code a test calls; mock only the network and filesystem, or
+   write down why. Fix the clock, random values, and generated IDs so the
+   same input gives the same output. Do not test the framework or the
+   language.
+5. Fix a flaky test at its cause, never with sleeps or retries.
+6. See each new test fail once for the right reason. If you wrote it before
+   the code, run it first; if after, revert or break the change and run it.
+   A test you have never seen fail may not test anything.
+7. Check config, generated files, and docs by loading or running them the
+   way the system does, never by asserting their text.
+8. For a removal, test what remains and search to confirm the old code is
+   gone. Test the removal itself only if callers now get an explicit error,
+   such as a 404 or 410.
+9. Before editing, run the existing tests for the code you will change.
+   Never edit, skip, weaken, or delete a test, golden file, or snapshot to
+   make the change pass. If one fails, fix the change, get the user's
+   approval for the behavior change, or replace a test of internals with a
+   test of the same rule and say so.
+10. Work outward from one test: get it green, then run the other tests for
+    the same code, then the tests for code the change could affect. Run the
+    whole suite last, before saying done or committing. Report a failure
+    unrelated to the change separately; it does not block.
+11. Before saying done, re-read the latest request and corrections, look at
+    each changed file as it is now, and rerun the checks. List each
+    acceptance criterion with its check and result: proven, partly proven,
+    blocked, or unproven.
 
 ## Tripwires
 
 | Trigger | Do this instead | False alarm |
 |---|---|---|
-| "The suite is green, so the change is proven" | Run the check that would fail if this change were wrong; a green check that never touches the change is partial. | The green check enters at the changed boundary. |
-| "Add a unit test for every helper" | Test the contract black-box at the boundary. | It guards a fixed bug that no boundary test reproduces. |
-| "Update the test or snapshot so it passes" | Find out whether the change broke behavior. Change the test only for a behavior change the user approved. | The user approved the behavior change the test contradicts. |
-| "The types already prove it" | Check the invariant or behavior the types do not cover. | The claim is exactly what the type checker enforces. |
-| "There's no way to test this, so skip proof" | Record the manual check: command, output, and the claim it proves. | An existing check already loads or runs the artifact. |
-| "The test mentions the changed code, so it counts" | Rewrite or delete tests that assert how the code is built instead of what it does. | The asserted structure is itself a public contract. |
+| "The suite is green, so it's done" | Name the acceptance criterion each passing test proves. | Every criterion already maps to a passing check. |
+| "Add a unit test for every helper" | Test each business rule at the level that shows it most directly (Rule 3). | The helper is pure domain logic reached through its module's public functions. |
+| "Update the test or snapshot so it passes" | Fix the change, or get the user's approval for the behavior change. | The test checks internals; replace it with a test of the same rule. |
+| "The types already prove it" | Test the rule the types do not enforce. | The criterion is exactly what the type checker enforces. |
+| "There's no way to test this, so skip proof" | Run it by hand and record the command, the output, and the criterion it proves. | An existing check already loads or runs it. |
+| "The test mentions the changed code, so it counts" | Ask whether it would fail if the rule were wrong; rewrite it if not. | It fails when the rule is broken. |
+| "The test passed first time" | Revert or break the change and watch it fail (Rule 6). | You saw it fail before the code existed. |
 
 ## Handoffs
 
-- `specify`: an agreed design artifact's proof obligations.
+- `specify`: acceptance criteria from an agreed design.
 - `domain-modeling`: invariants that make invalid states unrepresentable.
 - `debugging`: proof that hinges on root-cause evidence.
-- `api`: claims that are public contracts.
+- `api`: tests of a public API contract.
 - `refactoring`: before/after evidence, and tests that are hard to place
   because the code is tangled.
 - `error-handling`: an unsettled error shape the proof must assert.
@@ -120,7 +106,7 @@ here expecting them.
   regression guard.
 - `references/data-shape-boundaries.md`: load when placing checks in
   pipelines, parsers, validators, middleware, or functional-core splits.
-- `references/recipes.md`: load when the proof shape is domain-specific.
+- `references/recipes.md`: load when the right check depends on the domain.
 - `references/removals.md`: load for removals and replacements.
 - `references/test-theater.md`: load when a test asserts how the code is
   built instead of what it does.

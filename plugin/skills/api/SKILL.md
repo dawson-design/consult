@@ -7,50 +7,50 @@ description: Adding or changing an HTTP endpoint, handler, status code, response
 
 ## Iron Law
 
-`DEFINE THE CONTRACT FIRST. PRESERVE SHIPPED CALLERS. PICK STATUS BY FAILURE.`
+`WRITE THE OPENAPI SPEC FIRST. PRESERVE SHIPPED CONSUMERS. PICK STATUS BY FAILURE.`
 
 ## When to Use
 
 - Adding, removing, renaming, or reviewing REST endpoints, fields, status
   codes, webhooks, auth, pagination, rate limits, or idempotency.
-- Writing or changing OpenAPI, JSON Schema, public SDK boundaries, or
-  integration contracts external callers depend on.
+- Writing or changing an HTTP API's OpenAPI spec or JSON Schema.
 
 ## When NOT to Use
 
 - Internal function signatures with no caller contract; use `domain-modeling`.
-- Auth, secrets, or trust-boundary review beyond API shape; use `security`.
+- Auth, secrets, or trust-boundary review beyond the API contract; use `security`.
 - Database schema; use `database`.
 - gRPC, GraphQL, or message-queue APIs: use `architecture` for the style
-  decision and that ecosystem's conventions for shape.
+  decision and that ecosystem's conventions for the contract.
 
 ## Rules
 
-1. Sketch new or changed caller-visible behavior in OpenAPI or the repo's
-   contract source before controller code, then implement from it. For a fix
-   that restores existing behavior, use the current contract as the source of
-   truth. Make every response shape explicit, including errors, empty states,
-   pagination, and auth failures. Durable API interfaces route through
-   `contract-first`. Additive changes old callers cannot notice (a new
-   optional field, param, or endpoint) proceed without a stop; state the shape
+1. Sketch new or changed behavior consumers can see in the OpenAPI spec (or
+   the repo's API spec) before writing handler code, then build from it. Spell
+   out every response, including success, errors, empty results, pagination,
+   and auth failures. For a fix that restores existing behavior, the current
+   contract is the source of truth. Changes to endpoints consumers depend on
+   get approval through `contract-first`. Additions old consumers cannot
+   notice (a new optional field, param, or endpoint) go ahead; describe them
    in the close-out.
-2. Preserve shipped contracts with independent callers. Optional fields,
-   params, headers, methods, and endpoints evolve in place when old callers
-   can ignore them. When they alter a shipped contract, renames, removals,
-   required additions, status-code changes, and semantic changes need a
-   successor contract or a deprecation path with an overlap window. An
-   explicitly unstable contract, or one whose change no running caller can
-   observe, may change in place. Open browser tabs and installed apps are
-   independent running callers. Use one versioning strategy per service;
-   compatible additions never re-version.
-3. Use `4xx` for caller-side conditions such as invalid input, missing
+2. Don't break a shipped contract that has independent consumers: ones you
+   cannot update in the same release, such as open browser tabs and installed
+   apps still running old code. Optional fields, params, headers, methods, and
+   endpoints may change in place when old consumers can ignore them. Renames,
+   removals, required additions, status-code changes, and changes in meaning
+   to a shipped contract need a successor (such as a new field, endpoint, or
+   version) or a deprecation path with an overlap window. A contract marked
+   unstable, or one whose change no running consumer can see, may change in
+   place. Use one versioning scheme per service, and never bump it for
+   compatible additions.
+3. Use `4xx` for consumer-side conditions such as invalid input, missing
    resources, authorization, or rate limits; use `5xx` when this service or a
    dependency cannot fulfill a valid request.
    Never mix origins in one response or leak raw upstream or internal errors.
 4. Preserve an existing service's representation and error contract. For a new
    REST resource API with no established format, default to JSON:API unless a
    domain standard or client interoperability need favors another documented
-   choice. New APIs use the chosen model's native error shape; document
+   choice. New APIs use the chosen model's native error format; document
    deviations.
 5. Non-idempotent mutations define idempotency key scope, replay window,
    duplicate response, and conflict semantics, or are documented as unsafe to
@@ -69,23 +69,23 @@ description: Adding or changing an HTTP endpoint, handler, status code, response
 
 | Trigger | Do this instead | False alarm |
 |---|---|---|
-| "Renaming this field is harmless" | Preserve shipped callers with a successor contract or deprecation path. | The field never shipped, or no running caller can observe the change. |
-| "Any error can be a 400 (or a 500)" | Classify caller-side conditions and service failures separately. | None. |
-| "Return whatever the handler has" | Define response and error shape in the contract first. | None. |
+| "Renaming this field is harmless" | Keep shipped consumers working with a successor or a deprecation path. | The field never shipped, or no running consumer can see the change. |
+| "Any error can be a 400 (or a 500)" | Classify consumer-side conditions and service failures separately. | None. |
+| "Return whatever the handler has" | Define response and error bodies in the spec first. | None. |
 | "The list is small, skip pagination" | Define bounded pagination and invalid-token behavior before the endpoint can grow. | The collection is provably bounded, such as an enum-sized set. |
-| "Callers can just retry the mutation" | Define the idempotency contract first, or document the mutation as unsafe to retry. | The mutation is naturally idempotent and documented as such. |
+| "Consumers can just retry the mutation" | Define the idempotency contract first, or document the mutation as unsafe to retry. | The mutation is naturally idempotent and documented as such. |
 | "It's just an outgoing webhook" | Sign, timestamp, replay-protect, version, and deduplicate. | Delivery stays inside one trust boundary. |
 | "Put the check in middleware so it's global" | Keep route-specific validation, ownership, and domain rules in handler or domain code. | The concern is genuinely transport-wide. |
 
 ## Handoffs
 
-- `contract-first`: durable API approval.
+- `contract-first`: approval of API contracts consumers depend on.
 - `proof`: test request-to-response behavior, including status codes, error
   envelopes, and pagination.
 - `error-handling`: internal failure mapping, timeouts, retries behind the API.
 - `security`: authn/authz, input trust, SSRF, data exposure.
 - `async-systems`: SSE, subscriptions, event streams.
-- `release`: version bumps, `Sunset` and `Deprecation` primitives.
+- `release`: version bumps, `Sunset` and `Deprecation` headers.
 
 ## References
 

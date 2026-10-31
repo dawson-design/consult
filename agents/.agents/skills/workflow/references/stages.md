@@ -1,6 +1,6 @@
 # Build Stages
 
-Use this when a change spans more than one `workflow` Rule 10 stage,
+Use this when a change spans more than one `workflow` Rule 9 stage,
 behavior slices, a removal or rename, or a phased schema rollout.
 
 ## Scope
@@ -20,6 +20,12 @@ behavior slices, a removal or rename, or a phased schema rollout.
 | Data | Migrations run forward, and back where reversible. Integration tests against the real database show that each constraint the schema enforces rejects bad rows. Domain types pass the type checker where the language has one. Mark any invariant that neither enforces as unproven at the gate; the contracts stage's boundary tests prove it. | Unit tests of model or parser internals. |
 | Contracts | The contract source validates. Black-box tests written from it fail first, then pass, for each response the shell produces without transformation logic, such as input rejection, auth failures, not-found, and plain reads and writes. | Tests that pass against a stub. A new endpoint whose valid response needs transformation logic gets its valid path and its tests in the transformations stage; until then that path returns an explicit not-implemented error that no test asserts. An existing endpoint keeps its current valid response until the transformations stage changes it. |
 | Transformations | Black-box tests through the contract, with expected outputs from the spec, for each endpoint whose valid response the logic computes. Earlier stages' tests stay green unchanged. | Editing an earlier stage's test to fit the logic. |
+
+## Review at each stage
+
+Each stage's fresh-context review gets that stage's diff and scope. The last
+stage's review gets the whole diff and every acceptance criterion.
+Documentation and release wait for the last stage.
 
 ## Handoffs
 

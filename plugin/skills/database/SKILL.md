@@ -28,7 +28,7 @@ description: Migrations, schema changes, indexes, queries, transactions, or lock
    through `contract-first`, which owns the approval scope. Data deletion and
    non-reversible backfills always need explicit approval, because a rollback
    cannot undo them. An additive, easily reversed change on a
-   development-stage schema proceeds with its shape stated in the close-out.
+   development-stage schema proceeds, and the close-out describes the change.
 2. Use the project's existing database unless the task is choosing a store;
    `architecture` owns store selection.
 3. Destructive or tightening changes ship as separate deployable

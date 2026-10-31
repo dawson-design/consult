@@ -25,7 +25,7 @@ description: "Only when asked to write or update docs for existing code: READMEs
   required by a validator. Name the possible gap in the final response
   instead of editing docs.
 - CHANGELOG, release notes, migration notes, version manifests; use
-  `release`. API contract shape; use `api`.
+  `release`. API contract design; use `api`.
 
 ## Rules
 
@@ -62,6 +62,6 @@ description: "Only when asked to write or update docs for existing code: READMEs
 
 ## Handoffs
 
-- `api`: OpenAPI and wire-contract shape.
+- `api`: OpenAPI and wire-contract design.
 - `observability`: alert and runbook signal definitions.
 - `release`: CHANGELOG, release notes, migration notes, version manifests.

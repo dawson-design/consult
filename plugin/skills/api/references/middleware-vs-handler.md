@@ -17,7 +17,7 @@ the specific resource, actor, and contract are visible.
 - Logging, tracing, and metrics that apply to every route.
 - CORS preflight, CSP, HSTS, and other transport security headers.
 - Body parsing and content negotiation.
-- Authentication context establishment (who is the caller?).
+- Authentication context establishment (who is the consumer?).
 - Coarse rate limiting (global per-IP, global per-key).
 - Final error-shape translation (Problem Details normalization).
 
@@ -43,7 +43,7 @@ transport-wide and middleware-eligible.
 
 ## Anti-pattern: Authorisation in Middleware
 
-Middleware can establish *who* the caller is (authentication).
+Middleware can establish *who* the consumer is (authentication).
 Deciding *what* they can do on a specific resource (authorisation)
 needs the resource and the action, which the middleware does not own.
 Putting authorisation in middleware scatters access rules across the

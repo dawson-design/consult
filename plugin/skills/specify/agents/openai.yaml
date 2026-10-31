@@ -1,4 +1,4 @@
 interface:
   display_name: "Consult: Specify"
-  short_description: "Shape ambiguous work through design decisions"
+  short_description: "Agree on a design before building"
   default_prompt: "Use Consult specify to turn this fuzzy intent into an agreed design direction before coding."

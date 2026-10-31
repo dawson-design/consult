@@ -7,14 +7,14 @@ description: A new service or feature from a brief, or a design choice with open
 
 ## Iron Law
 
-`DESIGN-PARTNER MODE: READ THE SYSTEM, DECIDE THE SHAPE TOGETHER, THEN RECORD WHAT WAS AGREED.`
+`READ THE CODE, PROPOSE A DESIGN, AND GET AGREEMENT BEFORE BUILDING.`
 
 ## When to Use
 
 - Work that touches more than one contract, component, module boundary, state
   transition, or domain invariant.
-- Adding or changing a public surface, shared structure, or a structural
-  runtime dependency (framework, database, ORM, auth client, SDK, job queue).
+- Adding or changing a contract, or a runtime dependency that's hard to swap
+  later (framework, database, ORM, auth client, SDK, job queue).
 - Significant new code with no caller-facing boundary: a substantial module,
   non-trivial logic, or a deliberate change to observable behavior.
 - Ambiguous or risky intent, or the user asks for an ADR, RFC, tech spec, or
@@ -23,70 +23,67 @@ description: A new service or feature from a brief, or a design choice with open
 ## When NOT to Use
 
 - Typos, docs-only edits, internal helper extraction, private file moves,
-  dependency bumps with no public surface change, or narrow bug fixes that
-  restore intended behavior.
+  dependency bumps that change no contract, or narrow bug fixes that restore
+  intended behavior.
 - The design is settled and the user wants a task plan; use `workflow` or the
   host's planning mode. To file it as tracker work, use `issue-tracking`.
-- A caller-facing interface is already concrete and only needs approval; use
+- A contract is already written out and only needs approval; use
   `contract-first`.
 
 ## Rules
 
-1. Design-partner means the agent proposes concrete options and the human
-   approves, revises, or rules them out. Neither "the agent decides alone"
-   nor "the human should come up with the design" is this mode.
-2. Stay above implementation sequencing. Specify owns contracts, states,
-   tradeoffs, risks, and decisions. File-by-file edits, pseudocode, and task
-   checklists belong to planning after the direction is agreed.
-3. Contracts are any caller-facing boundary: function signature, module
-   export, public type, error vocabulary, CLI flag, environment variable,
-   schema or migration step, event payload, file format, config key. "API"
-   does not mean only HTTP.
-4. A design written before reading code is speculation. Cite the current
-   surface with `file:line` evidence, or name the adjacent convention for
-   greenfield work.
-5. Ask the smallest question that changes the shape: one recommended option
-   with its key tradeoff and approve/revise/rule-out, secondary uncertainties
-   as notes. Open questions that block the design are asked now, not left for
-   code review.
-6. When a design artifact lists interfaces or domain shapes, mark each one
-   approved or proposed. Record a shape whose earlier `workflow` Rule 10
-   stages do not exist yet as pending its stage gate, even when the user
-   agreed to it.
-7. Spikes are disposable: ask first, keep them local and small, discard or
-   rewrite after convergence.
-8. Capture only what will be used, in the smallest useful form, in
+1. Design the decisions, not the build steps: contracts, data shapes,
+   states, tradeoffs, and risks. Leave file-by-file edits, pseudocode, and
+   task lists for the plan, after the design is agreed.
+2. Contracts are what `contract-first` Rule 1 defines, not only HTTP APIs.
+3. Read the code before proposing a design. Cite the current code with
+   `file:line`, or, when no code exists yet, name the nearby convention it
+   follows.
+4. Propose concrete options, recommend one, and let the user decide. Don't
+   decide alone, and don't ask the user to invent the design. Ask one
+   question at a time, and only questions whose answer would change the
+   design. Give your recommendation and its main tradeoff, and ask the user
+   to approve, revise, or rule it out. Put smaller doubts in notes. Ask
+   questions that block the design now, not in code review.
+5. In a design doc, mark each contract and data shape approved, proposed, or
+   pending. Mark it pending when the `workflow` Rule 9 stages before it are
+   not built yet, even if the user agreed to it. It stays pending until that
+   stage's sign-off.
+6. Ask before writing a spike (throwaway code that answers a design
+   question). Keep it local and small, and delete or rewrite it once the
+   design is agreed.
+7. Write down only what someone will use, and keep it short. Put it in
    checked-in `docs/` when the team should keep it. Record what the user
-   approved, not what was proposed.
+   approved, not what you proposed.
 
 ## Workflow
 
-1. Frame the design task: intended outcome and the decision that needs
-   collaboration. Say that coding waits until the shape is agreed.
-2. Read before proposing (Rule 4).
-3. Propose one target shape and ask the next design question (Rule 5).
-4. Route specialist risks: `domain-modeling` for data, state, effects, and
-   invariants; `contract-first` for contract approval; the domain skill for
-   the rest.
-5. Iterate until the human agrees on the direction or rules it out, then hand
-   off to planning, implementation, proof, or review.
+1. State the outcome and the decision the user needs to make. Say that coding
+   waits until the design is agreed.
+2. Read before proposing (Rule 3).
+3. Propose your recommended design and ask the next question.
+4. Load `domain-modeling` for data, states, effects, and invariants,
+   `contract-first` for contract approval, and the matching skill for
+   anything else.
+5. Repeat until the user agrees on the design or rules it out, then move to
+   planning, building, proof, or review.
 
 ## Tripwires
 
 | Trigger | Do this instead | False alarm |
 |---|---|---|
-| "I already know what the design should be" | Read and cite the current surface first. | Greenfield work with the adjacent convention named. |
-| "I'll build it to discover the shape" | Ask first; keep spikes local, small, and disposable. | The user approved a disposable spike. |
-| "The design file exists, so the contract is approved" | Get the explicit decision on each concrete surface. | The user explicitly approved those surfaces in the artifact once their earlier `workflow` Rule 10 stages existed. |
+| "I already know what the design should be" | Read and cite the current code first. | No code exists yet, and the nearby convention is named. |
+| "I'll build it to find the design" | Ask first; keep spikes local, small, and disposable. | The user approved a disposable spike. |
+| "The design file exists, so the contract is approved" | Get the explicit decision on each contract and data shape. | The user explicitly approved them in the doc once their earlier `workflow` Rule 9 stages existed. |
 | "Ask about everything at once" | One recommended decision with notes. | None. |
-| "The human should come up with the design" | Propose concrete options; the human approves, revises, or rules out. | None. |
-| "Run the design gate alongside the host's plan mode" | Converge inside the host's planning surface. | The host has no plan or approval mode. |
+| "The human should come up with the design" | Propose concrete options; the user approves, revises, or rules out. | None. |
+| "Run the design discussion alongside the host's plan mode" | Hold it inside the host's plan mode. | The host has no plan or approval mode. |
 
 ## Handoffs
 
 - `contract-first`: contract approval.
 - `domain-modeling`: data shapes, invariants, transitions, effects.
-- `architecture`: boundaries, ownership, layering, system shape.
-- `proof`: the design's proof obligations.
-- `documentation`: docs placement once the artifact exists.
-- Domain skills as specialist lenses when the design touches them.
+- `architecture`: boundaries, ownership, layering, system structure.
+- `proof`: acceptance criteria for the design.
+- `documentation`: docs placement once the design doc exists.
+- Other domain skills when the design touches their area.

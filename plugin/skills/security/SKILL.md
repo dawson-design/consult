@@ -21,15 +21,15 @@ description: Code touching auth, permissions, secrets, crypto, redirects, or unt
 ## When NOT to Use
 
 - General code quality with no trust boundary; use the relevant skill.
-- API shape without security semantics; use `api`.
+- API contract details with no security impact; use `api`.
 - Runtime alert design; pair with `observability`.
 
 ## Rules
 
 1. Map actors, assets, entry points, trust boundaries, and data flows before
    reviewing code. Deny by default; fail closed on auth, authz, validation,
-   and crypto errors. Internal and admin surfaces get the same treatment as
-   public ones.
+   and crypto errors. Internal and admin endpoints, services, and panels get
+   the same treatment as public ones.
 2. Do not roll your own auth, crypto, token validation, sanitization, CSRF,
    parsers, or signature schemes. Use the framework primitive, provider SDK,
    or maintained library that owns the problem. Custom security logic
@@ -44,7 +44,7 @@ description: Code touching auth, permissions, secrets, crypto, redirects, or unt
    responses. Redaction is a field allowlist, not a secret deny-list. A
    secret in an old commit still needs history removal and rotation.
 6. Auth, registration, password reset, MFA enroll, and email change do not
-   enumerate users through response shape, content, or timing.
+   enumerate users through response structure, content, or timing.
 7. Dependencies, build steps, and CI identity are attack surface. Run the
    ecosystem's native dependency audit and a secrets scan on every
    security-relevant change.
@@ -60,7 +60,7 @@ description: Code touching auth, permissions, secrets, crypto, redirects, or unt
 
 | Trigger | Do this instead | False alarm |
 |---|---|---|
-| "It's internal, nobody can reach it" | Apply authn, authz, and input validation as for public surfaces. | Isolated local-only developer routes. |
+| "It's internal, nobody can reach it" | Apply authn, authz, and input validation as for public ones. | Isolated local-only developer routes. |
 | "The framework already validates this" | Validate domain rules at the boundary you control. | The framework check provably enforces the same domain rule. |
 | "It's just a simple token check / crypto wrapper" | Use the maintained library or provider SDK. | Custom logic with a documented need, threat model, and negative tests. |
 | "The guard obviously works" | Write the negative test first. | The guard is a maintained library covered by its own tests. |
@@ -71,15 +71,15 @@ description: Code touching auth, permissions, secrets, crypto, redirects, or unt
 
 ## Handoffs
 
-- `error-handling`: safe error propagation and user-facing failure shape.
-- `api`: auth, error, and idempotency contract shape.
+- `error-handling`: safe error propagation and user-facing failure behavior.
+- `api`: auth, error, and idempotency contracts.
 - `database`: tenant isolation, row-level security, deletion semantics.
 - `observability`: security-event alerts, audit-log integrity.
 - `release`: CI/CD identity, secret scope, signed artifacts.
 
 ## References
 
-Load the one that matches the surface in the diff:
+Load the one that matches the area the diff touches:
 
 - `references/owasp-top-10.md`: per-category mitigations.
 - `references/secrets.md`: secrets, tokens, MFA, sessions, identity.

@@ -6,7 +6,7 @@ Use this reference when designing list or stream endpoints.
 
 List and stream endpoints have bounded pagination, stable ordering,
 and explicit continuation-token semantics. Opaque cursors, page
-tokens, sync tokens, and resume tokens are caller input: malformed,
+tokens, sync tokens, and resume tokens are consumer input: malformed,
 tampered, expired, or out-of-range tokens fail with a documented
 client error or empty-result behavior, never a silent fallback to an
 earlier position.
@@ -16,7 +16,7 @@ earlier position.
 - Cap results server-side (`max_page_size`) even when the client
   passes a larger value. Document the cap.
 - Default page size matches the most common use; expose a `limit`
-  parameter for callers that need a different size up to the cap.
+  parameter for consumers that need a different size up to the cap.
 
 ## Continuation Tokens
 
@@ -29,7 +29,7 @@ Prefer opaque cursors over page numbers:
   being passed unchanged on every request unless the contract
   documents that.
 - **Tamper-evident.** Sign or HMAC the token so a forged token
-  cannot reposition the cursor into another caller's data.
+  cannot reposition the cursor into another consumer's data.
 - **Versioned.** Include a small format version inside the token so
   the server can reject tokens it can no longer interpret.
 

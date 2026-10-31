@@ -52,8 +52,8 @@ against it.
    `settleInvoice` or `expireHold`, not `process`, `handle`, or `execute`. A
    suffix like `Service` or `Manager` is fine only with a domain word saying
    what kind.
-9. Each non-trivial invariant or transition gets a Proof Contract (claim,
-   data invariant, boundary, check, evidence) via `proof`.
+9. Each non-trivial invariant or transition gets a check and evidence via
+   `proof`.
 10. Get approval before implementing a core model, shared invariant, state
     machine, or glossary term future work will bind to; `contract-first` owns
     the approval scope. Disposable or local shapes are not gated.
@@ -79,10 +79,10 @@ against it.
 ## Handoffs
 
 - `specify`: contracts whose data shape is being modeled.
-- `contract-first`: approval of durable domain shapes.
+- `contract-first`: approval of domain shapes future work depends on.
 - `architecture`: module boundaries, locality, layering.
 - `database`: schema enforcement for invariants that race under concurrency.
-- `proof`: prove at the parse handoff where raw input becomes the typed
+- `proof`: checks at the parse step, where raw input becomes the typed
   domain shape.
 - `error-handling`: parse failures, Result/Either shape, error context.
 - `async-systems`: mutable places or ownership crossing task boundaries.
