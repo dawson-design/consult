@@ -128,7 +128,22 @@ the generator (`MIRROR_DESTS`).
    first and is small, and porting afterward means the generated-hook logic
    is ported once, in Python, instead of being written in JS and then
    rewritten. Steps 1 and 2 (ruff over `eval/`, tests pointed at the JS
-   scripts) touch none of those files and can start right away.
+   scripts) can start right away.
+
+## Rebase onto always-on-core (before step 3)
+
+Steps 0 to 2 were built from `main` at `c5595a9`. always-on-core changes
+three Vitest files that step 2 already ported:
+`tests/generate-plugin-symlinks.test.mjs`, `tests/plugin-session-hook.test.mjs`,
+and `tests/validate-skill-anatomy.test.mjs`. After rebasing onto `main`:
+
+1. Port the cases those files gained or changed into
+   `tests/test_generate_plugin_symlinks.py`, `tests/test_plugin_session_hook.py`,
+   and `tests/test_validate_skill_anatomy.py`
+   (`git diff c5595a9 main -- tests/*.test.mjs` lists them).
+2. Re-run `uv run ruff format` and `python3 eval/scripts/sync_tests.py` if
+   always-on-core touched `eval/` Python, then `make test`.
+3. Continue with step 3.
 
 An approving design or RFC approves the direction, not the concrete shapes.
 Sign-off on this plan covers the rename map and the decisions above. Nothing
@@ -162,9 +177,10 @@ committing.
    `test_plugin_session_hook.py` test Bash and JSON, so they are finished at
    this step. Keep `skipUnless(shutil.which("expect"))` on the confirmation
    tests, and keep `PATH=/usr/bin:/bin` for the missing-stow test.
+   - `make test` and CI run both suites until step 7.
    - Check: the unittest suite and Vitest both pass against the JS scripts.
-     For each ported file, break one assertion on purpose and confirm the
-     suite goes red.
+     For each ported file, break the script under test on purpose and
+     confirm the suite goes red.
 3. **Port the generator.** Write `scripts/generate_plugin_symlinks.py`, flip
    `COMMAND` in its test, and switch `setup.sh` (lines 190 and 416 to 422)
    from `node` to `python3`. Delete the `.mjs` file and its Vitest test.
