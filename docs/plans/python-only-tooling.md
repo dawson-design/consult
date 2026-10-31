@@ -184,6 +184,9 @@ committing.
 3. **Port the generator.** Write `scripts/generate_plugin_symlinks.py`, flip
    `COMMAND` in its test, and switch `setup.sh` (lines 190 and 416 to 422)
    from `node` to `python3`. Delete the `.mjs` file and its Vitest test.
+   - In `test_generate_plugin_symlinks.py`, replace the local `MIRROR_DESTS`
+     with the generator's and assert it equals `["plugin/skills"]`, restoring
+     the Vitest guard against a dropped mirror destination.
    - Check: `test_generate_plugin_symlinks.py`; run `./setup.sh` and confirm
      `git status` shows no drift in `plugin/skills/`.
 4. **Port the anatomy validator.** Write `scripts/validate_skill_anatomy.py`,
