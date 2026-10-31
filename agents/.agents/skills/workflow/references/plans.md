@@ -7,9 +7,9 @@ building from a saved plan.
 
 Save the approved plan as Markdown: the host's plan file when the host
 writes one, otherwise `docs/plans/<slug>.md`. Include intent, acceptance
-criteria, constraints, approved table items, steps in Rule 10 stage order,
-and proof obligations, so a fresh session can build it without the planning
-conversation. Record later stages' table items as proposed, and mark each
+criteria, constraints, approved Rule 7 items, steps in Rule 10 stage
+order, and proof obligations, so a fresh session can build it without the planning
+conversation. Record later stages' Rule 7 items as proposed, and mark each
 approved when its gate clears.
 
 ## Handoffs

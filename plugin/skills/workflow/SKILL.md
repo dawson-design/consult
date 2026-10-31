@@ -41,16 +41,13 @@ description: Load before reading code for any feature, bug fix, refactor, test, 
    sign-off. For higher risk, give progress updates, explain options, and get
    approval before acting. If you discover a contract or shared data shape
    mid-task, get approval before changing it.
-7. **Get the user's approval before you build any of these.**
-
-   | Needs approval | Details in |
-   | --- | --- |
-   | The design direction | `specify` |
-   | A contract that callers depend on | `contract-first` |
-   | A core data shape, invariant, or glossary term that later work depends on | `domain-modeling` |
-   | A migration, or a change that deletes or rewrites data | `database` |
-   | A release artifact | `release` |
-   | A change to git history, or any destructive git operation | `git-workflow` |
+7. **Get the user's approval before you build any of these:**
+   - the design direction
+   - a contract that callers depend on
+   - a core data shape, invariant, or glossary term later work depends on
+   - a migration, or a change that deletes or rewrites data
+   - a release artifact
+   - a change to git history, or any destructive git operation
 
    These are hard to undo, or later work depends on them. While you wait,
    keep working on whatever the approval does not affect, and say what you
@@ -73,8 +70,8 @@ description: Load before reading code for any feature, bug fix, refactor, test, 
     writes data, and renders output); transformations (pure logic between
     parsed input and output). Removals and renames move consumers first
     (`references/stages.md`). Skip stages the change does not touch. Before
-    building a stage that holds a Rule 7 table item, show the earlier stages
-    with their evidence and get sign-off on them. Sign-off from before
+    building a stage that holds a Rule 7 item, show the earlier stages with
+    their evidence and get sign-off on them. Sign-off from before
     those earlier stages existed does not count, whatever it named. A
     pending gate blocks later stages; with no human to answer, take Rule 7's
     provisional path and mark later stages provisional.

@@ -54,14 +54,14 @@ class ExportTests(unittest.TestCase):
         rows = self.export(self.root / "bare")
         self.assertEqual([(r["job"], r["rule"], r["automated"]) for r in rows],
                          [("bare", "debugging.1", "1.0"), ("bare", "workflow.7", "0.0")])
-        self.assertTrue(rows[1]["rule_text"].startswith("Get the user's approval before you build any of these."))
+        self.assertTrue(rows[1]["rule_text"].startswith("Get the user's approval before you build any of these:"))
         self.assertEqual(rows[0]["evidence_dir"], str(trial.resolve()))
         self.assertEqual((rows[0]["proposed"], rows[0]["human"]), ("", ""))
 
     def test_a_rule_text_leaves_out_the_tables_inside_the_rule(self):
-        """workflow.7 holds the sign-off table; a reviewer needs the rule, not the table rows."""
-        self.assertNotIn("|", rule_labels.rule_text("workflow.7"))
-        self.assertIn("no human can answer", rule_labels.rule_text("workflow.7"))
+        """code-review.2 holds the severity table; a reviewer needs the rule, not the table rows."""
+        self.assertNotIn("|", rule_labels.rule_text("code-review.2"))
+        self.assertIn("findings first by severity", rule_labels.rule_text("code-review.2"))
 
     def test_a_multi_step_trial_points_at_its_final_steps_evidence(self):
         trial = write_rule_trial(self.root / "consult", "money-field-change", 0, {"api.1": 1.0}, ("brief", "build"))
