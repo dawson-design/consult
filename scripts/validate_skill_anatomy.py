@@ -84,8 +84,10 @@ MAX_BODY_WORDS = 700
 # spec, and agents never edit an existing test to make a change pass. api
 # rose to 730 so Rules 1 and 2 state its REST compatibility policy (which
 # changes need approval, who counts as an independent consumer, and what
-# needs a successor) in plain sentences instead of dense ones.
-BODY_WORD_EXCEPTIONS = {"workflow": 928, "proof": 1050, "code-review": 950, "api": 730}
+# needs a successor) in plain sentences instead of dense ones, then to 740
+# so Rule 1 limits the spec to the responses an endpoint can return and the
+# References entry routes to the per-endpoint status-code table.
+BODY_WORD_EXCEPTIONS = {"workflow": 928, "proof": 1050, "code-review": 950, "api": 740}
 MAX_TRIPWIRE_ROWS = 8
 MAX_DESCRIPTION_LENGTH = 120
 # ~600 tokens of routing surface that every host loads before picking a skill.
