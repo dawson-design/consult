@@ -201,6 +201,7 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   session, and ask before removing one you did not create. `git-workflow`
   and its `workflow` routing row now list worktrees; the `workflow` word
   budget rises to 943.
+- `commit` Rule 5 keeps the subject under 72 characters.
 
 ## [18.0.0] (2026-10-23)
 
