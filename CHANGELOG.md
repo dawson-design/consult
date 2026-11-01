@@ -228,6 +228,9 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   score, not instructions. `build_bundle` no longer follows a symlink the
   agent left as a new file, which would have put any file in the container in
   front of the judge and into the persisted trial artifacts.
+- The CI workflow pins its three actions to commit SHAs and grants the
+  workflow token read access only. `tests/test_ci_workflow.py` fails on an
+  unpinned action or a write permission.
 
 ## [18.0.0] (2026-10-23)
 
