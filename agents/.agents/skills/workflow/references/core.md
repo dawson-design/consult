@@ -26,8 +26,9 @@ loaded. Skills cite them as core rules.
    safety or data loss requires an edge case now. Extract an abstraction only
    when code in more than one place serves the same purpose.
 4. **Check existing tools before building one.** Look for a maintained library
-   before writing code for a solved problem, and prefer mature, proven options
-   unless the user asks for newer ones. Ask before adding a dependency.
+   before writing code for a solved problem, and prefer mature, proven
+   libraries and tools, on current supported versions, unless the user asks
+   for newer ones. Ask before adding a dependency.
 5. **Write code a reader can follow in one pass.** This covers code you write
    or change; do not reshape untouched code to fit. Functions do one thing and
    stay around 25-30 lines. Conditionals and loops stay under three nesting
@@ -51,7 +52,9 @@ loaded. Skills cite them as core rules.
 8. **Treat input that crosses a trust boundary as untrusted**, even when the
    request does not mention security. Parse or validate it before use.
 9. **Static checks count as much as tests.** Before you commit or push, run
-   the project's formatter, linter, and type checker along with its tests,
-   and fix what they report in the code you changed. Do not rerun them after
-   every edit. If a project past the prototype stage lacks any of them, say
-   so and propose adding it. Adding one is a dependency under core rule 4.
+   the project's linter and type checker, and its formatter in check mode or
+   on the files you changed. Fix what they report in the code you changed,
+   and do not rerun them after every edit. If a project past the prototype
+   stage lacks its ecosystem's standard tool for one of these and has not
+   declined it, say so and propose adding it. Adding one is a dependency
+   under core rule 4.

@@ -183,12 +183,14 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   stale plugin symlinks it used to report removing but leave behind.
 - Core rule 2 now says to keep calculations pure and push I/O, database
   access, network calls, and mutation to the edges of the code you write.
-  Core rule 4 now prefers mature, proven options unless the user asks for
-  newer ones.
+  Core rule 4 now prefers mature, proven libraries and tools, on current
+  supported versions, unless the user asks for newer ones. `domain-modeling`
+  Rule 6 cites core rule 2 for keeping effects at the shell.
 - New core rule 9: static checks count as much as tests. Before committing
-  or pushing, run the project's formatter, linter, and type checker with
-  its tests and fix what they report in the changed code, but not after
-  every edit. A project past the prototype stage that lacks one gets a
+  or pushing, run the project's linter and type checker, and its formatter
+  in check mode or on changed files, and fix what they report in the changed
+  code, but not after every edit. A project past the prototype stage that
+  lacks its ecosystem's standard tool, and has not declined it, gets a
   proposal to add it.
 - `scaffolding` Rule 5 adds a pre-push hook that runs format, lint,
   typecheck, and the fast tests, so commits stay quick. Rule 7 pins the

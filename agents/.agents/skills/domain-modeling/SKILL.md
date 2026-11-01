@@ -44,7 +44,7 @@ against it.
    into named states.
 6. Effects (async, exceptions, I/O, clocks, randomness, logging, persistence,
    mutation, shared state) are contagious. Keep them at the imperative shell
-   so the functional core stays pure. Core tests run without mocks,
+   (core rule 2) so the functional core stays pure. Core tests run without mocks,
    monkey-patches, databases, network, or global time.
 7. Discover abstractions from repeated domain meaning. No generic wrappers,
    base classes, or helper layers before the data proves they pay.
