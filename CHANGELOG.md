@@ -6,6 +6,8 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [19.0.0] (2026-11-01)
+
 ### Changed
 
 - `api` Rule 1 asks the spec for every response the endpoint can return.
