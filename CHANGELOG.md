@@ -8,6 +8,13 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- `api` Rule 1 asks the spec for every response the endpoint can return.
+  `references/rest-error-status-codes.md` gains a table of the status codes
+  each endpoint documents, by what the endpoint does (takes input, requires
+  auth, applies permissions, addresses a resource by id, can conflict,
+  enforces rate limits, can refuse work, calls an upstream). `500` is
+  defined once per API. The api body budget rises from 730 to 740 words.
+
 - `workflow` holds only guidance that applies to all code, plus routing.
   Plan-file detail moves to a new `references/plans.md`, stage delegation to
   `references/long-runs.md`, and per-stage review scope to

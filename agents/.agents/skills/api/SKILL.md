@@ -27,8 +27,8 @@ description: Adding or changing an HTTP endpoint, handler, status code, response
 
 1. Sketch new or changed behavior consumers can see in the OpenAPI spec (or
    the repo's API spec) before writing handler code, then build from it. Spell
-   out every response, including success, errors, empty results, pagination,
-   and auth failures. For a fix that restores existing behavior, the current
+   out every response the endpoint can return, including success, errors,
+   empty results, pagination, and auth failures. For a fix that restores existing behavior, the current
    contract is the source of truth. Changes to endpoints consumers depend on
    get approval through `contract-first`. Additions old consumers cannot
    notice (a new optional field, param, or endpoint) go ahead; describe them
@@ -92,7 +92,8 @@ description: Adding or changing an HTTP endpoint, handler, status code, response
 Load only the one the feature needs:
 
 - `references/api-evolution.md`: evolution rules and versioning strategies.
-- `references/rest-error-status-codes.md`: status-by-origin decision tree.
+- `references/rest-error-status-codes.md`: which codes each endpoint
+  documents; status-by-origin decision tree.
 - `references/data-models.md`: JSON:API default; FHIR, HAL, JSON-LD.
 - `references/idempotency.md`: idempotency-key contract.
 - `references/pagination.md`: cursor and bounded-pagination semantics.
