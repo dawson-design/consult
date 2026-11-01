@@ -391,6 +391,22 @@ class SkillAnatomyTests(ValidatorTestCase):
             self.validate(), "emoji/SKILL.md", "frontmatter description too long (122 > 120 characters)"
         )
 
+    def test_trims_a_description_the_way_hosts_do(self) -> None:
+        # A byte-order mark is whitespace to the JavaScript hosts, so it does
+        # not count toward the 120-character limit; U+0085 is not, so it does.
+        bom = GOOD_SKILL.replace("description: Good test skill", "description: \ufeff" + "x" * 120)
+        nel = GOOD_SKILL.replace("description: Good test skill", "description: " + "y" * 120 + "\u0085")
+        make_skill(self.skills_dir, "bom", bom.replace("name: good", "name: bom"))
+        folded = GOOD_SKILL.replace("description: Good test skill", "description: >-\n  \ufeff" + "z" * 120)
+        make_skill(self.skills_dir, "nel", nel.replace("name: good", "name: nel"))
+        make_skill(self.skills_dir, "folded", folded.replace("name: good", "name: folded"))
+
+        result = self.validate()
+
+        self.assert_fails_with(result, "nel/SKILL.md", "frontmatter description too long (121 > 120 characters)")
+        self.assertNotIn("bom/SKILL.md", result.stdout)
+        self.assertNotIn("folded/SKILL.md", result.stdout)
+
     def test_rejects_more_than_eight_tripwire_rows(self) -> None:
         make_skill(self.skills_dir, "long-tripwires", LONG_TRIPWIRES_SKILL)
 
@@ -569,6 +585,18 @@ class PluginPackageTests(ValidatorTestCase):
         (self.tmp / HOOK_SOURCE.replace("agents/.agents/skills/", "plugin/skills/")).unlink()
 
         self.assert_fails_with(self.validate(), f"missing {HOOK_SOURCE}, the source of plugin/hooks/hooks.json")
+
+    def test_accepts_a_hook_command_that_is_not_whitespace_to_javascript(self) -> None:
+        # U+001C is whitespace to Python's strip() but not to JavaScript's
+        # trim(), so this command is non-empty and only drifts from core.md.
+        handler = {"type": "command", "command": "\u001c"}
+        self.make_good_packaged_repo(plugin_hooks={"hooks": {"SessionStart": [{"hooks": [handler]}]}})
+        write_hook_source(self.tmp)
+
+        result = self.validate()
+
+        self.assert_fails_with(result, f"plugin/hooks/hooks.json differs from {HOOK_SOURCE}")
+        self.assertNotIn("SessionStart handler must be", result.stdout)
 
     def test_reports_plugin_version_drift_across_claude_and_codex_manifests(self) -> None:
         self.make_good_packaged_repo(

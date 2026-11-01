@@ -11,9 +11,11 @@ It replaced a JavaScript validator and keeps that validator's findings,
 messages, and exit codes, so a few helpers reproduce JavaScript semantics: lengths in
 UTF-16 code units, trim()'s whitespace set, ASCII-only \\b and \\d, strict
 equality, and JSON values where a missing field differs from null and an
-empty object counts as present. Two JavaScript behaviors are not reproduced,
-since they change only wording: integer-like JSON keys print in file order
-rather than first, and integers beyond 2**53 print exactly.
+empty object counts as present. Three JavaScript behaviors are not
+reproduced. Integer-like JSON keys print in file order rather than first, and
+integers beyond 2**53 print exactly, which change only wording. Regex \\s
+follows Python's whitespace set, which differs from JavaScript's only for
+U+001C to U+001F, U+0085, and U+FEFF inside Markdown text.
 """
 
 from __future__ import annotations
