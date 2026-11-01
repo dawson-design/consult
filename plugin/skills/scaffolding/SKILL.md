@@ -44,12 +44,15 @@ the baseline without local knowledge.
    `tsconfig.json`, `package.json`, `pyproject.toml`, CI, or README by name;
    substitute a nearby config only with approval.
 5. Commands are the contract: `test`, `lint`, `format`, `typecheck`, and
-   `coverage` where applicable, and CI runs the same checks developers run.
-   Every added config is consumed by a standard command.
+   `coverage` where applicable. CI runs the same checks developers run, and a
+   pre-push hook runs format, lint, typecheck, and the fast tests locally, so
+   commits stay quick. Every added config is consumed by a standard command.
 6. `typecheck` runs a real type checker using the config added for it. A
    syntax check such as `node --check` is lint, not typecheck.
 7. Fresh scaffolds get git and `.gitignore` before feature code, one package
-   manager with a committed lockfile, one smoke test that can fail and pass,
+   manager with a committed lockfile, the language version pinned in the
+   ecosystem's file (`.python-version`, `.nvmrc`, `rust-toolchain.toml`,
+   `go.mod`), one smoke test that can fail and pass,
    secret hygiene with `.env.example` placeholders, and a README with
    purpose, install, run, and test.
 8. Prototypes keep the same command names even when checks are lightweight,

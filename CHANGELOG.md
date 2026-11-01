@@ -181,6 +181,32 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   Markdown links (`make links`). `package.json`, pnpm, and Vitest are gone;
   Node remains only for the eval's hidden checks. The generator now removes
   stale plugin symlinks it used to report removing but leave behind.
+- Core rule 2 now says to keep calculations pure and push I/O, database
+  access, network calls, and mutation to the edges of the code you write.
+  Core rule 4 now prefers mature, proven libraries and tools, on current
+  supported versions, unless the user asks for newer ones. `domain-modeling`
+  Rule 6 cites core rule 2 for keeping effects at the shell.
+- New core rule 9: static checks count as much as tests. Before committing
+  or pushing, run the project's linter and type checker, and its formatter
+  in check mode or on changed files, and fix what they report in the changed
+  code, but not after every edit. A project past the prototype stage that
+  lacks its ecosystem's standard tool, and has not declined it, gets a
+  proposal to add it.
+- `scaffolding` Rule 5 adds a pre-push hook that runs format, lint,
+  typecheck, and the fast tests, so commits stay quick. Rule 7 pins the
+  language version in the ecosystem's file (`.python-version`, `.nvmrc`,
+  `rust-toolchain.toml`, `go.mod`).
+- New `git-workflow` Rule 8: work on a branch in the main checkout by
+  default, and create a worktree only for parallel work, saying so. For
+  worktrees the agent creates (host-managed ones stay the host's), keep
+  them outside the repository, reuse the main checkout's build output, and
+  once the work is committed, merge it back if the main checkout is clean
+  or hand the branch to the user, then remove the worktree. Unfinished work
+  is reported, not removed, and the agent asks before removing a worktree
+  it did not create. `git-workflow`
+  and its `workflow` routing row now list worktrees; the `workflow` word
+  budget rises to 943.
+- `commit` Rule 5 keeps the subject under 72 characters.
 
 ## [18.0.0] (2026-10-23)
 

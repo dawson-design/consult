@@ -38,8 +38,9 @@ The host owns git invocation; this skill sets the packaging standard.
 4. Confirm the relevant proof is current before committing. If a broad suite
    is noisy for unrelated reasons, name the targeted proof and report the
    drift separately.
-5. The subject completes "When applied, this commit will ...". Add a body
-   only when the change needs context, at most 2-3 short paragraphs.
+5. The subject completes "When applied, this commit will ..." in under 72
+   characters. Add a body only when the change needs context, at most 2-3
+   short paragraphs.
 6. Attribution trailers are host configuration, not message content. When a
    host adds `Co-Authored-By` or similar by default, point the user at the
    setting that disables it (`includeCoAuthoredBy: false` in Claude Code)
