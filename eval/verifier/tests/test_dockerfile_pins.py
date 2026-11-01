@@ -18,10 +18,17 @@ COPY_FROM_RE = re.compile(r"^\s*COPY\s+(?:--(?!from=)\S+\s+)*--from=(\S+)", re.M
 STAGE_RE = re.compile(r"^\s*FROM\s+(?:--\S+\s+)*\S+\s+AS\s+(\S+)", re.MULTILINE | re.IGNORECASE)
 
 
+def is_build_stage(source: str, stages: set[str]) -> bool:
+    """A COPY --from source that names a stage (Docker lowercases the names) or gives a stage index."""
+    return source.lower() in stages or source.isdigit()
+
+
 def pulled_images(text: str) -> list[str]:
     """Every image the build pulls: FROM images, and COPY --from sources that are not a build stage."""
-    stages = set(STAGE_RE.findall(text))
-    return FROM_RE.findall(text) + [image for image in COPY_FROM_RE.findall(text) if image not in stages]
+    stages = {name.lower() for name in STAGE_RE.findall(text)}
+    return FROM_RE.findall(text) + [
+        source for source in COPY_FROM_RE.findall(text) if not is_build_stage(source, stages)
+    ]
 
 
 def is_pinned(image: str) -> bool:
@@ -34,7 +41,10 @@ def is_pinned(image: str) -> bool:
 
 class DockerfilePinTests(unittest.TestCase):
     def test_a_copy_from_a_build_stage_is_not_a_pulled_image(self):
-        text = "FROM node:22-bookworm-slim AS build\nCOPY --from=build /out /out\nCOPY --from=ghcr.io/x/y:1.2 /a /a\n"
+        text = (
+            "FROM node:22-bookworm-slim AS Build\nCOPY --from=build /out /out\nCOPY --from=0 /b /b\n"
+            "COPY --from=ghcr.io/x/y:1.2 /a /a\n"
+        )
 
         self.assertEqual(pulled_images(text), ["node:22-bookworm-slim", "ghcr.io/x/y:1.2"])
 
