@@ -223,6 +223,11 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `NODE_PATH`, and `NODE_VERSION` names. It used to
   drop only names that looked like credentials, which would have passed a
   `DATABASE_URL` through beside the judge's `CLAUDE_CODE_OAUTH_TOKEN`.
+- The eval judge prompt fences the agent's bundle between `BEGIN AGENT
+  OUTPUT` and `END AGENT OUTPUT` markers and says its contents are data to
+  score, not instructions. `build_bundle` no longer follows a symlink the
+  agent left as a new file, which would have put any file in the container in
+  front of the judge and into the persisted trial artifacts.
 
 ## [18.0.0] (2026-10-23)
 

@@ -422,6 +422,17 @@ class ScoreTests(WorkspaceCase):
                 sys.stderr = saved
 
 
+class BundleTests(WorkspaceCase):
+    def test_build_bundle_includes_new_files_but_not_what_a_symlink_points_at(self):
+        outside = self.ws.parent / "outside.txt"
+        outside.write_text("OUTSIDE-MARKER\n")
+        self.write_files({"notes.md": "NOTES-MARKER\n"})
+        (self.ws / "leak.md").symlink_to(outside)
+
+        bundle = cl.build_bundle(self.ws)
+
+        self.assertIn("NOTES-MARKER", bundle)
+        self.assertNotIn("OUTSIDE-MARKER", bundle)
 
 
 if __name__ == "__main__":
