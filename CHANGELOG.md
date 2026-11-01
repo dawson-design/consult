@@ -19,6 +19,9 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - The README groups the skills by the kind of work: process and proof, design,
   interfaces and docs, backend and security, production, and repo and tools.
+- The README covers the Claude Code desktop app and the Claude desktop app
+  (chat and Cowork), and how to turn on auto-update for the `consult`
+  marketplace, which Claude Code leaves off for third-party marketplaces.
 
 ## [19.0.0] (2026-11-01)
 
