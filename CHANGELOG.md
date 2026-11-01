@@ -181,6 +181,10 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   Markdown links (`make links`). `package.json`, pnpm, and Vitest are gone;
   Node remains only for the eval's hidden checks. The generator now removes
   stale plugin symlinks it used to report removing but leave behind.
+- Core rule 2 now says to keep calculations pure and push I/O, database
+  access, network calls, and mutation to the edges of the code you write.
+  Core rule 4 now prefers mature, proven options unless the user asks for
+  newer ones.
 
 ## [18.0.0] (2026-10-23)
 
