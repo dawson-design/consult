@@ -84,7 +84,7 @@ file before your first edit.
    | `proof` | Any non-trivial change. |
    | `code-review` | A review is requested, or the change is non-trivial. |
    | `commit` | The user asks to commit: staging, splitting commits, writing messages. |
-   | `git-workflow` | The user asks for branches, conflicts, rebases, recovery, force-push, or GitHub access, or approved work needs them. |
+   | `git-workflow` | The user asks for branches, worktrees, conflicts, rebases, recovery, force-push, or GitHub access, or approved work needs them. |
    | `issue-tracking` | Drafting, splitting, or tracking initiatives, epics, or issues, or a task citing one. |
    | `release` | Release prep is requested or a validator requires artifact sync. |
 

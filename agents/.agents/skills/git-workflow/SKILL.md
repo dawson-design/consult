@@ -14,8 +14,8 @@ gates: recoverability and approval of published text.
 
 ## When to Use
 
-- Rebases, merge conflicts, bisects, reflog recovery, branch cleanup, PR
-  history repair, force-push decisions, or any GitHub access.
+- Rebases, merge conflicts, bisects, reflog recovery, branch cleanup,
+  worktrees, PR history repair, force-push decisions, or any GitHub access.
 
 ## When NOT to Use
 
@@ -52,6 +52,14 @@ gates: recoverability and approval of published text.
    needs no test; the script that selects commands, blocks branches, or
    routes files does.
 7. This skill never bypasses the host's sandbox or approval gates.
+8. Work on a branch in the main checkout by default. Create a worktree only
+   when work must run in parallel with uncommitted changes there, and say
+   so, because each worktree duplicates the checkout and its build
+   directories. Put it outside the repository, and reuse the main checkout's
+   build output instead of rebuilding. Once its work is committed, merge or
+   rebase it into the main checkout's branch, then run `git worktree remove`
+   and `git worktree prune`. Never leave one at the end of a session, and ask
+   before removing a worktree you did not create.
 
 ## Tripwires
 

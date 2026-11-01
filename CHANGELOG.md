@@ -194,6 +194,13 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   typecheck, and the fast tests, so commits stay quick. Rule 7 pins the
   language version in the ecosystem's file (`.python-version`, `.nvmrc`,
   `rust-toolchain.toml`, `go.mod`).
+- New `git-workflow` Rule 8: work on a branch in the main checkout by
+  default, create a worktree only for parallel work and say so, keep it
+  outside the repository, reuse the main checkout's build output, and
+  remove it once its work is merged back. Never leave one at the end of a
+  session, and ask before removing one you did not create. `git-workflow`
+  and its `workflow` routing row now list worktrees; the `workflow` word
+  budget rises to 943.
 
 ## [18.0.0] (2026-10-23)
 
