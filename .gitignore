@@ -7,3 +7,5 @@ node_modules/
 .antigravitycli/
 reference/
 eval/runs
+.venv/
+__pycache__/

@@ -29,7 +29,7 @@ description: Run Consult's guarded maintainer flow for commit, merge, version bu
   `plugin/.codex-plugin/plugin.json`, `plugin/.cursor-plugin/plugin.json`,
   `.claude-plugin/marketplace.json`, and `.cursor-plugin/marketplace.json`.
   `plugin/plugin.json` should match these too; reconcile drift when bumping.
-- Root `package.json` is private tooling and is not versioned for release.
+- Root `pyproject.toml` is private tooling and is not versioned for release.
 - Version marker is the `CHANGELOG.md` header `## [X.Y.Z] (YYYY-MM-DD)`.
   Promote `## [Unreleased]` into a dated version section and leave a fresh
   empty `## [Unreleased]` above it.

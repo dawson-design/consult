@@ -41,7 +41,7 @@ the SessionStart hook are acceptable even where those hosts lack them.
   manifest in sync with Claude plugin packaging.
 - **Plugin SessionStart hook**: `plugin/hooks/hooks.json` is generated from
   `agents/.agents/skills/workflow/references/core.md` by
-  `scripts/generate-plugin-symlinks.mjs`. Edit `core.md`, never
+  `scripts/generate_plugin_symlinks.py`. Edit `core.md`, never
   `hooks.json`. Claude Code and Codex discover it by convention, so no
   manifest declares `hooks`. It holds exactly one SessionStart command, a
   heredoc that needs a POSIX `sh`, which prints `core.md` inline. The
@@ -94,10 +94,12 @@ Consequences for anyone editing this repo:
 
 ## Common commands
 
-A clean clone installs with `pnpm install`. `eval/` is a separate `uv` project
-that runs the Consult evaluation suite through Harbor; it is not a pnpm
-workspace package. `make eval` runs its static checks and `make smoke` runs
-one real trial. See `eval/README.md` for setup.
+The maintainer checks need `python3` 3.12 or newer, `uv`, and `lychee`
+(`brew install lychee`). The root `pyproject.toml` pins ruff, the only Python
+dev dependency, and `uv run` installs it on first use. `eval/` is a separate
+`uv` project that runs the Consult evaluation suite through Harbor. `make eval`
+runs its static checks and `make smoke` runs one real trial. See
+`eval/README.md` for setup.
 
 Real eval runs (`make smoke`, `make eval-fast`, `make eval-triggers`, and
 `eval/scripts/run.py`) bill the maintainer's Claude or Codex subscription.
@@ -113,31 +115,33 @@ eval verifier sync and rule-check tests.
 # skill is added / renamed / removed. Idempotent.
 ./setup.sh
 
-# Refresh the generated plugin skill mirror.
-node scripts/generate-plugin-symlinks.mjs
+# Refresh the generated plugin skill mirror and SessionStart hook.
+python3 scripts/generate_plugin_symlinks.py
 
 # Validate every SKILL.md against the playbook anatomy (frontmatter,
 # sections, budgets, em dashes, attribution), plugin/ drift, rule coverage
 # in eval/verifier/rules.json, the plugin hooks file, and the Codex, Cursor,
 # and Google Antigravity plugin packages. Run this before publishing skill
 # changes.
-node scripts/validate-skill-anatomy.mjs
+python3 scripts/validate_skill_anatomy.py
 
-# Validate local Markdown links and anchors. Remote URL checks are omitted by
-# default so this stays deterministic for local development.
-pnpm run check:links
+# Validate local Markdown links and anchors with lychee. Remote URLs are
+# skipped so this stays deterministic for local development.
+make links
 
 # Self-test the validator itself (uses a tmp dir of fixtures).
-node scripts/validate-skill-anatomy.mjs --self-test
+python3 scripts/validate_skill_anatomy.py --self-test
+
+# ruff lint and format check over every repo-owned Python file.
+make lint
 
 # Repo-owned tests.
-pnpm test
+python3 -m unittest discover -s tests
 ```
 
-There is no product application test suite; repo-level Vitest, the anatomy
-validator, and `check:links` are maintenance checks. Treat clean Vitest,
-`validate-skill-anatomy.mjs`, and `check:links` commands as the bar for script
-changes.
+There is no product application test suite; the repo's unittest suite, the
+anatomy validator, `make lint`, and `make links` are maintenance checks.
+Treat them passing as the bar for script changes.
 
 ## Maintainer skills
 
@@ -154,15 +158,15 @@ Run the narrowest check that proves the touched surface first. Broaden only
 when the changed files require it or the narrow check exposes cross-package
 risk.
 
-- Canonical skill prose changes: run `node scripts/validate-skill-anatomy.mjs`.
+- Canonical skill prose changes: run `python3 scripts/validate_skill_anatomy.py`.
   It checks the generated mirror (`plugin/skills`, read from the
   generator's `MIRROR_DESTS`), so it is sufficient on its own; no
-  separate `cmp` pass, and no need for root `pnpm test`. Regenerate with
-  `node scripts/generate-plugin-symlinks.mjs` when it reports drift.
+  separate `cmp` pass, and no need for the repo test suite. Regenerate with
+  `python3 scripts/generate_plugin_symlinks.py` when it reports drift.
 - `eval/` changes: run `make eval`, which needs `harbor` and `uv`, or the two
   checks CI runs without them: `python3 eval/scripts/sync_tests.py --check`
   and `python3 -m unittest discover eval/verifier/tests`.
-- Markdown link/doc-wide changes: run `pnpm run check:links` only when
+- Markdown link/doc-wide changes: run `make links` only when
   links or broad docs moved. Do not run it for ordinary runtime or narrow skill
   edits.
 - Release/package metadata changes: run the release/package checks that match
@@ -346,9 +350,11 @@ should not regress to it.
 
 ## Conventions specific to this repo
 
-- Markdown, JavaScript, and Python (`eval/`, a `uv` project) are the repo-owned
-  languages. Use Vitest for JS tests, `unittest` for the eval verifier, and
-  `check:links` for local Markdown link validation. Keep Markdown prose
+- Markdown and Python are the repo-owned languages. JavaScript appears only as
+  eval content: the hidden checks and task fixtures. `scripts/` and `tests/`
+  use only the Python standard library, so they run with a bare `python3`.
+  Use `unittest` for tests, ruff (`make lint`) for Python lint and format, and
+  `make links` for local Markdown link validation. Keep Markdown prose
   manually formatted; do not add a docs formatter.
 - Do not add author-attribution trailers (`Co-Authored-By`,
   `Generated by`) to commits.

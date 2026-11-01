@@ -18,7 +18,7 @@ from pathlib import Path
 
 EVAL_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(EVAL_DIR / "verifier" / "shared"))
-import consult_lib as cl  # noqa: E402
+import consult_lib as cl
 
 STEP_NAME_RE = re.compile(r'^\[\[steps\]\]\s*\n\s*name\s*=\s*"([^"]+)"', re.MULTILINE)
 
@@ -55,8 +55,12 @@ def loading_rows(job_dir: Path) -> list[dict]:
     for trial_dir in sorted(p.parent for p in job_dir.glob("*/result.json")):
         by_task.setdefault(trial_task(trial_dir), []).append(trial_skills(trial_dir))
     return [
-        {"task": task, "trials": len(runs), "loaded": sum(1 for skills in runs if skills),
-         "skills": Counter(chain.from_iterable(runs))}
+        {
+            "task": task,
+            "trials": len(runs),
+            "loaded": sum(1 for skills in runs if skills),
+            "skills": Counter(chain.from_iterable(runs)),
+        }
         for task, runs in sorted(by_task.items())
     ]
 

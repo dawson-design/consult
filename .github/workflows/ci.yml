@@ -14,23 +14,36 @@ jobs:
       # Tcl expect drives the setup.sh confirmation tests. Without it those tests
       # skip, so install it here to make sure they actually run somewhere.
       #
-      # Do NOT install GNU Stow. tests/setup-sh.test.mjs asserts that setup.sh
+      # Do NOT install GNU Stow. tests/test_setup_sh.py asserts that setup.sh
       # refuses to run when stow is missing, using PATH=/usr/bin:/bin — a runner
       # with stow in /usr/bin breaks that test.
       - name: Install expect
         run: sudo apt-get update && sudo apt-get install -y expect
 
-      - uses: pnpm/action-setup@v4
-
+      # Node serves only eval/verifier/tests/test_hidden_checks.py, which runs
+      # the eval's JS hidden checks. The repo's own tooling is Python.
       - uses: actions/setup-node@v5
         with:
           node-version: 22
-          cache: pnpm
 
-      # `eval/` is a separate uv project, not a workspace package, so a plain
-      # install is expected to succeed here. If this step fails, the
-      # clean-clone contract is broken.
-      - run: pnpm install --frozen-lockfile
+      # ruff is pinned in the root pyproject.toml and uv.lock. setup-uv
+      # publishes no floating major tag, so pin the release.
+      - uses: astral-sh/setup-uv@v10.3.0
+
+      # lychee checks local Markdown links and anchors (make links), and the
+      # pre-commit tests expect it on PATH. Pinned release binary, verified
+      # against its published SHA-256.
+      - name: Install lychee
+        run: |
+          curl -sSfL -o "$RUNNER_TEMP/lychee.tar.gz" \
+            https://github.com/lycheeverse/lychee/releases/download/lychee-v0.24.2/lychee-x86_64-unknown-linux-gnu.tar.gz
+          echo "1f4e0ef7f6554a6ed33dd7ac144fb2e1bbed98598e7af973042fc5cd43951c9a  $RUNNER_TEMP/lychee.tar.gz" | sha256sum -c -
+          tar xzf "$RUNNER_TEMP/lychee.tar.gz" -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/lychee-x86_64-unknown-linux-gnu" >> "$GITHUB_PATH"
+
+      - name: Python lint and format
+        if: ${{ !cancelled() }}
+        run: make lint
 
       # The Harbor verifier is vendored into every eval task; this fails when a
       # copy drifts from eval/verifier/. Standard library only, no Docker.
@@ -48,28 +61,24 @@ jobs:
       # cheap deterministic checks run first: skill prose is the common change,
       # and the validator is what covers it.
       - name: Skill anatomy and mirror drift
-        run: node scripts/validate-skill-anatomy.mjs
+        run: python3 scripts/validate_skill_anatomy.py
 
       - name: Validator self-test
         if: ${{ !cancelled() }}
-        run: node scripts/validate-skill-anatomy.mjs --self-test
+        run: python3 scripts/validate_skill_anatomy.py --self-test
 
       - name: Markdown links
         if: ${{ !cancelled() }}
-        run: pnpm run check:links
+        run: make links
 
+      # The setup.sh confirmation tests skip without expect. They must not
+      # silently skip on CI, so a skip anywhere fails this step.
       - name: Repo tests
         if: ${{ !cancelled() }}
-        run: pnpm test
-
-      # The confirmation tests must not silently skip on CI. If expect went
-      # missing, this catches it rather than letting coverage quietly drop.
-      - name: Assert setup.sh confirmation tests ran
-        if: ${{ !cancelled() }}
         run: |
-          if ! pnpm test 2>&1 | tee /tmp/vitest.log; then exit 1; fi
-          if grep -qE '[0-9]+ skipped' /tmp/vitest.log; then
-            echo "::error::tests skipped on CI -- expect is probably missing"
-            grep -E 'skipped' /tmp/vitest.log
+          set -o pipefail
+          python3 -m unittest discover -s tests 2>&1 | tee "$RUNNER_TEMP/unittest.log"
+          if grep -q 'skipped=' "$RUNNER_TEMP/unittest.log"; then
+            echo "::error::unittest skipped tests on CI -- expect is probably missing"
             exit 1
           fi

@@ -1,6 +1,6 @@
 """The rule calibration sheet: exporting rule verdicts to label, and agreement once labelled.
 
-  python3 -m unittest discover eval/verifier/tests
+python3 -m unittest discover eval/verifier/tests
 """
 
 from __future__ import annotations
@@ -18,7 +18,7 @@ from unittest import mock
 EVAL_DIR = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(EVAL_DIR / "scripts"))
 
-import rule_labels  # noqa: E402
+import rule_labels
 
 
 def write_rule_trial(job: Path, task: str, n: int, rules: dict[str, float], steps: tuple[str, ...] = ()) -> Path:
@@ -53,8 +53,10 @@ class ExportTests(unittest.TestCase):
     def test_export_writes_one_row_per_rule_verdict_with_the_rule_text_and_evidence(self):
         trial = write_rule_trial(self.root / "bare", "bug-from-symptom", 0, {"workflow.1": 0.0, "debugging.1": 1.0})
         rows = self.export(self.root / "bare")
-        self.assertEqual([(r["job"], r["rule"], r["automated"]) for r in rows],
-                         [("bare", "debugging.1", "1.0"), ("bare", "workflow.1", "0.0")])
+        self.assertEqual(
+            [(r["job"], r["rule"], r["automated"]) for r in rows],
+            [("bare", "debugging.1", "1.0"), ("bare", "workflow.1", "0.0")],
+        )
         self.assertTrue(rows[1]["rule_text"].startswith("Ask more of the user when changes affect more code"))
         self.assertEqual(rows[0]["evidence_dir"], str(trial.resolve()))
         self.assertEqual((rows[0]["proposed"], rows[0]["human"]), ("", ""))
@@ -74,7 +76,9 @@ class ExportTests(unittest.TestCase):
 
     def test_a_multi_step_trial_points_at_its_final_steps_evidence(self):
         trial = write_rule_trial(self.root / "consult", "money-field-change", 0, {"api.1": 1.0}, ("brief", "build"))
-        self.assertEqual(self.export(self.root / "consult")[0]["evidence_dir"], str((trial / "steps" / "build").resolve()))
+        self.assertEqual(
+            self.export(self.root / "consult")[0]["evidence_dir"], str((trial / "steps" / "build").resolve())
+        )
 
     def test_sign_off_rules_and_tasks_without_rules_are_left_out(self):
         """Sign-off rules never score in the rules dimension, so their rows cannot inform its weight."""
@@ -85,7 +89,9 @@ class ExportTests(unittest.TestCase):
     def test_export_reads_every_job_given(self):
         write_rule_trial(self.root / "bare", "bug-from-symptom", 0, {"debugging.1": 0.0})
         write_rule_trial(self.root / "consult", "bug-from-symptom", 0, {"debugging.1": 1.0})
-        self.assertEqual([r["job"] for r in self.export(self.root / "bare", self.root / "consult")], ["bare", "consult"])
+        self.assertEqual(
+            [r["job"] for r in self.export(self.root / "bare", self.root / "consult")], ["bare", "consult"]
+        )
 
     def test_export_refuses_to_overwrite_a_sheet(self):
         write_rule_trial(self.root / "bare", "bug-from-symptom", 0, {"debugging.1": 0.0})
@@ -122,9 +128,18 @@ class AgreementTests(unittest.TestCase):
         return sheet
 
     def test_agreement_counts_matches_false_passes_and_false_fails(self):
-        rows = rule_labels.read_sheet(self.sheet([("api.1", "1.0", "pass"), ("api.1", "0.0", "fail"),
-                                                  ("api.1", "1.0", "fail"), ("api.1", "0.0", "Pass"),
-                                                  ("api.1", "1.0", ""), ("workflow.1", "0.0", "fail")]))
+        rows = rule_labels.read_sheet(
+            self.sheet(
+                [
+                    ("api.1", "1.0", "pass"),
+                    ("api.1", "0.0", "fail"),
+                    ("api.1", "1.0", "fail"),
+                    ("api.1", "0.0", "Pass"),
+                    ("api.1", "1.0", ""),
+                    ("workflow.1", "0.0", "fail"),
+                ]
+            )
+        )
         result = rule_labels.agreement(rows)
         self.assertEqual(result["api.1"], {"labelled": 4, "agree": 2, "false_pass": 1, "false_fail": 1})
         self.assertEqual(result["workflow.1"]["agree"], 1)

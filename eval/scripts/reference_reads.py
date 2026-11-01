@@ -34,11 +34,12 @@ from pathlib import Path
 EVAL_DIR = Path(__file__).resolve().parent.parent
 SKILLS_DIR = EVAL_DIR.parent / "agents" / ".agents" / "skills"
 sys.path.insert(0, str(EVAL_DIR / "verifier" / "shared"))
-import consult_lib as cl  # noqa: E402
+import consult_lib as cl
 
 REFERENCE_SUFFIXES = (".md", ".yaml", ".yml")
 REFERENCE_PATH_RE = re.compile(
-    r"skills/([a-z][a-z0-9-]*/references/[\w./-]+\.(?:" + "|".join(s[1:] for s in REFERENCE_SUFFIXES) + "))")
+    r"skills/([a-z][a-z0-9-]*/references/[\w./-]+\.(?:" + "|".join(s[1:] for s in REFERENCE_SUFFIXES) + "))"
+)
 
 
 def trial_references(trial_dir: Path) -> set[str]:

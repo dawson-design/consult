@@ -33,7 +33,7 @@ def parse_bundle(text: str) -> Bundle:
     """The diff and new files consult_lib.build_bundle wrote; RebuildError when truncated or malformed."""
     if not text.startswith(BUNDLE_HEAD):
         raise RebuildError("bundle does not start with the diff section")
-    blocks = SECTION_BREAK_RE.split(text[len(BUNDLE_HEAD) - 1:])
+    blocks = SECTION_BREAK_RE.split(text[len(BUNDLE_HEAD) - 1 :])
     if len(blocks) < 2 or not blocks[-1].startswith(FINAL_HEAD):
         raise RebuildError("bundle is truncated: no final agent message section")
     return Bundle(diff=blocks[0][1:], new_files=tuple(parse_new_file(b) for b in blocks[1:-1]))
@@ -43,4 +43,4 @@ def parse_new_file(block: str) -> tuple[str, str]:
     header, fence, content = block.partition("\n\n```\n")
     if not header.startswith(NEW_FILE_HEAD) or not fence:
         raise RebuildError(f"bundle has a malformed section: {header[:80]!r}")
-    return header[len(NEW_FILE_HEAD):], content
+    return header[len(NEW_FILE_HEAD) :], content

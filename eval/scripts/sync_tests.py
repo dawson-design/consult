@@ -46,7 +46,7 @@ TASKS_DIR = EVAL_DIR / "tasks"
 SHARED_DIR = EVAL_DIR / "verifier" / "shared"
 HIDDEN_DIR = EVAL_DIR / "verifier" / "hidden"
 sys.path.insert(0, str(SHARED_DIR))
-from consult_rules import scored_rule_ids  # noqa: E402
+from consult_rules import scored_rule_ids
 
 # task.toml step names; a regex, not tomllib, so CI's and macOS's python3 both run this.
 STEP_NAME_RE = re.compile(r'^\[\[steps\]\]\s*\n\s*name\s*=\s*"([^"]+)"', re.MULTILINE)
@@ -95,7 +95,9 @@ def reward_toml(task: Path, kind: str) -> bytes:
         return shared.encode()
     zeroed, count = RULES_WEIGHT_RE.subn(r"\g<1>0.0", shared)
     if count != 1:
-        raise SystemExit(f"reward.{kind}.toml must name the rules weight once to zero it for {task.name}; found {count}")
+        raise SystemExit(
+            f"reward.{kind}.toml must name the rules weight once to zero it for {task.name}; found {count}"
+        )
     return zeroed.encode()
 
 
@@ -104,15 +106,19 @@ def step_names(task: Path) -> list[str]:
 
 
 def dimension_copies(dimension: str, dest_dir: Path) -> list[tuple[Path, Path]]:
-    return [(source, dest_dir / source.name) for source in sorted((SHARED_DIR / dimension).iterdir()) if source.is_file()]
+    return [
+        (source, dest_dir / source.name) for source in sorted((SHARED_DIR / dimension).iterdir()) if source.is_file()
+    ]
 
 
 def judge_instruction(task: Path, steps: list[str]) -> Path | bytes:
     """The prompt the judge sees: the task instruction, or each step's instruction in order."""
     if not steps:
         return task / "instruction.md"
-    parts = [f"## Turn {i}: {name}\n\n{(task / 'steps' / name / 'instruction.md').read_text().strip()}\n"
-             for i, name in enumerate(steps, start=1)]
+    parts = [
+        f"## Turn {i}: {name}\n\n{(task / 'steps' / name / 'instruction.md').read_text().strip()}\n"
+        for i, name in enumerate(steps, start=1)
+    ]
     return "\n".join(parts).encode()
 
 

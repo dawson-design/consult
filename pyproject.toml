@@ -1,0 +1,35 @@
+# Maintainer tooling for the Consult skill pack: the Python dev tools (ruff)
+# and the lint configuration for every repo-owned Python file. `eval/` is a
+# separate uv project with its own dependencies; ruff reads this file for
+# eval/ too, because eval/pyproject.toml has no [tool.ruff] section.
+
+[project]
+name = "consult-tooling"
+version = "0.0.0"
+description = "Maintainer tooling for the Consult skill pack."
+requires-python = ">=3.12"
+dependencies = []
+
+[dependency-groups]
+dev = ["ruff==0.17.2"]
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+line-length = 120
+# The verifier under eval/verifier/shared runs inside the task containers,
+# whose Debian bookworm python3 is 3.11, so fixes must not need 3.12.
+target-version = "py311"
+# Vendored verifier copies are regenerated from eval/verifier/ by
+# eval/scripts/sync_tests.py, and fixtures are deliberate task content.
+extend-exclude = [
+  "eval/tasks",
+  "eval/triggers/fixtures",
+  "eval/verifier/tests/fixtures",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Test classes keep per-case fixtures as class attributes that no test
+# mutates; ClassVar annotations on each would add noise and no safety.
+"eval/verifier/tests/*" = ["RUF012"]

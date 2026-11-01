@@ -1,12 +1,13 @@
 # Synced from eval/verifier/shared/rules/rules.py. Do not edit in tests/.
 """One criterion per rule id in consult.json `rules`, named by the id. Zero-weight readout."""
+
 import sys
 from pathlib import Path
 
 sys.path.insert(0, "/tests")
-import consult_lib as cl  # noqa: E402
-import consult_rules as cr  # noqa: E402
-from rewardkit import criteria, criterion  # noqa: E402
+import consult_lib as cl
+import consult_rules as cr
+from rewardkit import criteria, criterion
 
 
 @criterion

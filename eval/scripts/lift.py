@@ -65,8 +65,8 @@ from pathlib import Path
 EVAL_DIR = Path(__file__).resolve().parent.parent
 TASKS_DIR = EVAL_DIR / "tasks"
 sys.path.insert(0, str(EVAL_DIR / "verifier" / "shared"))
-import consult_lib as cl  # noqa: E402
-from bundle import RebuildError, parse_bundle  # noqa: E402
+import consult_lib as cl
+from bundle import RebuildError, parse_bundle
 
 MODES = ("stopped", "provisional", "built")
 READOUTS = ("skill_triggering", "non_interruption")
@@ -76,13 +76,22 @@ BOOTSTRAP_ROUNDS = 2000
 WEIGHTS_RE = re.compile(r"^weights\s*=\s*\{(.*)\}", re.MULTILINE)
 WEIGHT_RE = re.compile(r"(\w+)\s*=\s*([0-9.]+)")
 COST_METRICS = ("output_tokens", "cost_usd", "agent_seconds", "turns", "lines_changed", "questions")
-COST_LABELS = {"output_tokens": ("output tokens", ",.0f"), "cost_usd": ("cost (USD)", ",.2f"),
-               "agent_seconds": ("agent seconds", ",.0f"), "turns": ("turns", ",.1f"),
-               "lines_changed": ("lines changed", ",.0f"), "questions": ("questions", ",.2f")}
-COST_NOTE = ("Each metric averages over the tasks where both arms recorded it. Cost is the agent's API-equivalent "
-             "estimate; these runs bill a subscription. Questions count agent messages that end in a question after "
-             "the last user turn, the gate-fatigue number.")
-JUDGE_EXCLUDED_NOTE = "Rewards exclude the judge: one job ran without it, so both are scored on deterministic dimensions."
+COST_LABELS = {
+    "output_tokens": ("output tokens", ",.0f"),
+    "cost_usd": ("cost (USD)", ",.2f"),
+    "agent_seconds": ("agent seconds", ",.0f"),
+    "turns": ("turns", ",.1f"),
+    "lines_changed": ("lines changed", ",.0f"),
+    "questions": ("questions", ",.2f"),
+}
+COST_NOTE = (
+    "Each metric averages over the tasks where both arms recorded it. Cost is the agent's API-equivalent "
+    "estimate; these runs bill a subscription. Questions count agent messages that end in a question after "
+    "the last user turn, the gate-fatigue number."
+)
+JUDGE_EXCLUDED_NOTE = (
+    "Rewards exclude the judge: one job ran without it, so both are scored on deterministic dimensions."
+)
 
 
 def load_trials(job_dir: Path) -> dict[str, list[dict]]:
@@ -235,7 +244,9 @@ def low_tail(entries: list[dict]) -> float:
 
 def suite_delta(before: dict[str, list[dict]], after: dict[str, list[dict]], tasks: list[str]) -> tuple[float, float]:
     """(mean reward change, mean floor-rate change) across tasks, each task weighted equally."""
-    reward = statistics.fmean(mean_reward(after.get(t, []), "reward") - mean_reward(before.get(t, []), "reward") for t in tasks)
+    reward = statistics.fmean(
+        mean_reward(after.get(t, []), "reward") - mean_reward(before.get(t, []), "reward") for t in tasks
+    )
     floor = statistics.fmean(floor_rate(after.get(t, [])) - floor_rate(before.get(t, [])) for t in tasks)
     return reward, floor
 
@@ -251,14 +262,23 @@ def compare(before: dict[str, list[dict]], after: dict[str, list[dict]], seed: i
     intervals are None when resampling cannot estimate spread (see estimable).
     """
     tasks = sorted(t for t in after if before.get(t) and after[t])
-    result = {"tasks": tasks, "missing": sorted(t for t in after if not before.get(t)),
-              "reward": 0.0, "floor_rate": 0.0, "reward_interval": None, "floor_rate_interval": None}
+    result = {
+        "tasks": tasks,
+        "missing": sorted(t for t in after if not before.get(t)),
+        "reward": 0.0,
+        "floor_rate": 0.0,
+        "reward_interval": None,
+        "floor_rate_interval": None,
+    }
     if not tasks:
         return result
     result["reward"], result["floor_rate"] = suite_delta(before, after, tasks)
     if estimable(before, after, tasks):
         rng = random.Random(seed)
-        draws = [suite_delta(resample(before, tasks, rng), resample(after, tasks, rng), tasks) for _ in range(BOOTSTRAP_ROUNDS)]
+        draws = [
+            suite_delta(resample(before, tasks, rng), resample(after, tasks, rng), tasks)
+            for _ in range(BOOTSTRAP_ROUNDS)
+        ]
         result["reward_interval"] = interval([d[0] for d in draws])
         result["floor_rate_interval"] = interval([d[1] for d in draws])
     return result
@@ -339,10 +359,15 @@ def summarize(bare: dict[str, list[dict]], consult: dict[str, list[dict]]) -> di
         row["lift"] = row["consult"] - row["bare"]
         rows.append(row)
     suite = compare(bare, consult)
-    return {"tasks": rows, "suite_lift": suite["reward"], "suite": suite, "judge_excluded": judge_excluded,
-            "cost": {m: compare_cost(bare, consult, m) for m in COST_METRICS},
-            "rules": rule_scorecard(bare, consult),
-            "skills": [skill_row(t, bare.get(t, []), consult.get(t, [])) for t in tasks]}
+    return {
+        "tasks": rows,
+        "suite_lift": suite["reward"],
+        "suite": suite,
+        "judge_excluded": judge_excluded,
+        "cost": {m: compare_cost(bare, consult, m) for m in COST_METRICS},
+        "rules": rule_scorecard(bare, consult),
+        "skills": [skill_row(t, bare.get(t, []), consult.get(t, [])) for t in tasks],
+    }
 
 
 def mean_cost(entries: list[dict], metric: str) -> float | None:
@@ -370,8 +395,10 @@ def compare_cost(bare: dict[str, list[dict]], consult: dict[str, list[dict]], me
     result = {"bare": before, "consult": after, "change": after - before, "interval": None, "tasks": len(tasks)}
     if values_estimable([b[t] for t in tasks] + [c[t] for t in tasks]):
         rng = random.Random(seed)
-        draws = [suite_means(resample_values(c, tasks, rng), tasks) - suite_means(resample_values(b, tasks, rng), tasks)
-                 for _ in range(BOOTSTRAP_ROUNDS)]
+        draws = [
+            suite_means(resample_values(c, tasks, rng), tasks) - suite_means(resample_values(b, tasks, rng), tasks)
+            for _ in range(BOOTSTRAP_ROUNDS)
+        ]
         result["interval"] = interval(draws)
     return result
 
@@ -445,8 +472,10 @@ def render_markdown(summary: dict, bare_dir: Path, consult_dir: Path) -> str:
     lines = [
         f"# Lift: {consult_dir.name} vs {bare_dir.name}",
         "",
-        "| task | bare | consult | lift | floor rate (bare / consult) | p25 (bare / consult) "
-        "| skill_triggering (consult) | non_interruption (bare / consult) |",
+        (
+            "| task | bare | consult | lift | floor rate (bare / consult) | p25 (bare / consult) "
+            "| skill_triggering (consult) | non_interruption (bare / consult) |"
+        ),
         "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
     ]
     for row in summary["tasks"]:
@@ -462,9 +491,7 @@ def render_markdown(summary: dict, bare_dir: Path, consult_dir: Path) -> str:
         lines += [JUDGE_EXCLUDED_NOTE, ""]
     for row in summary["tasks"]:
         if row["dimensions"]:
-            dims = ", ".join(
-                f"{d} {v['bare']:.2f}->{v['consult']:.2f}" for d, v in row["dimensions"].items()
-            )
+            dims = ", ".join(f"{d} {v['bare']:.2f}->{v['consult']:.2f}" for d, v in row["dimensions"].items())
             lines.append(f"- {row['task']}: {dims}")
         if row["failed"]:
             lines.append(f"- {row['task']}: no reward for {', '.join(row['failed'])}")
@@ -476,8 +503,13 @@ def render_cost(cost: dict[str, dict]) -> list[str]:
     rows = [render_cost_row(m, cost[m]) for m in COST_METRICS if cost[m]["change"] is not None]
     if not rows:
         return []
-    header = ["", "## Cost and effort", "", "| metric | tasks | bare | consult | change | 90% interval |",
-              "| --- | ---: | ---: | ---: | ---: | --- |"]
+    header = [
+        "",
+        "## Cost and effort",
+        "",
+        "| metric | tasks | bare | consult | change | 90% interval |",
+        "| --- | ---: | ---: | ---: | ---: | --- |",
+    ]
     return header + rows + ["", COST_NOTE]
 
 
@@ -487,8 +519,11 @@ def render_cost_row(metric: str, result: dict) -> str:
     if result["bare"]:
         change += f" ({result['change'] / result['bare']:+.0%})"
     bounds = result["interval"]
-    spread = "no interval" if bounds is None else (
-        f"{format(bounds[0], '+' + spec)} to {format(bounds[1], '+' + spec)}, {noise_verdict(*bounds)}")
+    spread = (
+        "no interval"
+        if bounds is None
+        else (f"{format(bounds[0], '+' + spec)} to {format(bounds[1], '+' + spec)}, {noise_verdict(*bounds)}")
+    )
     means = f"{format(result['bare'], spec)} | {format(result['consult'], spec)}"
     return f"| {label} | {result['tasks']} | {means} | {change} | {spread} |"
 
@@ -496,8 +531,10 @@ def render_cost_row(metric: str, result: dict) -> str:
 def render_comparison(result: dict, label: str, before: str = "the earlier job") -> list[str]:
     lines = [
         f"{label}: {result['reward']:+.3f} ({interval_text(result['reward_interval'], '+.3f')})",
-        f"Floor rate change: {result['floor_rate']:+.0%} ({interval_text(result['floor_rate_interval'], '+.0%')}). "
-        f"Below the floor means verification failed or reward < {FLOOR_REWARD}.",
+        (
+            f"Floor rate change: {result['floor_rate']:+.0%} ({interval_text(result['floor_rate_interval'], '+.0%')}). "
+            f"Below the floor means verification failed or reward < {FLOOR_REWARD}."
+        ),
     ]
     if result["missing"]:
         lines.append(f"Left out, no trials in {before}: {', '.join(result['missing'])}")
@@ -516,16 +553,22 @@ def noise_verdict(lo: float, hi: float) -> str:
 
 
 def render_regression(result: dict, baseline_dir: Path) -> list[str]:
-    return ["", f"## Against the earlier Consult job {baseline_dir.name}", "",
-            *render_comparison(result, "Reward change")]
+    return [
+        "",
+        f"## Against the earlier Consult job {baseline_dir.name}",
+        "",
+        *render_comparison(result, "Reward change"),
+    ]
 
 
 def aligned_comparison(before: dict[str, list[dict]], after: dict[str, list[dict]]) -> dict:
     """compare() after judge alignment, plus each compared task's mean reward in both jobs."""
     before, after, judge_excluded = align(before, after)
     result = compare(before, after)
-    rows = [{"task": t, "before": mean_reward(before[t], "reward"), "after": mean_reward(after[t], "reward")}
-            for t in result["tasks"]]
+    rows = [
+        {"task": t, "before": mean_reward(before[t], "reward"), "after": mean_reward(after[t], "reward")}
+        for t in result["tasks"]
+    ]
     failed = failed_trials(chain.from_iterable(before[t] + after[t] for t in result["tasks"]))
     return {**result, "judge_excluded": judge_excluded, "rows": rows, "failed": failed}
 
@@ -537,8 +580,10 @@ def stub_comparisons(bare: dict[str, list[dict]], stub: dict[str, list[dict]], c
 
 def content_verdict(result: dict) -> str:
     if result["failed"]:
-        return ("Verdict: withheld, failed trials are listed above. "
-                "Rerun them before reading the change as a skill-content effect.")
+        return (
+            "Verdict: withheld, failed trials are listed above. "
+            "Rerun them before reading the change as a skill-content effect."
+        )
     if result["reward_interval"] is None:
         return "Verdict: no interval, so this run cannot say whether skill content changes the reward."
     lo, hi = result["reward_interval"]
@@ -551,14 +596,25 @@ def content_verdict(result: dict) -> str:
 
 def render_stub(comparisons: dict) -> list[str]:
     content, listing = comparisons["content"], comparisons["listing"]
-    return [*arm_section("Skill content: consult vs stub", content, "stub", "consult"), content_verdict(content),
-            *arm_section("Listing and hook: stub vs bare", listing, "bare", "stub")]
+    return [
+        *arm_section("Skill content: consult vs stub", content, "stub", "consult"),
+        content_verdict(content),
+        *arm_section("Listing and hook: stub vs bare", listing, "bare", "stub"),
+    ]
 
 
 def arm_section(title: str, result: dict, before: str, after: str) -> list[str]:
-    lines = ["", f"## {title}", "", f"| task | {before} | {after} | {after} - {before} |", "| --- | ---: | ---: | ---: |"]
-    lines += [f"| {r['task']} | {r['before']:.3f} | {r['after']:.3f} | {r['after'] - r['before']:+.3f} |"
-              for r in result["rows"]]
+    lines = [
+        "",
+        f"## {title}",
+        "",
+        f"| task | {before} | {after} | {after} - {before} |",
+        "| --- | ---: | ---: | ---: |",
+    ]
+    lines += [
+        f"| {r['task']} | {r['before']:.3f} | {r['after']:.3f} | {r['after'] - r['before']:+.3f} |"
+        for r in result["rows"]
+    ]
     lines += ["", *render_comparison(result, "Reward change", f"the {before} job")]
     if result["failed"]:
         lines.append(f"Failed trials (no reward counts as 0): {', '.join(result['failed'])}")
@@ -568,7 +624,13 @@ def arm_section(title: str, result: dict, before: str, after: str) -> list[str]:
 def render_rules(rows: list[dict]) -> list[str]:
     if not rows:
         return []
-    lines = ["", "## Rules", "", "| rule | tasks | bare pass | consult pass | lift |", "| --- | ---: | ---: | ---: | ---: |"]
+    lines = [
+        "",
+        "## Rules",
+        "",
+        "| rule | tasks | bare pass | consult pass | lift |",
+        "| --- | ---: | ---: | ---: | ---: |",
+    ]
     lines += [
         f"| {r['rule']} | {r['tasks']} | {rate(r['bare'], '.2f')} | {rate(r['consult'], '.2f')} | {rate(r['lift'], '+.2f')} |"
         for r in rows
@@ -581,8 +643,13 @@ def rate(value: float | None, spec: str) -> str:
 
 
 def render_skills(rows: list[dict]) -> list[str]:
-    lines = ["", "## Skills (consult arm)", "",
-             "| task | fired | missed | silent violations | signoff_mode (bare / consult) |", "| --- | --- | --- | --- | --- |"]
+    lines = [
+        "",
+        "## Skills (consult arm)",
+        "",
+        "| task | fired | missed | silent violations | signoff_mode (bare / consult) |",
+        "| --- | --- | --- | --- | --- |",
+    ]
     for r in rows:
         modes = f"{format_modes(r['signoff_mode']['bare'])} / {format_modes(r['signoff_mode']['consult'])}"
         lines.append(

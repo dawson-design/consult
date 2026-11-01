@@ -52,12 +52,34 @@ SKILL_PATH_RE = re.compile(r"skills/([a-z][a-z0-9-]*)/SKILL\.md")
 SKILL_BASE_DIR_RE = re.compile(r"Base directory for this skill: \S*/skills/([a-z][a-z0-9-]*)(?![\w/.-])")
 # The directory names under agents/.agents/skills. The verifier runs where the
 # repo is absent; test_skill_detection.py fails when this list drifts.
-CONSULT_SKILLS = frozenset({
-    "api", "architecture", "async-systems", "code-review", "commit", "contract-first", "database",
-    "debugging", "documentation", "domain-modeling", "error-handling", "git-workflow", "issue-tracking",
-    "observability", "official-source-check", "performance", "proof", "refactoring", "release", "scaffolding",
-    "security", "specify", "ui-design", "workflow",
-})
+CONSULT_SKILLS = frozenset(
+    {
+        "api",
+        "architecture",
+        "async-systems",
+        "code-review",
+        "commit",
+        "contract-first",
+        "database",
+        "debugging",
+        "documentation",
+        "domain-modeling",
+        "error-handling",
+        "git-workflow",
+        "issue-tracking",
+        "observability",
+        "official-source-check",
+        "performance",
+        "proof",
+        "refactoring",
+        "release",
+        "scaffolding",
+        "security",
+        "specify",
+        "ui-design",
+        "workflow",
+    }
+)
 # `node --test` and `npm run -s test` may carry flags; `--test-name-pattern` alone is not a test run.
 POST_WRITE_PROOF_RE = re.compile(
     r"\b(npm\s+test|npm\s+run\s+(-\S+\s+)*(test|typecheck|lint|check)|vitest|pytest|go\s+test|cargo\s+test|mvn\s+test"
@@ -222,8 +244,7 @@ def reported_exit_code(text: str) -> int | None:
 def normalize_path(path: str) -> str:
     path = path.strip().strip("'\"")
     for prefix in ("/app/", "./"):
-        if path.startswith(prefix):
-            path = path[len(prefix):]
+        path = path.removeprefix(prefix)
     return path
 
 
@@ -340,7 +361,7 @@ def _test_offsets(raw: str, tests: re.Pattern) -> list[int]:
     functions = [m for m in SHELL_FUNCTION_RE.finditer(mask) if tests.search(m[0])]
     direct = [m.start() for m in tests.finditer(mask) if not _in_function(m.start(), functions)]
     wrappers = SHELL_WRAPPER_RE.finditer(mask)
-    wrapped = [m.start() for m in wrappers if tests.search(_mask_quotes(raw[m.start(2):m.end(2)]))]
+    wrapped = [m.start() for m in wrappers if tests.search(_mask_quotes(raw[m.start(2) : m.end(2)]))]
     return direct + wrapped + _function_calls(raw, mask, functions)
 
 
@@ -397,7 +418,7 @@ def _mask_quotes(text: str) -> str:
 def _shell_words(raw: str, segment: re.Match) -> list[str]:
     """A segment's words, split on the quote-masked text and read from the raw text."""
     base = segment.start()
-    return [raw[base + w.start():base + w.end()] for w in re.finditer(r"\S+", segment[0])]
+    return [raw[base + w.start() : base + w.end()] for w in re.finditer(r"\S+", segment[0])]
 
 
 def _segment_targets(text: str, raw: str, segment: re.Match, words: list[str], count_copies: bool) -> list[str]:
@@ -408,7 +429,7 @@ def _segment_targets(text: str, raw: str, segment: re.Match, words: list[str], c
 def _redirect_targets(raw: str, segment: re.Match) -> list[str]:
     base = segment.start()
     matches = REDIRECT_TARGET_RE.finditer(segment[0])
-    return [raw[base + m.start(m.lastindex):base + m.end(m.lastindex)] for m in matches]
+    return [raw[base + m.start(m.lastindex) : base + m.end(m.lastindex)] for m in matches]
 
 
 def _in_place_targets(words: list[str]) -> list[str]:
@@ -417,7 +438,7 @@ def _in_place_targets(words: list[str]) -> list[str]:
     With no file operand the files come from xargs, so the target is the current directory.
     """
     editor = next((word for word in words if word in IN_PLACE_EDITORS), None)
-    args = words[words.index(editor) + 1:] if editor else []
+    args = words[words.index(editor) + 1 :] if editor else []
     if not any(IN_PLACE_FLAG_RE.match(word) for word in args):
         return []
     operands, has_script_flag, skip_next = [], False, False
@@ -445,7 +466,7 @@ def _script_writes(text: str, segment: re.Match, words: list[str]) -> list[str]:
     if not words or words[0] not in INTERPRETERS:
         return []
     bodies = [m[4] for m in HEREDOC_RE.finditer(text) if segment.start() <= m.start() < segment.end()]
-    script = "\n".join([text[segment.start():segment.end()], *bodies])
+    script = "\n".join([text[segment.start() : segment.end()], *bodies])
     return [_script_target(script, m["open"] or m["path"] or m["call"]) for m in SCRIPT_WRITE_RE.finditer(script)]
 
 
@@ -465,7 +486,7 @@ def _assignments(words: list[str]) -> dict[str, list[str]]:
     if len(words) > 2 and words[0] == "for" and words[2] == "in":
         return {words[1]: [word.strip("'\"") for word in words[3:]]}
     if "read" in words:
-        return {word: ["."] for word in words[words.index("read") + 1:] if not word.startswith("-")}
+        return {word: ["."] for word in words[words.index("read") + 1 :] if not word.startswith("-")}
     return {m[1]: [m[2].strip("'\"")] for m in map(ASSIGNMENT_RE.fullmatch, words) if m}
 
 
@@ -478,7 +499,7 @@ def _expand_target(target: str, variables: dict[str, list[str]]) -> list[str]:
     match = next((m for m in VARIABLE_RE.finditer(target) if m[1] in variables), None)
     if match is None:
         return [target]
-    return [target[:match.start()] + value + target[match.end():] for value in variables[match[1]]]
+    return [target[: match.start()] + value + target[match.end() :] for value in variables[match[1]]]
 
 
 def _cd_in_workspace(args: list[str], current: bool) -> bool:
@@ -529,7 +550,9 @@ def run_command(workspace: Path, argv: list[str], timeout: int) -> tuple[bool, s
     """Run agent-influenced code (tests, npm scripts, the app) without the verifier's credentials."""
     env = {k: v for k, v in os.environ.items() if not CREDENTIAL_ENV_RE.search(k)}
     try:
-        result = subprocess.run(argv, cwd=workspace, env=env, capture_output=True, text=True, timeout=timeout, check=False)
+        result = subprocess.run(
+            argv, cwd=workspace, env=env, capture_output=True, text=True, timeout=timeout, check=False
+        )
     except subprocess.TimeoutExpired:
         return False, f"timed out after {timeout}s: {' '.join(argv)}"
     return result.returncode == 0, (result.stdout + result.stderr)[-4000:]
@@ -579,7 +602,7 @@ def judge_credentials_present() -> bool:
     judge = os.environ.get("REWARDKIT_JUDGE", "claude-code")
     if judge.startswith("anthropic/") or judge.lower().startswith("claude"):
         return bool(os.environ.get("CLAUDE_CODE_OAUTH_TOKEN") or os.environ.get("ANTHROPIC_API_KEY"))
-    if judge.startswith("openai/") or judge.startswith("gpt"):
+    if judge.startswith(("openai/", "gpt")):
         return bool(os.environ.get("OPENAI_API_KEY"))
     return True
 

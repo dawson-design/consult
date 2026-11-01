@@ -187,7 +187,7 @@ Consult setup will:
   - link individual Consult skills into ~/.codeium/windsurf/skills when Windsurf is installed
   - prune stale Consult-owned skill links and legacy command links
   - ask before replacing conflicting symlinks or moving real directories
-  - sync plugin/ skill links when node is available
+  - sync plugin/ skill links when python3 is available
 
 It will not overwrite real skill directories or third-party symlinks without
 showing the exact path and asking again.
@@ -411,15 +411,15 @@ prune_stale_command_links() {
 prune_stale_command_links "$HOME/.claude/commands"
 prune_stale_command_links "$HOME/.codex/prompts"
 
-# Sync the in-repo Claude Code / Codex plugin mirror for maintainers when Node
-# is available. End-user installs use the committed plugin mirror.
-GENERATE_PLUGIN="$REPO_ROOT/scripts/generate-plugin-symlinks.mjs"
-if [ -f "$GENERATE_PLUGIN" ] && command -v node >/dev/null 2>&1; then
+# Sync the in-repo Claude Code / Codex plugin mirror for maintainers when
+# python3 is available. End-user installs use the committed plugin mirror.
+GENERATE_PLUGIN="$REPO_ROOT/scripts/generate_plugin_symlinks.py"
+if [ -f "$GENERATE_PLUGIN" ] && command -v python3 >/dev/null 2>&1; then
 	echo ""
-	(cd "$REPO_ROOT" && node "$GENERATE_PLUGIN" "$REPO_ROOT")
+	(cd "$REPO_ROOT" && python3 "$GENERATE_PLUGIN" "$REPO_ROOT")
 elif [ -f "$GENERATE_PLUGIN" ]; then
 	echo ""
-	echo "node not found; skipping maintainer-only plugin sync"
+	echo "python3 not found; skipping maintainer-only plugin sync"
 fi
 
 echo "Done."

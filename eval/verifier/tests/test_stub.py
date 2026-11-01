@@ -1,6 +1,6 @@
 """Stub skills: the real frontmatter, a neutral body, and nothing else.
 
-  python3 -m unittest discover eval/verifier/tests
+python3 -m unittest discover eval/verifier/tests
 """
 
 from __future__ import annotations
@@ -15,7 +15,7 @@ EVAL_DIR = Path(__file__).resolve().parents[2]
 SKILLS_DIR = EVAL_DIR.parent / "agents" / ".agents" / "skills"
 sys.path.insert(0, str(EVAL_DIR / "scripts"))
 
-import stub  # noqa: E402
+import stub
 
 
 def source_skills() -> dict[str, bytes]:

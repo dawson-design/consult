@@ -68,11 +68,11 @@ import tempfile
 import threading
 import time
 from collections import Counter
+from collections.abc import Iterable
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from itertools import chain, dropwhile, product
 from pathlib import Path, PurePosixPath
-from typing import Iterable, Optional
 
 EVAL_DIR = Path(__file__).resolve().parent.parent
 REPO_DIR = EVAL_DIR.parent
@@ -115,7 +115,8 @@ CONTAINER_ENV = {
     "ENABLE_BACKGROUND_TASKS": "1",
 }
 CONFIG_SETUP = "mkdir -p " + " ".join(
-    f"$CLAUDE_CONFIG_DIR/{d}" for d in ("debug", "projects/-app", "shell-snapshots", "statsig", "todos", "skills"))
+    f"$CLAUDE_CONFIG_DIR/{d}" for d in ("debug", "projects/-app", "shell-snapshots", "statsig", "todos", "skills")
+)
 ARM_SETUP = {"skills": f"cp -r {HARBOR_SKILLS_DIR}/* $CLAUDE_CONFIG_DIR/skills/"}
 ARM_FLAGS = {"plugin": ["--plugin-dir", PLUGIN_MOUNT], "skills": ["--settings", SETTINGS_PATH], "bare": []}
 
@@ -160,7 +161,7 @@ class Suite:
 @dataclass(frozen=True)
 class RunConfig:
     model: str
-    effort: Optional[str]
+    effort: str | None
     max_turns: int
     max_budget_usd: float
     plugin_dir: Path
@@ -176,6 +177,7 @@ class Trial:
 
 
 # ---------------------------------------------------------------- cases file
+
 
 def catalog(skills_dir: Path = SKILLS_DIR) -> frozenset:
     return frozenset(p.parent.name for p in skills_dir.glob("*/SKILL.md"))
@@ -197,8 +199,11 @@ def threshold_problems(doc: dict) -> list:
     confidence = doc.get("confidence")
     problems = [] if isinstance(confidence, float) and 0 < confidence < 1 else ["confidence must be a fraction"]
     wanted = {"workflow_recall": "min", "narrow_recall": "min", "false_trigger_rate": "max"}
-    problems += [f"thresholds.{m} needs a {b} fraction" for m, b in wanted.items()
-                 if not isinstance((thresholds.get(m) or {}).get(b), (int, float))]
+    problems += [
+        f"thresholds.{m} needs a {b} fraction"
+        for m, b in wanted.items()
+        if not isinstance((thresholds.get(m) or {}).get(b), (int, float))
+    ]
     if not isinstance(thresholds.get("negative_case_max_triggered"), int):
         problems.append("thresholds.negative_case_max_triggered must be an integer")
     return problems
@@ -273,7 +278,10 @@ def edit_problems(case: Case) -> list:
 def to_case(raw: dict) -> Case:
     kind, name = next(iter(raw["source"].items()))
     return Case(
-        name=raw["name"], kind=raw["kind"], source_kind=kind, source=str(name),
+        name=raw["name"],
+        kind=raw["kind"],
+        source_kind=kind,
+        source=str(name),
         prompt=(raw.get("prompt") or task_prompt(str(name))).strip(),
         code_change=raw["code_change"],
         required_any=tuple(raw.get("required_any") or ()),
@@ -291,7 +299,7 @@ def task_prompt(task: str) -> str:
     return path.read_text()
 
 
-def load_suite(path: Path = CASES_PATH, names: Optional[frozenset] = None) -> Suite:
+def load_suite(path: Path = CASES_PATH, names: frozenset | None = None) -> Suite:
     import yaml  # the runner needs pyyaml; the scoring code and its tests do not
 
     doc = yaml.safe_load(path.read_text())
@@ -303,6 +311,7 @@ def load_suite(path: Path = CASES_PATH, names: Optional[frozenset] = None) -> Su
 
 
 # ---------------------------------------------------------- build contexts
+
 
 def image_tag(case: Case) -> str:
     if case.edits or case.uncommitted:
@@ -326,7 +335,9 @@ def materialize(case: Case, dest: Path) -> Path:
     for edit in case.uncommitted:
         apply_edit(dest / "uncommitted", dest / "workspace", edit)
     if case.uncommitted:
-        dockerfile += "\n# Copied after the scaffold commit: the case needs a dirty working tree.\nCOPY uncommitted/ /app/\n"
+        dockerfile += (
+            "\n# Copied after the scaffold commit: the case needs a dirty working tree.\nCOPY uncommitted/ /app/\n"
+        )
     (dest / "Dockerfile").write_text(dockerfile)
     return dest
 
@@ -351,7 +362,8 @@ def edited_text(source: Path, edit: dict) -> str:
 
 # ------------------------------------------------------- transcript scoring
 
-def parse_line(line: str) -> Optional[dict]:
+
+def parse_line(line: str) -> dict | None:
     try:
         event = json.loads(line)
     except json.JSONDecodeError:
@@ -375,11 +387,11 @@ def tool_calls(events: list) -> list:
     return list(chain.from_iterable(map(event_tool_uses, events)))
 
 
-def first_event(events: list, kind: str, subtype: Optional[str] = None) -> Optional[dict]:
+def first_event(events: list, kind: str, subtype: str | None = None) -> dict | None:
     return next((e for e in events if e.get("type") == kind and subtype in (None, e.get("subtype"))), None)
 
 
-def last_event(events: list, kind: str) -> Optional[dict]:
+def last_event(events: list, kind: str) -> dict | None:
     return next((e for e in reversed(events) if e.get("type") == kind), None)
 
 
@@ -442,8 +454,11 @@ def event_failed_ids(event: dict) -> list:
     content = (event.get("message") or {}).get("content") if event.get("type") == "user" else None
     if not isinstance(content, list):
         return []
-    return [b["tool_use_id"] for b in content if isinstance(b, dict) and b.get("type") == "tool_result"
-            and b.get("is_error") and b.get("tool_use_id")]
+    return [
+        b["tool_use_id"]
+        for b in content
+        if isinstance(b, dict) and b.get("type") == "tool_result" and b.get("is_error") and b.get("tool_use_id")
+    ]
 
 
 def loaded_skills(call: dict, names: frozenset, shadowed: frozenset) -> list:
@@ -460,7 +475,7 @@ def invoked_skill(args: dict, names: frozenset, shadowed: frozenset) -> list:
     raw = str(args.get("skill") or args.get("name") or args.get("command") or "").strip().lstrip("/")
     token = raw.split()[0] if raw else ""
     prefixed = token.startswith(PREFIX)
-    name = token[len(PREFIX):] if prefixed else token
+    name = token[len(PREFIX) :] if prefixed else token
     return [name] if name in names and (prefixed or name not in shadowed) else []
 
 
@@ -488,8 +503,12 @@ def call_summary(call: dict) -> dict:
 
 
 def hook_fired(events: list) -> bool:
-    return any(e.get("subtype") == "hook_response" and e.get("hook_event") == "SessionStart"
-               and HOOK_MARKER in str(e.get("output") or "") for e in events)
+    return any(
+        e.get("subtype") == "hook_response"
+        and e.get("hook_event") == "SessionStart"
+        and HOOK_MARKER in str(e.get("output") or "")
+        for e in events
+    )
 
 
 def run_facts(events: list) -> dict:
@@ -523,15 +542,20 @@ def trial_outcome(events: list, stopped: bool, timed_out: bool) -> str:
     return "completed"
 
 
-def trial_record(case: Case, arm: str, attempt: int, events: list, names: frozenset,
-                 stopped: bool = False, timed_out: bool = False) -> dict:
+def trial_record(
+    case: Case, arm: str, attempt: int, events: list, names: frozenset, stopped: bool = False, timed_out: bool = False
+) -> dict:
     init = first_event(events, "system", "init") or {}
     calls = tool_calls(events)
     scored = score_calls(calls, names, shadowed_names(init, arm), failed_call_ids(events))
     on_time = {load["skill"] for load in scored["loads"] if load["on_time"]}
     loaded = {load["skill"] for load in scored["loads"]}
     return {
-        "case": case.name, "arm": arm, "attempt": attempt, "kind": case.kind, "code_change": case.code_change,
+        "case": case.name,
+        "arm": arm,
+        "attempt": attempt,
+        "kind": case.kind,
+        "code_change": case.code_change,
         "outcome": trial_outcome(events, stopped, timed_out),
         "hook_fired": hook_fired(events),
         "workflow_on_time": "workflow" in on_time,
@@ -546,7 +570,8 @@ def trial_record(case: Case, arm: str, attempt: int, events: list, names: frozen
 
 # ------------------------------------------------------------------ metrics
 
-def wilson(hits: int, n: int, confidence: float) -> Optional[tuple]:
+
+def wilson(hits: int, n: int, confidence: float) -> tuple | None:
     if n == 0:
         return None
     z = statistics.NormalDist().inv_cdf(0.5 + confidence / 2)
@@ -572,8 +597,12 @@ def judged(measure: dict, bound: dict) -> dict:
     if not measure["n"]:
         return {**measure, "threshold": bound, "verdict": "no data", "bound_clears": None}
     rate = measure["rate"]
-    return {**measure, "threshold": bound, "verdict": "pass" if meets(rate, rate, bound) else "fail",
-            "bound_clears": meets(*measure["interval"], bound)}
+    return {
+        **measure,
+        "threshold": bound,
+        "verdict": "pass" if meets(rate, rate, bound) else "fail",
+        "bound_clears": meets(*measure["interval"], bound),
+    }
 
 
 def failing_negatives(negatives: list, max_triggered: int) -> list:
@@ -592,8 +621,9 @@ def arm_metrics(trials: list, thresholds: dict, confidence: float) -> dict:
     positives = [t for t in valid if t["kind"] == "positive"]
     negatives = [t for t in valid if t["kind"] == "negative"]
     measures = {
-        "workflow_recall": proportion([t for t in positives if t["code_change"]], lambda t: t["workflow_on_time"],
-                                      confidence),
+        "workflow_recall": proportion(
+            [t for t in positives if t["code_change"]], lambda t: t["workflow_on_time"], confidence
+        ),
         "narrow_recall": proportion(positives, lambda t: t["required_hit"], confidence),
         "false_trigger_rate": proportion(negatives, lambda t: t["any_load"], confidence),
     }
@@ -601,8 +631,10 @@ def arm_metrics(trials: list, thresholds: dict, confidence: float) -> dict:
     failing = failing_negatives(negatives, thresholds["negative_case_max_triggered"])
     return {
         **metrics,
-        "off_target": {**proportion(positives, lambda t: bool(t["off_target"]), confidence),
-                       "skills": dict(Counter(chain.from_iterable(t["off_target"] for t in positives)))},
+        "off_target": {
+            **proportion(positives, lambda t: bool(t["off_target"]), confidence),
+            "skills": dict(Counter(chain.from_iterable(t["off_target"] for t in positives))),
+        },
         "failing_negative_cases": failing,
         "errors": len(trials) - len(valid),
         "overall": overall_verdict([m["verdict"] for m in metrics.values()], failing),
@@ -617,11 +649,12 @@ def overall_verdict(verdicts: list, failing_negative_cases: list) -> str:
 
 # ------------------------------------------------------------------- report
 
-def percent(value: Optional[float]) -> str:
+
+def percent(value: float | None) -> str:
     return "n/a" if value is None else f"{value:.0%}"
 
 
-def interval_text(bounds: Optional[tuple]) -> str:
+def interval_text(bounds: tuple | None) -> str:
     return "n/a" if bounds is None else f"{bounds[0]:.0%} to {bounds[1]:.0%}"
 
 
@@ -631,18 +664,24 @@ def threshold_text(bound: dict) -> str:
 
 def metric_row(name: str, m: dict) -> str:
     clears = {True: "yes", False: "no", None: "n/a"}[m["bound_clears"]]
-    return (f"| {name} | {m['hits']}/{m['n']} | {percent(m['rate'])} | {interval_text(m['interval'])} "
-            f"| {threshold_text(m['threshold'])} | {m['verdict']} | {clears} |")
+    return (
+        f"| {name} | {m['hits']}/{m['n']} | {percent(m['rate'])} | {interval_text(m['interval'])} "
+        f"| {threshold_text(m['threshold'])} | {m['verdict']} | {clears} |"
+    )
 
 
 def metric_rows(metrics: dict, confidence: float) -> list:
-    lines = [f"| metric | hits/n | rate | {confidence:.0%} Wilson | threshold | verdict | interval meets threshold |",
-             "| --- | ---: | ---: | --- | --- | --- | --- |"]
+    lines = [
+        f"| metric | hits/n | rate | {confidence:.0%} Wilson | threshold | verdict | interval meets threshold |",
+        "| --- | ---: | ---: | --- | --- | --- | --- |",
+    ]
     lines += [metric_row(name, metrics[name]) for name in METRICS]
     off = metrics["off_target"]
     skills = ", ".join(f"{s} ({n})" for s, n in sorted(off["skills"].items())) or "none"
-    lines.append(f"| off_target (descriptive) | {off['hits']}/{off['n']} | {percent(off['rate'])} "
-                 f"| {interval_text(off['interval'])} | none | {skills} | - |")
+    lines.append(
+        f"| off_target (descriptive) | {off['hits']}/{off['n']} | {percent(off['rate'])} "
+        f"| {interval_text(off['interval'])} | none | {skills} | - |"
+    )
     return lines
 
 
@@ -669,8 +708,10 @@ def case_table(trials: list) -> list:
     by_case: dict = {}
     for trial in trials:
         by_case.setdefault(trial["case"], []).append(trial)
-    lines = ["| case | kind | attempts | workflow on time | required hit | false triggers | loads in order (per attempt) |",
-             "| --- | --- | ---: | ---: | ---: | ---: | --- |"]
+    lines = [
+        "| case | kind | attempts | workflow on time | required hit | false triggers | loads in order (per attempt) |",
+        "| --- | --- | ---: | ---: | ---: | ---: | --- |",
+    ]
     return lines + [case_row(case, rows) for case, rows in by_case.items()]
 
 
@@ -681,32 +722,65 @@ def cost_line(trials: list) -> str:
 
 def render_arm(arm: str, trials: list, metrics: dict, confidence: float) -> list:
     failing = ", ".join(metrics["failing_negative_cases"]) or "none"
-    lines = [f"## Arm: {arm}", "", f"Overall: **{metrics['overall']}**. Negative cases triggered in 2+ attempts: "
-             f"{failing}. Error trials excluded: {metrics['errors']}.", ""]
+    lines = [
+        f"## Arm: {arm}",
+        "",
+        (
+            f"Overall: **{metrics['overall']}**. Negative cases triggered in 2+ attempts: "
+            f"{failing}. Error trials excluded: {metrics['errors']}."
+        ),
+        "",
+    ]
     lines += metric_rows(metrics, confidence) + [""] + case_table(trials) + ["", cost_line(trials), ""]
     return lines
 
 
 def render_report(results: dict) -> str:
     run = results["run"]
-    header = [f"# Trigger suite: {run['label']}", "",
-              f"Model {run['model']}, effort {run['effort'] or 'CLI default'}, {run['attempts']} attempts, "
-              f"max turns {run['max_turns']}, budget ${run['max_budget_usd']} per trial. "
-              "Loads marked * came after the first write. The bare arm is the control; thresholds judge the Consult arms. "
-              "A verdict compares the point estimate with the threshold; the last column says whether the whole "
-              "Wilson interval also meets it.", ""]
-    body = [render_arm(arm, [t for t in results["trials"] if t["arm"] == arm], results["metrics"][arm],
-                       results["confidence"]) for arm in run["arms"]]
+    header = [
+        f"# Trigger suite: {run['label']}",
+        "",
+        (
+            f"Model {run['model']}, effort {run['effort'] or 'CLI default'}, {run['attempts']} attempts, "
+            f"max turns {run['max_turns']}, budget ${run['max_budget_usd']} per trial. "
+            "Loads marked * came after the first write. The bare arm is the control; thresholds judge the Consult arms. "
+            "A verdict compares the point estimate with the threshold; the last column says whether the whole "
+            "Wilson interval also meets it."
+        ),
+        "",
+    ]
+    body = [
+        render_arm(
+            arm, [t for t in results["trials"] if t["arm"] == arm], results["metrics"][arm], results["confidence"]
+        )
+        for arm in run["arms"]
+    ]
     return "\n".join(header + list(chain.from_iterable(body)))
 
 
 # ------------------------------------------------------------------- docker
 
+
 def claude_args(prompt: str, run: RunConfig, arm: str) -> list:
     effort = ["--effort", run.effort] if run.effort else []
-    return ["-p", prompt, "--model", run.model, *effort, "--output-format", "stream-json", "--verbose",
-            "--include-hook-events", "--permission-mode", "bypassPermissions", "--max-turns", str(run.max_turns),
-            "--max-budget-usd", str(run.max_budget_usd), *ARM_FLAGS[arm]]
+    return [
+        "-p",
+        prompt,
+        "--model",
+        run.model,
+        *effort,
+        "--output-format",
+        "stream-json",
+        "--verbose",
+        "--include-hook-events",
+        "--permission-mode",
+        "bypassPermissions",
+        "--max-turns",
+        str(run.max_turns),
+        "--max-budget-usd",
+        str(run.max_budget_usd),
+        *ARM_FLAGS[arm],
+    ]
 
 
 def arm_mounts(arm: str, run: RunConfig) -> list:
@@ -722,12 +796,30 @@ def docker_argv(image: str, container: str, arm: str, run: RunConfig, prompt: st
     env = list(chain.from_iterable(["-e", f"{k}={v}"] for k, v in CONTAINER_ENV.items()))
     token = ["-e", "CLAUDE_CODE_OAUTH_TOKEN"] if with_token else []
     script = " && ".join([CONFIG_SETUP, *([ARM_SETUP[arm]] if arm in ARM_SETUP else []), 'exec claude "$@"'])
-    return ["docker", "run", "--rm", "--name", container, "-w", WORKDIR, *env, *token, *arm_mounts(arm, run),
-            image, "sh", "-c", script, "claude", *claude_args(prompt, run, arm)]
+    return [
+        "docker",
+        "run",
+        "--rm",
+        "--name",
+        container,
+        "-w",
+        WORKDIR,
+        *env,
+        *token,
+        *arm_mounts(arm, run),
+        image,
+        "sh",
+        "-c",
+        script,
+        "claude",
+        *claude_args(prompt, run, arm),
+    ]
 
 
 def docker_build(tag: str, context: Path) -> None:
-    proc = subprocess.run(["docker", "build", "-q", "-t", tag, str(context)], capture_output=True, text=True)
+    proc = subprocess.run(
+        ["docker", "build", "-q", "-t", tag, str(context)], capture_output=True, text=True, check=False
+    )
     if proc.returncode:
         raise SystemExit(f"docker build {tag} failed:\n{proc.stderr[-3000:]}")
 
@@ -750,7 +842,7 @@ def build_images(cases: Iterable[Case]) -> None:
 
 
 def kill(container: str) -> None:
-    subprocess.run(["docker", "kill", container], capture_output=True)
+    subprocess.run(["docker", "kill", container], capture_output=True, check=False)
 
 
 def pump(stdout, transcript, container: str, stop_at_write: bool) -> tuple:
@@ -799,16 +891,19 @@ def run_trial(trial: Trial, run: RunConfig, names: frozenset, out_dir: Path, sta
     events, stopped, timed_out = stream_container(argv, container, transcript, trial.case.kind == "positive")
     record = trial_record(trial.case, trial.arm, trial.attempt, events, names, stopped, timed_out)
     record.update(wall_seconds=round(time.monotonic() - started, 1), transcript=str(transcript.relative_to(out_dir)))
-    print(f"{trial.case.name} {trial.arm} #{trial.attempt}: {record['outcome']}, loads {load_order(record)}", flush=True)
+    print(
+        f"{trial.case.name} {trial.arm} #{trial.attempt}: {record['outcome']}, loads {load_order(record)}", flush=True
+    )
     return record
 
 
 # ------------------------------------------------------------ wiring check
 
+
 def listed_consult(init: dict, names: frozenset) -> dict:
     listed = set(init.get("skills") or [])
     return {
-        "prefixed": {s[len(PREFIX):] for s in listed if s.startswith(PREFIX)} & names,
+        "prefixed": {s[len(PREFIX) :] for s in listed if s.startswith(PREFIX)} & names,
         "plain": listed & names,
         "plugin": any(p.get("name") == "consult" for p in init.get("plugins") or [] if isinstance(p, dict)),
     }
@@ -834,8 +929,9 @@ def wiring_problems(arm: str, events: list, names: frozenset) -> list:
         return ["no init event"]
     seen = {**listed_consult(init, names), "hook": hook_fired(events)}
     want = expected_wiring(arm, names)
-    problems = [f"{key}: expected {sorted_or(want[key])}, got {sorted_or(seen[key])}"
-                for key in want if seen[key] != want[key]]
+    problems = [
+        f"{key}: expected {sorted_or(want[key])}, got {sorted_or(seen[key])}" for key in want if seen[key] != want[key]
+    ]
     return problems + ([] if auth_blocked(events) else ["the run did not stop at auth"])
 
 
@@ -847,29 +943,43 @@ def wiring_row(case: Case, arm: str, run: RunConfig, names: frozenset, stamp: st
     container = f"{IMAGE_PREFIX}-wiring-{stamp}-{os.getpid()}-{case.name}-{arm}"
     argv = docker_argv(image_tag(case), container, arm, run, case.prompt, with_token=False)
     try:
-        proc = subprocess.run(argv, capture_output=True, text=True, timeout=WIRING_TIMEOUT_SEC)
+        proc = subprocess.run(argv, capture_output=True, text=True, timeout=WIRING_TIMEOUT_SEC, check=False)
         events = parse_stream(proc.stdout.splitlines())
     except subprocess.TimeoutExpired:
         kill(container)
         events = []
     init = first_event(events, "system", "init") or {}
     listed = listed_consult(init, names)
-    return {"case": case.name, "arm": arm, "prefixed": len(listed["prefixed"]), "plain": len(listed["plain"]),
-            "plugin": listed["plugin"], "hook": hook_fired(events), "problems": wiring_problems(arm, events, names)}
+    return {
+        "case": case.name,
+        "arm": arm,
+        "prefixed": len(listed["prefixed"]),
+        "plain": len(listed["plain"]),
+        "plugin": listed["plugin"],
+        "hook": hook_fired(events),
+        "problems": wiring_problems(arm, events, names),
+    }
 
 
 def wiring_check(cases: list, arms: list, run: RunConfig, names: frozenset) -> int:
     build_images(cases)
     stamp = dt.datetime.now().strftime("%Y%m%dT%H%M%S")
     rows = [wiring_row(case, arm, run, names, stamp) for case, arm in product(cases, arms)]
-    lines = ["| case | arm | consult:* listed | plain listed | plugin | hook | result |", "| --- | --- | ---: | ---: | --- | --- | --- |"]
-    lines += [f"| {r['case']} | {r['arm']} | {r['prefixed']} | {r['plain']} | {r['plugin']} | {r['hook']} "
-              f"| {'ok' if not r['problems'] else '; '.join(r['problems'])} |" for r in rows]
+    lines = [
+        "| case | arm | consult:* listed | plain listed | plugin | hook | result |",
+        "| --- | --- | ---: | ---: | --- | --- | --- |",
+    ]
+    lines += [
+        f"| {r['case']} | {r['arm']} | {r['prefixed']} | {r['plain']} | {r['plugin']} | {r['hook']} "
+        f"| {'ok' if not r['problems'] else '; '.join(r['problems'])} |"
+        for r in rows
+    ]
     print("\n".join(lines))
     return 1 if any(r["problems"] for r in rows) else 0
 
 
 # ---------------------------------------------------------------------- cli
+
 
 def agent_defaults() -> tuple:
     """Model (without the anthropic/ prefix), effort, and the consult-arm settings file from the Claude Code agent
@@ -878,12 +988,12 @@ def agent_defaults() -> tuple:
 
     agent = yaml.safe_load(AGENT_CONFIG.read_text())
     model = str(agent.get("model_name") or "")
-    model = model[len("anthropic/"):] if model.startswith("anthropic/") else model
+    model = model.removeprefix("anthropic/")
     effort = (agent.get("kwargs") or {}).get("reasoning_effort")
     return model, effort, REPO_DIR / agent["consult_settings"]
 
 
-def select_cases(cases: tuple, patterns: Optional[str]) -> list:
+def select_cases(cases: tuple, patterns: str | None) -> list:
     if not patterns:
         return list(cases)
     wanted = [p.strip() for p in patterns.split(",") if p.strip()]
@@ -901,7 +1011,7 @@ def parse_arms(value: str) -> list:
     return arms
 
 
-def parse_args(argv: Optional[list] = None) -> argparse.Namespace:
+def parse_args(argv: list | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--suite", type=Path, default=CASES_PATH, help="cases file (default: eval/triggers/cases.yaml)")
     parser.add_argument("--cases", help="comma-separated case names or globs (default: all)")
@@ -909,8 +1019,11 @@ def parse_args(argv: Optional[list] = None) -> argparse.Namespace:
     parser.add_argument("--attempts", type=int, default=3)
     parser.add_argument("--concurrency", type=int, default=3)
     parser.add_argument("--model", help="default: model_name in eval/agents/claude-code.yaml")
-    parser.add_argument("--effort", choices=EFFORTS,
-                        help="passed as --effort (default: reasoning_effort in eval/agents/claude-code.yaml)")
+    parser.add_argument(
+        "--effort",
+        choices=EFFORTS,
+        help="passed as --effort (default: reasoning_effort in eval/agents/claude-code.yaml)",
+    )
     parser.add_argument("--plugin", type=Path, default=PLUGIN_DIR, help="plugin dir for the plugin arm")
     parser.add_argument("--max-turns", type=int, default=30)
     parser.add_argument("--max-budget-usd", type=float, default=3.0)
@@ -925,13 +1038,21 @@ def run_config(args: argparse.Namespace) -> RunConfig:
     plugin_dir = args.plugin.resolve()
     if not (plugin_dir / "plugin.json").is_file() and not (plugin_dir / ".claude-plugin" / "plugin.json").is_file():
         raise SystemExit(f"--plugin {plugin_dir} has no plugin.json")
-    return RunConfig(model=args.model or model, effort=args.effort or effort, max_turns=args.max_turns,
-                     max_budget_usd=args.max_budget_usd, plugin_dir=plugin_dir, settings_file=settings)
+    return RunConfig(
+        model=args.model or model,
+        effort=args.effort or effort,
+        max_turns=args.max_turns,
+        max_budget_usd=args.max_budget_usd,
+        plugin_dir=plugin_dir,
+        settings_file=settings,
+    )
 
 
 def plan(cases: list, arms: list, attempts: int) -> list:
-    return [Trial(case, arm, attempt, image_tag(case))
-            for case, arm, attempt in product(cases, arms, range(1, attempts + 1))]
+    return [
+        Trial(case, arm, attempt, image_tag(case))
+        for case, arm, attempt in product(cases, arms, range(1, attempts + 1))
+    ]
 
 
 def dry_run(trials: list, run: RunConfig) -> int:
@@ -945,7 +1066,9 @@ def dry_run(trials: list, run: RunConfig) -> int:
     return 0
 
 
-def run_suite(suite: Suite, trials: list, arms: list, run: RunConfig, args: argparse.Namespace, names: frozenset) -> int:
+def run_suite(
+    suite: Suite, trials: list, arms: list, run: RunConfig, args: argparse.Namespace, names: frozenset
+) -> int:
     build_images(t.case for t in trials)
     stamp = dt.datetime.now().strftime("%Y-%m-%dT%H-%M-%S")
     label = args.label or run.model + (f"-{run.effort}" if run.effort else "")
@@ -953,12 +1076,25 @@ def run_suite(suite: Suite, trials: list, arms: list, run: RunConfig, args: argp
     (out_dir / "transcripts").mkdir(parents=True)
     with ThreadPoolExecutor(max_workers=args.concurrency) as pool:
         records = list(pool.map(lambda t: run_trial(t, run, names, out_dir, stamp), trials))
-    metrics = {arm: arm_metrics([r for r in records if r["arm"] == arm], suite.thresholds, suite.confidence)
-               for arm in arms}
-    results = {"run": {"label": label, "model": run.model, "effort": run.effort, "arms": arms,
-                       "attempts": args.attempts, "max_turns": run.max_turns, "max_budget_usd": run.max_budget_usd,
-                       "plugin_dir": str(run.plugin_dir)},
-               "confidence": suite.confidence, "thresholds": suite.thresholds, "metrics": metrics, "trials": records}
+    metrics = {
+        arm: arm_metrics([r for r in records if r["arm"] == arm], suite.thresholds, suite.confidence) for arm in arms
+    }
+    results = {
+        "run": {
+            "label": label,
+            "model": run.model,
+            "effort": run.effort,
+            "arms": arms,
+            "attempts": args.attempts,
+            "max_turns": run.max_turns,
+            "max_budget_usd": run.max_budget_usd,
+            "plugin_dir": str(run.plugin_dir),
+        },
+        "confidence": suite.confidence,
+        "thresholds": suite.thresholds,
+        "metrics": metrics,
+        "trials": records,
+    }
     (out_dir / "results.json").write_text(json.dumps(results, indent=2))
     report = render_report(results)
     (out_dir / "report.md").write_text(report)
@@ -966,7 +1102,7 @@ def run_suite(suite: Suite, trials: list, arms: list, run: RunConfig, args: argp
     return 0 if all(metrics[a]["overall"] == "pass" for a in arms if a in CONSULT_ARMS) else 1
 
 
-def main(argv: Optional[list] = None) -> int:
+def main(argv: list | None = None) -> int:
     args = parse_args(argv)
     names = catalog()
     suite = load_suite(args.suite, names)
@@ -978,8 +1114,10 @@ def main(argv: Optional[list] = None) -> int:
     if args.wiring_check:
         return wiring_check(cases, arms, run, names)
     if not os.environ.get("CLAUDE_CODE_OAUTH_TOKEN"):
-        raise SystemExit("CLAUDE_CODE_OAUTH_TOKEN is not set. Run `claude setup-token` and export it; "
-                         "--dry-run and --wiring-check need no token.")
+        raise SystemExit(
+            "CLAUDE_CODE_OAUTH_TOKEN is not set. Run `claude setup-token` and export it; "
+            "--dry-run and --wiring-check need no token."
+        )
     return run_suite(suite, plan(cases, arms, args.attempts), arms, run, args, names)
 
 

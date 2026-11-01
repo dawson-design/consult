@@ -14,15 +14,14 @@ import json
 import subprocess
 import sys
 import tempfile
-import textwrap
 import unittest
 from pathlib import Path
 
 SHARED = Path(__file__).resolve().parent.parent / "shared"
 sys.path.insert(0, str(SHARED))
 
-import consult_lib as cl  # noqa: E402
-import consult_rules as cr  # noqa: E402
+import consult_lib as cl
+import consult_rules as cr
 
 
 def codex_command(call_id: str, cmd: str, exit_code: int) -> dict:
@@ -30,7 +29,9 @@ def codex_command(call_id: str, cmd: str, exit_code: int) -> dict:
         "source": "agent",
         "message": "",
         "tool_calls": [{"tool_call_id": call_id, "function_name": "exec_command", "arguments": {"cmd": cmd}}],
-        "observation": {"results": [{"source_call_id": call_id, "content": f"Process exited with code {exit_code}\nOutput:\n"}]},
+        "observation": {
+            "results": [{"source_call_id": call_id, "content": f"Process exited with code {exit_code}\nOutput:\n"}]
+        },
     }
 
 
@@ -50,7 +51,9 @@ def claude_bash(call_id: str, command: str, is_error: bool) -> dict:
         "source": "agent",
         "message": "",
         "tool_calls": [{"tool_call_id": call_id, "function_name": "Bash", "arguments": {"command": command}}],
-        "observation": {"results": [{"source_call_id": call_id, "content": "out", "extra": {"tool_result_is_error": is_error}}]},
+        "observation": {
+            "results": [{"source_call_id": call_id, "content": "out", "extra": {"tool_result_is_error": is_error}}]
+        },
     }
 
 
@@ -58,7 +61,13 @@ def claude_write(call_id: str, path: str) -> dict:
     return {
         "source": "agent",
         "message": "",
-        "tool_calls": [{"tool_call_id": call_id, "function_name": "Write", "arguments": {"file_path": f"/app/{path}", "content": "x"}}],
+        "tool_calls": [
+            {
+                "tool_call_id": call_id,
+                "function_name": "Write",
+                "arguments": {"file_path": f"/app/{path}", "content": "x"},
+            }
+        ],
     }
 
 
@@ -132,7 +141,7 @@ class LibTests(unittest.TestCase):
 
     def test_arrows_comparisons_and_quoted_angle_brackets_are_not_writes(self):
         traj = trajectory(
-            codex_command("a", 'node -e "import(\'./src/a.js\').then(m => console.log(m))"', 0),
+            codex_command("a", "node -e \"import('./src/a.js').then(m => console.log(m))\"", 0),
             codex_command("b", 'node -e "console.log(1 > 0)"', 0),
             claude_bash("c", 'grep -rn "=>" src', False),
             claude_bash("d", "test $((a>=b)) -eq 1", False),
@@ -151,6 +160,7 @@ class LibTests(unittest.TestCase):
 
     def test_run_command_hides_credentials_from_agent_code(self):
         import os
+
         os.environ["FAKE_EVAL_TOKEN"] = "secret"
         self.addCleanup(os.environ.pop, "FAKE_EVAL_TOKEN")
         _, output = cl.run_command(Path("."), ["bash", "-c", "echo ${FAKE_EVAL_TOKEN:-hidden}"], timeout=10)
@@ -178,11 +188,15 @@ class DebuggingTests(WorkspaceCase):
         self.assertEqual(self.check("debugging.1", traj), 1.0)
 
     def test_debugging_1_passes_on_a_new_failing_test_before_the_fix(self):
-        traj = trajectory(claude_write("t", "test/a.test.js"), claude_bash("r", "npm test", True), claude_write("f", "src/a.js"))
+        traj = trajectory(
+            claude_write("t", "test/a.test.js"), claude_bash("r", "npm test", True), claude_write("f", "src/a.js")
+        )
         self.assertEqual(self.check("debugging.1", traj), 1.0)
 
     def test_debugging_1_passes_on_a_failing_one_liner_with_an_arrow(self):
-        repro = codex_command("t", 'node -e "import(\'./src/a.js\').then(m => process.exit(m.double(2) === 4 ? 0 : 1))"', 1)
+        repro = codex_command(
+            "t", "node -e \"import('./src/a.js').then(m => process.exit(m.double(2) === 4 ? 0 : 1))\"", 1
+        )
         self.assertEqual(self.check("debugging.1", trajectory(repro, codex_patch("p", "Update File: src/a.js"))), 1.0)
 
     def test_debugging_1_ignores_failed_exploration_commands_and_passing_tests(self):
@@ -207,17 +221,21 @@ class DebuggingTests(WorkspaceCase):
         self.assertEqual(self.check("debugging.5"), 1.0)
 
     def test_debugging_5_fails_when_the_test_passes_on_the_scaffold(self):
-        self.write_files({
-            "src/a.js": "export const double = (n) => n * 2;\n",
-            "test/a.test.js": self.test_file.replace("double(2), 4", "typeof double, 'function'"),
-        })
+        self.write_files(
+            {
+                "src/a.js": "export const double = (n) => n * 2;\n",
+                "test/a.test.js": self.test_file.replace("double(2), 4", "typeof double, 'function'"),
+            }
+        )
         self.assertEqual(self.check("debugging.5"), 0.0)
 
     def test_debugging_5_is_inconclusive_when_the_scaffold_cannot_load_the_test(self):
-        self.write_files({
-            "src/a.js": "export const double = (n) => n * 2;\nexport const triple = (n) => n * 3;\n",
-            "test/a.test.js": self.test_file.replace("{ double }", "{ double, triple }"),
-        })
+        self.write_files(
+            {
+                "src/a.js": "export const double = (n) => n * 2;\nexport const triple = (n) => n * 3;\n",
+                "test/a.test.js": self.test_file.replace("{ double }", "{ double, triple }"),
+            }
+        )
         self.assertEqual(self.check("debugging.5"), 0.0)
 
 
@@ -246,7 +264,9 @@ class DocumentationAndWorkflowTests(WorkspaceCase):
 
     def test_workflow_1_accepts_a_closing_offer_after_finished_work(self):
         self.write_files({"src/a.js": "export const a = 2;\n", "test/a.test.js": "//\n"})
-        self.assertEqual(self.check("workflow.1", trajectory(user("fix"), agent("Fixed. Want me to also update b?"))), 1.0)
+        self.assertEqual(
+            self.check("workflow.1", trajectory(user("fix"), agent("Fixed. Want me to also update b?"))), 1.0
+        )
 
     def test_workflow_1_fails_when_the_agent_stops_to_ask(self):
         traj = trajectory(user("fix"), agent("Should I change the serializer or the editor?"))
@@ -259,15 +279,24 @@ class ApiTests(WorkspaceCase):
         self.assertEqual(self.check("api.1", traj), 1.0)
 
     def test_api_1_ignores_config_files_written_before_the_contract(self):
-        traj = trajectory(claude_write("g", ".gitignore"), claude_write("t", "tsconfig.json"),
-                          claude_write("c", "openapi.yaml"), claude_write("h", "src/server.js"))
+        traj = trajectory(
+            claude_write("g", ".gitignore"),
+            claude_write("t", "tsconfig.json"),
+            claude_write("c", "openapi.yaml"),
+            claude_write("h", "src/server.js"),
+        )
         self.assertEqual(self.check("api.1", traj), 1.0)
 
     def test_api_1_ignores_data_files_written_before_the_contract(self):
         """workflow Rule 4 builds the data stage before the contract."""
-        traj = trajectory(claude_write("m", "db/migrations/001_links.js"), claude_write("s", "src/schema.js"),
-                          claude_write("d", "src/models/link.js"), claude_write("o", "src/link.model.ts"),
-                          claude_write("c", "openapi.yaml"), claude_write("h", "src/server.js"))
+        traj = trajectory(
+            claude_write("m", "db/migrations/001_links.js"),
+            claude_write("s", "src/schema.js"),
+            claude_write("d", "src/models/link.js"),
+            claude_write("o", "src/link.model.ts"),
+            claude_write("c", "openapi.yaml"),
+            claude_write("h", "src/server.js"),
+        )
         self.assertEqual(self.check("api.1", traj), 1.0)
 
     def test_api_1_counts_a_file_that_only_resembles_a_data_name(self):
@@ -279,7 +308,9 @@ class ApiTests(WorkspaceCase):
         self.assertEqual(self.check("api.1", traj), 0.0)
 
     def test_api_probe_rules_read_the_probe_output(self):
-        (self.tests / "rules_probe.mjs").write_text('console.log("noise");\nconsole.log(JSON.stringify({"api.2": 1, "api.3": 0}));\n')
+        (self.tests / "rules_probe.mjs").write_text(
+            'console.log("noise");\nconsole.log(JSON.stringify({"api.2": 1, "api.3": 0}));\n'
+        )
         self.assertEqual((self.check("api.2"), self.check("api.3")), (1.0, 0.0))
 
     def test_api_3_scores_zero_when_verification_fails(self):
@@ -296,7 +327,8 @@ class ScaffoldingTests(WorkspaceCase):
         "test/smoke.test.js": "//\n",
         ".env.example": "PORT=3000\n",
         "src/server.js": "const port = process.env.PORT;\n",
-        "README.md": "# Links\n\nA self-hosted link shortener for the team. " + "It keeps short links. " * 8
+        "README.md": "# Links\n\nA self-hosted link shortener for the team. "
+        + "It keeps short links. " * 8
         + "\n\n## Install\n\nnpm install\n\n## Run\n\nnpm start\n\n## Test\n\nnpm test\n",
     }
 
@@ -356,7 +388,9 @@ class SignoffTests(WorkspaceCase):
 
     def test_specs_and_notes_are_not_gated(self):
         self.write_files({"docs/specs/links.md": "#\n", "NOTES.md": "#\n"})
-        self.assertEqual(cr.signoff_mode(self.ws, trajectory(user("brief"), agent("Plan ready.")), {"gated_paths": ["*"]}), "stopped")
+        self.assertEqual(
+            cr.signoff_mode(self.ws, trajectory(user("brief"), agent("Plan ready.")), {"gated_paths": ["*"]}), "stopped"
+        )
 
     def test_scaffolding_1_fails_on_an_install_before_approval(self):
         traj = trajectory(user("brief"), codex_command("i", "npm install express", 0), agent("Plan ready."))

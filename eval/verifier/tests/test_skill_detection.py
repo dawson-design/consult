@@ -19,8 +19,7 @@ EVAL_DIR = Path(__file__).resolve().parents[2]
 SKILLS_DIR = EVAL_DIR.parent / "agents" / ".agents" / "skills"
 sys.path.insert(0, str(EVAL_DIR / "verifier" / "shared"))
 
-import consult_lib as cl  # noqa: E402
-
+import consult_lib as cl
 
 INSTALLED_SKILLS = "/logs/agent/sessions/skills"
 
@@ -64,7 +63,10 @@ class SkillDetectionTests(unittest.TestCase):
         self.assertEqual(skills_read(step), [])
 
     def test_an_installed_skill_that_claude_code_loaded_is_counted(self):
-        steps = [*skill_file_load("workflow", f"{INSTALLED_SKILLS}/workflow"), *skill_file_load("debugging", f"{INSTALLED_SKILLS}/debugging")]
+        steps = [
+            *skill_file_load("workflow", f"{INSTALLED_SKILLS}/workflow"),
+            *skill_file_load("debugging", f"{INSTALLED_SKILLS}/debugging"),
+        ]
         self.assertEqual(skills_read(*steps), ["debugging", "workflow"])
 
     def test_a_consult_plugin_skill_load_is_counted(self):

@@ -47,9 +47,9 @@ from pathlib import Path
 EVAL_DIR = Path(__file__).resolve().parent.parent
 TASKS_DIR = EVAL_DIR / "tasks"
 sys.path.insert(0, str(EVAL_DIR / "scripts"))
-import lift  # noqa: E402
-from bundle import Bundle, RebuildError, parse_bundle  # noqa: E402
-from sync_tests import step_names  # noqa: E402
+import lift
+from bundle import Bundle, RebuildError, parse_bundle
+from sync_tests import step_names
 
 HUNK_RE = re.compile(r"^@@ -\d+(?:,(\d+))? \+\d+(?:,(\d+))? @@")
 # Host git must ignore the user's config: a global diff or apply setting changes the result.
@@ -96,6 +96,7 @@ class Trial:
 
 # ------------------------------------------------------------------- bundle
 
+
 def patch_text(diff: str) -> str:
     """The diff as git printed it: build_bundle strips the final newline and any blank context lines before it."""
     if not diff:
@@ -111,7 +112,7 @@ def stripped_context(lines: list[str]) -> int:
         return 0
     match = HUNK_RE.match(lines[start])
     old_count, new_count = int(match.group(1) or 1), int(match.group(2) or 1)
-    body = lines[start + 1:]
+    body = lines[start + 1 :]
     missing = old_count - sum(1 for line in body if line[:1] in (" ", "-"))
     new_missing = new_count - sum(1 for line in body if line[:1] in (" ", "+"))
     return missing if missing > 0 and missing == new_missing else 0
@@ -128,8 +129,14 @@ def last_hunk_start(lines: list[str]) -> int | None:
 
 
 def git(workspace: Path, *args: str, stdin: str | None = None) -> subprocess.CompletedProcess:
-    return subprocess.run(["git", "-C", str(workspace), *args], input=stdin, capture_output=True, text=True,
-                          env={**os.environ, **GIT_ENV}, check=False)
+    return subprocess.run(
+        ["git", "-C", str(workspace), *args],
+        input=stdin,
+        capture_output=True,
+        text=True,
+        env={**os.environ, **GIT_ENV},
+        check=False,
+    )
 
 
 def reconstruct(workspace: Path, bundle: Bundle) -> None:
@@ -172,9 +179,13 @@ def environment_flags(trial: Trial) -> list[str]:
         return ["result.json has no started_at: cannot tell whether the task environment changed since the run"]
     environment = TASKS_DIR / trial.task / "environment"
     newest = max(p.lstat().st_mtime for p in [environment, *environment.rglob("*")])
-    if newest > datetime.fromisoformat(started.replace("Z", "+00:00")).timestamp():
-        return [f"tasks/{trial.task}/environment changed after the trial started: "
-                "the scaffold may not be the one the agent saw"]
+    if newest > datetime.fromisoformat(started).timestamp():
+        return [
+            (
+                f"tasks/{trial.task}/environment changed after the trial started: "
+                "the scaffold may not be the one the agent saw"
+            )
+        ]
     return []
 
 
@@ -205,6 +216,7 @@ def dependency_notes(workspace: Path) -> list[str]:
 
 # ------------------------------------------------------------------- rewards
 
+
 def weighted_reward(dimensions: dict[str, float], weights: dict[str, float]) -> float:
     """RewardKit's weighted mean over the dimensions present, rounded as it rounds; an unlisted dimension weighs 1."""
     total = sum(weights.get(d, 1.0) for d in dimensions)
@@ -229,8 +241,9 @@ def merge_details(old_path: Path, new_path: Path) -> dict:
 
 def merge_final(trial: Trial, verifier_dir: Path) -> dict:
     """Merge the original judge into the new reward.json and reward-details.json; returns the rewards."""
-    rewards = merge_rewards(trial.old_rewards, json.loads((verifier_dir / "reward.json").read_text()),
-                            lift.task_weights(trial.task))
+    rewards = merge_rewards(
+        trial.old_rewards, json.loads((verifier_dir / "reward.json").read_text()), lift.task_weights(trial.task)
+    )
     details = merge_details(trial.bundle_path.parent / "reward-details.json", verifier_dir / "reward-details.json")
     replace_file(verifier_dir / "reward.json", json.dumps(rewards, indent=2))
     replace_file(verifier_dir / "reward-details.json", json.dumps(details, indent=2))
@@ -245,6 +258,7 @@ def replace_file(path: Path, text: str) -> None:
 
 
 # ------------------------------------------------------------------- docker
+
 
 def docker(*args: str) -> str:
     proc = subprocess.run(["docker", *args], capture_output=True, text=True, check=False)
@@ -309,8 +323,12 @@ def run_container(trial: Trial, workspace: Path, final_dest: Path) -> list[str]:
     try:
         docker("run", "-d", "--name", name, *mounts, image_tag(trial.task), "sleep", "infinity")
         load_container(name, trial, workspace)
-        subprocess.run(["docker", "exec", "-w", "/app", *env, name, "bash", "-c", VERIFIER_COMMAND],
-                       capture_output=True, timeout=VERIFIER_TIMEOUT_SEC, check=False)
+        subprocess.run(
+            ["docker", "exec", "-w", "/app", *env, name, "bash", "-c", VERIFIER_COMMAND],
+            capture_output=True,
+            timeout=VERIFIER_TIMEOUT_SEC,
+            check=False,
+        )
     except DockerError as error:
         return [str(error)]
     except subprocess.TimeoutExpired:
@@ -331,6 +349,7 @@ def verifier_flags(trial: Trial, verifier_dir: Path) -> list[str]:
 
 
 # ------------------------------------------------------------------- trials
+
 
 def load_trial(trial_dir: Path) -> Trial:
     result = json.loads((trial_dir / "result.json").read_text())
@@ -383,8 +402,12 @@ def rescore_trial(trial: Trial, scaffold: Path) -> dict:
     dest = trial.out_dir / trial.name
     final_dest = copy_trial(trial, dest)
     flags, notes = verify(trial, scaffold, final_dest)
-    record = {"old": trial.old_rewards, "new": None if flags else merge_final(trial, final_dest / "verifier"),
-              "flags": flags, "notes": notes}
+    record = {
+        "old": trial.old_rewards,
+        "new": None if flags else merge_final(trial, final_dest / "verifier"),
+        "flags": flags,
+        "notes": notes,
+    }
     (dest / "result.json").write_text(json.dumps(rescored_result(trial.result, record), indent=4))
     print(f"{trial.job.name}/{trial.name}: {row_text(record)}", flush=True)
     return record
@@ -400,6 +423,7 @@ def dry_run_trial(trial: Trial, scaffold: Path) -> list[str]:
 
 
 # ------------------------------------------------------------------- summary
+
 
 def value_pair(record: dict, key: str) -> str:
     old, new = record["old"].get(key), (record["new"] or {}).get(key)
@@ -426,10 +450,15 @@ def summary_line(row: dict) -> str:
 
 def render_summary(summary: dict) -> str:
     rows = summary["trials"]
-    lines = [f"# Rescore: {Path(summary['job']).name}", "",
-             "Deterministic dimensions rerun with the current task tests; judge scores are the originals.", "",
-             f"| trial | {' | '.join(SUMMARY_KEYS)} | flags | notes |",
-             f"| --- |{' ---: |' * len(SUMMARY_KEYS)} --- | --- |", *map(summary_line, rows)]
+    lines = [
+        f"# Rescore: {Path(summary['job']).name}",
+        "",
+        "Deterministic dimensions rerun with the current task tests; judge scores are the originals.",
+        "",
+        f"| trial | {' | '.join(SUMMARY_KEYS)} | flags | notes |",
+        f"| --- |{' ---: |' * len(SUMMARY_KEYS)} --- | --- |",
+        *map(summary_line, rows),
+    ]
     scored = [r for r in rows if r["new"] is not None]
     changed = [r for r in scored if abs(float(r["new"]["reward"]) - float(r["old"].get("reward") or 0.0)) > 0.001]
     lines += ["", f"Scored {len(scored)} of {len(rows)} trials; {len(changed)} changed reward by more than 0.001."]
@@ -446,13 +475,15 @@ def write_summary(out_dir: Path, job: Path) -> str:
 
 # ------------------------------------------------------------------- main
 
+
 def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("jobs", nargs="+", type=Path, help="Harbor job dirs")
     parser.add_argument("--tasks", default="", help="comma-separated task names (default: all)")
     parser.add_argument("--concurrency", type=int, default=4)
-    parser.add_argument("--dry-run", action="store_true",
-                        help="rebuild the workspaces and print flags; run no verifier")
+    parser.add_argument(
+        "--dry-run", action="store_true", help="rebuild the workspaces and print flags; run no verifier"
+    )
     return parser.parse_args(argv)
 
 

@@ -1,6 +1,6 @@
 """The skill-loading preflight: first-turn task copies and the loading readout.
 
-  python3 -m unittest discover eval/verifier/tests
+python3 -m unittest discover eval/verifier/tests
 """
 
 from __future__ import annotations
@@ -15,7 +15,7 @@ from pathlib import Path
 EVAL_DIR = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(EVAL_DIR / "scripts"))
 
-import preflight  # noqa: E402
+import preflight
 
 
 def skill_load(skill: str) -> list[dict]:
@@ -65,7 +65,9 @@ class FirstTurnTaskTests(unittest.TestCase):
         self.assertNotIn("[[steps]]", config)
         self.assertNotIn("multi_step_reward_strategy", config)
         self.assertFalse((self.out / "t" / "steps").exists())
-        self.assertEqual((self.out / "t" / "instruction.md").read_text(), (src / "steps" / "brief" / "instruction.md").read_text())
+        self.assertEqual(
+            (self.out / "t" / "instruction.md").read_text(), (src / "steps" / "brief" / "instruction.md").read_text()
+        )
 
     def test_a_single_step_task_is_copied_unchanged(self):
         src = EVAL_DIR / "tasks" / "bug-from-symptom"
@@ -82,15 +84,19 @@ class LoadingTests(unittest.TestCase):
             write_trial(job, "bug-from-symptom__b", [])
             write_trial(job, "service-from-brief__c", ["workflow"])
             rows = preflight.loading_rows(job)
-        self.assertEqual([(r["task"], r["loaded"], r["trials"]) for r in rows],
-                         [("bug-from-symptom", 1, 2), ("service-from-brief", 1, 1)])
+        self.assertEqual(
+            [(r["task"], r["loaded"], r["trials"]) for r in rows],
+            [("bug-from-symptom", 1, 2), ("service-from-brief", 1, 1)],
+        )
         self.assertAlmostEqual(preflight.loading_rate(rows), 2 / 3)
         self.assertIn("| bug-from-symptom | 1/2 | debugging (1), workflow (1) |", preflight.render(rows))
 
     def test_a_multi_step_trial_counts_skills_read_in_every_step(self):
         with tempfile.TemporaryDirectory() as tmp:
             job = Path(tmp)
-            write_multi_step_trial(job, "money-field-change__a", {"brief": ["workflow"], "approve": ["workflow", "proof"]})
+            write_multi_step_trial(
+                job, "money-field-change__a", {"brief": ["workflow"], "approve": ["workflow", "proof"]}
+            )
             rows = preflight.loading_rows(job)
         self.assertEqual([(r["task"], r["loaded"], r["trials"]) for r in rows], [("money-field-change", 1, 1)])
         self.assertEqual(dict(rows[0]["skills"]), {"proof": 1, "workflow": 1})

@@ -29,7 +29,7 @@ from pathlib import Path
 # RewardKit imports every .py at the tests root, this one included, before any
 # dimension script has put /tests on sys.path.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import consult_lib as cl  # noqa: E402
+import consult_lib as cl
 
 CONTRACT_RE = re.compile(r"(^|/)openapi\.(ya?ml|json)$")
 SCRATCH_RE = re.compile(r"(^|/)(repro|scratch|tmp|debug)[^/]*$|^/")
@@ -43,7 +43,9 @@ PLAN_DOC_RE = re.compile(
     r"(^|/)docs/(plans|adr|decisions|specs?|design)/|(^|/)(PLAN|NOTES)\.md$|(spec|design|plan|adr|decision)[^/]*\.md$",
     re.IGNORECASE,
 )
-INSTALL_RE = re.compile(r"\b(npm\s+(i|install|ci|add)|pnpm\s+(i|install|add)|yarn(\s+add)?|bun\s+(i|install|add)|npx\s+create-)\b")
+INSTALL_RE = re.compile(
+    r"\b(npm\s+(i|install|ci|add)|pnpm\s+(i|install|add)|yarn(\s+add)?|bun\s+(i|install|add)|npx\s+create-)\b"
+)
 TEST_COMMAND_RE = re.compile(r"\b(npm\s+(test|run\s+test)|node\s+--test|vitest|jest|mocha|pytest)\b")
 # A reproduction runs the code: a test runner or an interpreter, not grep or cat.
 REPRO_COMMAND_RE = re.compile(r"\b(node|npm|npx|pnpm|yarn|bun|deno|vitest|jest|mocha|pytest|python3?)\b")
@@ -61,12 +63,12 @@ SKIP_DIRS = {"node_modules", ".git"}
 # Shared evidence, computed once per verifier process.
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def verification_passed(workspace: Path) -> bool:
     return cl.visible_tests_pass(workspace, cl.load_task_meta()) and cl.hidden_check_passes(workspace)
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def probe_results(workspace: Path) -> dict:
     """Per-task runtime probe: tests/rules_probe.mjs prints {"<rule id>": 0|1} on its last line."""
     script = cl.TESTS_DIR / "rules_probe.mjs"
@@ -104,7 +106,8 @@ def matches_any(path: str, patterns) -> bool:
 
 def workspace_files(workspace: Path, suffixes: tuple[str, ...]) -> list[Path]:
     return [
-        p for p in workspace.rglob("*")
+        p
+        for p in workspace.rglob("*")
         if p.is_file() and p.suffix in suffixes and not SKIP_DIRS.intersection(p.relative_to(workspace).parts)
     ]
 
@@ -163,7 +166,8 @@ def documentation_1(workspace: Path, trajectory: cl.Trajectory, meta: dict) -> f
     if not verification_passed(workspace):
         return 0.0
     docs = [
-        p for p in cl.changed_paths(workspace)
+        p
+        for p in cl.changed_paths(workspace)
         if (cl.classify(p) == "documentation" or p.startswith("docs/")) and not PLAN_DOC_RE.search(p)
     ]
     return 0.0 if docs else 1.0

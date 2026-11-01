@@ -42,7 +42,9 @@ def stub_files(source: Path) -> dict[str, bytes]:
 
 def skill_files(source: Path) -> dict[str, bytes]:
     """relative path -> bytes, for every file under source."""
-    return {path.relative_to(source).as_posix(): path.read_bytes() for path in sorted(source.rglob("*")) if path.is_file()}
+    return {
+        path.relative_to(source).as_posix(): path.read_bytes() for path in sorted(source.rglob("*")) if path.is_file()
+    }
 
 
 def content_hash(files: dict[str, bytes]) -> str:
