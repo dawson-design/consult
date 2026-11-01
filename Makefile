@@ -27,7 +27,7 @@ lint:
 # `brew install lychee`.
 links:
 	git ls-files -z -- '*.md' \
-		| while IFS= read -r -d '' file; do [ -e "$$file" ] && printf '%s\0' "$$file"; done \
+		| while IFS= read -r -d '' file; do if [ -e "$$file" ]; then printf '%s\0' "$$file"; fi; done \
 		| xargs -0 lychee --offline --include-fragments --no-progress
 
 # Static checks for the Harbor eval suite: the vendored verifier copies match
