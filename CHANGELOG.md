@@ -236,6 +236,9 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   an absolute path. The generator
   mirrors symlinks as symlinks and a plugin clone recreates them on every
   user's machine.
+- The eval verifier image pins `uv` to 0.13.6 instead of `latest`, the one
+  image it pulled by that tag. `eval/verifier/tests/test_dockerfile_pins.py`
+  rejects `latest` tags.
 
 ## [18.0.0] (2026-10-23)
 
