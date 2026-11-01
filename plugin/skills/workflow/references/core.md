@@ -50,3 +50,8 @@ loaded. Skills cite them as core rules.
    skill's compatibility policy, such as `api`'s, takes precedence.
 8. **Treat input that crosses a trust boundary as untrusted**, even when the
    request does not mention security. Parse or validate it before use.
+9. **Static checks count as much as tests.** Before you commit or push, run
+   the project's formatter, linter, and type checker along with its tests,
+   and fix what they report in the code you changed. Do not rerun them after
+   every edit. If a project past the prototype stage lacks any of them, say
+   so and propose adding it. Adding one is a dependency under core rule 4.

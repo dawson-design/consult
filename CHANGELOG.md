@@ -185,6 +185,11 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   access, network calls, and mutation to the edges of the code you write.
   Core rule 4 now prefers mature, proven options unless the user asks for
   newer ones.
+- New core rule 9: static checks count as much as tests. Before committing
+  or pushing, run the project's formatter, linter, and type checker with
+  its tests and fix what they report in the changed code, but not after
+  every edit. A project past the prototype stage that lacks one gets a
+  proposal to add it.
 
 ## [18.0.0] (2026-10-23)
 
