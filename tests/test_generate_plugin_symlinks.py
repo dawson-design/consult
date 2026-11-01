@@ -1,4 +1,4 @@
-"""The plugin generator's CLI: the plugin/skills mirror and the SessionStart hook.
+"""The plugin generator's CLI: the core's workflow copy, the plugin/skills mirror, and the SessionStart hook.
 
 Each test builds a scratch repo with canonical skills under
 agents/.agents/skills and runs the generator against it.
@@ -16,6 +16,7 @@ from helpers import ROOT, TempDirTestCase, load_script, run
 COMMAND = ["python3", ROOT / "scripts/generate_plugin_symlinks.py"]
 generator = load_script("generate_plugin_symlinks")
 HOOK_SOURCE = generator.HOOK_SOURCE
+CORE_COPY = generator.CORE_COPY
 HOOK_DEST = generator.HOOK_DEST
 MAX_HOOK_CHARS = generator.MAX_HOOK_CHARS
 
@@ -116,6 +117,10 @@ class GeneratePluginSymlinksTests(TempDirTestCase):
 
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn(f"generated {HOOK_DEST} from {HOOK_SOURCE}", result.stdout)
+        core = (self.tmp / HOOK_SOURCE).read_bytes()
+        self.assertEqual((self.tmp / CORE_COPY).read_bytes(), core)
+        mirror = CORE_COPY.replace("agents/.agents/skills/", "plugin/skills/")
+        self.assertEqual((self.tmp / mirror).read_bytes(), core)
         printed = run(["sh", "-c", hook_command(self.tmp)], cwd=self.tmp)
         self.assertEqual(printed.returncode, 0, printed.stderr)
         expected = "Consult is installed.\n\nKeep `$HOME`, \"quotes\", 'apostrophes', and \\n literal.\n"

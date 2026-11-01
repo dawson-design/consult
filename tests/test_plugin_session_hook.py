@@ -1,7 +1,7 @@
 """The shipped plugin SessionStart hook, end to end.
 
 Runs the hook's command the way a host does and compares the output with
-its source, the workflow skill's core.md.
+its source, agents/.agents/core.md.
 """
 
 from __future__ import annotations
@@ -32,7 +32,7 @@ class PluginSessionHookTests(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.result = run(["sh", "-c", session_start_command()])
 
-    def test_prints_the_workflow_skills_core_md_exactly_ending_in_one_newline(self) -> None:
+    def test_prints_core_md_exactly_ending_in_one_newline(self) -> None:
         core = (ROOT / HOOK_SOURCE).read_text(encoding="utf8").replace("\r", "").strip()
 
         self.assertEqual(self.result.returncode, 0, self.result.stderr)

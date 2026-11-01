@@ -264,6 +264,9 @@ class SelectionTests(unittest.TestCase):
         self.assertEqual(selection.skill_name("agents/.agents/skills/api/references/errors.md"), "api")
         self.assertIsNone(selection.skill_name("agents/.agents/README.md"))
 
+    def test_a_core_edit_maps_to_workflow(self):
+        self.assertEqual(selection.skill_name("agents/.agents/core.md"), "workflow")
+
     def test_tasks_where_the_skill_is_most_central_come_first(self):
         tasks = selection.select_tasks(
             {"ui-design"}, ["service-from-brief", "accessible-ui-state", "api-error-contract"], 4

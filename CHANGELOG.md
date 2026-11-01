@@ -207,6 +207,13 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   and its `workflow` routing row now list worktrees; the `workflow` word
   budget rises to 943.
 - `commit` Rule 5 keeps the subject under 72 characters.
+- The Consult core's source moves from `workflow/references/core.md` to
+  `agents/.agents/core.md`, beside the skills directory, so it is found as
+  its own file; the README links it. The generator writes an identical copy
+  back to `workflow/references/core.md`, which the validator checks, so
+  readers without the hook still get it with the skills. The workflow
+  pointer to that copy is shorter. Edits to `core.md` select `workflow`
+  tasks in the fast eval tier.
 
 ## [18.0.0] (2026-10-23)
 
