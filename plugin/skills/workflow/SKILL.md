@@ -19,9 +19,9 @@ description: Load before reading code for any feature, bug fix, refactor, test, 
 
 ## Rules
 
-The Consult core in `references/core.md` applies with these rules. If the
-block that starts "Consult is installed." is not in your context, read that
-file before your first edit.
+If the block that starts "Consult is installed." is not in your context,
+read `references/core.md` (the Consult core) before your first edit. Its
+rules apply with these.
 
 1. **Ask more of the user when changes affect more code or are harder to
    undo.** If both risks are low, do the work and prove it without sign-off.
@@ -109,8 +109,6 @@ file before your first edit.
 
 ## References
 
-- `references/core.md`: the always-on Consult core; load it as the note
-  under Rules says.
 - `references/simple-not-easy.md`: load when ceremony, helper layers, or
   hidden coupling might pass for rigor.
 - `references/plans.md`: load when saving an approved plan or building from

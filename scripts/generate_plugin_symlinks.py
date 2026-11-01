@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Sync plugin copies from canonical agent assets.
 
-Writes the plugin/skills mirror and the SessionStart hook in
-plugin/hooks/hooks.json. validate_skill_anatomy.py imports the constants and
-functions below to check that neither has drifted. Stdlib only, so it runs
-with a bare python3.
+Writes the workflow skill's copy of the Consult core, the plugin/skills
+mirror, and the SessionStart hook in plugin/hooks/hooks.json.
+validate_skill_anatomy.py imports the constants and functions below to check
+that none of them has drifted. Stdlib only, so it runs with a bare python3.
 """
 
 from __future__ import annotations
@@ -20,13 +20,18 @@ from pathlib import Path
 # agents/.agents/skills so no mirror can silently drift.
 MIRROR_DESTS = ["plugin/skills"]
 
-# The SessionStart hook prints the Consult core. Its text lives in the workflow
-# skill, so it also ships in the plugin/skills mirror for readers that never
-# run the hook. hooks.json carries the text inline rather than reading a path,
+# The SessionStart hook prints the Consult core, agents/.agents/core.md, which
+# sits beside the skills directory so readers of the source find it as its own
+# file. Readers that never run the hook (subagents, Codex before trust,
+# Antigravity, manual installs, the eval's Codex arm) only receive skills, so
+# the generator also writes an identical copy into the workflow skill, which
+# points at references/core.md. hooks.json carries the text inline rather than
+# reading a path,
 # because the eval passes only hooks.json to Claude Code, and Codex has
 # resolved plugin root placeholders differently from Claude Code. The heredoc
 # needs a POSIX sh, which is how Claude Code runs hook commands.
-HOOK_SOURCE = "agents/.agents/skills/workflow/references/core.md"
+HOOK_SOURCE = "agents/.agents/core.md"
+CORE_COPY = "agents/.agents/skills/workflow/references/core.md"
 HOOK_DEST = "plugin/hooks/hooks.json"
 # Every session pays for the hook text, and hosts cap hook output (Claude Code
 # at 10,000 characters), so the core stays well below that.
@@ -39,7 +44,8 @@ JS_WHITESPACE = "\t\n\v\f\r \u00a0\u1680\u2000\u2001\u2002\u2003\u2004\u2005\u20
 USAGE = """Usage: python3 scripts/generate_plugin_symlinks.py [repo_root]
 
 Sync every skill mirror (plugin/skills) from agents/.agents/skills, and
-generate plugin/hooks/hooks.json from the workflow skill's references/core.md."""
+copy agents/.agents/core.md into the workflow skill and generate
+plugin/hooks/hooks.json from it."""
 
 
 def repo_root_from_script() -> str:
@@ -160,7 +166,9 @@ def render_session_start_hooks(markdown: str) -> str:
 
 
 def sync_session_start_hook(root: str) -> int:
-    """Write HOOK_DEST from HOOK_SOURCE under `root`; return 0, or 1 when the source is unusable.
+    """Write CORE_COPY and HOOK_DEST from HOOK_SOURCE under `root`.
+
+    Returns 0, or 1 when the source is unusable.
 
     A root without the hook source (a test fixture, say) keeps whatever
     hooks.json it has; the validator reports a missing source in the real repo.
@@ -174,6 +182,10 @@ def sync_session_start_hook(root: str) -> int:
     if problem:
         print(f"ERROR: {HOOK_SOURCE} {problem}", file=sys.stderr)
         return 1
+    copy = Path(root, CORE_COPY)
+    copy.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(source, copy)
+    print(f"copied {HOOK_SOURCE} -> {CORE_COPY}")
     dest = Path(root, HOOK_DEST)
     dest.parent.mkdir(parents=True, exist_ok=True)
     dest.write_text(render_session_start_hooks(markdown), encoding="utf8")
@@ -182,8 +194,9 @@ def sync_session_start_hook(root: str) -> int:
 
 
 def sync_plugin_symlinks(repo_root: str) -> int:
-    """Regenerate every mirror and the hook under `repo_root`.
+    """Regenerate the core copy, the hook, and every mirror under `repo_root`.
 
+    The core copy is written first, so the mirror that follows includes it.
     Returns 0 on success, 1 when a real file blocks a copy or the hook source
     is unusable, and 2 when `repo_root` has no agents/.agents/skills directory.
     """
@@ -192,6 +205,9 @@ def sync_plugin_symlinks(repo_root: str) -> int:
     if not os.path.exists(skills_src) or not stat.S_ISDIR(os.lstat(skills_src).st_mode):
         print(f"not a repo root (no agents/.agents/skills): {root}", file=sys.stderr)
         return 2
+    hook_result = sync_session_start_hook(root)
+    if hook_result != 0:
+        return hook_result
     for dest in MIRROR_DESTS:
         skills_dest = os.path.join(root, dest)
         os.makedirs(skills_dest, exist_ok=True)
@@ -200,7 +216,7 @@ def sync_plugin_symlinks(repo_root: str) -> int:
         if result != 0:
             return result
     print("plugin skill mirror in sync")
-    return sync_session_start_hook(root)
+    return 0
 
 
 def main(argv: list[str]) -> int:

@@ -1,5 +1,5 @@
 """Rule checks for Consult skills, keyed by `<skill>.<rule number>` (or
-`core.<rule number>` for the workflow skill's references/core.md).
+`core.<rule number>` for agents/.agents/core.md).
 
 Synced from eval/verifier/shared/consult_rules.py into every task's tests/ by
 eval/scripts/sync_tests.py. Do not edit the copy under tests/.

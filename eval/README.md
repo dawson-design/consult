@@ -115,11 +115,11 @@ descriptions, but every skill body reads "This skill has no further
 guidance." `scripts/stub.py` builds it under `runs/stub-skills/`.
 
 - Stub minus bare: what the listing and the hook change on their own. The
-  hook prints the Consult core (`workflow/references/core.md`), so this
+  hook prints the Consult core (`agents/.agents/core.md`), so this
   includes the always-on core rules.
 - Consult minus stub: what the skill bodies add beyond the core. Codex arms
   get no hook, so on Codex the core arrives only when the agent loads
-  `workflow` and reads `references/core.md`.
+  `workflow` and reads its `references/core.md` copy.
 
 Both arms read one snapshot of `agents/.agents/skills` taken when the run
 starts, so an edit made mid-run reaches neither.

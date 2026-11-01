@@ -66,11 +66,12 @@ class ExportTests(unittest.TestCase):
         self.assertNotIn("|", rule_labels.rule_text("code-review.2"))
         self.assertIn("findings first by severity", rule_labels.rule_text("code-review.2"))
 
-    def test_a_core_rule_text_comes_from_workflows_core_md(self):
-        core = self.root / "workflow" / "references" / "core.md"
-        core.parent.mkdir(parents=True)
+    def test_a_core_rule_text_comes_from_core_md_beside_the_skills(self):
+        skills = self.root / "skills"
+        skills.mkdir()
+        core = self.root / "core.md"
         core.write_text("Consult is installed.\n\n## Rules\n\n1. **First.** One.\n2. Second\n   rule.\n")
-        with mock.patch.object(rule_labels, "SKILLS_DIR", self.root):
+        with mock.patch.object(rule_labels, "SKILLS_DIR", skills):
             self.assertEqual(rule_labels.rule_text("core.2"), "Second rule.")
             self.assertEqual(rule_labels.rule_text("core.1"), "First. One.")
 

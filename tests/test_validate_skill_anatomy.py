@@ -19,6 +19,7 @@ COMMAND = ["python3", ROOT / "scripts/validate_skill_anatomy.py"]
 
 generator = load_script("generate_plugin_symlinks")
 HOOK_SOURCE = generator.HOOK_SOURCE
+CORE_COPY = generator.CORE_COPY
 
 GOOD_SKILL = """---
 name: good
@@ -165,9 +166,9 @@ def write_json(path: Path, value: Any) -> None:
 
 
 def write_hook_source(root: Path, text: str = HOOK_CORE) -> None:
-    """Write core.md and its plugin/skills mirror copy, so the fixture passes both drift checks."""
-    mirror_path = HOOK_SOURCE.replace("agents/.agents/skills/", "plugin/skills/")
-    for rel in [HOOK_SOURCE, mirror_path]:
+    """Write core.md, its workflow copy, and that copy's plugin/skills mirror, so every drift check passes."""
+    mirror = CORE_COPY.replace("agents/.agents/skills/", "plugin/skills/")
+    for rel in [HOOK_SOURCE, CORE_COPY, mirror]:
         (root / rel).parent.mkdir(parents=True, exist_ok=True)
         (root / rel).write_text(text, encoding="utf8")
 
@@ -582,9 +583,24 @@ class PluginPackageTests(ValidatorTestCase):
     def test_reports_a_hooks_file_whose_core_md_source_is_missing(self) -> None:
         self.make_good_packaged_repo()
         (self.tmp / HOOK_SOURCE).unlink()
-        (self.tmp / HOOK_SOURCE.replace("agents/.agents/skills/", "plugin/skills/")).unlink()
 
         self.assert_fails_with(self.validate(), f"missing {HOOK_SOURCE}, the source of plugin/hooks/hooks.json")
+
+    def test_reports_a_workflow_core_md_copy_that_differs_from_its_source(self) -> None:
+        self.make_good_packaged_repo()
+        stale = "Consult is installed. Stale copy.\n"
+        (self.tmp / CORE_COPY).write_text(stale, encoding="utf8")
+        (self.tmp / CORE_COPY.replace("agents/.agents/skills/", "plugin/skills/")).write_text(stale, encoding="utf8")
+
+        self.assert_fails_with(self.validate(), f"{CORE_COPY} is missing or differs from {HOOK_SOURCE}")
+
+    def test_reports_an_em_dash_in_core_md(self) -> None:
+        self.make_good_packaged_repo()
+        core = "Consult is installed \u2014 load the consult:workflow skill.\n"
+        write_hook_source(self.tmp, core)
+        write_generated_hooks(self.tmp, core)
+
+        self.assert_fails_with(self.validate(), f"{HOOK_SOURCE} has an em dash")
 
     def test_accepts_a_hook_command_that_is_not_whitespace_to_javascript(self) -> None:
         # U+001C is whitespace to Python's strip() but not to JavaScript's

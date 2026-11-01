@@ -31,6 +31,7 @@ from pathlib import Path
 from typing import Any, NamedTuple
 
 from generate_plugin_symlinks import (
+    CORE_COPY,
     HOOK_DEST,
     HOOK_SOURCE,
     MIRROR_DESTS,
@@ -74,16 +75,17 @@ MAX_BODY_WORDS = 700
 # It rose to 1,201 for Rule 8's delegated-model sentence, after trimming
 # restated Workflow steps 3 and 5 paid for part of it, then fell to 947 when
 # the rules every code change needs (the Iron Law and old Rules 1-5 and 10)
-# moved to the always-on core in references/core.md.
+# moved to the always-on core, now agents/.agents/core.md.
 # It fell to 942 when step 1's compatibility-shim clause became core rule 7.
-# It rose to 943 when the git-workflow routing row gained "worktrees".
+# It rose to 943 when the git-workflow routing row gained "worktrees", then
+# fell to 928 when workflow's pointer to the core was shortened.
 # proof rose to 1,050 for the
 # test-level and test-oracle rules: expected outputs come from the
 # spec, and agents never edit an existing test to make a change pass. api
 # rose to 730 so Rules 1 and 2 state its REST compatibility policy (which
 # changes need approval, who counts as an independent consumer, and what
 # needs a successor) in plain sentences instead of dense ones.
-BODY_WORD_EXCEPTIONS = {"workflow": 943, "proof": 1050, "code-review": 950, "api": 730}
+BODY_WORD_EXCEPTIONS = {"workflow": 928, "proof": 1050, "code-review": 950, "api": 730}
 MAX_TRIPWIRE_ROWS = 8
 MAX_DESCRIPTION_LENGTH = 120
 # ~600 tokens of routing surface that every host loads before picking a skill.
@@ -112,9 +114,8 @@ TRIPWIRES_FORMAT_PROBLEM = "Tripwires must use the '| Trigger | Do this instead 
 NO_MANIFEST_HOOKS = "must not declare hooks; the Consult SessionStart hook lives in plugin/hooks/hooks.json"
 GENERATOR_COMMAND = "python3 scripts/generate_plugin_symlinks.py"
 RULE_STATUSES = {"check", "judge-only", "untested"}
-# The Consult core (the SessionStart hook's source) numbers its rules under
-# `## Rules` like a SKILL.md, and its eval ids are `core.<n>`.
-CORE_RULES_FILE = HOOK_SOURCE.replace("agents/.agents/skills/", "")
+# The Consult core (HOOK_SOURCE, the SessionStart hook's source) numbers its
+# rules under `## Rules` like a SKILL.md, and its eval ids are `core.<n>`.
 
 USAGE = """Usage: python3 scripts/validate_skill_anatomy.py [skills_dir] [--self-test]
 
@@ -825,8 +826,16 @@ def session_start_hook_drift_problem(root: str, hooks_text: str) -> str | None:
     source_problem = hook_source_problem(markdown)
     if source_problem:
         return f"{HOOK_SOURCE} {source_problem}"
+    if EM_DASH in markdown:
+        return f"{HOOK_SOURCE} has an em dash -- use a period, colon, comma, or parentheses instead"
     if hooks_text.replace("\r", "") != render_session_start_hooks(markdown):
         return f"{HOOK_DEST} differs from {HOOK_SOURCE} -- run {GENERATOR_COMMAND}"
+    copy_path = os.path.join(root, CORE_COPY)
+    if not os.path.exists(copy_path) or not same_bytes(source_path, copy_path):
+        return (
+            f"{CORE_COPY} is missing or differs from {HOOK_SOURCE}; it is generated, so move any edits"
+            f" to {HOOK_SOURCE}, then run {GENERATOR_COMMAND}"
+        )
     return None
 
 
@@ -852,7 +861,7 @@ def skill_rule_ids(skills_dir: str) -> list[str]:
     ids = []
     for name in skill_names(skills_dir):
         ids.extend(f"{name}.{n}" for n in rule_numbers(read_text(os.path.join(skills_dir, name, "SKILL.md"))))
-    core_path = os.path.join(skills_dir, CORE_RULES_FILE)
+    core_path = os.path.join(repo_root_for_skills_dir(skills_dir), HOOK_SOURCE)
     if os.path.exists(core_path):
         ids.extend(f"core.{n}" for n in rule_numbers(read_text(core_path)))
     return ids

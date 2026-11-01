@@ -66,8 +66,8 @@ built-in skills; `setup.sh` symlinks `~/.claude/skills` and registers bare
 names, so `code-review` and `security` become ambiguous with the built-ins of
 the same name. Running both also loads every skill twice. Pick one.
 
-The plugin ships a SessionStart hook that prints the Consult core into every
-session: the Iron Law and the rules every code change needs (simplicity,
+The plugin ships a SessionStart hook that prints the Consult core,
+[`agents/.agents/core.md`](agents/.agents/core.md), into every session: the Iron Law and the rules every code change needs (simplicity,
 building only what was asked, code shape, backward compatibility, security),
 plus a line telling Claude to load the `workflow` skill before non-trivial
 code work. The core applies even when no skill loads, so it can replace the
@@ -174,7 +174,7 @@ we have not confirmed that it uses the output. On those hosts the agent picks
 skills from their descriptions alone and sees the core only once `workflow`
 loads. To route non-trivial code work through `workflow`, add this line to the
 host's instruction file, for example `AGENTS.md`. To keep the core always on
-as well, paste the rules from the `workflow` skill's `references/core.md`
+as well, paste the rules from [`agents/.agents/core.md`](agents/.agents/core.md)
 there too.
 
 ```text
@@ -184,7 +184,8 @@ Before a non-trivial feature, fix, refactor, debugging task, test, or config cha
 ## Skills
 
 Consult includes 24 skills. Open a skill for when it applies and the rules it
-sets.
+sets. The rules that apply to every code change, whether or not a skill
+loads, are in the Consult core, [`agents/.agents/core.md`](agents/.agents/core.md).
 
 - Routing and proof:
   - [`workflow`](agents/.agents/skills/workflow/SKILL.md): Loads first for non-trivial code changes to choose skills, sign-off gates, and checks.

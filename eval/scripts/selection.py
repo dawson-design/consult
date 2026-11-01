@@ -15,15 +15,16 @@ from pathlib import Path
 EVAL_DIR = Path(__file__).resolve().parent.parent
 REPO_DIR = EVAL_DIR.parent
 SKILLS_PATH = "agents/.agents/skills"
-# Rule id prefixes that are not skill names, mapped to the skill whose files
-# hold those rules. core.<n> rules live in workflow's references/core.md.
+# The Consult core sits beside the skills dir. workflow points readers at it,
+# so its edits and its core.<n> rules select workflow tasks.
+CORE_PATH = "agents/.agents/core.md"
 RULE_PREFIX_SKILLS = {"core": "workflow"}
 
 
 def changed_skills(ref: str) -> set[str]:
-    """Skill names with tracked changes against ref, or new untracked files, under the canonical skills dir."""
-    diff = git("diff", "--name-only", "--no-renames", ref, "--", SKILLS_PATH)
-    untracked = git("ls-files", "--others", "--exclude-standard", "--", SKILLS_PATH)
+    """Skill names with tracked changes against ref, or new untracked files, under the canonical skills dir or the core."""
+    diff = git("diff", "--name-only", "--no-renames", ref, "--", SKILLS_PATH, CORE_PATH)
+    untracked = git("ls-files", "--others", "--exclude-standard", "--", SKILLS_PATH, CORE_PATH)
     return {skill_name(p) for p in (diff + untracked).split() if skill_name(p)}
 
 
@@ -32,6 +33,8 @@ def git(*args: str) -> str:
 
 
 def skill_name(path: str) -> str | None:
+    if path == CORE_PATH:
+        return RULE_PREFIX_SKILLS["core"]
     parts = path.split("/")
     return parts[3] if len(parts) > 4 and path.startswith(SKILLS_PATH + "/") else None
 
