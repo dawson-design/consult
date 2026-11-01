@@ -197,10 +197,13 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   language version in the ecosystem's file (`.python-version`, `.nvmrc`,
   `rust-toolchain.toml`, `go.mod`).
 - New `git-workflow` Rule 8: work on a branch in the main checkout by
-  default, create a worktree only for parallel work and say so, keep it
-  outside the repository, reuse the main checkout's build output, and
-  remove it once its work is merged back. Never leave one at the end of a
-  session, and ask before removing one you did not create. `git-workflow`
+  default, and create a worktree only for parallel work, saying so. For
+  worktrees the agent creates (host-managed ones stay the host's), keep
+  them outside the repository, reuse the main checkout's build output, and
+  once the work is committed, merge it back if the main checkout is clean
+  or hand the branch to the user, then remove the worktree. Unfinished work
+  is reported, not removed, and the agent asks before removing a worktree
+  it did not create. `git-workflow`
   and its `workflow` routing row now list worktrees; the `workflow` word
   budget rises to 943.
 - `commit` Rule 5 keeps the subject under 72 characters.

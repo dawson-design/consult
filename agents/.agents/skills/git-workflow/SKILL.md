@@ -55,11 +55,14 @@ gates: recoverability and approval of published text.
 8. Work on a branch in the main checkout by default. Create a worktree only
    when work must run in parallel with uncommitted changes there, and say
    so, because each worktree duplicates the checkout and its build
-   directories. Put it outside the repository, and reuse the main checkout's
-   build output instead of rebuilding. Once its work is committed, merge or
-   rebase it into the main checkout's branch, then run `git worktree remove`
-   and `git worktree prune`. Never leave one at the end of a session, and ask
-   before removing a worktree you did not create.
+   directories. Leave host-managed worktrees to the host (core rule 1). Put
+   yours outside the repository (the scratchpad directory when the host has
+   one), and reuse the main checkout's build output instead of rebuilding.
+   Once its work is committed, merge or rebase it into the main checkout's
+   branch if that checkout is clean, or hand the branch to the user if not,
+   then run `git worktree remove` and `git worktree prune`. If its work is
+   unfinished when the session ends, report the worktree instead of removing
+   it. Ask before removing a worktree you did not create.
 
 ## Tripwires
 
