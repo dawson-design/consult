@@ -17,6 +17,7 @@ import os
 import re
 import subprocess
 import sys
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from itertools import chain
 from pathlib import Path
@@ -43,8 +44,17 @@ WRITE_TOOL_RE = re.compile(
 # `=>`, `->`, `>=`, and `>>`'s second `>` are not redirects.
 WRITE_COMMAND_RE = re.compile(r"apply_patch|(?<![0-9&=<>-])>(?!=)\s*(?!/dev/null|&)\S|\btee\b|\bsed\s+-i\b")
 QUOTED_RE = re.compile(r"'[^']*'|\"(?:[^\"\\]|\\.)*\"")
-# Variables a verifier must not hand to agent-written code (npm scripts, the app).
-CREDENTIAL_ENV_RE = re.compile(r"TOKEN|KEY|SECRET|PASSWORD|CREDENTIAL|AUTH", re.IGNORECASE)
+# The environment agent-written code (npm scripts, the app, probes) runs with.
+# An allowlist of exact names, so a credential the verifier holds under any
+# name stays out: task.toml [verifier.env] hands it CLAUDE_CODE_OAUTH_TOKEN for
+# the judge, a name test for TOKEN or KEY would pass DATABASE_URL, and a NODE_
+# prefix would pass NODE_AUTH_TOKEN. PWD is left out: run_command sets the cwd.
+AGENT_ENV_NAMES = frozenset(
+    {"PATH", "HOME", "LANG", "LANGUAGE", "TERM", "TZ", "TMPDIR", "SHELL", "USER", "LOGNAME", "HOSTNAME", "CI"}
+    | {"NODE_ENV", "NODE_OPTIONS", "NODE_PATH", "NODE_VERSION"}
+)
+# Locale variables only; every other family is listed by exact name above.
+AGENT_ENV_PREFIXES = ("LC_",)
 SKILL_PATH_RE = re.compile(r"skills/([a-z][a-z0-9-]*)/SKILL\.md")
 # Claude Code injects this line and the skill body as a user message once a Skill
 # call resolves to a skill file. A failed call injects nothing. A bundled skill such
@@ -546,9 +556,14 @@ def classify(path: str) -> str:
     return "source"
 
 
+def agent_env(environ: Mapping[str, str]) -> dict[str, str]:
+    """The part of `environ` agent-written code may see: AGENT_ENV_NAMES and AGENT_ENV_PREFIXES only."""
+    return {k: v for k, v in environ.items() if k in AGENT_ENV_NAMES or k.upper().startswith(AGENT_ENV_PREFIXES)}
+
+
 def run_command(workspace: Path, argv: list[str], timeout: int) -> tuple[bool, str]:
     """Run agent-influenced code (tests, npm scripts, the app) without the verifier's credentials."""
-    env = {k: v for k, v in os.environ.items() if not CREDENTIAL_ENV_RE.search(k)}
+    env = agent_env(os.environ)
     try:
         result = subprocess.run(
             argv, cwd=workspace, env=env, capture_output=True, text=True, timeout=timeout, check=False

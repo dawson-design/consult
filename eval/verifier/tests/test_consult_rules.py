@@ -11,11 +11,13 @@ commit, like the task image builds.
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 SHARED = Path(__file__).resolve().parent.parent / "shared"
 sys.path.insert(0, str(SHARED))
@@ -165,6 +167,16 @@ class LibTests(unittest.TestCase):
         self.addCleanup(os.environ.pop, "FAKE_EVAL_TOKEN")
         _, output = cl.run_command(Path("."), ["bash", "-c", "echo ${FAKE_EVAL_TOKEN:-hidden}"], timeout=10)
         self.assertEqual(output.strip(), "hidden")
+
+    def test_run_command_passes_only_allowlisted_variables_to_agent_code(self):
+        """A credential under any name stays out, a NODE_-prefixed one included; what node needs gets through."""
+        env = {"DATABASE_URL": "postgres://u:p@h/db", "NODE_AUTH_TOKEN": "t", "NODE_ENV": "test", "LC_ALL": "C"}
+        script = (
+            'echo "${DATABASE_URL:-hidden} ${NODE_AUTH_TOKEN:-hidden} $NODE_ENV $LC_ALL ${HOME:+home} ${PATH:+path}"'
+        )
+        with mock.patch.dict(os.environ, env):
+            _, output = cl.run_command(Path("."), ["bash", "-c", script], timeout=10)
+        self.assertEqual(output.strip(), "hidden hidden test C home path")
 
     def test_questions_count_only_after_the_last_user_step(self):
         traj = trajectory(user("brief"), agent("Which store should I use?"), user("Approved."), agent("Done."))
@@ -408,6 +420,8 @@ class ScoreTests(WorkspaceCase):
                 self.assertEqual(cr.score("test.crash", self.ws), 0.0)
             finally:
                 sys.stderr = saved
+
+
 
 
 if __name__ == "__main__":

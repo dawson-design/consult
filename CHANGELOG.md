@@ -215,6 +215,15 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   pointer to that copy is shorter. Edits to `core.md` select `workflow`
   tasks in the fast eval tier.
 
+### Security
+
+- The eval verifier runs agent-written code (visible tests, hidden checks,
+  npm scripts, probes) with an allowlisted environment: `PATH`, `HOME`,
+  locale and terminal variables, and the `NODE_ENV`, `NODE_OPTIONS`,
+  `NODE_PATH`, and `NODE_VERSION` names. It used to
+  drop only names that looked like credentials, which would have passed a
+  `DATABASE_URL` through beside the judge's `CLAUDE_CODE_OAUTH_TOKEN`.
+
 ## [18.0.0] (2026-10-23)
 
 ### Changed
