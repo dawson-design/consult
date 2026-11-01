@@ -1,11 +1,15 @@
 # Synced from eval/verifier/shared/Dockerfile by eval/scripts/sync_tests.py. Do not edit here.
+# A floating Node 22 tag on purpose: it follows Node 22 patch and Debian
+# rebuilds. The CLIs below name exact versions.
 FROM node:22-bookworm-slim
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends git curl ca-certificates python3 \
     && rm -rf /var/lib/apt/lists/*
 
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
+# Pinned like the CLIs below, so an image rebuild pulls what the last one did;
+# bump it on purpose. eval/verifier/tests/test_dockerfile_pins.py rejects `latest`.
+COPY --from=ghcr.io/astral-sh/uv:0.13.6 /uv /uvx /usr/local/bin/
 ENV UV_TOOL_BIN_DIR=/usr/local/bin
 RUN uv tool install harbor-rewardkit==0.2.1
 # Preinstalled agent CLIs: Harbor skips its per-trial install when the binary

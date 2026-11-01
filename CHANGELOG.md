@@ -215,6 +215,31 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   pointer to that copy is shorter. Edits to `core.md` select `workflow`
   tasks in the fast eval tier.
 
+### Security
+
+- The eval verifier runs agent-written code (visible tests, hidden checks,
+  npm scripts, probes) with an allowlisted environment: `PATH`, `HOME`,
+  locale and terminal variables, and the `NODE_ENV`, `NODE_OPTIONS`,
+  `NODE_PATH`, and `NODE_VERSION` names. It used to
+  drop only names that looked like credentials, which would have passed a
+  `DATABASE_URL` through beside the judge's `CLAUDE_CODE_OAUTH_TOKEN`.
+- The eval judge prompt fences the agent's bundle between `BEGIN AGENT
+  OUTPUT` and `END AGENT OUTPUT` markers and says its contents are data to
+  score, not instructions. `build_bundle` no longer follows a symlink the
+  agent left as a new file, which would have put any file in the container in
+  front of the judge and into the persisted trial artifacts.
+- The CI workflow pins its three actions to commit SHAs and grants the
+  workflow token read access only. `tests/test_ci_workflow.py` fails on an
+  unpinned action or a write permission.
+- The skill anatomy validator rejects a symlink under `agents/.agents/skills`
+  that resolves outside that directory, points at nothing, or is written as
+  an absolute path. The generator
+  mirrors symlinks as symlinks and a plugin clone recreates them on every
+  user's machine.
+- The eval verifier image pins `uv` to 0.13.6 instead of `latest`, the one
+  image it pulled by that tag. `eval/verifier/tests/test_dockerfile_pins.py`
+  rejects `latest` tags.
+
 ## [18.0.0] (2026-10-23)
 
 ### Changed

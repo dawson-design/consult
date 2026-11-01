@@ -5,11 +5,19 @@ on:
     branches: ["**"]
   pull_request:
 
+# The checks only read the checkout. The repository default is already
+# read-only; saying so here keeps that true if the default ever changes.
+permissions:
+  contents: read
+
 jobs:
   checks:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      # Every action is pinned to a commit, as the lychee download below is
+      # pinned to a checksum, so a moved tag cannot change what runs here.
+      # tests/test_ci_workflow.py enforces the pins and the permissions.
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
       # Tcl expect drives the setup.sh confirmation tests. Without it those tests
       # skip, so install it here to make sure they actually run somewhere.
@@ -22,13 +30,12 @@ jobs:
 
       # Node serves only eval/verifier/tests/test_hidden_checks.py, which runs
       # the eval's JS hidden checks. The repo's own tooling is Python.
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version: 22
 
-      # ruff is pinned in the root pyproject.toml and uv.lock. setup-uv
-      # publishes no floating major tag, so pin the release.
-      - uses: astral-sh/setup-uv@v10.3.0
+      # ruff is pinned in the root pyproject.toml and uv.lock.
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
 
       # lychee checks local Markdown links and anchors (make links), and the
       # pre-commit tests expect it on PATH. Pinned release binary, verified
