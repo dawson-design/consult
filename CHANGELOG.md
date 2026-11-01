@@ -190,6 +190,10 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   its tests and fix what they report in the changed code, but not after
   every edit. A project past the prototype stage that lacks one gets a
   proposal to add it.
+- `scaffolding` Rule 5 adds a pre-push hook that runs format, lint,
+  typecheck, and the fast tests, so commits stay quick. Rule 7 pins the
+  language version in the ecosystem's file (`.python-version`, `.nvmrc`,
+  `rust-toolchain.toml`, `go.mod`).
 
 ## [18.0.0] (2026-10-23)
 
