@@ -104,6 +104,9 @@ MODEL_KEY_RE = re.compile(r"^model:", re.MULTILINE)
 ATTRIBUTION_RE = re.compile(r"(?<![A-Za-z0-9_])[Pp]er\s+(?:[A-Z][a-z]+\s+)?[A-Z][a-z]+(?![A-Za-z0-9_])")
 EM_DASH = "—"
 EM_DASH_PROBLEM = "em dash found -- use a period, colon, comma, or parentheses instead"
+ESCAPING_SYMLINK_PROBLEM = "symlink resolves outside the skills directory -- link only to files inside it"
+DANGLING_SYMLINK_PROBLEM = "symlink target does not exist"
+ABSOLUTE_SYMLINK_PROBLEM = "symlink target is an absolute path -- use a relative one, which a clone can resolve"
 # One authoritative phrasing of the direction-vs-shapes approval rule. Skills
 # that invoke the concept must carry this sentence verbatim so the semantics
 # cannot drift file by file.
@@ -383,6 +386,48 @@ def walk_files(root: str) -> list[str]:
     return files
 
 
+def walk_symlinks(root: str) -> list[str]:
+    """Return every symlink under `root`, depth first in sorted order, descending into real directories only."""
+    if not os.path.isdir(root):
+        return []
+    links = []
+    for name in sorted(os.listdir(root)):
+        path = os.path.join(root, name)
+        if os.path.islink(path):
+            links.append(path)
+        elif os.path.isdir(path):
+            links.extend(walk_symlinks(path))
+    return links
+
+
+def symlink_problem(link: str, root: str) -> str | None:
+    """Say why `link` may not ship: its target is missing, lies outside `root` (a real path), or is absolute.
+
+    An absolute target resolves on the author's machine only; the generator
+    and a git clone both reproduce the link text as written.
+    """
+    target = os.path.realpath(link)
+    if not os.path.exists(target):
+        return DANGLING_SYMLINK_PROBLEM
+    if target != root and not target.startswith(root + os.sep):
+        return ESCAPING_SYMLINK_PROBLEM
+    if os.path.isabs(os.readlink(link)):
+        return ABSOLUTE_SYMLINK_PROBLEM
+    return None
+
+
+def validate_symlinks(skills_dir: str) -> list[Finding]:
+    """Report each symlink under `skills_dir` that points outside it, at nothing, or by an absolute path.
+
+    The generator mirrors symlinks as symlinks, and a plugin clone recreates
+    them on every user's machine, where one that leaves the tree would read
+    whatever it points at there.
+    """
+    root = os.path.realpath(skills_dir)
+    problems = ((link, symlink_problem(link, root)) for link in walk_symlinks(skills_dir))
+    return [Finding(link, [problem]) for link, problem in problems if problem]
+
+
 def validate_skill_references(skill_dir: str) -> list[Finding]:
     """Report each Markdown file under the skill's references/ that holds an em dash."""
     paths = walk_files(os.path.join(skill_dir, "references"))
@@ -415,7 +460,7 @@ def validate_workflow_routing(skills_dir: str) -> list[Finding]:
 
 
 def validate_skills(skills_dir: str) -> list[Finding]:
-    """Check every skill, its references, the workflow router, and the pack-wide description budget."""
+    """Check every skill, its references, its symlinks, the workflow router, and the description budget."""
     findings = []
     total_description_length = 0
     for name in sorted(os.listdir(skills_dir)):
@@ -430,6 +475,7 @@ def validate_skills(skills_dir: str) -> list[Finding]:
             findings.append(finding)
         findings.extend(validate_skill_references(os.path.join(skills_dir, name)))
     findings.extend(validate_workflow_routing(skills_dir))
+    findings.extend(validate_symlinks(skills_dir))
     if total_description_length > MAX_TOTAL_DESCRIPTION_LENGTH:
         total = f"{total_description_length} > {MAX_TOTAL_DESCRIPTION_LENGTH} characters"
         problem = f"frontmatter description total too long ({total})"
@@ -1091,6 +1137,10 @@ SELF_TEST_EXPECTED = [
     "description total too long",
     "quoted/SKILL.md",
     f"description too long ({js_length(QUOTED_DESCRIPTION)} > {MAX_DESCRIPTION_LENGTH} characters)",
+    "escape/link",
+    ESCAPING_SYMLINK_PROBLEM,
+    "absolute/link",
+    ABSOLUTE_SYMLINK_PROBLEM,
 ]
 
 
@@ -1114,6 +1164,12 @@ def write_self_test_fixtures(tmp: str) -> None:
     write_fixture(os.path.join(tmp, "orphan/SKILL.md"), ORPHAN_FIXTURE)
     write_fixture(os.path.join(tmp, "quoted/SKILL.md"), QUOTED_FIXTURE)
     write_fixture(os.path.join(tmp, "stale/SKILL.md"), STALE_FIXTURE)
+    # A symlink out of the skills tree; the parent of tmp is outside it.
+    os.makedirs(os.path.join(tmp, "escape"))
+    os.symlink(os.path.dirname(tmp), os.path.join(tmp, "escape", "link"))
+    # A symlink inside the tree but written as an absolute path.
+    os.makedirs(os.path.join(tmp, "absolute"))
+    os.symlink(os.path.join(tmp, "good", "SKILL.md"), os.path.join(tmp, "absolute", "link"))
     # Enough fixtures to exceed MAX_TOTAL_DESCRIPTION_LENGTH with margin, so the
     # budget assertion does not quietly stop testing anything when the ceiling
     # is raised.

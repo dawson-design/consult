@@ -479,6 +479,40 @@ class SkillAnatomyTests(ValidatorTestCase):
             "skill 'orphan' is not referenced by the workflow router",
         )
 
+    def test_rejects_a_symlink_that_leaves_the_skills_directory(self) -> None:
+        skill = make_skill(self.skills_dir, "good")
+        outside = self.tmp / "outside.md"
+        outside.write_text("not a skill file\n", encoding="utf8")
+        (skill / "references").mkdir()
+        (skill / "references" / "leak.md").symlink_to(outside)
+
+        self.assert_fails_with(self.validate(), "good/references/leak.md", "outside the skills directory")
+
+    def test_rejects_a_dangling_symlink(self) -> None:
+        skill = make_skill(self.skills_dir, "good")
+        (skill / "references").mkdir()
+        (skill / "references" / "gone.md").symlink_to("missing.md")
+
+        self.assert_fails_with(self.validate(), "good/references/gone.md", "does not exist")
+
+    def test_rejects_a_symlink_with_an_absolute_target(self) -> None:
+        skill = make_skill(self.skills_dir, "good")
+        (skill / "references").mkdir()
+        (skill / "references" / "real.md").write_text("Shared notes.\n", encoding="utf8")
+        (skill / "references" / "alias.md").symlink_to(skill / "references" / "real.md")
+
+        self.assert_fails_with(self.validate(), "good/references/alias.md", "absolute path")
+
+    def test_accepts_a_symlink_that_stays_inside_the_skills_directory(self) -> None:
+        skill = make_skill(self.skills_dir, "good")
+        (skill / "references").mkdir()
+        (skill / "references" / "real.md").write_text("Shared notes.\n", encoding="utf8")
+        (skill / "references" / "alias.md").symlink_to("real.md")
+
+        result = self.validate()
+
+        self.assertIn("all skills conform to the anatomy", result.stdout)
+
 
 class PluginPackageTests(ValidatorTestCase):
     def test_reports_plugin_drift_when_a_skill_mirror_is_missing(self) -> None:

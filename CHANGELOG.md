@@ -231,6 +231,11 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The CI workflow pins its three actions to commit SHAs and grants the
   workflow token read access only. `tests/test_ci_workflow.py` fails on an
   unpinned action or a write permission.
+- The skill anatomy validator rejects a symlink under `agents/.agents/skills`
+  that resolves outside that directory, points at nothing, or is written as
+  an absolute path. The generator
+  mirrors symlinks as symlinks and a plugin clone recreates them on every
+  user's machine.
 
 ## [18.0.0] (2026-10-23)
 
