@@ -6,6 +6,20 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- A marketing site in `site/`, published to GitHub Pages at
+  <https://dawson-design.github.io/consult/>, with a skills page generated
+  from `core.md`, the README skill list, and each `SKILL.md`.
+  `scripts/serve_site.py` previews it locally with live reload, and
+  `scripts/build_site_skills.py` regenerates the skills page; tests fail while
+  the page or the home page's counts and release line are out of date.
+
+### Changed
+
+- The README groups the skills by the kind of work: process and proof, design,
+  interfaces and docs, backend and security, production, and repo and tools.
+
 ## [19.0.0] (2026-11-01)
 
 ### Changed

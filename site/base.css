@@ -1,0 +1,193 @@
+/* base.css: shared foundation for the Consult site (index.html and skills/). Design tokens
+   (spacing, type scale, fonts, light and dark colours), reset, header, logo, install block with
+   tabs and copy buttons, sections, footer, and focus and no-JavaScript rules. site.css loads after
+   it and sets the site's always-dark tokens and page-specific layout. */
+:root {
+  --paper: #FAFAFA;
+  --ink: #101010;
+  --ink-2: #5C5C5C;
+  --rule: #E2E2E2;
+  --wash: #EEEEEE;
+  --draft: #BDBDBD;
+  --accent: #C8201A;
+  --on-accent: #FFFFFF;
+  --bg-draft: #F2F2F2;
+  --bg-proof: #E7E7E7;
+  --bg-gate: rgba(200, 32, 26, 0.18);
+
+  --f-logo: "Archivo", "Arial Black", "Helvetica Neue", Arial, sans-serif;
+  --f-body: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --t-label: 0.8125rem;
+  --t-small: 0.9375rem;
+  --t-body: 1.0625rem;
+  --t-lead: clamp(1.375rem, 1.1rem + 1vw, 1.875rem);
+  --t-head: clamp(1.75rem, 1.3rem + 1.6vw, 2.5rem);
+  --t-mark: clamp(3.5rem, 1.5rem + 7vw, 6.5rem);
+
+  --s-1: 0.5rem;
+  --s-2: 1rem;
+  --s-3: 1.5rem;
+  --s-4: 2.5rem;
+  --s-5: 4rem;
+  --s-6: clamp(4rem, 2.5rem + 4vw, 6rem);
+
+  --gutter: clamp(16px, 4vw, 2.5rem);
+  --column: 44rem;
+  --wide: 76rem;
+  --bar: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0B0B0B; --ink: #EEEEEE; --ink-2: #A0A0A0; --rule: #262626;
+    --wash: #1A1A1A; --draft: #4D4D4D; --accent: #F0645A; --on-accent: #0B0B0B;
+    --bg-draft: #121212; --bg-proof: #1A1A1A; --bg-gate: rgba(240, 100, 90, 0.22);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0B0B0B; --ink: #EEEEEE; --ink-2: #A0A0A0; --rule: #262626;
+  --wash: #1A1A1A; --draft: #4D4D4D; --accent: #F0645A; --on-accent: #0B0B0B;
+  --bg-draft: #121212; --bg-proof: #1A1A1A; --bg-gate: rgba(240, 100, 90, 0.22);
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--f-body);
+  font-size: var(--t-body);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3, p, ul, ol, pre, figure, blockquote, dl, dd { margin: 0; }
+ul, ol { padding: 0; list-style: none; }
+img, svg, canvas { max-width: 100%; }
+a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 0.2em; }
+a:hover { text-decoration-thickness: 2px; }
+code { font-family: var(--f-mono); font-size: 0.92em; }
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+[hidden] { display: none !important; }
+.vh {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+.wrap {
+  max-width: calc(var(--column) + 5rem);
+  margin-inline: auto;
+  padding-left: max(var(--gutter), env(safe-area-inset-left, 0px));
+  padding-right: max(var(--gutter), env(safe-area-inset-right, 0px));
+}
+.wrap-wide { max-width: calc(var(--wide) + 5rem); }
+
+/* Header */
+.top { border-top: var(--bar) solid var(--ink); }
+.top-inner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s-1) var(--s-3); padding-block: var(--s-2); }
+.brand { display: inline-flex; align-items: center; gap: 0.4rem; text-decoration: none; font-family: var(--f-logo); font-weight: 900; font-size: 1.375rem; letter-spacing: -0.05em; line-height: 1; }
+.brand .logo { width: 1.1em; height: 1.1em; }
+.nav { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-1) var(--s-3); }
+.nav a { font-size: var(--t-small); color: var(--ink-2); text-decoration: none; }
+.nav a:hover { color: var(--ink); text-decoration: underline; }
+.nav .star { color: var(--ink); border: 1px solid var(--rule); padding: 0.375rem 0.75rem; }
+.nav .star:hover { border-color: var(--ink); text-decoration: none; }
+
+/* Logo mark (the constructed quote marks; fills are set in site.css). */
+.logo { display: block; }
+
+.lead { font-size: var(--t-lead); font-weight: 400; line-height: 1.2; letter-spacing: -0.02em; text-wrap: balance; max-width: 26ch; }
+.sub { font-size: var(--t-body); color: var(--ink-2); max-width: 46ch; text-wrap: pretty; }
+
+/* Install block: tabs, panels, and copy buttons (behaviour in site.js) */
+.install { width: 100%; max-width: 36rem; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-2); text-align: left; }
+.install > *, .panel > *, .desk-steps > li { min-width: 0; }
+.panel { grid-template-columns: minmax(0, 1fr); }
+.tabs { display: flex; gap: var(--s-3); }
+.install[data-align="center"] .tabs { justify-content: center; }
+.tab {
+  font: inherit; font-size: var(--t-small); color: var(--ink-2);
+  background: none; border: 0; border-bottom: 2px solid transparent;
+  padding: 0.5rem 0; min-height: 44px; cursor: pointer;
+}
+.tab[aria-selected="true"] { color: var(--ink); font-weight: 500; border-bottom-color: var(--ink); }
+.tab:hover { color: var(--ink); }
+.panel { display: grid; gap: var(--s-1); }
+.cmd-row { display: flex; align-items: stretch; border: 1px solid var(--rule); background: var(--wash); }
+.cmd-row pre { flex: 1; min-width: 0; white-space: pre-wrap; overflow-wrap: anywhere; padding: 0.75rem 0.875rem; font-family: var(--f-mono); font-size: 0.875rem; line-height: 1.5; }
+.cmd-row pre code { font-size: inherit; }
+.cmd-row .tok { white-space: nowrap; }
+.cmd-row .n { color: var(--ink-2); user-select: none; margin-right: 0.75rem; }
+.btn {
+  font: inherit; font-size: var(--t-small); font-weight: 600; line-height: 1.2;
+  cursor: pointer; border: 2px solid transparent;
+  padding: 0.5rem 1rem; min-height: 44px; min-width: 5.5rem;
+  display: inline-flex; align-items: center; justify-content: center; text-decoration: none;
+}
+.btn-primary { background: var(--accent); color: var(--on-accent); }
+.btn-primary:hover { background: var(--ink); color: var(--paper); }
+.btn-quiet { background: transparent; color: var(--ink); border-left: 1px solid var(--rule); }
+.btn-quiet:hover { background: var(--ink); color: var(--paper); }
+
+.hint { font-size: var(--t-small); color: var(--ink-2); }
+.install[data-align="center"] .hint { text-align: center; }
+.desk-steps { display: grid; gap: var(--s-1); }
+.desk-steps .step { font-size: var(--t-small); }
+.desk-steps .step + .cmd-row { margin-top: var(--s-1); }
+.desk-steps .step b { font-weight: 600; font-variant-numeric: tabular-nums; margin-right: 0.375rem; }
+.all { border-top: 1px solid var(--rule); }
+.all summary { cursor: pointer; font-size: var(--t-small); color: var(--ink-2); padding-block: var(--s-2); }
+.install[data-align="center"] .all summary { text-align: center; }
+.all summary:hover, .all[open] summary { color: var(--ink); }
+.others { display: grid; gap: var(--s-3); padding-bottom: var(--s-2); }
+.others .h { font-size: var(--t-small); font-weight: 600; margin-bottom: var(--s-1); }
+.others p { font-size: var(--t-small); color: var(--ink-2); }
+.others .cmd-row + .cmd-row { margin-top: var(--s-1); }
+
+/* Without JavaScript: show both install panels with labels, hide controls that need a script. */
+.no-js .tabs, .no-js [data-copy] { display: none !important; }
+.no-js .panel[hidden] { display: grid !important; }
+.no-js .panel::before { content: attr(data-label); font-size: var(--t-small); font-weight: 600; }
+
+/* Sections */
+.section { border-top: 1px solid var(--rule); }
+.section > .wrap { padding-block: var(--s-6); }
+h2 { font-size: var(--t-head); font-weight: 400; line-height: 1.1; letter-spacing: -0.03em; text-wrap: balance; max-width: 24ch; }
+.section h2 + * { margin-top: var(--s-4); }
+.section p { max-width: 62ch; text-wrap: pretty; }
+
+.steps { display: grid; gap: var(--s-1); counter-reset: n; }
+.steps li { display: grid; grid-template-columns: 2rem minmax(0, 1fr); gap: var(--s-2); padding-block: 0.375rem; }
+.steps li::before { counter-increment: n; content: counter(n); color: var(--accent); font-weight: 600; font-variant-numeric: tabular-nums; }
+.steps b { font-weight: 500; }
+.steps span { color: var(--ink-2); }
+
+/* Footer */
+.foot { border-top: var(--bar) solid var(--ink); }
+.foot-inner { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: var(--s-2); padding-block: var(--s-3) var(--s-4); }
+.foot ul { display: flex; flex-wrap: wrap; gap: var(--s-1) var(--s-3); }
+.foot ul a { font-size: var(--t-small); color: var(--ink-2); }
+
+@media (max-width: 40rem) {
+  .nav a:not(.star) { display: none; }
+  .top-inner { flex-wrap: nowrap; }
+  .cmd-row pre { font-size: 0.8125rem; padding: 0.625rem 0.75rem; }
+  .btn { min-width: 4.5rem; padding-inline: 0.75rem; }
+  
+  
+  
+  
+  
+  
+}
+@media (prefers-reduced-motion: no-preference) {
+  .btn, .tab { transition: background-color 120ms ease, color 120ms ease; }
+}
+@media (forced-colors: active) {
+  .btn { border-color: ButtonText; }
+  .tab[aria-selected="true"] { border-bottom-color: Highlight; }
+  
+}

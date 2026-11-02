@@ -187,37 +187,36 @@ Consult includes 24 skills. Open a skill for when it applies and the rules it
 sets. The rules that apply to every code change, whether or not a skill
 loads, are in the Consult core, [`agents/.agents/core.md`](agents/.agents/core.md).
 
-- Routing and proof:
+- Process and proof:
   - [`workflow`](agents/.agents/skills/workflow/SKILL.md): Loads first for non-trivial code changes to choose skills, sign-off gates, and checks.
   - [`proof`](agents/.agents/skills/proof/SKILL.md): Tests and checks that prove acceptance criteria, edge cases, and invariants.
-  - [`contract-first`](agents/.agents/skills/contract-first/SKILL.md): Approve contracts (APIs, schemas, formats, module boundaries) before implementation.
-- Design:
-  - [`specify`](agents/.agents/skills/specify/SKILL.md): Read the code, propose a design, and agree on it before building: tradeoffs, decisions, and design docs.
-  - [`domain-modeling`](agents/.agents/skills/domain-modeling/SKILL.md): Data shapes, invariants, state transitions, parsing, and effects.
-  - [`architecture`](agents/.agents/skills/architecture/SKILL.md): Architecture decisions, module boundaries, coupling, layering, and system structure.
-- Correctness and change:
   - [`code-review`](agents/.agents/skills/code-review/SKILL.md): Review diffs and PRs for bugs, regressions, edge cases, and merge readiness.
   - [`debugging`](agents/.agents/skills/debugging/SKILL.md): Reproduce symptoms, isolate causes, inspect evidence, and fix bugs.
-  - [`error-handling`](agents/.agents/skills/error-handling/SKILL.md): Error types, propagation, retries, user messages, and recovery.
   - [`refactoring`](agents/.agents/skills/refactoring/SKILL.md): Behavior-preserving change, tests, and safe rewrites.
-  - [`official-source-check`](agents/.agents/skills/official-source-check/SKILL.md): Version-sensitive framework, library, SDK, or platform behavior, checked against official sources.
-- Safety:
-  - [`security`](agents/.agents/skills/security/SKILL.md): Auth, secrets, crypto, input validation, dependency risk, and trust boundaries.
-  - [`database`](agents/.agents/skills/database/SKILL.md): Schemas, migrations, indexes, transactions, query plans, and locking.
-  - [`release`](agents/.agents/skills/release/SKILL.md): Release prep and release-artifact sync, on request or approval.
-- Public-facing:
+- Design:
+  - [`specify`](agents/.agents/skills/specify/SKILL.md): Read the code, propose a design, and agree on it before building: tradeoffs, decisions, and design docs.
+  - [`architecture`](agents/.agents/skills/architecture/SKILL.md): Architecture decisions, module boundaries, coupling, layering, and system structure.
+  - [`domain-modeling`](agents/.agents/skills/domain-modeling/SKILL.md): Data shapes, invariants, state transitions, parsing, and effects.
+  - [`contract-first`](agents/.agents/skills/contract-first/SKILL.md): Approve contracts (APIs, schemas, formats, module boundaries) before implementation.
+- Interfaces and docs:
   - [`api`](agents/.agents/skills/api/SKILL.md): REST API contracts: endpoints, fields, evolution, status codes, errors, pagination, idempotency.
-  - [`documentation`](agents/.agents/skills/documentation/SKILL.md): READMEs, runbooks, API docs, module docs, and comments for existing code.
   - [`ui-design`](agents/.agents/skills/ui-design/SKILL.md): Frontend UI, layouts, components, responsive behavior, accessibility, WCAG, keyboard, and focus.
-- Production quality:
+  - [`documentation`](agents/.agents/skills/documentation/SKILL.md): READMEs, runbooks, API docs, module docs, and comments for existing code.
+- Backend and security:
+  - [`database`](agents/.agents/skills/database/SKILL.md): Schemas, migrations, indexes, transactions, query plans, and locking.
   - [`async-systems`](agents/.agents/skills/async-systems/SKILL.md): Message contracts and schemas, queues, streams, concurrency, ordering, and backpressure.
+  - [`error-handling`](agents/.agents/skills/error-handling/SKILL.md): Error types, propagation, retries, user messages, and recovery.
+  - [`security`](agents/.agents/skills/security/SKILL.md): Auth, secrets, crypto, input validation, dependency risk, and trust boundaries.
+- Production:
   - [`observability`](agents/.agents/skills/observability/SKILL.md): Production logs, metrics, traces, health checks, alerts, SLOs, and performance measurement.
   - [`performance`](agents/.agents/skills/performance/SKILL.md): Profiling, latency, throughput, allocation, caching, and hot paths.
-- Repo workflow:
+  - [`release`](agents/.agents/skills/release/SKILL.md): Release prep and release-artifact sync, on request or approval.
+- Repo and tools:
   - [`commit`](agents/.agents/skills/commit/SKILL.md): Staging reviewed work, commit splits, and messages.
-  - [`scaffolding`](agents/.agents/skills/scaffolding/SKILL.md): New projects, package setup, quality tooling, CI, and repo structure.
   - [`git-workflow`](agents/.agents/skills/git-workflow/SKILL.md): Branches, history edits, conflicts, rebases, recovery, and force-push.
   - [`issue-tracking`](agents/.agents/skills/issue-tracking/SKILL.md): Initiatives, epics, and issues in GitHub, Jira, or another tracker: drafting, sizing, linking, and status.
+  - [`scaffolding`](agents/.agents/skills/scaffolding/SKILL.md): New projects, package setup, quality tooling, CI, and repo structure.
+  - [`official-source-check`](agents/.agents/skills/official-source-check/SKILL.md): Version-sensitive framework, library, SDK, or platform behavior, checked against official sources.
 
 Greenfield stack templates live under
 [`scaffolding/references/stacks/`](agents/.agents/skills/scaffolding/references/stacks/).
