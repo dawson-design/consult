@@ -26,6 +26,9 @@ TESTS_DIR = Path("/tests")
 TRAJECTORY_PATH = Path("/logs/agent/trajectory.json")
 SCAFFOLD_SHA_PATH = Path("/opt/eval/scaffold.sha")
 BUNDLE_PATH = Path("/logs/verifier/judge-bundle.md")
+# The dimensions a model scores: the generic judge (routing tasks, and code
+# tasks before the rubric) and the rubric judges (code tasks).
+MODEL_DIMENSIONS = ("judge", "rubric")
 # RewardKit passes the judge prompt as one `claude -p` argument, and Linux caps
 # a single argument at 128 KiB. A larger bundle stays on disk for the judge to read.
 INLINE_BUNDLE_LIMIT = 100_000
@@ -602,8 +605,8 @@ def final_agent_message(trajectory: Trajectory) -> str:
     return messages[-1] if messages else ""
 
 
-def build_bundle(workspace: Path) -> str:
-    """Judge input: the diff against the committed scaffold plus new files and the final message."""
+def changes_text(workspace: Path) -> str:
+    """The diff against the committed scaffold plus each new file: the agent's changes as the judges read them."""
     diff = git(workspace, "diff", scaffold_sha(workspace))
     untracked = git(workspace, "ls-files", "--others", "--exclude-standard").split()
     sections = ["# Changes against the starting repository", "", "## Diff", "", "```diff", diff.strip(), "```", ""]
@@ -614,9 +617,15 @@ def build_bundle(workspace: Path) -> str:
         if file_path.is_symlink() or not file_path.is_file() or file_path.stat().st_size > 64_000:
             continue
         sections += [f"## New file: {rel}", "", "```", file_path.read_text(errors="replace"), "```", ""]
-    final = final_agent_message(load_trajectory())
-    sections += ["## Final agent message", "", final or "No final message was captured.", ""]
     return "\n".join(sections)
+
+
+def build_bundle(workspace: Path) -> str:
+    """The trial record (judge-bundle.md): the changes, then the final message. rescore.py rebuilds workspaces from it."""
+    final = final_agent_message(load_trajectory())
+    return "\n".join(
+        [changes_text(workspace), "## Final agent message", "", final or "No final message was captured.", ""]
+    )
 
 
 def judge_credentials_present() -> bool:
@@ -633,31 +642,50 @@ def judge_credentials_present() -> bool:
 def prepare_tests(tests_dir: Path) -> None:
     """Adjust the uploaded tests dir to what this trial can actually score.
 
-    Without judge credentials, or with CONSULT_EVAL_SKIP_JUDGE set, the judge
-    dimension is removed and its weight dropped from reward.toml so the
-    programmatic dimensions still produce a reward. Otherwise the claude-code
-    judge gets its inputs inline, so it scores in one turn instead of reading
-    files with tool calls.
+    Without judge credentials, or with CONSULT_EVAL_SKIP_JUDGE set, the model
+    dimensions (judge for routing tasks, rubric for code tasks) are dropped so
+    the programmatic dimensions still produce a reward. A code task without a
+    rubric yet drops the rubric dimension too. The rubric runs on Claude
+    whatever CONSULT_EVAL_JUDGE says, so it needs a Claude credential. Otherwise the claude-code judge
+    of a routing task gets its inputs inline, so it scores in one turn instead
+    of reading files with tool calls. judge_runner.py reads the rubric's own
+    inputs.
     """
     import os
-    import shutil
 
+    skip_all = bool(os.environ.get("CONSULT_EVAL_SKIP_JUDGE"))
+    # The rubric judges always run on Claude (judge_runner.py); CONSULT_EVAL_JUDGE
+    # picks the routing tasks' generic judge only.
+    present = {
+        "judge": judge_credentials_present(),
+        "rubric": bool(os.environ.get("CLAUDE_CODE_OAUTH_TOKEN") or os.environ.get("ANTHROPIC_API_KEY")),
+    }
+    for name in MODEL_DIMENSIONS:
+        if (skip_all or not present[name]) and (tests_dir / name).exists():
+            drop_dimension(tests_dir, name)
+            sys.stderr.write(
+                f"consult: {name} skipped (no credentials or CONSULT_EVAL_SKIP_JUDGE); reward excludes it\n"
+            )
+    rubric_dir = tests_dir / "rubric"
+    if rubric_dir.exists() and not (rubric_dir / "items.json").exists():
+        drop_dimension(tests_dir, "rubric")
+        sys.stderr.write("consult: the task has no rubric yet; reward excludes the rubric\n")
     judge_dir = tests_dir / "judge"
-    if not judge_dir.exists():
-        return
-    skip = bool(os.environ.get("CONSULT_EVAL_SKIP_JUDGE")) or not judge_credentials_present()
-    if skip:
-        shutil.rmtree(judge_dir)
-        reward = tests_dir / "reward.toml"
-        reward.write_text(re.sub(r",\s*judge\s*=\s*[0-9.]+", "", reward.read_text()))
-        sys.stderr.write("consult: judge skipped (no credentials or CONSULT_EVAL_SKIP_JUDGE); reward excludes judge\n")
-        return
-    if os.environ.get("REWARDKIT_JUDGE", "claude-code") != "claude-code":
+    if not judge_dir.exists() or os.environ.get("REWARDKIT_JUDGE", "claude-code") != "claude-code":
         return
     if BUNDLE_PATH.exists() and BUNDLE_PATH.stat().st_size > INLINE_BUNDLE_LIMIT:
         sys.stderr.write("consult: judge bundle over the inline limit; the judge reads it from disk\n")
         return
     inline_judge_inputs(judge_dir, BUNDLE_PATH)
+
+
+def drop_dimension(tests_dir: Path, name: str) -> None:
+    """Remove a dimension's directory and its weight from reward.toml, so RewardKit scores without it."""
+    import shutil
+
+    shutil.rmtree(tests_dir / name, ignore_errors=True)
+    reward = tests_dir / "reward.toml"
+    reward.write_text(re.sub(rf",\s*{name}\s*=\s*[0-9.]+", "", reward.read_text()))
 
 
 def inline_judge_inputs(judge_dir: Path, bundle_path: Path) -> None:

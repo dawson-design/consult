@@ -47,6 +47,8 @@ from pathlib import Path
 EVAL_DIR = Path(__file__).resolve().parent.parent
 TASKS_DIR = EVAL_DIR / "tasks"
 sys.path.insert(0, str(EVAL_DIR / "scripts"))
+sys.path.insert(0, str(EVAL_DIR / "verifier" / "shared"))
+import consult_lib as cl
 import lift
 from bundle import Bundle, RebuildError, parse_bundle
 from sync_tests import step_names
@@ -226,28 +228,43 @@ def weighted_reward(dimensions: dict[str, float], weights: dict[str, float]) -> 
 
 
 def merge_rewards(old: dict, new: dict, weights: dict[str, float]) -> dict:
-    """The new deterministic dimensions, the original judge score, and the reward recomputed from both."""
-    dimensions = {d: v for d, v in new.items() if d not in ("reward", "judge")}
-    if "judge" in old:
-        dimensions["judge"] = old["judge"]
+    """The new deterministic dimensions, the original model scores, and the reward recomputed from both.
+
+    A code trial judged before the rubric replaced the generic judge keeps its
+    judge score at the weight the task now gives the rubric, so the model share
+    of its reward stays what it was.
+    """
+    model = cl.MODEL_DIMENSIONS
+    dimensions = {d: v for d, v in new.items() if d != "reward" and d not in model}
+    dimensions.update({d: old[d] for d in model if d in old})
+    weights = {"judge": weights.get("rubric", 1.0), **weights}
     return {**dimensions, "reward": weighted_reward(dimensions, weights)}
 
 
 def merge_details(old_path: Path, new_path: Path) -> dict:
     new = json.loads(new_path.read_text())
     old = json.loads(old_path.read_text()) if old_path.is_file() else {}
-    return {**new, **({"judge": old["judge"]} if "judge" in old else {})}
+    return {**new, **{d: old[d] for d in cl.MODEL_DIMENSIONS if d in old}}
 
 
 def merge_final(trial: Trial, verifier_dir: Path) -> dict:
-    """Merge the original judge into the new reward.json and reward-details.json; returns the rewards."""
+    """Merge the original model scores into the new reward.json and reward-details.json; returns the rewards."""
     rewards = merge_rewards(
         trial.old_rewards, json.loads((verifier_dir / "reward.json").read_text()), lift.task_weights(trial.task)
     )
     details = merge_details(trial.bundle_path.parent / "reward-details.json", verifier_dir / "reward-details.json")
     replace_file(verifier_dir / "reward.json", json.dumps(rewards, indent=2))
     replace_file(verifier_dir / "reward-details.json", json.dumps(details, indent=2))
+    keep_judge_answers(trial.bundle_path.parent, verifier_dir)
     return rewards
+
+
+def keep_judge_answers(original: Path, verifier_dir: Path) -> None:
+    """Copy the rubric judges' answers and transcripts, which back the kept rubric score, into the new verifier dir."""
+    if (original / "judge-items.json").is_file():
+        shutil.copy2(original / "judge-items.json", verifier_dir / "judge-items.json")
+    if (original / "judge").is_dir():
+        shutil.copytree(original / "judge", verifier_dir / "judge", dirs_exist_ok=True)
 
 
 def replace_file(path: Path, text: str) -> None:

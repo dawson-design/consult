@@ -133,17 +133,17 @@ class SyncTests(unittest.TestCase):
         self._tmp = tempfile.TemporaryDirectory()
         self.rubrics = Path(self._tmp.name)
         (self.rubrics / "core_items.json").write_text(rubric.TEMPLATES_PATH.read_text())
-        self.task = next(iter(sync_tests.task_dirs()))
+        self.task = next(t for t in sync_tests.task_dirs() if sync_tests.task_kind(t) == "code")
 
     def tearDown(self) -> None:
         self._tmp.cleanup()
 
-    def copies(self) -> list[tuple[bytes, Path]]:
+    def copies(self, task: Path | None = None, kind: str = "code") -> list[tuple[bytes, Path]]:
         with (
             mock.patch.object(rubric, "RUBRICS_DIR", self.rubrics),
             mock.patch.object(rubric, "TEMPLATES_PATH", self.rubrics / "core_items.json"),
         ):
-            return sync_tests.rubric_copies(self.task)
+            return sync_tests.rubric_copies(task or self.task, kind)
 
     def test_task_without_rubric_gets_no_items_file(self) -> None:
         self.assertEqual(self.copies(), [])
@@ -151,7 +151,7 @@ class SyncTests(unittest.TestCase):
     def test_valid_rubric_writes_resolved_items(self) -> None:
         (self.rubrics / f"{self.task.name}.json").write_text(json.dumps({"items": valid_items()}))
         [(content, dest)] = self.copies()
-        self.assertEqual(dest, self.task / "tests" / "judge" / "items.json")
+        self.assertEqual(dest, self.task / "tests" / "rubric" / "items.json")
         items = json.loads(content)["items"]
         self.assertEqual(len(items), 12)
         self.assertTrue(all(set(rubric.FIELDS) <= set(item) for item in items))
@@ -163,6 +163,13 @@ class SyncTests(unittest.TestCase):
         with self.assertRaises(SystemExit) as raised:
             self.copies()
         self.assertIn("rubric problems", str(raised.exception))
+
+    def test_a_routing_task_cannot_have_a_rubric(self):
+        routing = next(t for t in sync_tests.task_dirs() if sync_tests.task_kind(t) == "routing")
+        (self.rubrics / f"{routing.name}.json").write_text(json.dumps({"items": valid_items()}))
+        with self.assertRaises(SystemExit) as raised:
+            self.copies(routing, "routing")
+        self.assertIn("only code tasks have rubrics", str(raised.exception))
 
 
 class RubricEdgeCaseTests(unittest.TestCase):
@@ -194,18 +201,40 @@ class RubricEdgeCaseTests(unittest.TestCase):
         self.assertTrue(any("every other field a string" in p for p in problems_for(items)))
 
 
-class StaleItemsTests(unittest.TestCase):
-    def test_items_file_without_rubric_is_stale(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            task = Path(tmp) / "some-task"
-            items = task / "tests" / "judge" / "items.json"
-            items.parent.mkdir(parents=True)
-            items.write_text("{}")
-            with mock.patch.object(rubric, "RUBRICS_DIR", Path(tmp) / "rubrics"):
-                self.assertEqual(sync_tests.stale_items(task), items)
-                (Path(tmp) / "rubrics").mkdir()
-                (Path(tmp) / "rubrics" / "some-task.json").write_text("{}")
-                self.assertIsNone(sync_tests.stale_items(task))
+class StalePathsTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self._tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self._tmp.name)
+        self.task = self.root / "some-task"
+        self.rubrics = self.root / "rubrics"
+        self.rubrics.mkdir()
+
+    def tearDown(self) -> None:
+        self._tmp.cleanup()
+
+    def stale(self, kind: str) -> list[Path]:
+        with mock.patch.object(rubric, "RUBRICS_DIR", self.rubrics):
+            return sync_tests.stale_paths(self.task, kind)
+
+    def write(self, rel: str) -> Path:
+        path = self.task / "tests" / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("{}")
+        return path
+
+    def test_items_file_without_rubric_is_stale(self):
+        items = self.write("rubric/items.json")
+        self.assertEqual(self.stale("code"), [items])
+        (self.rubrics / "some-task.json").write_text("{}")
+        self.assertEqual(self.stale("code"), [])
+
+    def test_a_code_task_drops_the_generic_judge_it_used_to_have(self):
+        self.write("judge/quality.toml")
+        self.assertEqual(self.stale("code"), [self.task / "tests" / "judge"])
+
+    def test_a_routing_task_keeps_its_judge(self):
+        self.write("judge/quality.toml")
+        self.assertEqual(self.stale("routing"), [])
 
 
 if __name__ == "__main__":

@@ -70,7 +70,7 @@ from bundle import RebuildError, parse_bundle
 
 MODES = ("stopped", "provisional", "built")
 READOUTS = ("skill_triggering", "non_interruption")
-DIMENSIONS = ("verification", "proof", "change_quality", "no_file_writes", "judge")
+DIMENSIONS = ("verification", "proof", "change_quality", "no_file_writes", *cl.MODEL_DIMENSIONS)
 FLOOR_REWARD = 0.5
 BOOTSTRAP_ROUNDS = 2000
 WEIGHTS_RE = re.compile(r"^weights\s*=\s*\{(.*)\}", re.MULTILINE)
@@ -90,7 +90,9 @@ COST_NOTE = (
     "the last user turn, the gate-fatigue number."
 )
 JUDGE_EXCLUDED_NOTE = (
-    "Rewards exclude the judge: one job ran without it, so both are scored on deterministic dimensions."
+    "Rewards exclude the model judges for some tasks: their trials did not all carry the same model scores"
+    " (a job without the judge, an older judge, or a failed judge call), so those tasks are scored on"
+    " deterministic dimensions in both jobs."
 )
 
 
@@ -302,37 +304,42 @@ def task_weights(task: str) -> dict[str, float]:
     return {name: float(w) for name, w in WEIGHT_RE.findall(WEIGHTS_RE.search(text).group(1))}
 
 
-def has_judge(by_task: dict[str, list[dict]]) -> bool:
-    return any("judge" in e["rewards"] for e in chain.from_iterable(by_task.values()))
-
-
 def without_judge(task: str, entries: list[dict]) -> list[dict]:
-    """Entries with reward recomputed as the weighted mean of their non-judge dimensions."""
+    """Entries with reward recomputed as the weighted mean of their dimensions no model scored."""
     weights = task_weights(task)
     return [rescored(e, deterministic_reward(e["rewards"], weights)) for e in entries]
 
 
 def rescored(entry: dict, reward: float | None) -> dict:
-    rewards = {k: v for k, v in entry["rewards"].items() if k != "judge"}
+    rewards = {k: v for k, v in entry["rewards"].items() if k not in cl.MODEL_DIMENSIONS}
     return {**entry, "reward": reward, "rewards": {**rewards, "reward": reward}}
 
 
 def deterministic_reward(rewards: dict, weights: dict[str, float]) -> float | None:
-    scored = {d: w for d, w in weights.items() if w > 0 and d != "judge" and d in rewards}
+    scored = {d: w for d, w in weights.items() if w > 0 and d not in cl.MODEL_DIMENSIONS and d in rewards}
     if not scored:
         return None
     return sum(float(rewards[d] or 0.0) * w for d, w in scored.items()) / sum(scored.values())
 
 
 def align(before: dict[str, list[dict]], after: dict[str, list[dict]]) -> tuple[dict, dict, bool]:
-    """Both jobs rescored without the judge when only one has judge scores; the flag says so."""
-    if has_judge(before) == has_judge(after):
-        return before, after, False
-    return strip_judge(before), strip_judge(after), True
+    """Rescore a task without model scores in both jobs unless all its scored trials carry the same model dimensions.
+
+    That covers a judge-free job against a judged one, an old generic-judge job
+    against a rubric job, and a trial whose rubric judges failed. The flag says
+    whether any task was rescored.
+    """
+    mixed = {t for t in set(before) | set(after) if len(model_dimension_sets(before.get(t, []) + after.get(t, []))) > 1}
+    return (
+        {t: without_judge(t, e) if t in mixed else e for t, e in before.items()},
+        {t: without_judge(t, e) if t in mixed else e for t, e in after.items()},
+        bool(mixed),
+    )
 
 
-def strip_judge(by_task: dict[str, list[dict]]) -> dict[str, list[dict]]:
-    return {t: without_judge(t, entries) for t, entries in by_task.items()}
+def model_dimension_sets(entries: list[dict]) -> set[frozenset[str]]:
+    """The distinct sets of model dimensions among trials that have a reward."""
+    return {frozenset(d for d in cl.MODEL_DIMENSIONS if d in e["rewards"]) for e in entries if e["reward"] is not None}
 
 
 def summarize(bare: dict[str, list[dict]], consult: dict[str, list[dict]]) -> dict:

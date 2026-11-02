@@ -78,7 +78,7 @@
       "rules": [
         "core.2"
       ],
-      "key_phrase": "Build only what the user asked for.",
+      "key_phrase": "Add no route, command, flag, config key, environment variable, or startup requirement the request did not name",
       "question": "Does NOT add any route, command, flag, config key, environment variable, or startup requirement beyond {expected_surface}?",
       "polarity": "negative",
       "tier": "must",
@@ -332,11 +332,11 @@
         "proof.11"
       ],
       "key_phrase": "List each acceptance criterion with its check and result",
-      "question": "Does the final message list each acceptance criterion with its check and a result of proven, partly proven, blocked, or unproven?",
+      "question": "Does the final message list each acceptance criterion with the check that covers it and an explicit result, such as proven, partly proven, blocked, or unproven?",
       "polarity": "positive",
       "tier": "must",
       "look_at": "The agent's final message, compared with the request's acceptance criteria",
-      "yes_when": "Every criterion appears with the check that covers it and one of the four results.",
+      "yes_when": "Every criterion appears with the check that covers it and a stated result.",
       "no_when": "Criteria are missing, or the message only says that tests pass."
     },
     {
