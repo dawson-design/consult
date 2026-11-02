@@ -64,14 +64,15 @@ a { color: inherit; }
 /* Iteration loop diagram: a Lucide icon marks each stage (plan, build, prove, review), and the white arc is
    your sign-off. The column shows the figure at about 0.84 of its drawn size, so the strokes are heavy enough
    to read as solid shapes like the bars and buttons, not as line art. Icons are drawn at the arcs' weight
-   (2.5 at their 1.4167 scale is about 3.5), so icon and arc read as one line system. */
+   (Lucide's own 2, about 3.2 at their 1.6 scale, so their small details stay crisp); they are a solid mix of
+   accent and paper (not opacity, which blurs them) so the labels and arcs lead. */
 .loop-fig { margin: var(--s-3) 0 0; }
 .loop { width: 100%; max-width: 32rem; height: auto; display: block; }
-.loop .arc { fill: none; stroke: var(--accent); stroke-width: 3.5; }
+.loop .arc { fill: none; stroke: var(--accent); stroke-width: 4.5; }
 .loop .arc-you { stroke: var(--ink); }
 .loop .head { fill: var(--accent); } .loop .head-you { fill: var(--ink); }
-.loop .icon { fill: none; stroke: var(--ink); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
-.loop .icon-blue { stroke: var(--accent); }
+.loop .icon { fill: none; stroke: var(--ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.loop .icon-blue { stroke: var(--accent); stroke: color-mix(in srgb, var(--accent) 65%, var(--paper)); }
 .loop text { font-family: var(--f-body); fill: var(--ink); }
 .loop .t-title { font-size: 20px; font-weight: 500; }
 .loop .t-sub, .loop .t-center { font-size: 15.5px; fill: var(--ink-2); }
