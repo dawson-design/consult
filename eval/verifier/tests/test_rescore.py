@@ -394,11 +394,23 @@ class RejudgeTests(JobTestCase):
         self.assertEqual(self.run_cli("--rejudge", "--yes"), 1)
         self.assertIn("judge-items.json", json.loads((self.out / "rescore.json").read_text())["trials"][0]["flags"][0])
 
-    def test_a_task_without_a_rubric_is_not_rejudged(self):
+    def test_a_task_without_a_rubric_is_left_out_of_the_rejudged_job(self):
         self.single_step("routing-settings-copy__a", self.bundle, task_name="consult/routing-settings-copy")
+        self.single_step("api-error-contract__b", self.bundle)
+        self.assertEqual(self.run_cli("--rejudge", "--yes", verifier=judging_verifier), 0)
+        self.assertEqual(sorted(lift.load_trials(self.out)), ["consult/api-error-contract"])
+
+    def test_changes_that_differ_from_the_judged_bundle_stop_before_any_judge_is_billed(self):
+        self.single_step("api-error-contract__a", self.bundle.replace("limit = 2", "limit = 3"))
         self.assertEqual(self.run_cli("--rejudge", "--yes", verifier=judging_verifier), 1)
         self.container.assert_not_called()
-        self.assertIn("no rubric", json.loads((self.out / "rescore.json").read_text())["trials"][0]["flags"][0])
+
+    def test_a_rejudge_that_scores_a_trial_clears_its_old_verifier_failure(self):
+        crashed = {"exception_type": "RewardFileNotFoundError", "exception_message": "judge rate limited"}
+        self.single_step("api-error-contract__a", self.bundle, verifier_result=None, exception_info=crashed)
+        self.run_cli("--rejudge", "--yes", verifier=judging_verifier)
+        entry = lift.load_trials(self.out)["consult/api-error-contract"][0]
+        self.assertEqual((entry.get("error"), entry["reward"]), (None, 0.91))
 
     def test_a_repeat_pass_writes_beside_the_first(self):
         self.single_step("api-error-contract__a", self.bundle)
@@ -438,6 +450,16 @@ class EnvironmentChangedTests(unittest.TestCase):
 
     def test_a_clean_environment_changed_when_it_was_last_committed(self):
         self.assertEqual(rescore.environment_changed_at("t"), datetime(2001, 1, 1, tzinfo=UTC).timestamp())
+
+    def test_a_change_merged_after_a_trial_counts_from_the_merge(self):
+        repo = rescore.EVAL_DIR
+        git(repo, "switch", "-qc", "change")
+        self.dockerfile.write_text("FROM node:24\n")
+        git(repo, "commit", "-qam", "change the environment on a branch")
+        git(repo, "switch", "-q", "-")
+        with mock.patch.dict(os.environ, {"GIT_COMMITTER_DATE": "2003-01-01T00:00:00Z"}):
+            git(repo, "merge", "-q", "--no-ff", "-m", "merge", "change")
+        self.assertEqual(rescore.environment_changed_at("t"), datetime(2003, 1, 1, tzinfo=UTC).timestamp())
 
     def test_an_uncommitted_change_counts_from_its_file_time(self):
         self.dockerfile.write_text("FROM node:24\n")

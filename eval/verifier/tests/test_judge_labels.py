@@ -90,6 +90,7 @@ class ExportTests(LabelTestCase):
         sheet = self.sheet.read_text()
         self.assertNotIn("answer", self.rows()[0])
         self.assertNotIn("reason ", sheet)
+        self.assertNotIn("src/snapshot.js:4 for", sheet)
         self.assertNotIn("bare", sheet)
         self.assertNotIn("consult", sheet.lower())
 
@@ -106,7 +107,7 @@ class ExportTests(LabelTestCase):
         self.export()
         key = json.loads(jl.key_path(self.sheet).read_text())
         entry = next(iter(key["rows"].values()))
-        self.assertEqual(set(entry), {"job", "trial", "arm", "answer", "why"})
+        self.assertEqual(set(entry), {"job", "trial", "arm", "answer", "evidence", "why"})
         self.assertEqual(sum(t["unknown"] for t in key["totals"].values()), 2)
 
     def test_each_dimension_samples_half_from_each_arm(self):
@@ -126,6 +127,22 @@ class ExportTests(LabelTestCase):
         jl.cases_dir(self.sheet).rmdir()
         self.export("--seed", "7")
         self.assertEqual(self.sheet.read_text(), first)
+
+    def test_a_trial_rescore_flagged_is_left_out(self):
+        result = self.consult / f"{TASK}__c0" / "result.json"
+        result.write_text(json.dumps({"task_name": f"consult/{TASK}", "rescore": {"flags": ["not the one judged"]}}))
+        self.export()
+        key = json.loads(jl.key_path(self.sheet).read_text())
+        self.assertNotIn(f"{TASK}__c0", {e["trial"] for e in key["rows"].values()})
+        self.assertEqual(sum(t["unknown"] for t in key["totals"].values()), 1)
+
+    def test_items_a_failed_call_left_unknown_count_toward_the_unknown_rate(self):
+        failed = [{**answer(i, "unknown"), "source": "missing", "evidence": ""} for i in ITEMS]
+        write_trial(self.bare, f"{TASK}__failed", failed)
+        self.export()
+        key = json.loads(jl.key_path(self.sheet).read_text())
+        self.assertEqual(sum(t["unknown"] for t in key["totals"].values()), 2 + len(ITEMS))
+        self.assertNotIn(f"{TASK}__failed", {e["trial"] for e in key["rows"].values()})
 
     def test_export_refuses_to_overwrite_a_sheet_that_may_hold_labels(self):
         self.export()
@@ -164,6 +181,11 @@ class AgreeTests(LabelTestCase):
     def test_unlabelled_rows_are_left_out(self):
         result = jl.agreement(self.sheet)
         self.assertTrue(all(r["labelled"] == 0 and r["kappa"] is None for r in result.values()))
+
+    def test_a_sheet_saved_with_a_byte_order_mark_still_reads(self):
+        self.label(lambda row, key: "yes")
+        self.sheet.write_bytes(b"\xef\xbb\xbf" + self.sheet.read_bytes())
+        self.assertTrue(all(r["human"] == "yes" for r in jl.read_labels(self.sheet)))
 
     def test_a_label_other_than_yes_or_no_is_refused(self):
         self.label(lambda row, key: "maybe")

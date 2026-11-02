@@ -75,6 +75,8 @@ VERIFIER_TIMEOUT_SEC = 900
 # A live verifier gets 60 minutes (task.toml); the judges dominate it.
 REJUDGE_TIMEOUT_SEC = 3600
 SUMMARY_KEYS = ("verification", "proof", "change_quality", "reward")
+# Harbor's exceptions from the verifier stage, which a rejudge that scores the trial supersedes.
+VERIFIER_EXCEPTION_RE = re.compile(r"Reward|Verifier")
 REJUDGE_SUMMARY_KEYS = ("verification", "proof", "change_quality", "rubric", "reward")
 
 
@@ -212,13 +214,16 @@ def environment_flags(trial: Trial) -> list[str]:
 def environment_changed_at(task: str) -> float:
     """When tasks/<task>/environment last changed, as a Unix time.
 
-    The last commit that touched it, so a fresh checkout or worktree does not
-    look newer than every trial. When the directory has uncommitted changes,
-    or git cannot say, the newest file time there.
+    The last commit on this checkout's first-parent history that touched it,
+    so a fresh checkout or worktree does not look newer than every trial, and
+    a change merged after a trial counts from the merge, not from the branch
+    commit. When the directory has uncommitted changes, or git cannot say, the
+    newest file time there. It cannot see a trial run from another branch, or
+    on uncommitted edits since discarded.
     """
     environment = TASKS_DIR / task / "environment"
     status = git(EVAL_DIR, "status", "--porcelain", "--", str(environment))
-    log = git(EVAL_DIR, "log", "-1", "--format=%ct", "--", str(environment))
+    log = git(EVAL_DIR, "log", "-1", "--first-parent", "--format=%ct", "--", str(environment))
     if status.returncode or log.returncode or status.stdout.strip() or not log.stdout.strip():
         return max(p.lstat().st_mtime for p in [environment, *environment.rglob("*")])
     return float(log.stdout)
@@ -237,7 +242,11 @@ def rubric_calls(task: str) -> int:
 
 
 def rebuild(trial: Trial, scaffold: Path, workspace: Path, rejudge: bool = False) -> list[str]:
-    """Rebuild the trial's final workspace from a copy of the scaffold; the flags say why it could not."""
+    """Rebuild the trial's final workspace from a copy of the scaffold; the flags say why it could not.
+
+    A rejudge also checks the rebuilt changes against the bundle before any
+    judge is billed; a plain rescore checks the whole bundle after the verifier.
+    """
     flags = original_flags(trial, rejudge)
     if flags:
         return flags
@@ -246,6 +255,14 @@ def rebuild(trial: Trial, scaffold: Path, workspace: Path, rejudge: bool = False
         reconstruct(workspace, parse_bundle(trial.bundle_path.read_bytes().decode("utf-8")))
     except (RebuildError, UnicodeDecodeError) as error:
         return [str(error)]
+    return changes_flags(trial, workspace) if rejudge else []
+
+
+def changes_flags(trial: Trial, workspace: Path) -> list[str]:
+    """The rebuilt workspace's changes, as the verifier will write them, open the original bundle."""
+    expected = f"{cl.changes_text(workspace)}\n## Final agent message\n"
+    if not trial.bundle_path.read_text(encoding="utf-8").startswith(expected):
+        return ["the rebuilt changes differ from the original judge-bundle.md: the workspace is not the one judged"]
     return []
 
 
@@ -464,6 +481,9 @@ def rescored_result(result: dict, record: dict) -> dict:
     out = {**result, "verifier_result": verifier, "rescore": record}
     if verifier is None:
         out["exception_info"] = {"exception_type": "RescoreError", "exception_message": "; ".join(record["flags"])}
+    elif VERIFIER_EXCEPTION_RE.search((result.get("exception_info") or {}).get("exception_type") or ""):
+        # A rejudge scored a trial whose original verifier failed; that failure no longer stands.
+        out["exception_info"] = None
     if result.get("step_results"):
         steps = result["step_results"]
         out["step_results"] = [*steps[:-1], {**steps[-1], "verifier_result": verifier}]
@@ -588,6 +608,12 @@ def select_trials(args: argparse.Namespace) -> list[Trial]:
     if unknown:
         raise SystemExit(f"--tasks names no task under {TASKS_DIR}: {', '.join(unknown)}")
     trials = list(chain.from_iterable(load_job(job, tasks, args.suffix) for job in dict.fromkeys(args.jobs)))
+    if args.rejudge:
+        # A task without a rubric would reach lift.py as an unscored trial and count as 0 in both arms.
+        skipped = sorted({t.task for t in trials if not rubric_path(t.task).is_file()})
+        if skipped:
+            print(f"skipped tasks without a rubric: {', '.join(skipped)}", flush=True)
+        trials = [t for t in trials if rubric_path(t.task).is_file()]
     if not trials:
         raise SystemExit("no trials to rescore")
     return trials
@@ -609,6 +635,8 @@ def judge_plan(trials: list[Trial]) -> tuple[int, str]:
 
 def main(argv: list[str]) -> int:
     args = parse_args(argv[1:])
+    # consult_lib's host-side git calls (the rejudge's changes check) must ignore the user's git config too.
+    os.environ.update(GIT_ENV)
     trials = select_trials(args)
     if args.rejudge:
         _, line = judge_plan(trials)

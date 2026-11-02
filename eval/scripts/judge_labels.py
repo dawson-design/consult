@@ -12,13 +12,15 @@ consult trials, spread across tasks by a seeded shuffle. Each job's name must
 say its arm (-bare or -consult).
 
 The labeller works blind. The sheet shows each item (question, what to look
-at, when yes, when no), the judge's evidence quote, and an opaque case id, but
-neither the judge's answer, its reason, nor the arm. Each case's material is
+at, when yes, when no) and an opaque case id, but not the judge's answer, its
+reason, its evidence (whose form differs by answer: a quote for yes or no, the
+files checked for a missing thing, what it could not find for unknown), or the
+arm. Each case's material is
 in <sheet>-cases/<case>.md: the task instruction, the agent's earlier replies
 the judges read, and the judge bundle (the diff and the final message), with
 Consult's names scrubbed as the judges' view scrubs them. The labeller may
-still recognise an arm from its style. The answers, reasons, and arms go to
-<sheet>.key.json, which agree reads. export refuses to overwrite any of these,
+still recognise an arm from its style. The answers, reasons, evidence, and arms
+go to <sheet>.key.json, which agree reads. export refuses to overwrite any of these,
 so a rerun cannot erase labels.
 
 The labeller writes yes or no in the human column: whether the item holds for
@@ -66,7 +68,6 @@ COLUMNS = (
     "look_at",
     "yes_when",
     "no_when",
-    "judge_evidence",
     "human",
     "note",
 )
@@ -90,28 +91,28 @@ def job_arm(job_dir: Path) -> str:
 
 
 def judged_trials(job_dir: Path) -> list[dict]:
-    """Each trial in the job whose rubric judges answered: its dir, task, final-step dir, and answers."""
+    """Each trial in the job whose rubric judges ran and rescore did not flag: its task, final-step dir, and answers."""
     trials = []
     for result_path in sorted(job_dir.glob("*/result.json")):
         trial_dir = result_path.parent
         final = evidence_dir(trial_dir)
         answers_path = final / "verifier" / "judge-items.json"
-        if not answers_path.is_file():
-            continue
         result = json.loads(result_path.read_text())
+        # rescore.py flagged it, such as a workspace that is not the one judged: its answers do not count.
+        if not answers_path.is_file() or (result.get("rescore") or {}).get("flags"):
+            continue
         task = (result.get("task_name") or trial_dir.name.split("__")[0]).split("/")[-1]
         items = json.loads(answers_path.read_text())["items"]
         trials.append({"job": job_dir.name, "trial": trial_dir.name, "task": task, "final": final, "items": items})
     return trials
 
 
-def judge_answers(trials: list[dict], arm: str) -> list[dict]:
-    """One record per item the judge itself answered (not a failed or missing call)."""
+def all_answers(trials: list[dict], arm: str) -> list[dict]:
+    """One record per rubric item, including those a failed call left unknown (source missing or invalid)."""
     return [
         {"job": t["job"], "trial": t["trial"], "task": t["task"], "arm": arm, "final": t["final"], **item}
         for t in trials
         for item in t["items"]
-        if item.get("source") == "judge"
     ]
 
 
@@ -168,7 +169,6 @@ def sheet_row(number: int, case: str, answer: dict) -> dict:
         "item": answer["id"],
         "tier": answer["tier"],
         **{key: jr.scrub(item[key]) for key in ("question", "look_at", "yes_when", "no_when")},
-        "judge_evidence": jr.scrub(answer["evidence"]),
         "human": "",
         "note": "",
     }
@@ -188,7 +188,7 @@ def case_text(case: str, answer: dict) -> str:
 
 
 def unknown_totals(answers: list[dict]) -> dict[str, dict[str, int]]:
-    """dimension -> answers and unknowns over every judge answer, for the unknown rate."""
+    """dimension -> items and unknowns over every item, failed calls included: all score as unknown."""
     totals: dict[str, dict[str, int]] = defaultdict(lambda: {"answers": 0, "unknown": 0})
     for answer in answers:
         totals[answer["dimension"]]["answers"] += 1
@@ -209,7 +209,9 @@ def export(sheet: Path, jobs: list[Path], per_dimension: int, seed: int) -> int:
     if existing:
         print(f"{', '.join(existing)} exists and may hold labels; export to a new sheet", file=sys.stderr)
         return 2
-    answers = [a for job in jobs for a in judge_answers(judged_trials(job), job_arm(job))]
+    everything = [a for job in jobs for a in all_answers(judged_trials(job), job_arm(job))]
+    # Only the judge's own answers are labelled; a failed call has nothing to agree with.
+    answers = [a for a in everything if a.get("source") == "judge"]
     if not answers:
         print("no judge answers in the given jobs; rejudge them with rescore.py --rejudge", file=sys.stderr)
         return 2
@@ -221,10 +223,10 @@ def export(sheet: Path, jobs: list[Path], per_dimension: int, seed: int) -> int:
         (cases_dir(sheet) / f"{case}.md").write_text(case_text(case, answer))
     key = {
         "rows": {
-            row["row"]: {k: a[k] for k in ("job", "trial", "arm", "answer", "why")}
+            row["row"]: {k: a[k] for k in ("job", "trial", "arm", "answer", "evidence", "why")}
             for row, a in zip(rows, picked, strict=True)
         },
-        "totals": unknown_totals(answers),
+        "totals": unknown_totals(everything),
         "seed": seed,
     }
     with sheet.open("x", newline="") as handle:
@@ -242,7 +244,8 @@ def export(sheet: Path, jobs: list[Path], per_dimension: int, seed: int) -> int:
 def read_labels(sheet: Path) -> list[dict]:
     """Each sheet row joined to its key entry; SystemExit naming a row with an unreadable label."""
     key = json.loads(key_path(sheet).read_text())["rows"]
-    with sheet.open(newline="") as handle:
+    # utf-8-sig: a spreadsheet's "CSV UTF-8" save starts the file with a byte-order mark.
+    with sheet.open(newline="", encoding="utf-8-sig") as handle:
         rows = list(csv.DictReader(handle))
     joined = []
     for row in rows:
