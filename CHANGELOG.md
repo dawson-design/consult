@@ -22,6 +22,9 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The README covers the Claude Code desktop app and the Claude desktop app
   (chat and Cowork), and how to turn on auto-update for the `consult`
   marketplace, which Claude Code leaves off for third-party marketplaces.
+- The README and the site explain what to do when Claude Desktop says a
+  `consult` marketplace already exists, or the installed one shows an old
+  version.
 
 ## [19.0.0] (2026-11-01)
 

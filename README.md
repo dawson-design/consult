@@ -104,6 +104,12 @@ appears in Claude Code terminal sessions signed in to the same account, but
 not the other way round. To pick up new releases, turn on **Sync
 automatically** for the marketplace, or use **Check for updates**.
 
+If Claude says a marketplace with the same name already exists, Consult was
+added before. Install it from the existing `consult` marketplace instead. If
+that marketplace shows an old version, or points somewhere other than
+`dawson-design/consult`, use **Check for updates** or restart Claude, or remove
+it and add `dawson-design/consult` again.
+
 ### Codex
 
 ```sh
