@@ -76,7 +76,7 @@ MAX_BODY_WORDS = 700
 # restated Workflow steps 3 and 5 paid for part of it, then fell to 947 when
 # the rules every code change needs (the Iron Law and old Rules 1-5 and 10)
 # moved to the always-on core, now agents/.agents/core.md.
-# It fell to 942 when step 1's compatibility-shim clause became core rule 7.
+# It fell to 942 when step 1's compatibility-shim clause became core rule 7 (now 6).
 # It rose to 943 when the git-workflow routing row gained "worktrees", then
 # fell to 928 when workflow's pointer to the core was shortened.
 # proof rose to 1,050 for the

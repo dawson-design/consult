@@ -55,7 +55,7 @@ gates: recoverability and approval of published text.
 8. Work on a branch in the main checkout by default. Create a worktree only
    when work must run in parallel with uncommitted changes there, and say
    so, because each worktree duplicates the checkout and its build
-   directories. Leave host-managed worktrees to the host (core rule 1). Put
+   directories. Leave host-managed worktrees to the host. Put
    yours outside the repository (the scratchpad directory when the host has
    one), and reuse the main checkout's build output instead of rebuilding.
    Once its work is committed, merge or rebase it into the main checkout's
