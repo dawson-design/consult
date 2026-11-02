@@ -370,6 +370,9 @@ uv run scripts/sync_tests.py --check  # fail on drift; run in CI and `make eval`
   task name.
 - `verifier/hidden/<task>.rules.mjs`: a runtime probe for rule checks. It
   prints `{"<rule id>": 0|1}` as its last line.
+- `verifier/rubrics/<task>.json`: the task's judge rubric (see below). The
+  sync validates it and writes the resolved items to `tests/judge/items.json`.
+- `verifier/rubrics/core_items.json`: shared rubric item templates.
 - `verifier/rules.json`: every rule of every skill, marked `check`,
   `judge-only`, or `untested`. `scripts/validate_skill_anatomy.py` fails when
   a rule has no entry, an entry names a rule that no longer exists, or a
@@ -393,6 +396,42 @@ To add a task:
    no-op `solution/solve.sh` in `brief` and `continue`, so the oracle proposes
    first and builds once, in `approve`.
 6. Add the name to a suite and run the sync.
+
+### Judge rubrics
+
+A rubric is the checklist the code judges answer for one task: 12 to 20
+atomic items, each a yes/no question tied to the Consult rules it applies.
+"Yes" always means the item is met, so a negative item starts with
+"Does NOT". Each item has:
+
+- `id`: a dotted slug, such as `scope.no_new_env`.
+- `dimension`: one of `structure`, `scope`, `boundaries`, `proof`, `report`.
+  Each dimension will get its own isolated judge.
+- `rules`: the rule ids the item applies, such as `core.2`.
+- `key_phrase`: a phrase quoted verbatim from one of those rules.
+- `question`, `look_at`, `yes_when`, `no_when`: what the judge answers, where
+  it looks, and what decides each answer.
+- `polarity`: `positive` or `negative`.
+- `tier`: `must` (the reference solution must meet it) or `quality`.
+
+An item can name a template from `verifier/rubrics/core_items.json` with
+`extends`, then fill the template's `{placeholders}` with the task's
+specifics, such as the calculation's name or the expected config:
+
+```json
+{"id": "scope.no_new_env", "extends": "scope.no_unrequested_surface",
+ "question": "Does NOT add any route, command, flag, config key, environment variable, or startup requirement beyond `PORT` and `DATABASE_URL`?"}
+```
+
+The sync stops on any problem `scripts/rubric.py` finds, for example:
+
+- an unknown rule id;
+- a key phrase that is not verbatim in its rule;
+- an unfilled placeholder;
+- a negative item that does not ask "Does NOT";
+- duplicate ids;
+- fewer than 12 or more than 20 items;
+- no must-have item.
 
 Check the task with the oracle before spending model calls:
 

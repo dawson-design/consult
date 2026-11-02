@@ -16,6 +16,12 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `scripts/serve_site.py` previews it locally with live reload, and
   `scripts/build_site_skills.py` regenerates the skills page; tests fail while
   the page or the home page's counts and release line are out of date.
+- The eval has a judge rubric format. A task's rubric
+  (`eval/verifier/rubrics/<task>.json`) lists 12 to 20 yes/no items, each
+  tied to the Consult rules it applies by a verbatim key phrase. Items can
+  extend shared templates in `eval/verifier/rubrics/core_items.json`.
+  `eval/scripts/sync_tests.py` validates each rubric and writes the resolved
+  items into the task. No task has a rubric yet, and nothing judges them yet.
 
 ### Changed
 
