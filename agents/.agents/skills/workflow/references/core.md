@@ -16,13 +16,20 @@ loaded. Skills cite them as core rules.
 
 ## Rules
 
-1. **Keep unrelated parts separate.** Make state and effects explicit. Keep
-   calculations pure, and push I/O, database access, network calls, and
-   mutation to the edges of the code you write. Keep the number of things a
-   maintainer must understand together small.
+1. **Keep unrelated parts separate.** Calculations, I/O, and state changes are
+   different parts. Keep calculations pure: a function that computes a result
+   reads no clock, random source, file, network, or database, and changes
+   nothing outside itself. Make state and effects explicit, and push I/O,
+   database access, network calls, and mutation to the edges of the code you
+   write. In code you write or change, keep separate features in separate
+   functions or modules. Keep the number of things a maintainer must
+   understand together small.
 2. **Build only what the user asked for.** Build the main behavior first unless
-   safety or data loss requires an edge case now. Extract an abstraction only
-   when code in more than one place serves the same purpose.
+   safety or data loss requires an edge case now. Add no route, command, flag,
+   config key, environment variable, or startup requirement the request did
+   not name, even one that is additive and easy to undo. When one seems
+   needed, propose it in your report instead of building it. Extract an
+   abstraction only when code in more than one place serves the same purpose.
 3. **Check existing tools before building one.** Look for a maintained library
    before writing code for a solved problem, and prefer mature, proven
    libraries and tools, on current supported versions, unless the user asks

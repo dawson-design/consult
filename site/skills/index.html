@@ -27,7 +27,7 @@
 <p class="law-label">Iron Law</p>
 <p class="law law-lead">Complexity is the enemy: keep software simple enough to understand, change, and prove.</p>
 <ol class="rules">
-<li><b>Keep unrelated parts separate.</b> Make state and effects explicit.</li>
+<li><b>Keep unrelated parts separate.</b> Calculations, I/O, and state changes are different parts.</li>
 <li><b>Build only what the user asked for.</b> Build the main behavior first unless safety or data loss requires an edge case now.</li>
 <li><b>Check existing tools before building one.</b> Look for a maintained library before writing code for a solved problem, and prefer mature, proven libraries and tools, on current supported versions, unless the user asks for newer ones.</li>
 <li><b>Write code a reader can follow in one pass.</b> This covers code you write or change; do not reshape untouched code to fit.</li>

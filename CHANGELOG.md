@@ -27,6 +27,17 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The README and the site explain what to do when Claude Desktop says a
   `consult` marketplace already exists, or the installed one shows an old
   version.
+- Core rules 1 and 2 now name what they ask for, the way rule 4 gives
+  numbers for function shape. Rule 1 says a function that computes a result
+  reads no clock, random source, file, network, or database and changes
+  nothing outside itself. It also asks to keep separate features in separate
+  functions or modules in code you write or change. Rule 2 lists what not to
+  add unasked (routes, commands, flags, config keys, environment variables,
+  startup requirements), even when the addition is additive and easy to
+  undo, and says to propose it in the report instead. Rule 3 still owns
+  dependencies. The eval
+  calibration on 2026-11-02 found agents adding exactly these, such as a
+  required login password nobody asked for.
 
 ### Removed
 
