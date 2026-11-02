@@ -1,4 +1,4 @@
-/* base.css: shared foundation for the Consult site (index.html and skills/). Design tokens
+/* base.css: shared foundation for the Consult site (index.html, skills/, and why/). Design tokens
    (spacing, type scale, fonts, light and dark colours), reset, header, logo, install block with
    tabs and copy buttons, sections, footer, and focus and no-JavaScript rules. site.css loads after
    it and sets the site's always-dark tokens and page-specific layout. */

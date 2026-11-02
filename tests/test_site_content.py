@@ -1,7 +1,7 @@
 """The marketing site's hand-written facts match the repo, and site/ holds only the shipped pages.
 
 The home page (site/index.html) states the skill count, the core-rule count, and the release
-version in prose. These tests read the real sources (skill directories, core.md, and the plugin
+version in prose, and the essay (site/why/index.html) quotes the Iron Law. These tests read the real sources (skill directories, core.md, and the plugin
 manifests) so a release or a new skill cannot leave the page quietly wrong. The file check stops
 draft or stale pages being published to GitHub Pages.
 """
@@ -16,7 +16,8 @@ from helpers import ROOT
 
 SITE = ROOT / "site"
 HOME = (SITE / "index.html").read_text(encoding="utf-8")
-SHIPPED_PAGES = {"index.html", "skills/index.html"}
+WHY = (SITE / "why/index.html").read_text(encoding="utf-8")
+SHIPPED_PAGES = {"index.html", "skills/index.html", "why/index.html"}
 NUMBER_WORDS = {
     7: "Seven",
     8: "Eight",
@@ -67,6 +68,23 @@ class HomePageFactsTest(unittest.TestCase):
         )
         self.assertIsNotNone(heading, f"CHANGELOG.md has no {version} entry")
         self.assertEqual(anchor[1], version.replace(".", "") + "-" + heading[1])
+
+
+def iron_law() -> str:
+    """The Consult core's Iron Law, the backticked line under its heading."""
+    text = (ROOT / "agents/.agents/core.md").read_text(encoding="utf-8")
+    law = re.search(r"^## Iron Law\n\n`([^`]+)`", text, re.MULTILINE)
+    assert law is not None, "core.md has no Iron Law line"
+    return law[1]
+
+
+class WhyPageFactsTest(unittest.TestCase):
+    """The essay at why/ quotes the Iron Law as core.md states it."""
+
+    def test_iron_law_quote(self) -> None:
+        quote = re.search(r"Iron Law: <q>([^<]+)</q>", WHY)
+        self.assertIsNotNone(quote, "the essay should quote the Iron Law in a <q>")
+        self.assertEqual(quote[1].casefold(), iron_law().casefold())
 
 
 class ShippedFilesTest(unittest.TestCase):
