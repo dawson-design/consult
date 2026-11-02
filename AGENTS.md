@@ -247,6 +247,16 @@ only if it is one of:
    contract-first, illegal states unrepresentable.
 4. Routing: when to load, when not, handoffs, reference load triggers.
 
+To check whether a rule is policy, ask whether a competent engineer could
+reasonably choose otherwise. If no reasonable alternative exists, the model
+already does it, so delete the rule. If two choices are both reasonable, the
+model may pick either, so a rule that picks one earns its place with a short
+"because" clause. Two examples are feature-first modules over horizontal
+layers, and naming compound conditions. When the two choices suit different
+readers, pick the one that keeps the code easier for a person to follow. This
+test covers house defaults. Gates, floors, and proof rules qualify as policy
+for other reasons.
+
 Delete anything that teaches standard practice. Where a rule is non-obvious to
 a junior engineer, keep one short "because" clause, not a paragraph.
 
