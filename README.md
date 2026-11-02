@@ -67,12 +67,48 @@ names, so `code-review` and `security` become ambiguous with the built-ins of
 the same name. Running both also loads every skill twice. Pick one.
 
 The plugin ships a SessionStart hook that prints the Consult core,
-[`agents/.agents/core.md`](agents/.agents/core.md), into every session: the Iron Law and the rules every code change needs (simplicity,
-building only what was asked, code shape, backward compatibility, security),
-plus a line telling Claude to load the `workflow` skill before non-trivial
-code work. The core applies even when no skill loads, so it can replace the
-general coding rules in your own `CLAUDE.md`. You do not need a routing line
-there; if you added one, you can remove it.
+[`agents/.agents/core.md`](agents/.agents/core.md), into every session: the
+Iron Law and the rules every code change needs (simplicity, building only what
+was asked, code shape, backward compatibility, security), plus a line telling
+Claude to load the `workflow` skill before non-trivial code work. The core
+applies even when no skill loads, so it can replace the general coding rules
+in your own `CLAUDE.md`. You do not need a routing line there; if you added
+one, you can remove it.
+
+Claude Code does not auto-update third-party marketplaces by default. To get
+new releases automatically, open `/plugin`, go to **Marketplaces**, select
+`consult`, and choose **Enable auto-update**. To update by hand:
+
+```sh
+claude plugin marketplace update consult
+claude plugin update consult@consult
+```
+
+#### Claude Code desktop app
+
+The Code tab in the Claude desktop app is Claude Code, and it reads the same
+user settings as the terminal, so a plugin installed with the commands above
+is available there too. To install from the app instead, run the same
+`/plugin marketplace add` and `/plugin install` commands in a local session.
+Plugins, including the SessionStart hook, load in local and SSH sessions, not
+in cloud sessions.
+
+#### Claude desktop app (chat and Cowork)
+
+Go to **Customize > Plugins > Add > Add marketplace**, enter
+`dawson-design/consult`, and install **Consult**. The skills load there, but
+chat does not run hooks, so the Consult core is not always on: it applies once
+the `workflow` skill loads. Cowork runs hooks. Skills need code execution
+turned on in the app's settings. A plugin installed in the desktop app also
+appears in Claude Code terminal sessions signed in to the same account, but
+not the other way round. To pick up new releases, turn on **Sync
+automatically** for the marketplace, or use **Check for updates**.
+
+If Claude says a marketplace with the same name already exists, Consult was
+added before. Install it from the existing `consult` marketplace instead. If
+that marketplace shows an old version, or points somewhere other than
+`dawson-design/consult`, use **Check for updates** or restart Claude, or remove
+it and add `dawson-design/consult` again.
 
 ### Codex
 
