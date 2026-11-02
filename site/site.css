@@ -130,13 +130,14 @@ a { color: inherit; }
 /* Electric blue is for short highlights only; longer secondary text uses the light grey (--ink-2). */
 .cat, .steps li::before { color: var(--accent); }
 .hl { color: var(--accent); }
+.nowrap { white-space: nowrap; }
 /* Room above the footer bar, so the last section does not run into it. */
 .foot { margin-top: var(--s-5); }
 .cat a { color: inherit; text-decoration: none; }
 .cat a:hover, .cat a:focus-visible { text-decoration: underline; text-underline-offset: 0.2em; }
 /* Short lead under a column heading. */
 .duo .col-lead { color: var(--ink-2); line-height: 1.55; max-width: none; }
-.duo .col-lead + .loop-fig { margin-top: calc((var(--s-3) + var(--s-4)) / 2); }
+.duo .col-lead + .loop-fig, .duo .col-lead + .steps { margin-top: calc((var(--s-3) + var(--s-4)) / 2); }
 .loop-fig + .note { margin-top: var(--s-4); }
 /* Sticky header: pinned one bar-height above the viewport, so the blue bar scrolls away and the
    nav row stays, with a hairline to separate it from content scrolling beneath. */
