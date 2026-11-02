@@ -61,15 +61,17 @@ a { color: inherit; }
 .duo h3 + * { margin-top: var(--s-3); }
 .duo .note { margin-top: var(--s-3); font-size: var(--t-small); color: var(--ink-2); max-width: 34em; }
 
-/* Iteration loop diagram: white is you, solid blue is the agent, the outlined node is the second (review) agent. */
+/* Iteration loop diagram: white is you, solid blue is the agent, the outlined node is the second (review) agent.
+   The column shows the figure at about 0.84 of its drawn size, so the strokes are heavy enough to read as
+   solid shapes like the bars and buttons, not as line art; nothing else on the page is drawn with lines. */
 .loop-fig { margin: var(--s-3) 0 0; }
 .loop { width: 100%; max-width: 32rem; height: auto; display: block; }
-.loop .arc { fill: none; stroke: var(--accent); stroke-width: 2; }
+.loop .arc { fill: none; stroke: var(--accent); stroke-width: 3.5; }
 .loop .arc-you { stroke: var(--ink); }
 .loop .head { fill: var(--accent); } .loop .head-you { fill: var(--ink); }
 .loop .node-you { fill: var(--ink); }
 .loop .node-agent { fill: var(--accent); }
-.loop .node-reviewer { fill: var(--paper); stroke: var(--accent); stroke-width: 2.5; }
+.loop .node-reviewer { fill: var(--paper); stroke: var(--accent); stroke-width: 3.5; }
 .loop text { font-family: var(--f-body); fill: var(--ink); }
 .loop .t-title { font-size: 20px; font-weight: 500; }
 .loop .t-sub, .loop .t-center { font-size: 15.5px; fill: var(--ink-2); }
@@ -77,6 +79,7 @@ a { color: inherit; }
 .loop .t-stage { font-size: 16.5px; }
 @media (forced-colors: active) {
   .loop .arc, .loop .arc-you, .loop .node-reviewer { stroke: CanvasText; }
+  .loop .node-reviewer { fill: Canvas; }
   .loop .head, .loop .head-you, .loop .node-you, .loop .node-agent, .loop text, .loop tspan { fill: CanvasText; }
 }
 
