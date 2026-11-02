@@ -107,12 +107,12 @@
         "core.2"
       ],
       "key_phrase": "Extract an abstraction only when code in more than one place serves the same purpose.",
-      "question": "Does NOT add an abstraction that has only one use in the change: an interface, base class, factory, generic or configurable helper, or a function that only wraps one existing call under a new name?",
+      "question": "Does NOT add an abstraction that has only one use in the change, such as an interface, base class, factory, generic helper, or a named function that only renames one existing call?",
       "polarity": "negative",
       "tier": "must",
-      "look_at": "New interfaces, base classes, factories, generic helpers, and one-call wrappers in the diff, and their call sites",
-      "yes_when": "Each new abstraction serves more than one place that has the same purpose. A private function that holds one step split out of a longer function is not an abstraction, even with one caller.",
-      "no_when": "An abstraction has a single use or exists for flexibility nobody asked for, or a new function only wraps one existing call, adding no logic of its own."
+      "look_at": "New interfaces, base classes, factories, generic helpers, and named functions whose whole body is one call, and their call sites",
+      "yes_when": "Each new abstraction serves more than one place that has the same purpose. A private function with logic of its own that holds one step split out of a longer function is not an abstraction, even with one caller.",
+      "no_when": "An abstraction has a single use or exists for flexibility nobody asked for, or a named function's whole body is one call to an existing function or built-in, used from one place."
     },
     {
       "id": "scope.no_unasked_dependency",

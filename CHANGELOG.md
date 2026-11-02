@@ -33,12 +33,13 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   share of a code task's reward.
 - Rubrics and oracle solutions for the 15 eval tasks of the calibration runs,
   and `eval/scripts/oracle_judge.py`, which checks that every must-have rubric
-  item holds on each task's oracle. The first judged check passed on all 15
-  oracles after two fixes: the `service-from-brief` oracle crashed on a URL
-  its regex accepted but the URL parser rejected, and the
-  `security-boundary-fix` oracle added two single-use wrappers. The
-  speculative-abstraction template now names one-call wrappers and excludes a
-  private function that holds one step of a longer function.
+  item holds on each task's oracle. The first judged check failed 2 of 15
+  oracles, and both were oracle bugs: `service-from-brief` crashed on a URL
+  its regex accepted but the URL parser rejected, and `security-boundary-fix`
+  added two single-use wrappers. Both pass after their fixes. The
+  speculative-abstraction template now names a function whose whole body is
+  one call, and excludes a private function with logic of its own that holds
+  one step of a longer function.
 
 ### Changed
 
