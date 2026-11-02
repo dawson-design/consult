@@ -559,8 +559,8 @@ uv run scripts/judge_labels.py repeat runs/<job>-rejudged runs/<job>-rejudged-re
 ```
 
 `export` samples 50 answers per dimension by default, half from each arm and
-spread across tasks. The sheet shows each item and the judge's evidence quote,
-but not the judge's answer, its reason, or the arm. Each case's request,
+spread across tasks. The sheet shows each item, but not the judge's answer,
+reason, or evidence (whose form gives the answer away), nor the arm. Each case's request,
 earlier replies, diff, and final message are in `<sheet>-cases/<case>.md`,
 scrubbed as the judges' view is. The hidden fields go to `<sheet>.key.json`.
 Write `yes` or `no` in the `human` column. `agree` reports per dimension
