@@ -222,7 +222,7 @@ PAGE = """<!doctype html>
 <article class="catalog"><div class="wrap wrap-wide catalog-grid">
 <div class="catalog-text">
 <h1>Skills and core rules</h1>
-<p class="section-lead">{rule_count} core rules apply to every change, whether or not a skill loads. For each task, the workflow skill loads only the skills that task needs, not all {skill_count}. <a href="#skills-title">Every skill</a> is listed below the rules.</p>
+<p class="section-lead">{rule_count} core rules apply to every change, whether or not a skill loads. For each task, the workflow skill loads only the subset of the <a href="#skills-title">{skill_count} skills</a> that the task needs.</p>
 <h2 id="core-title">Core rules</h2>
 <p class="law law-lead">{iron}</p>
 <ol class="rules">
