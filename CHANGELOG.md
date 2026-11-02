@@ -40,6 +40,10 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   speculative-abstraction template now names a function whose whole body is
   one call, and excludes a private function with logic of its own that holds
   one step of a longer function.
+- `eval/scripts/rescore.py --rejudge` runs the rubric judges again on saved
+  trials, and `eval/scripts/judge_labels.py` exports a blind sample of their
+  answers for hand labels, then reports each dimension's agreement with the
+  labeller (kappa, per-arm bias, unknown rate) and between two rejudge passes.
 
 ### Changed
 
@@ -49,6 +53,8 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   tasks keep the generic judge.
 - Code tasks in the eval give each agent turn 45 minutes and the verifier 60
   minutes, so a long Opus turn or a slow judge is not cut off.
+- `rescore.py` checks for a changed task environment against the last commit
+  that touched it, not file times, so a fresh checkout can rescore old runs.
 - The README groups the skills by the kind of work: process and proof, design,
   interfaces and docs, backend and security, production, and repo and tools.
 - The README covers the Claude Code desktop app and the Claude desktop app

@@ -16,7 +16,7 @@ import shutil
 import sys
 import tempfile
 import unittest
-from contextlib import redirect_stdout
+from contextlib import redirect_stderr, redirect_stdout
 from datetime import UTC, datetime
 from pathlib import Path
 from unittest import mock
@@ -79,7 +79,7 @@ def agent_changes(workspace: Path) -> None:
     (workspace / "docs" / "NOTES.md").write_text("# Notes\n\n```\ncode\n```\n\n## Next\n")
 
 
-def fake_verifier(trial: rescore.Trial, workspace: Path, final_dest: Path) -> list[str]:
+def fake_verifier(trial: rescore.Trial, workspace: Path, final_dest: Path, rejudge: bool = False) -> list[str]:
     verifier = final_dest / "verifier"
     (verifier / "judge-bundle.md").write_text(consult_lib.build_bundle(workspace))
     (verifier / "reward.json").write_text(json.dumps(NEW_REWARDS))
@@ -87,7 +87,7 @@ def fake_verifier(trial: rescore.Trial, workspace: Path, final_dest: Path) -> li
     return []
 
 
-def root_owned_verifier(trial: rescore.Trial, workspace: Path, final_dest: Path) -> list[str]:
+def root_owned_verifier(trial: rescore.Trial, workspace: Path, final_dest: Path, rejudge: bool = False) -> list[str]:
     """On Linux with rootful Docker the verifier's files are root-owned 0644, which the host user cannot write."""
     fake_verifier(trial, workspace, final_dest)
     for name in ("reward.json", "reward-details.json"):
@@ -210,7 +210,9 @@ class KeepJudgeAnswersTests(unittest.TestCase):
             self.assertEqual(list(new.iterdir()), [])
 
 
-class RescoredJobTests(RescoreTestCase):
+class JobTestCase(RescoreTestCase):
+    """A job dir of saved trials, and the rescorer run on it with Docker stubbed."""
+
     def setUp(self) -> None:
         super().setUp()
         self.job = self.root / "consult-job"
@@ -264,6 +266,8 @@ class RescoredJobTests(RescoreTestCase):
         self.container = container
         return code
 
+
+class RescoredJobTests(JobTestCase):
     def test_lift_reads_a_rescored_job(self):
         self.single_step("api-error-contract__a", self.bundle)
         self.multi_step("money-field-change__b")
@@ -320,6 +324,146 @@ class RescoredJobTests(RescoreTestCase):
         self.assertEqual(self.run_cli("--dry-run"), 0)
         self.container.assert_not_called()
         self.assertFalse(self.out.exists())
+
+
+RUBRIC_REWARDS = {"verification": 1.0, "proof": 1.0, "change_quality": 1.0, "rubric": 0.8, "reward": 0.91}
+
+
+def judging_verifier(trial: rescore.Trial, workspace: Path, final_dest: Path, rejudge: bool = False) -> list[str]:
+    """A live verifier: the rubric judges answered, and the reward carries their score."""
+    fake_verifier(trial, workspace, final_dest)
+    (final_dest / "verifier" / "reward.json").write_text(json.dumps(RUBRIC_REWARDS))
+    (final_dest / "verifier" / "judge-items.json").write_text(json.dumps({"score": 0.8, "items": []}))
+    return []
+
+
+def failed_judge_verifier(trial: rescore.Trial, workspace: Path, final_dest: Path, rejudge: bool = False) -> list[str]:
+    """The judges failed, so the runner dropped the rubric and the reward has no rubric score."""
+    fake_verifier(trial, workspace, final_dest)
+    (final_dest / "verifier" / "judge-items.json").write_text(json.dumps({"score": None, "items": []}))
+    return []
+
+
+class RejudgeTests(JobTestCase):
+    def setUp(self) -> None:
+        super().setUp()
+        self.out = self.root / "consult-job-rejudged"
+        token = mock.patch.dict(os.environ, {"CLAUDE_CODE_OAUTH_TOKEN": "test-token"})
+        token.start()
+        self.addCleanup(token.stop)
+
+    def test_without_yes_it_states_the_judge_calls_and_runs_nothing(self):
+        self.single_step("api-error-contract__a", self.bundle)
+        out = io.StringIO()
+        with redirect_stdout(out):
+            code = rescore.main(["rescore.py", str(self.job), "--rejudge"])
+        calls = rescore.rubric_calls("api-error-contract")
+        self.assertEqual(code, 0)
+        self.assertIn(f"1 trials, {calls} judge calls (up to {2 * calls} with retries)", out.getvalue())
+        self.assertFalse(self.out.exists())
+
+    def test_yes_without_a_token_refuses(self):
+        self.single_step("api-error-contract__a", self.bundle)
+        with mock.patch.dict(os.environ, {"CLAUDE_CODE_OAUTH_TOKEN": ""}), mock.patch("sys.stderr", io.StringIO()):
+            self.assertEqual(self.run_cli("--rejudge", "--yes", verifier=judging_verifier), 2)
+        self.container.assert_not_called()
+
+    def test_a_rejudged_trial_takes_the_new_rubric_score_and_drops_the_old_judge(self):
+        self.single_step("api-error-contract__a", self.bundle)
+        self.assertEqual(self.run_cli("--rejudge", "--yes", verifier=judging_verifier), 0)
+        entry = lift.load_trials(self.out)["consult/api-error-contract"][0]
+        self.assertEqual(entry["rewards"], RUBRIC_REWARDS)
+        self.assertTrue((self.out / "api-error-contract__a" / "verifier" / "judge-items.json").is_file())
+        self.assertTrue(self.container.call_args.args[3])
+
+    def test_a_trial_whose_original_verifier_recorded_no_reward_can_be_rejudged(self):
+        crashed = {"exception_type": "RewardFileNotFoundError", "exception_message": "judge rate limited"}
+        self.single_step("api-error-contract__a", self.bundle, verifier_result=None, exception_info=crashed)
+        self.assertEqual(self.run_cli("--rejudge", "--yes", verifier=judging_verifier), 0)
+        self.assertEqual(lift.load_trials(self.out)["consult/api-error-contract"][0]["reward"], 0.91)
+
+    def test_a_failed_judge_keeps_the_deterministic_reward_and_says_so(self):
+        self.single_step("api-error-contract__a", self.bundle)
+        self.assertEqual(self.run_cli("--rejudge", "--yes", verifier=failed_judge_verifier), 0)
+        row = json.loads((self.out / "rescore.json").read_text())["trials"][0]
+        self.assertEqual(row["new"], NEW_REWARDS)
+        self.assertIn(rescore.RUBRIC_DROPPED, row["notes"])
+
+    def test_a_verifier_that_left_no_judge_answers_is_not_scored(self):
+        self.single_step("api-error-contract__a", self.bundle)
+        self.assertEqual(self.run_cli("--rejudge", "--yes"), 1)
+        self.assertIn("judge-items.json", json.loads((self.out / "rescore.json").read_text())["trials"][0]["flags"][0])
+
+    def test_a_task_without_a_rubric_is_left_out_of_the_rejudged_job(self):
+        self.single_step("routing-settings-copy__a", self.bundle, task_name="consult/routing-settings-copy")
+        self.single_step("api-error-contract__b", self.bundle)
+        self.assertEqual(self.run_cli("--rejudge", "--yes", verifier=judging_verifier), 0)
+        self.assertEqual(sorted(lift.load_trials(self.out)), ["consult/api-error-contract"])
+
+    def test_changes_that_differ_from_the_judged_bundle_stop_before_any_judge_is_billed(self):
+        self.single_step("api-error-contract__a", self.bundle.replace("limit = 2", "limit = 3"))
+        self.assertEqual(self.run_cli("--rejudge", "--yes", verifier=judging_verifier), 1)
+        self.container.assert_not_called()
+
+    def test_a_rejudge_that_scores_a_trial_clears_its_old_verifier_failure(self):
+        crashed = {"exception_type": "RewardFileNotFoundError", "exception_message": "judge rate limited"}
+        self.single_step("api-error-contract__a", self.bundle, verifier_result=None, exception_info=crashed)
+        self.run_cli("--rejudge", "--yes", verifier=judging_verifier)
+        entry = lift.load_trials(self.out)["consult/api-error-contract"][0]
+        self.assertEqual((entry.get("error"), entry["reward"]), (None, 0.91))
+
+    def test_a_repeat_pass_writes_beside_the_first(self):
+        self.single_step("api-error-contract__a", self.bundle)
+        self.run_cli("--rejudge", "--yes", "--suffix", "rejudged-repeat", verifier=judging_verifier)
+        self.assertTrue((self.root / "consult-job-rejudged-repeat" / "rescore.json").is_file())
+
+    def test_rejudging_runs_one_trial_at_a_time(self):
+        with redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+            rescore.parse_args([str(self.job), "--rejudge", "--concurrency", "2"])
+        self.assertEqual(rescore.parse_args([str(self.job), "--rejudge"]).concurrency, 1)
+
+    def test_the_token_reaches_the_container_by_name_only(self):
+        self.assertEqual(rescore.verifier_env(rejudge=True), ["-e", "CLAUDE_CODE_OAUTH_TOKEN"])
+        self.assertEqual(rescore.verifier_env(rejudge=False), ["-e", "CONSULT_EVAL_SKIP_JUDGE=1"])
+
+
+class EnvironmentChangedTests(unittest.TestCase):
+    """A fresh checkout writes every file now; the last commit says when the environment really changed."""
+
+    def setUp(self) -> None:
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        repo = Path(self._tmp.name).resolve()
+        env = mock.patch.dict(os.environ, {**rescore.GIT_ENV, "GIT_COMMITTER_DATE": "2001-01-01T00:00:00Z"})
+        env.start()
+        self.addCleanup(env.stop)
+        self.dockerfile = repo / "tasks" / "t" / "environment" / "Dockerfile"
+        self.dockerfile.parent.mkdir(parents=True)
+        self.dockerfile.write_text("FROM node:22\n")
+        git(repo, "init", "-q")
+        git(repo, "add", "-A")
+        git(repo, "commit", "-qm", "environment")
+        for name, value in (("EVAL_DIR", repo), ("TASKS_DIR", repo / "tasks")):
+            patch = mock.patch.object(rescore, name, value)
+            patch.start()
+            self.addCleanup(patch.stop)
+
+    def test_a_clean_environment_changed_when_it_was_last_committed(self):
+        self.assertEqual(rescore.environment_changed_at("t"), datetime(2001, 1, 1, tzinfo=UTC).timestamp())
+
+    def test_a_change_merged_after_a_trial_counts_from_the_merge(self):
+        repo = rescore.EVAL_DIR
+        git(repo, "switch", "-qc", "change")
+        self.dockerfile.write_text("FROM node:24\n")
+        git(repo, "commit", "-qam", "change the environment on a branch")
+        git(repo, "switch", "-q", "-")
+        with mock.patch.dict(os.environ, {"GIT_COMMITTER_DATE": "2003-01-01T00:00:00Z"}):
+            git(repo, "merge", "-q", "--no-ff", "-m", "merge", "change")
+        self.assertEqual(rescore.environment_changed_at("t"), datetime(2003, 1, 1, tzinfo=UTC).timestamp())
+
+    def test_an_uncommitted_change_counts_from_its_file_time(self):
+        self.dockerfile.write_text("FROM node:24\n")
+        self.assertGreater(rescore.environment_changed_at("t"), datetime(2020, 1, 1, tzinfo=UTC).timestamp())
 
 
 if __name__ == "__main__":
