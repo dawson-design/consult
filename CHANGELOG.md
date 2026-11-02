@@ -74,6 +74,10 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   dependencies. The eval
   calibration on 2026-11-02 found agents adding exactly these, such as a
   required login password nobody asked for.
+- `AGENTS.md` gives maintainers a test for policy rules: a rule earns its
+  place when a competent engineer could reasonably choose otherwise and the
+  rule picks one choice, with a short "because". When the choices suit
+  different readers, pick the one that is easier for a person to follow.
 
 ### Removed
 
