@@ -398,7 +398,8 @@ To add a task:
 1. Copy a task directory of the same kind.
 2. Replace `instruction.md` and `environment/workspace/`.
 3. Edit `tests/consult.json`.
-4. For a code task, write `verifier/hidden/<task>.mjs` and `tests/proof/submitted.py`.
+4. For a code task, write `verifier/hidden/<task>.mjs`, `tests/proof/submitted.py`,
+   `solution/solve.sh`, and a rubric in `verifier/rubrics/<task>.json`.
 5. For a rule task, add the rule-task keys to `consult.json`. A multi-step
    task also needs `steps/brief/`, `steps/approve/`, `steps/continue/`, and a
    no-op `solution/solve.sh` in `brief` and `continue`, so the oracle proposes
@@ -510,11 +511,27 @@ Check the task with the oracle before spending model calls:
 harbor run -p tasks -i <task> -a oracle -o runs --yes
 ```
 
+Then check the rubric against the oracle. `scripts/oracle_judge.py` applies
+each task's `solution/solve.sh` in the task image, checks it passes the
+visible tests and the hidden check, and runs the rubric judges on every
+dimension but report, since the oracle writes no final message. Every
+must-have item must answer yes. One that does not is a bug in the rubric or
+the oracle. A multi-step task's judges also read the reply each later turn
+answered, so its oracle keeps that reply, such as the approved proposal, in
+`steps/<step>/solution/reply.md`, and the check passes it to them.
+
+```sh
+uv run scripts/oracle_judge.py --tasks <task>            # print the judge call count
+uv run scripts/oracle_judge.py --tasks <task> --dry-run  # apply and check the oracle, no judge
+uv run scripts/oracle_judge.py --tasks <task> --yes      # run the judges (bills the subscription)
+```
+
+Results go to `runs/oracle-judge/<timestamp>/`.
+
 ## Known gaps
 
-- Only `proof-first-bugfix`, the routing tasks, and the `rules` tasks have
-  oracle solutions. The other code tasks run without `solution/`, so
-  `-a oracle` cannot check them.
+- `large-checkout-workflow` and `large-link-shortener` have no `solution/`
+  and no rubric, so neither `-a oracle` nor `oracle_judge.py` can check them.
 - The oracle leaves no trajectory, so trajectory-based rules such as `api.1`
   and `debugging.1` score 0 on it.
 - Rule checks are heuristics until calibrated. `debugging.5` misses a fix that

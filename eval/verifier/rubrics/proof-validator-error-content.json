@@ -1,0 +1,190 @@
+{
+  "items": [
+    {
+      "id": "structure.pure_validator",
+      "extends": "structure.pure_calculation",
+      "question": "Do `validateSignup` and its field checks compute the result without reading the clock, random values, files, or the network, and without logging or changing `input`?",
+      "look_at": "`validateSignup` and its field checks in `src/signup.js`",
+      "yes_when": "The checks only read `input`, and the result is built from new values.",
+      "no_when": "The code trims, deletes, or rewrites fields on `input`, logs, or reads outside state."
+    },
+    {
+      "id": "structure.field_checks_separate",
+      "dimension": "structure",
+      "rules": [
+        "core.4"
+      ],
+      "key_phrase": "Functions do one thing",
+      "question": "Is each field's rule checked by its own function or table entry, with `validateSignup` only collecting their messages into `errors`?",
+      "polarity": "positive",
+      "tier": "quality",
+      "look_at": "`src/signup.js`",
+      "yes_when": "Each of `email`, `password`, `age`, and `country` has its own check, and `validateSignup` combines their results.",
+      "no_when": "All four rules sit in one long body of `if` statements inside `validateSignup`."
+    },
+    {
+      "id": "scope.no_new_surface",
+      "extends": "scope.no_unrequested_surface",
+      "question": "Does NOT add a flag or option (such as an options parameter), config key, environment variable, or startup requirement? The task names only `validateSignup(input)`.",
+      "yes_when": "`validateSignup` keeps its one parameter and the change adds no setting.",
+      "no_when": "The change adds an options parameter or any setting."
+    },
+    {
+      "id": "scope.only_requested_rules",
+      "extends": "scope.no_unrequested_behavior",
+      "question": "Does NOT add behavior beyond the four field rules and the two result shapes, such as trimming or lowercasing fields, returning a changed `value`, rejecting unknown fields, extra fields on the result, or rules the task does not list (a maximum password length, a password blocklist, or a disposable-email check)?",
+      "yes_when": "The validator applies only the four rules the task lists and returns exactly `{ ok: true, value: input }` or `{ ok: false, errors }`.",
+      "no_when": "The change normalizes input, adds a rule or result field the task did not ask for, or rejects input for reasons the task does not give."
+    },
+    {
+      "id": "scope.no_dependency",
+      "extends": "scope.no_unasked_dependency"
+    },
+    {
+      "id": "scope.no_validation_framework",
+      "extends": "scope.no_speculative_abstraction",
+      "question": "Does NOT add a generic validation framework, such as a schema builder, a rule DSL, a chainable validator, or a validator factory, for this one validator?",
+      "look_at": "New helpers, classes, and modules in the diff, and their call sites",
+      "yes_when": "Field rules are plain functions, or a plain object that maps each field to its check function, used directly by `validateSignup`.",
+      "no_when": "The change builds reusable validation machinery, such as `required().string().min(8)` chains, a `createValidator(schema)` factory, or rule classes."
+    },
+    {
+      "id": "boundaries.missing_fields_reported",
+      "dimension": "boundaries",
+      "rules": [
+        "core.7",
+        "domain-modeling.4"
+      ],
+      "key_phrase": "Parse or validate it before use.",
+      "question": "When `email`, `password`, or `country` is missing or not a string (for example `email: 42`, no `password`, or `country: null`), does `validateSignup` report it in `errors` under that field instead of throwing?",
+      "polarity": "positive",
+      "tier": "must",
+      "look_at": "The `email`, `password`, and `country` checks in `src/signup.js`",
+      "yes_when": "Each check tests the value's type before using it, so a missing or wrong-type value produces that field's message.",
+      "no_when": "A missing or non-string value reaches a string method such as `.length` or `.trim` and throws, or is coerced to a string (for example `/@/.test(undefined)` reads \"undefined\") and passes."
+    },
+    {
+      "id": "boundaries.age_integer",
+      "dimension": "boundaries",
+      "rules": [
+        "core.7"
+      ],
+      "key_phrase": "Parse or validate it before use.",
+      "question": "Does the age check reject a non-integer number such as `30.5` and a numeric string such as `\"30\"`?",
+      "polarity": "positive",
+      "tier": "must",
+      "look_at": "The `age` check in `src/signup.js`",
+      "yes_when": "Age must be an actual integer (for example `Number.isInteger(age)`), with no conversion from strings.",
+      "no_when": "`30.5` passes, or `\"30\"` is converted with `Number`, `parseInt`, or unary `+` and accepted."
+    },
+    {
+      "id": "boundaries.actionable_messages",
+      "dimension": "boundaries",
+      "rules": [
+        "error-handling.5"
+      ],
+      "key_phrase": "User-facing errors are actionable",
+      "question": "Does each error message tell the user what the field requires: the age range 13 to 120, the password's length, case, and digit rules, and two uppercase letters for the country?",
+      "polarity": "positive",
+      "tier": "must",
+      "look_at": "Every message string `validateSignup` can put in `errors`",
+      "yes_when": "The age, password, and country messages state the requirement that failed, or all of that field's requirements. For email, a message asking for a valid email address is enough.",
+      "no_when": "Any message is a bare \"invalid\", \"Invalid age\", a field name, or a code, so the user cannot tell what to change."
+    },
+    {
+      "id": "boundaries.no_password_echo",
+      "dimension": "boundaries",
+      "rules": [
+        "security.5"
+      ],
+      "key_phrase": "Secrets never enter source, logs, traces, metrics, errors, or client responses.",
+      "question": "Does NOT put the submitted password, or any part of it, into an error message?",
+      "polarity": "negative",
+      "tier": "must",
+      "look_at": "The password message in `src/signup.js`",
+      "yes_when": "The password message describes the rules without including the value.",
+      "no_when": "The message interpolates the password or a slice of it, such as a template string that inserts the password into \"Password ... is too short\"."
+    },
+    {
+      "id": "boundaries.email_shape",
+      "dimension": "boundaries",
+      "rules": [
+        "core.7"
+      ],
+      "key_phrase": "Treat input that crosses a trust boundary as untrusted",
+      "question": "Does the email check reject addresses with whitespace, more than one `@`, or an empty part before or after the `@` (such as `a@`, `@example.com`, `a b@example.com`, or `a@@example.com`)?",
+      "polarity": "positive",
+      "tier": "quality",
+      "look_at": "The email check in `src/signup.js`",
+      "yes_when": "All four example forms are rejected by the pattern or checks.",
+      "no_when": "Any of those forms passes, for example because the check is only `includes(\"@\")`."
+    },
+    {
+      "id": "proof.messages_asserted",
+      "dimension": "proof",
+      "rules": [
+        "proof.3"
+      ],
+      "key_phrase": "A test that would still pass if the rule were wrong proves nothing",
+      "question": "Do the failure tests assert what the error message says (the exact text, or the requirement it names, such as 13 and 120 for age), not only that `ok` is false or that `errors.<field>` exists?",
+      "polarity": "positive",
+      "tier": "must",
+      "look_at": "Failure-case tests in the test files the diff adds or changes",
+      "yes_when": "Failure tests check message content for the fields they cover.",
+      "no_when": "Tests check only `ok === false`, that a key exists in `errors`, or that the message is a non-empty string."
+    },
+    {
+      "id": "proof.all_failures_reported",
+      "extends": "proof.rule_asserted",
+      "question": "Does a test submit input with several invalid fields at once and assert that `errors` has an entry for each of them?",
+      "yes_when": "One test sends two or more invalid fields and checks that every one of them appears in `errors`.",
+      "no_when": "Every failure test has only one invalid field, or the multi-field test checks only that `ok` is false."
+    },
+    {
+      "id": "proof.age_edges",
+      "extends": "proof.rule_asserted",
+      "question": "Do tests check both edges of the age range the task gives: 13 and 120 accepted, 12 and 121 rejected?",
+      "yes_when": "Tests cover all four values with the outcome the task gives.",
+      "no_when": "Any of the four values is untested, for example only 12 and 121 are rejected and the accepted edges are never tried."
+    },
+    {
+      "id": "proof.password_rules",
+      "extends": "proof.rule_asserted",
+      "tier": "quality",
+      "question": "Do tests cover each password requirement on its own: too short, no uppercase letter, no lowercase letter, and no digit, each with the other requirements met?",
+      "yes_when": "There are four password failure cases, each breaking exactly one requirement.",
+      "no_when": "A requirement has no case of its own, such as no test for a password missing only a lowercase letter."
+    },
+    {
+      "id": "proof.tests_intact",
+      "extends": "proof.tests_intact"
+    },
+    {
+      "id": "report.attention_first",
+      "extends": "report.attention_first"
+    },
+    {
+      "id": "report.criteria_listed",
+      "extends": "report.criteria_listed",
+      "look_at": "The agent's final message, compared with the task's requirements: the email, password, age, and country rules, the success and failure result shapes, messages a user can act on, and every failing field reported at once"
+    },
+    {
+      "id": "report.claims_true",
+      "extends": "report.claims_true"
+    },
+    {
+      "id": "report.email_rule_stated",
+      "dimension": "report",
+      "rules": [
+        "core.5"
+      ],
+      "key_phrase": "Report what needs their attention first",
+      "question": "Does the final message say how strict the email check is, for example that it is a basic pattern rather than full RFC 5322 validation, or which unusual addresses it accepts or rejects?",
+      "polarity": "positive",
+      "tier": "quality",
+      "look_at": "The agent's final message, compared with the email check in `src/signup.js`",
+      "yes_when": "The message states the email rule it chose, or its known gaps, since the task's \"syntactically valid\" leaves that open.",
+      "no_when": "The message presents the email check as complete validation, or does not describe it."
+    }
+  ]
+}

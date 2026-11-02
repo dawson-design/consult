@@ -39,6 +39,8 @@ orders.write_text(s)
 
 spec = Path("openapi.yaml")
 t = spec.read_text()
+t = t.replace("unitPrice: { type: number, description: Price in dollars }",
+              'unitPrice: { type: number, description: "Unit price in major units of the order currency (dollars for USD orders)" }')
 t = t.replace('''        total: { type: number, description: Order total in dollars }''', '''        total: { type: number, description: "Order total in major units of the order currency (dollars for USD orders)" }
         totalMoney:
           type: object

@@ -31,6 +31,9 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   score, and `lift.py` then compares that task without model scores in both
   jobs. The new `rubric` dimension scores the answers and takes the 0.45 model
   share of a code task's reward.
+- Rubrics and oracle solutions for the 15 eval tasks of the calibration runs,
+  and `eval/scripts/oracle_judge.py`, which checks that every must-have rubric
+  item holds on each task's oracle.
 
 ### Changed
 

@@ -1,0 +1,129 @@
+{
+  "items": [
+    {
+      "id": "structure.pure_discount",
+      "extends": "structure.pure_calculation",
+      "question": "Is the discount (the 10% tier, the `WELCOME` coupon, and the cap) computed by a function that reads no clock, random value, file, network, or database and changes nothing outside itself, separate from the code that records the charge and queues the email?",
+      "look_at": "The discount code in `src/orders.js` (or wherever the diff moves it) and `processOrder`, which calls it",
+      "yes_when": "A function takes the subtotal and coupon (or the order) as arguments and returns the discount, and the charge and email effects happen in its caller.",
+      "no_when": "The discount is still computed inline in the same function body that records the charge and queues the email, or the discount code reads or writes module state such as the `charges` or `emails` arrays."
+    },
+    {
+      "id": "structure.effects_explicit",
+      "dimension": "structure",
+      "rules": ["core.1"],
+      "key_phrase": "Make state and effects explicit",
+      "question": "Can a caller or test see the charge and the confirmation email that `processOrder` produces through an explicit seam, such as effect functions passed in, a returned value, or an exported read accessor, rather than only through module-private arrays?",
+      "polarity": "positive",
+      "tier": "quality",
+      "look_at": "How `src/orders.js` records charges and queues emails, and how the new tests observe them",
+      "yes_when": "The charge and email effects are passed in, returned, or readable through an exported function or value, and the tests use that seam.",
+      "no_when": "Charges and emails still go only into module-private arrays that nothing outside the module can read, or tests reach them by editing or re-importing module internals."
+    },
+    {"id": "structure.one_job", "extends": "structure.one_job"},
+    {
+      "id": "structure.no_scattering_layer",
+      "extends": "structure.no_scattering_layer",
+      "no_when": "The discount rule is split across new pass-through modules, such as a discount service, a coupon repository, and a pricing manager, that add no boundary."
+    },
+    {
+      "id": "scope.no_new_surface",
+      "extends": "scope.no_unrequested_surface",
+      "question": "Does NOT add any route, command, flag, config key, environment variable, or startup requirement? The task names none.",
+      "yes_when": "No route, command, flag, config key, environment variable, or startup requirement was added. New exports or an optional parameter on `processOrder` do not count here.",
+      "no_when": "The change adds a route, command, flag, config file or key, environment variable, or startup requirement, such as a configurable coupon list read from a file or the environment."
+    },
+    {
+      "id": "scope.welcome_and_cap_only",
+      "extends": "scope.no_unrequested_behavior",
+      "question": "Does NOT add user-visible behavior beyond the `WELCOME` coupon (500 cents off, stacking with the tier discount) and the cap that keeps the combined discount at or below the subtotal?",
+      "no_when": "The change adds coupons other than `WELCOME`, percentage coupons, coupon expiry or usage limits, case-insensitive coupon matching, rejection of orders whose coupon is not `WELCOME`, or new fields in the result."
+    },
+    {
+      "id": "scope.existing_rules_kept",
+      "dimension": "scope",
+      "rules": ["core.2"],
+      "key_phrase": "Build only what the user asked for.",
+      "question": "Does NOT change the behavior the task kept: the 10% tier discount rounded down at subtotals of 5000 cents or more, the `empty order` and `unknown sku: <sku>` validation errors, and a charge and email for the discounted total only on success?",
+      "polarity": "negative",
+      "tier": "must",
+      "look_at": "The validation, pricing, tier discount, and effect code in `src/orders.js`, compared with the original",
+      "yes_when": "The tier threshold, rate, rounding, error values, and when the charge and email happen all match the original code.",
+      "no_when": "The threshold, rate, or rounding changed, an error value was reworded or restructured, or a charge or email is now produced for a failed order or for an amount other than the final total."
+    },
+    {"id": "scope.no_dependency", "extends": "scope.no_unasked_dependency"},
+    {
+      "id": "scope.no_speculative_abstraction",
+      "extends": "scope.no_speculative_abstraction",
+      "no_when": "The change adds a discount-rule engine, a strategy interface or class hierarchy for discounts, or a coupon registry built for the single `WELCOME` coupon."
+    },
+    {
+      "id": "boundaries.validated_before_effects",
+      "extends": "boundaries.parse_at_boundary",
+      "question": "Is the order validated (non-empty `lines`, every SKU known) before any discount is computed or any charge or email is produced?",
+      "look_at": "`processOrder` in `src/orders.js` and the functions it calls",
+      "yes_when": "Validation finishes and returns `{ ok: false, error }` for a bad order before the discount, charge, or email code runs.",
+      "no_when": "A charge, email, or discount can be produced for an order that later fails validation, or validation is interleaved with the effects."
+    },
+    {
+      "id": "proof.discount_cases",
+      "extends": "proof.rule_asserted",
+      "question": "Do tests assert the subtotal, discount, and total for each discount case the task names: below the tier with no coupon, the tier alone, `WELCOME` alone (500 off), and `WELCOME` stacked with the tier discount?",
+      "yes_when": "Each of the four cases has a test that checks the exact discount and total, with values worked out from the task's rules (for example 9000 subtotal with `WELCOME` gives 1400 discount and 7600 total).",
+      "no_when": "A case is missing, or tests only check `ok` or the subtotal, or the expected numbers do not follow from the task's rules."
+    },
+    {
+      "id": "proof.cap_asserted",
+      "dimension": "proof",
+      "rules": ["proof.3"],
+      "key_phrase": "Each test asserts a business rule from the acceptance criteria or spec, with expected values taken from there, not from the code.",
+      "question": "Does a test drive a case where the uncapped discount would exceed the subtotal (a subtotal below 500 cents with `WELCOME`) and assert that the discount equals the subtotal and the total is 0?",
+      "polarity": "positive",
+      "tier": "must",
+      "look_at": "Test files the diff adds or changes, and the function each cap test calls",
+      "yes_when": "A test calls the discount code or `processOrder` with a subtotal under 500 and `WELCOME` and checks the capped discount and a zero total.",
+      "no_when": "No test reaches the cap, or the only cap check is a generic `discount <= subtotal` on cases where the cap never applies."
+    },
+    {
+      "id": "proof.tier_threshold_edge",
+      "dimension": "proof",
+      "rules": ["proof.3"],
+      "key_phrase": "Each test asserts a business rule from the acceptance criteria or spec, with expected values taken from there, not from the code.",
+      "question": "Does a test check the tier threshold at exactly 5000 cents, asserting the 10% discount applies there?",
+      "polarity": "positive",
+      "tier": "quality",
+      "look_at": "Test files the diff adds or changes",
+      "yes_when": "A test uses a subtotal of exactly 5000 and expects a 500 discount (or tests 5000 next to a value just below it).",
+      "no_when": "No test sits on the 5000 boundary."
+    },
+    {
+      "id": "proof.charge_and_email_asserted",
+      "extends": "proof.rule_asserted",
+      "question": "Does a test assert that a successful order records a charge for that order's id and its discounted total, and queues an email to the order's address with the order id in the subject and the same amount?",
+      "yes_when": "A test checks the recorded charge's order id and amount and the queued email's recipient, subject, and amount, using a discounted order so the amount differs from the subtotal.",
+      "no_when": "No test inspects the charge or the email, or it checks only that one was produced, or the amount checked equals the subtotal so a missing discount would pass."
+    },
+    {
+      "id": "proof.failure_no_effects",
+      "extends": "proof.failure_path",
+      "question": "Does a test show that an order failing validation (empty lines or an unknown SKU) returns `ok: false` and records no charge and queues no email?",
+      "yes_when": "A test drives a validation failure and asserts both the error result and that no charge or email was produced.",
+      "no_when": "Failure paths are untested, or tested only for the returned error without checking the effects."
+    },
+    {"id": "proof.tests_intact", "extends": "proof.tests_intact"},
+    {
+      "id": "proof.real_code",
+      "extends": "proof.real_code",
+      "question": "Do the new tests call the real discount and order code, replacing at most the charge and email effects?",
+      "yes_when": "Tests run the repository's discount and `processOrder` code, and any fake stands in only for recording charges or queueing emails.",
+      "no_when": "Tests stub or monkey-patch the discount, pricing, or validation code, or replace the module under test."
+    },
+    {"id": "report.attention_first", "extends": "report.attention_first"},
+    {
+      "id": "report.criteria_listed",
+      "extends": "report.criteria_listed",
+      "look_at": "The agent's final message, compared with the task's requirements: the `WELCOME` coupon stacking with the tier, the cap, tests for the discount cases, and a test for the charge and confirmation email"
+    },
+    {"id": "report.claims_true", "extends": "report.claims_true"}
+  ]
+}

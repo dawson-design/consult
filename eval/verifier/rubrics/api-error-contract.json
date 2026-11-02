@@ -1,0 +1,105 @@
+{
+  "items": [
+    {
+      "id": "structure.no_scattering_layer",
+      "extends": "structure.no_scattering_layer"
+    },
+    {
+      "id": "structure.one_job",
+      "extends": "structure.one_job"
+    },
+    {
+      "id": "scope.no_new_surface",
+      "extends": "scope.no_unrequested_surface",
+      "question": "Does NOT add any route, command, flag, config key, environment variable, or startup requirement? The task names none.",
+      "yes_when": "The change adds no route, command, flag, option, setting, or startup requirement.",
+      "no_when": "The change adds a route, an option or flag (such as an extra parameter to `handleUserLookup`), a setting, or a startup requirement."
+    },
+    {
+      "id": "scope.three_outcomes_only",
+      "extends": "scope.no_unrequested_behavior",
+      "question": "Does NOT add user-visible behavior beyond the three outcomes the task names: missing input, a missing user, and a found user?",
+      "no_when": "The change adds behavior the task did not ask for, such as new lookup options, caching, logging to callers, or extra response fields on success."
+    },
+    {
+      "id": "scope.no_dependency",
+      "extends": "scope.no_unasked_dependency"
+    },
+    {
+      "id": "scope.no_speculative_abstraction",
+      "extends": "scope.no_speculative_abstraction"
+    },
+    {
+      "id": "scope.no_dead_defensive_code",
+      "extends": "scope.no_dead_defensive_code"
+    },
+    {
+      "id": "scope.success_unchanged",
+      "dimension": "scope",
+      "rules": [
+        "api.4"
+      ],
+      "key_phrase": "Preserve an existing service's representation and error contract.",
+      "question": "Does a found user still get status 200 with the user object itself as the body, as before the change?",
+      "polarity": "positive",
+      "tier": "must",
+      "look_at": "The success branch of `handleUserLookup` in `src/users.js`, compared with the original",
+      "yes_when": "A found user returns `{ status: 200, body: user }`, the same shape as before.",
+      "no_when": "The success body is wrapped, renamed, or given new or missing fields."
+    },
+    {
+      "id": "boundaries.id_checked_first",
+      "extends": "boundaries.parse_at_boundary",
+      "question": "Is `request.query.id` checked once, at the top of `handleUserLookup`, before the users map is read?",
+      "look_at": "`handleUserLookup` in `src/users.js`",
+      "yes_when": "A missing or empty id is rejected before the lookup, and the lookup only ever sees a checked id.",
+      "no_when": "The map is read with an unchecked id, or the id is checked in more than one place."
+    },
+    {
+      "id": "boundaries.one_error_shape",
+      "dimension": "boundaries",
+      "rules": [
+        "api.4"
+      ],
+      "key_phrase": "New APIs use the chosen model's native error format",
+      "question": "Do the missing-id and unknown-user responses use one error body shape, with a machine-readable code and a human-readable message in the same fields?",
+      "polarity": "positive",
+      "tier": "must",
+      "look_at": "Both error branches of `handleUserLookup` in `src/users.js`",
+      "yes_when": "Both error bodies have the same fields, holding a stable code and a readable message.",
+      "no_when": "The two errors use different body shapes, or one lacks a code or a message."
+    },
+    {
+      "id": "boundaries.no_leaky_errors",
+      "extends": "boundaries.no_leaky_errors"
+    },
+    {
+      "id": "proof.statuses_asserted",
+      "extends": "proof.rule_asserted",
+      "question": "Does at least one test assert that a missing id gets a 4xx response and an unknown id gets a 404, each with a code and a message?",
+      "yes_when": "Tests call `handleUserLookup` with no id and with an unknown id and check each status and error body.",
+      "no_when": "No test covers one of the two errors, or the tests check only that some error came back."
+    },
+    {
+      "id": "proof.tests_intact",
+      "extends": "proof.tests_intact"
+    },
+    {
+      "id": "proof.no_weak_tests",
+      "extends": "proof.no_weak_tests"
+    },
+    {
+      "id": "report.attention_first",
+      "extends": "report.attention_first"
+    },
+    {
+      "id": "report.criteria_listed",
+      "extends": "report.criteria_listed",
+      "look_at": "The agent's final message, compared with the task's three requirements"
+    },
+    {
+      "id": "report.claims_true",
+      "extends": "report.claims_true"
+    }
+  ]
+}

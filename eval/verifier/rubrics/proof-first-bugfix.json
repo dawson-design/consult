@@ -1,0 +1,169 @@
+{
+  "items": [
+    {
+      "id": "structure.whole_cents",
+      "dimension": "structure",
+      "rules": [
+        "domain-modeling.1",
+        "domain-modeling.11"
+      ],
+      "key_phrase": "Decide data shapes and invariants before writing transformations.",
+      "question": "Does `totalCents` always return a whole number of cents, rounding explicitly when SAVE10 applies to a subtotal that is not a multiple of 10 (for example 999 cents)?",
+      "polarity": "positive",
+      "tier": "must",
+      "look_at": "The discount calculation in `totalCents` in `src/cart.js`",
+      "yes_when": "The discounted total is computed in integer cents, or rounded to an integer with `Math.round`, `Math.floor`, or similar, so no fraction of a cent can be returned.",
+      "no_when": "A discounted total can come back with a fraction, such as 899.1 for a 999-cent subtotal, or the money is converted to floating-point dollars."
+    },
+    {
+      "id": "structure.pure_total",
+      "extends": "structure.pure_calculation",
+      "question": "Does `totalCents` compute its result without reading the clock, random values, files, the network, or the database, and without logging or changing anything outside itself, including the items it is given?",
+      "look_at": "`totalCents` in `src/cart.js` and any helpers it calls",
+      "no_when": "It logs, mutates the cart array or an item, or reads module state or any outside source."
+    },
+    {
+      "id": "scope.no_new_surface",
+      "extends": "scope.no_unrequested_surface",
+      "question": "Does NOT add a flag or option (such as a new parameter), config key, environment variable, or startup requirement? The task names only `totalCents(items, discountCode)`.",
+      "yes_when": "`totalCents` keeps its two parameters and the change adds no setting.",
+      "no_when": "The change adds a parameter (such as a discount table or an options object) or any setting."
+    },
+    {
+      "id": "scope.no_discount_framework",
+      "extends": "scope.no_speculative_abstraction",
+      "question": "Does NOT add a discount registry, strategy objects, a pluggable discount function, or a discount module to serve the single SAVE10 code?",
+      "look_at": "The discount handling in `src/cart.js` and any new files",
+      "yes_when": "SAVE10 is handled directly, such as one comparison and one rate, optionally with a named constant for the rate.",
+      "no_when": "The change builds structure for discount codes the task does not have, such as a registry, a list of rule objects, or a function that looks up discounts by name for future codes."
+    },
+    {
+      "id": "scope.only_requested_behavior",
+      "extends": "scope.no_unrequested_behavior",
+      "question": "Does NOT add user-visible behavior beyond the corrected SAVE10 total and the rejection of malformed carts and invalid item values, such as new discount codes, tax, currency formatting, or a return value other than a number of cents?",
+      "yes_when": "Every new behavior is the discount fix or a rejection of a bad cart or item. How an unrecognized discount code is handled does not count here.",
+      "no_when": "The change adds features the task did not ask for, such as another discount code, tax or shipping, formatted strings, or an object in place of the numeric total."
+    },
+    {
+      "id": "scope.no_dependency",
+      "extends": "scope.no_unasked_dependency"
+    },
+    {
+      "id": "boundaries.cart_checked",
+      "extends": "boundaries.parse_at_boundary",
+      "question": "Are `items` and each item's `priceCents` and `quantity` checked in `totalCents` before they are used in arithmetic?",
+      "look_at": "`totalCents` in `src/cart.js` and the code it passes items to",
+      "yes_when": "A non-array cart, a non-object item, and bad price or quantity values are caught before any sum or discount uses them, whether in a guard block or per item before that item is added.",
+      "no_when": "Raw values reach the arithmetic unchecked, so bad input can produce `NaN`, a string, or a wrong total instead of an error."
+    },
+    {
+      "id": "boundaries.refuses_bad_items",
+      "extends": "boundaries.fail_closed",
+      "question": "When the cart or an item fails a check, does `totalCents` refuse to return a total, rather than skipping, zeroing, or clamping the bad item?",
+      "look_at": "The cart and item checks in `totalCents` and the code paths after them",
+      "yes_when": "Every invalid cart or item leads to an error and no total is returned.",
+      "no_when": "An invalid item is skipped, counted as zero, clamped to a valid range, or replaced with a default, and a total is still returned."
+    },
+    {
+      "id": "boundaries.rejects_non_numbers",
+      "dimension": "boundaries",
+      "rules": [
+        "core.7"
+      ],
+      "key_phrase": "Parse or validate it before use.",
+      "question": "Does `totalCents` reject item values that are not finite integers, such as a string `priceCents` like \"500\", `NaN`, or `Infinity`, not only negative or fractional numbers?",
+      "polarity": "positive",
+      "tier": "quality",
+      "look_at": "The `priceCents` and `quantity` checks in `src/cart.js`",
+      "yes_when": "The checks require actual integers (for example `Number.isInteger`), so strings, `NaN`, and `Infinity` are rejected.",
+      "no_when": "A numeric string is converted and accepted, or `NaN` or `Infinity` passes the checks."
+    },
+    {
+      "id": "boundaries.useful_messages",
+      "dimension": "boundaries",
+      "rules": [
+        "error-handling.5"
+      ],
+      "key_phrase": "User-facing errors are actionable",
+      "question": "Does each rejection's error message say what is wrong, naming the cart or the field (`priceCents` or `quantity`) that failed?",
+      "polarity": "positive",
+      "tier": "must",
+      "look_at": "The errors `totalCents` throws or returns in `src/cart.js`",
+      "yes_when": "Each message, such as \"item 0 has an invalid priceCents\", tells the caller which value to fix.",
+      "no_when": "A rejection carries a generic message such as \"invalid input\", or a malformed cart still surfaces a native TypeError from `reduce` or property access."
+    },
+    {
+      "id": "proof.discount_regression",
+      "extends": "proof.regression_test",
+      "question": "Is there a test that applies SAVE10 and asserts the total is the subtotal less 10%, which would fail on the original code that returned 10% of the subtotal?",
+      "yes_when": "A test calls `totalCents` with SAVE10 and asserts an exact total, such as 900 for a 1000-cent subtotal.",
+      "no_when": "No test applies SAVE10, or the SAVE10 test's expected value matches what the original code returned."
+    },
+    {
+      "id": "proof.rejections_asserted",
+      "extends": "proof.rule_asserted",
+      "question": "Do tests call `totalCents` with a malformed cart (such as a non-array or a `null` item) and with an invalid item value (such as a negative price or a fractional quantity), and assert that each is rejected?",
+      "yes_when": "There is at least one test for a malformed cart and at least one for an invalid item value, each checking that `totalCents` throws or returns an error.",
+      "no_when": "Either kind of rejection has no test."
+    },
+    {
+      "id": "proof.specific_rejections",
+      "dimension": "proof",
+      "rules": [
+        "proof.3"
+      ],
+      "key_phrase": "A test that would still pass if the rule were wrong proves nothing",
+      "question": "Does each rejection test check which error occurred (its type or message), so it could not pass on the original code's accidental crash?",
+      "polarity": "positive",
+      "tier": "must",
+      "look_at": "The rejection tests in the test files the diff adds or changes",
+      "yes_when": "Each rejection assertion matches the error's message or type, such as `assert.throws(fn, /items must be an array/)`, or there are no rejection tests (another item covers that).",
+      "no_when": "A rejection test only checks that something throws, such as a bare `assert.throws(() => totalCents(null))`, which the original code's TypeError from `reduce` already satisfies."
+    },
+    {
+      "id": "proof.rounding_test",
+      "dimension": "proof",
+      "rules": [
+        "proof.3"
+      ],
+      "key_phrase": "Each test asserts a business rule from the acceptance criteria or spec, with expected values taken from there, not from the code.",
+      "question": "Does a test apply SAVE10 to a subtotal that is not a multiple of 10 and assert a whole-cent total?",
+      "polarity": "positive",
+      "tier": "quality",
+      "look_at": "SAVE10 tests in the test files the diff adds or changes",
+      "yes_when": "A test such as a 999-cent subtotal with SAVE10 asserts an exact integer result.",
+      "no_when": "Every SAVE10 test uses a subtotal that divides evenly, so fractional cents are never exercised."
+    },
+    {
+      "id": "proof.tests_intact",
+      "extends": "proof.tests_intact"
+    },
+    {
+      "id": "report.attention_first",
+      "extends": "report.attention_first"
+    },
+    {
+      "id": "report.criteria_listed",
+      "extends": "report.criteria_listed",
+      "look_at": "The agent's final message, compared with the task's requirements: the final total in cents with the supported discount code, and useful errors for malformed carts and invalid item values"
+    },
+    {
+      "id": "report.claims_true",
+      "extends": "report.claims_true"
+    },
+    {
+      "id": "report.code_change_flagged",
+      "dimension": "report",
+      "rules": [
+        "core.6"
+      ],
+      "key_phrase": "Ask whether backward compatibility is required when a change alters behavior that callers outside the change, or stored data, depend on.",
+      "question": "If the change alters what happens for a missing or unrecognized discount code (before the change, both returned the undiscounted subtotal), does the final message call this out as a behavior change for the user to confirm?",
+      "polarity": "positive",
+      "tier": "quality",
+      "look_at": "The discount-code handling in the diff, and the agent's final message",
+      "yes_when": "Missing and unrecognized codes still return the subtotal, or the message names the new handling (for example that unknown codes now throw) as a change the user should confirm.",
+      "no_when": "The change makes unrecognized or missing codes throw or change the total, and the message does not mention it or lists it only as a routine detail."
+    }
+  ]
+}

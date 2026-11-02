@@ -1,0 +1,190 @@
+{
+  "items": [
+    {
+      "id": "structure.awaits_every_send",
+      "dimension": "structure",
+      "rules": [
+        "async-systems.3"
+      ],
+      "key_phrase": "Every spawned task belongs to a scope that cancels, awaits, or supervises it",
+      "question": "Does `processNotifications` await every send it starts, including retries, before it returns, so no send is still running after the result is returned?",
+      "polarity": "positive",
+      "tier": "must",
+      "look_at": "How `src/worker.js` starts sends and retries and what it awaits before returning",
+      "yes_when": "Every send and retry runs inside promises that `processNotifications` awaits before returning its counts.",
+      "no_when": "A send or retry is started without being awaited (fire and forget, an un-awaited timer, or a promise left out of the awaited set)."
+    },
+    {
+      "id": "structure.structured_logs",
+      "dimension": "structure",
+      "rules": [
+        "observability.3"
+      ],
+      "key_phrase": "Logs are structured events with stable names, typed fields, severity, outcome",
+      "question": "Are the lifecycle logs structured events, each a stable event name plus a fields object, with a send that ran out of attempts distinguishable from routine progress by its level or an outcome field?",
+      "polarity": "positive",
+      "tier": "quality",
+      "look_at": "Every `logger` call in `src/worker.js`",
+      "yes_when": "Each call passes a fixed event name and an object of fields (such as notification id, attempt, counts, error message), and a final send failure stands out by level (warn or error) or by an outcome or severity field.",
+      "no_when": "Logs are free-text or interpolated strings, event names vary per call, or a final send failure looks the same as routine progress."
+    },
+    {
+      "id": "structure.one_job",
+      "extends": "structure.one_job"
+    },
+    {
+      "id": "scope.no_new_options",
+      "extends": "scope.no_unrequested_surface",
+      "question": "Does NOT add any route, command, flag, config key, environment variable, or startup requirement beyond the existing `options.concurrency` config key of `processNotifications`?",
+      "yes_when": "The retry budget and any backoff are constants in the code, and the only config key read is `options.concurrency`. New exports do not count here.",
+      "no_when": "The change adds config keys such as `options.maxAttempts`, `options.retries`, or `options.retryDelayMs`, environment variables, config files, or a command or startup requirement."
+    },
+    {
+      "id": "scope.requested_behavior_only",
+      "extends": "scope.no_unrequested_behavior",
+      "question": "Does NOT add user-visible behavior beyond bounded concurrency, retrying a failed send, delivery counts with the failed notifications identified, and lifecycle logs?",
+      "no_when": "The change adds a dead-letter store, persistence, a metrics emitter, rate limiting, cancellation, scheduling, or reordering of notifications."
+    },
+    {
+      "id": "scope.no_dependency",
+      "extends": "scope.no_unasked_dependency"
+    },
+    {
+      "id": "scope.no_speculative_abstraction",
+      "extends": "scope.no_speculative_abstraction",
+      "no_when": "The change adds an exported generic retry wrapper, a pool or queue class, or a pluggable retry-policy interface used only by `processNotifications`. Private helper functions extracted from it do not count."
+    },
+    {
+      "id": "boundaries.exhausted_reported",
+      "dimension": "boundaries",
+      "rules": [
+        "async-systems.9"
+      ],
+      "key_phrase": "Silent async failure is a bug.",
+      "question": "When a notification's send keeps failing until its attempts run out, does the batch carry on with the others and make that failure visible, counted in `failed` and identifiable by notification id, rather than rejecting the whole batch or dropping it?",
+      "polarity": "positive",
+      "tier": "must",
+      "look_at": "The retry and result code in `src/worker.js`",
+      "yes_when": "An exhausted notification is counted in `failed`, its id appears in the returned result or in an error-level log entry, and the other notifications are still sent.",
+      "no_when": "One exhausted notification rejects the whole call or stops the others, or nothing the caller or an operator can see says which notification was lost."
+    },
+    {
+      "id": "boundaries.retry_capped",
+      "dimension": "boundaries",
+      "rules": [
+        "error-handling.4"
+      ],
+      "key_phrase": "Retries apply only to idempotent transient failures, in one layer, with a capped budget and jittered backoff.",
+      "question": "Is each notification retried a fixed, small maximum number of times, with the retry in one place in the worker?",
+      "polarity": "positive",
+      "tier": "must",
+      "look_at": "The retry loop or recursion in `src/worker.js`",
+      "yes_when": "A named limit caps attempts per notification, and only one code path retries.",
+      "no_when": "Retries are unbounded, the limit depends on the batch size, or two layers both retry the same send."
+    },
+    {
+      "id": "boundaries.retry_backoff",
+      "dimension": "boundaries",
+      "rules": [
+        "error-handling.4"
+      ],
+      "key_phrase": "Retries apply only to idempotent transient failures, in one layer, with a capped budget and jittered backoff.",
+      "question": "Does the worker wait before retrying a failed send, with a delay that grows per attempt and is jittered?",
+      "polarity": "positive",
+      "tier": "quality",
+      "look_at": "The code between a failed send and its retry in `src/worker.js`",
+      "yes_when": "A retry waits for a growing, randomized delay.",
+      "no_when": "Retries fire immediately, or wait a fixed delay with no jitter."
+    },
+    {
+      "id": "boundaries.only_failed_resent",
+      "dimension": "boundaries",
+      "rules": [
+        "async-systems.6"
+      ],
+      "key_phrase": "Retried jobs and stream consumers are idempotent, deduplicated, or marked non-retryable with a reason.",
+      "question": "Does a retry resend only the notification whose send failed, never one whose send already succeeded?",
+      "polarity": "positive",
+      "tier": "must",
+      "look_at": "What the retry path in `src/worker.js` resends",
+      "yes_when": "The retry is scoped to the one failed notification, and a notification stops being sent after its first success.",
+      "no_when": "A failure retries a whole chunk or batch, or a notification can be sent again after a successful send."
+    },
+    {
+      "id": "boundaries.logs_allowlisted",
+      "dimension": "boundaries",
+      "rules": [
+        "observability.5"
+      ],
+      "key_phrase": "Sensitive data is redacted at the source with a field allowlist",
+      "question": "Does NOT log whole notification objects or send payloads, so logs carry only chosen fields such as the notification id, attempt, counts, and error message?",
+      "polarity": "negative",
+      "tier": "must",
+      "look_at": "The fields passed to every `logger` call in `src/worker.js`",
+      "yes_when": "Each log call builds its fields from named values, such as `notification.id`, not from the notification object itself.",
+      "no_when": "A log call passes the notification, a spread of it, or the send arguments, so recipient or message content can reach the logs."
+    },
+    {
+      "id": "proof.retry_regression",
+      "extends": "proof.regression_test",
+      "question": "Is there a test where one send fails once and then succeeds, asserting that every notification is counted as sent, none as failed, the failing one was attempted twice, and the others once?",
+      "yes_when": "A test drives a temporary failure and checks the counts and per-notification attempt numbers.",
+      "no_when": "No test drives a temporary failure, or it checks only the counts and not that the others were sent exactly once."
+    },
+    {
+      "id": "proof.concurrency_asserted",
+      "extends": "proof.rule_asserted",
+      "question": "Does a test assert that the number of sends in flight never exceeds the `concurrency` option, with more notifications than the limit?",
+      "yes_when": "A test with more notifications than the limit tracks in-flight sends and asserts the maximum is at most the limit (and ideally reaches it).",
+      "no_when": "No test measures in-flight sends, or the batch is no larger than the limit."
+    },
+    {
+      "id": "proof.exhausted_asserted",
+      "extends": "proof.failure_path",
+      "question": "Does a test make one notification's send always fail and assert that it is counted as failed and identified in the result while the others are sent?",
+      "yes_when": "A test with a permanently failing send checks the `failed` count, the failed notification's id in the result, and that the rest were sent.",
+      "no_when": "Only the temporary-failure path is tested, or the test checks only that the call did not throw."
+    },
+    {
+      "id": "proof.logs_asserted",
+      "dimension": "proof",
+      "rules": [
+        "async-systems.9"
+      ],
+      "key_phrase": "Exhausted jobs, lag, dropped events, and dead work have visible signals and tests.",
+      "question": "Does a test assert the lifecycle log events, such as the warning for a retried send and the error for a notification that ran out of attempts, with their notification id?",
+      "polarity": "positive",
+      "tier": "quality",
+      "look_at": "Test files the diff adds or changes, and the logger they pass in",
+      "yes_when": "A test records log calls and checks the event name or level and the notification id for a retry or a final failure.",
+      "no_when": "No test checks what is logged, or it checks only that something was logged."
+    },
+    {
+      "id": "proof.tests_intact",
+      "extends": "proof.tests_intact"
+    },
+    {
+      "id": "report.retry_risk_first",
+      "tier": "must",
+      "question": "Does the final message flag that a retry can send a duplicate if a failed send had in fact delivered, unless `send` deduplicates by notification id, as an assumption the user must confirm?",
+      "yes_when": "The message names the duplicate risk on retry (or the idempotency assumption about `send`) and asks the user to confirm it, wherever it appears.",
+      "no_when": "The message does not mention the risk, or claims retries can never duplicate a notification.",
+      "dimension": "report",
+      "rules": [
+        "core.5"
+      ],
+      "key_phrase": "Report what needs their attention first",
+      "polarity": "positive",
+      "look_at": "The agent's final message"
+    },
+    {
+      "id": "report.criteria_listed",
+      "extends": "report.criteria_listed",
+      "look_at": "The agent's final message, compared with the task's three requirements: throughput bounded by `concurrency`, a temporary send failure neither lost nor duplicated, and useful delivery counts with lifecycle logs"
+    },
+    {
+      "id": "report.claims_true",
+      "extends": "report.claims_true"
+    }
+  ]
+}

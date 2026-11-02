@@ -1,0 +1,258 @@
+{
+  "items": [
+    {
+      "dimension": "structure",
+      "extends": "structure.no_scattering_layer",
+      "id": "structure.no_scattering_layer",
+      "key_phrase": "Horizontal layers exist only for a real boundary",
+      "look_at": "New files and modules in the diff, and how the new behavior flows through them",
+      "no_when": "One behavior is split across new pass-through layers that add no boundary.",
+      "polarity": "negative",
+      "question": "Does NOT add a new layer (a service, repository, manager, or helper module) that the change's behavior passes through without a process, deploy, trust, persistence, or transport boundary or proven duplication?",
+      "rules": [
+        "architecture.2"
+      ],
+      "tier": "quality",
+      "yes_when": "New modules sit at a real boundary or remove proven duplication, or the behavior stays in the module that owns the feature."
+    },
+    {
+      "dimension": "structure",
+      "extends": "structure.one_job",
+      "id": "structure.one_job",
+      "key_phrase": "Functions do one thing",
+      "look_at": "Each function the diff adds or changes",
+      "no_when": "A function mixes jobs its name does not state, such as parsing, deciding, and writing in one body.",
+      "polarity": "positive",
+      "question": "Does each new or changed function do one job that its name states, without mixing parsing, deciding, and writing to storage or the network in one body?",
+      "rules": [
+        "core.4"
+      ],
+      "tier": "quality",
+      "yes_when": "Each function's body matches its name and does one job."
+    },
+    {
+      "dimension": "scope",
+      "extends": "scope.no_unrequested_surface",
+      "id": "scope.no_new_surface",
+      "key_phrase": "Add no route, command, flag, config key, environment variable, or startup requirement the request did not name",
+      "look_at": "Routes, CLI definitions, config and environment reads, and startup code in the final workspace",
+      "no_when": "The change adds a route, an option or flag (such as an extra parameter to `handleUserLookup`), a setting, or a startup requirement.",
+      "polarity": "negative",
+      "question": "Does NOT add any route, command, flag, config key, environment variable, or startup requirement? The task names none.",
+      "rules": [
+        "core.2"
+      ],
+      "tier": "must",
+      "yes_when": "The change adds no route, command, flag, option, setting, or startup requirement."
+    },
+    {
+      "dimension": "scope",
+      "extends": "scope.no_unrequested_behavior",
+      "id": "scope.three_outcomes_only",
+      "key_phrase": "Build only what the user asked for.",
+      "look_at": "The behavior the diff adds, compared with the request",
+      "no_when": "The change adds behavior the task did not ask for, such as new lookup options, caching, logging to callers, or extra response fields on success.",
+      "polarity": "negative",
+      "question": "Does NOT add user-visible behavior beyond the three outcomes the task names: missing input, a missing user, and a found user?",
+      "rules": [
+        "core.2"
+      ],
+      "tier": "must",
+      "yes_when": "Every new behavior serves the request."
+    },
+    {
+      "dimension": "scope",
+      "extends": "scope.no_unasked_dependency",
+      "id": "scope.no_dependency",
+      "key_phrase": "Ask before adding a dependency.",
+      "look_at": "Package manifests and lockfiles in the diff",
+      "no_when": "A new dependency appears that nobody approved.",
+      "polarity": "negative",
+      "question": "Does NOT add a package dependency that the request or an approved plan did not name?",
+      "rules": [
+        "core.3"
+      ],
+      "tier": "must",
+      "yes_when": "No dependency was added, or each added one was named in the request or the approved plan."
+    },
+    {
+      "dimension": "scope",
+      "extends": "scope.no_speculative_abstraction",
+      "id": "scope.no_speculative_abstraction",
+      "key_phrase": "Extract an abstraction only when code in more than one place serves the same purpose.",
+      "look_at": "New interfaces, base classes, factories, and generic helpers in the diff, and their call sites",
+      "no_when": "An abstraction has a single use or exists for flexibility nobody asked for.",
+      "polarity": "negative",
+      "question": "Does NOT add an abstraction (an interface, base class, factory, or generic helper) that has only one use in the change?",
+      "rules": [
+        "core.2"
+      ],
+      "tier": "must",
+      "yes_when": "Each new abstraction serves more than one place that has the same purpose."
+    },
+    {
+      "dimension": "scope",
+      "extends": "scope.no_dead_defensive_code",
+      "id": "scope.no_dead_defensive_code",
+      "key_phrase": "dead defensive code",
+      "look_at": "New guards, try/catch blocks, and fallbacks in the diff",
+      "no_when": "Guards or fallbacks cover cases the types or callers already rule out.",
+      "polarity": "negative",
+      "question": "Does NOT add checks, fallbacks, or error handling for conditions that cannot occur given the types and callers in the change?",
+      "rules": [
+        "code-review.6"
+      ],
+      "tier": "quality",
+      "yes_when": "Each guard handles input or a failure that can actually reach it. Validating outside input where it enters is never dead code."
+    },
+    {
+      "dimension": "scope",
+      "id": "scope.success_unchanged",
+      "key_phrase": "Preserve an existing service's representation and error contract.",
+      "look_at": "The success branch of `handleUserLookup` in `src/users.js`, compared with the original",
+      "no_when": "The success body is wrapped, renamed, or given new or missing fields.",
+      "polarity": "positive",
+      "question": "Does a found user still get status 200 with the user object itself as the body, as before the change?",
+      "rules": [
+        "api.4"
+      ],
+      "tier": "must",
+      "yes_when": "A found user returns `{ status: 200, body: user }`, the same shape as before."
+    },
+    {
+      "dimension": "boundaries",
+      "extends": "boundaries.parse_at_boundary",
+      "id": "boundaries.id_checked_first",
+      "key_phrase": "Parse or validate it before use.",
+      "look_at": "`handleUserLookup` in `src/users.js`",
+      "no_when": "The map is read with an unchecked id, or the id is checked in more than one place.",
+      "polarity": "positive",
+      "question": "Is `request.query.id` checked once, at the top of `handleUserLookup`, before the users map is read?",
+      "rules": [
+        "core.7",
+        "domain-modeling.4"
+      ],
+      "tier": "must",
+      "yes_when": "A missing or empty id is rejected before the lookup, and the lookup only ever sees a checked id."
+    },
+    {
+      "dimension": "boundaries",
+      "id": "boundaries.one_error_shape",
+      "key_phrase": "New APIs use the chosen model's native error format",
+      "look_at": "Both error branches of `handleUserLookup` in `src/users.js`",
+      "no_when": "The two errors use different body shapes, or one lacks a code or a message.",
+      "polarity": "positive",
+      "question": "Do the missing-id and unknown-user responses use one error body shape, with a machine-readable code and a human-readable message in the same fields?",
+      "rules": [
+        "api.4"
+      ],
+      "tier": "must",
+      "yes_when": "Both error bodies have the same fields, holding a stable code and a readable message."
+    },
+    {
+      "dimension": "boundaries",
+      "extends": "boundaries.no_leaky_errors",
+      "id": "boundaries.no_leaky_errors",
+      "key_phrase": "expose no stack traces, SQL, file paths, hostnames, secrets, or auth-enumeration clues",
+      "look_at": "Error responses and messages the change sends to callers",
+      "no_when": "An error response can carry internal detail to the caller.",
+      "polarity": "negative",
+      "question": "Does NOT return stack traces, SQL, file paths, hostnames, or secrets to callers in error responses?",
+      "rules": [
+        "error-handling.5"
+      ],
+      "tier": "quality",
+      "yes_when": "Callers get actionable messages without internal detail."
+    },
+    {
+      "dimension": "proof",
+      "extends": "proof.rule_asserted",
+      "id": "proof.statuses_asserted",
+      "key_phrase": "Each test asserts a business rule from the acceptance criteria or spec, with expected values taken from there, not from the code.",
+      "look_at": "Test files the diff adds or changes",
+      "no_when": "No test covers one of the two errors, or the tests check only that some error came back.",
+      "polarity": "positive",
+      "question": "Does at least one test assert that a missing id gets a 4xx response and an unknown id gets a 404, each with a code and a message?",
+      "rules": [
+        "proof.3"
+      ],
+      "tier": "must",
+      "yes_when": "Tests call `handleUserLookup` with no id and with an unknown id and check each status and error body."
+    },
+    {
+      "dimension": "proof",
+      "extends": "proof.tests_intact",
+      "id": "proof.tests_intact",
+      "key_phrase": "Never edit, skip, weaken, or delete a test, golden file, or snapshot to make the change pass.",
+      "look_at": "Changes to test files that existed before the change",
+      "no_when": "An existing test is skipped, loosened, or removed to make the change pass.",
+      "polarity": "negative",
+      "question": "Does NOT edit, skip, weaken, or delete an existing test, unless the request changed the behavior it tests?",
+      "rules": [
+        "proof.9"
+      ],
+      "tier": "must",
+      "yes_when": "Existing tests are unchanged, each change follows a behavior change the request made, or a test of internals is replaced by a test of the same rule."
+    },
+    {
+      "dimension": "proof",
+      "extends": "proof.no_weak_tests",
+      "id": "proof.no_weak_tests",
+      "key_phrase": "A test that would still pass if the rule were wrong proves nothing",
+      "look_at": "Every new test's assertions",
+      "no_when": "A new test only checks for no error, a status code, or a field's presence.",
+      "polarity": "negative",
+      "question": "Does NOT include a new test whose only assertions are that no error occurred, a status code, or that a field exists?",
+      "rules": [
+        "proof.3"
+      ],
+      "tier": "quality",
+      "yes_when": "Every new test asserts more than that no error occurred, a status code, or a field's presence."
+    },
+    {
+      "dimension": "report",
+      "extends": "report.attention_first",
+      "id": "report.attention_first",
+      "key_phrase": "Report what needs their attention first",
+      "look_at": "The opening of the agent's final message",
+      "no_when": "Decisions or risks appear only after the change list, or not at all.",
+      "polarity": "positive",
+      "question": "Does the final message open with what needs the user's attention (decisions, risks, unproven points) before describing the changes?",
+      "rules": [
+        "core.5"
+      ],
+      "tier": "quality",
+      "yes_when": "The first part names what the user must decide or watch, or says plainly that nothing needs attention."
+    },
+    {
+      "dimension": "report",
+      "extends": "report.criteria_listed",
+      "id": "report.criteria_listed",
+      "key_phrase": "List each acceptance criterion with its check and result",
+      "look_at": "The agent's final message, compared with the task's three requirements",
+      "no_when": "Some requirements go unmentioned, or the message only says that tests pass without tying them to the requirements.",
+      "polarity": "positive",
+      "question": "For each of the request's requirements, does the final message say whether it was checked and how, or say that it was not checked?",
+      "rules": [
+        "proof.11"
+      ],
+      "tier": "must",
+      "yes_when": "Every requirement is covered, in any wording or format, with how it was checked or a plain statement that it was not."
+    },
+    {
+      "dimension": "report",
+      "extends": "report.claims_true",
+      "id": "report.claims_true",
+      "key_phrase": "what proves it",
+      "look_at": "Tests and files named in the agent's final message, compared with the final workspace",
+      "no_when": "The message names a test or file that is missing or does something else.",
+      "polarity": "positive",
+      "question": "Does every test and file the final message names exist in the diff or the repository, and do what the message says?",
+      "rules": [
+        "core.5"
+      ],
+      "tier": "must",
+      "yes_when": "Each named test and file exists and does what the message says."
+    }
+  ]
+}

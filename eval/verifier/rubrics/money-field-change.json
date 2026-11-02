@@ -1,0 +1,150 @@
+{
+  "items": [
+    {
+      "id": "structure.currency_fixed_at_creation",
+      "dimension": "structure",
+      "rules": [
+        "domain-modeling.2"
+      ],
+      "key_phrase": "Distinguish identity, state, value, and time.",
+      "question": "Is each order's currency decided once when the order is created and stored on the order, rather than looked up again from the customer's country whenever the order is read?",
+      "polarity": "positive",
+      "tier": "quality",
+      "look_at": "`createOrder`, the stored order record, and `toResponse` in `src/orders.js`",
+      "yes_when": "The order record holds its currency (or a money value that includes it), and reading the order uses that stored value.",
+      "no_when": "The response derives the currency from the customer's current country at read time, so a change to the customer would change past orders."
+    },
+    {
+      "id": "structure.currency_choice_pure",
+      "extends": "structure.pure_calculation",
+      "tier": "quality",
+      "question": "Does the code that picks an order's currency (from the requested currency, if any, and the customer's country) take its inputs as arguments and return the currency or a rejection, without reading the orders store or changing anything?",
+      "look_at": "The function or expression in `src/orders.js` that chooses the order currency, and its caller",
+      "yes_when": "The choice is a function of values passed to it (the requested currency and the customer or country), using only constant lookup tables.",
+      "no_when": "The choice reads or writes the orders map, reads the customers store by id inside itself, or mutates its arguments."
+    },
+    {
+      "id": "scope.no_new_surface",
+      "extends": "scope.no_unrequested_surface",
+      "question": "Does NOT add any route, command, flag, config key, environment variable, or startup requirement beyond the response and request fields the approved proposal named, such as a money object on orders or an optional `currency` on `POST /orders`?",
+      "yes_when": "Every new field, parameter, and setting appears in the approved proposal. If the earlier reply built the feature instead of proposing it, judge against the request alone.",
+      "no_when": "The change adds something the proposal did not name, such as a `/currencies` or `/rates` route, a `DEFAULT_CURRENCY` or exchange-rate environment variable, or a display-currency query parameter."
+    },
+    {
+      "id": "scope.no_unrequested_behavior",
+      "extends": "scope.no_unrequested_behavior",
+      "question": "Does NOT add user-visible behavior, other than routes, commands, flags, or config, beyond pricing and totaling each order in its own currency from the catalog's prices, as the approved proposal describes?",
+      "no_when": "The change adds behavior neither the brief nor the approved proposal asked for, such as exchange-rate conversion, symbol or locale formatting, tax, or a change to how USD orders are priced."
+    },
+    {
+      "id": "scope.no_dependency",
+      "extends": "scope.no_unasked_dependency"
+    },
+    {
+      "id": "scope.matches_approved",
+      "dimension": "scope",
+      "rules": [
+        "contract-first.3"
+      ],
+      "key_phrase": "Approval covers the contract or data shape that was shown, nothing more.",
+      "question": "Does every field and request parameter the approved proposal showed exist in the build with the name, type, and unit the proposal gave it?",
+      "polarity": "positive",
+      "tier": "must",
+      "look_at": "The approved proposal, compared with `src/orders.js`, `src/server.js`, and `openapi.yaml`",
+      "yes_when": "Each shape in the proposal is built as shown: same field names, nesting, types, units, and defaults. Extra additions do not decide this item. If the earlier reply built the feature instead of proposing it, judge against the request alone.",
+      "no_when": "A proposed field is renamed, nested differently, uses another unit (for example major units where the proposal said minor units), or is missing."
+    },
+    {
+      "id": "boundaries.shipped_fields_kept",
+      "dimension": "boundaries",
+      "rules": [
+        "api.2"
+      ],
+      "key_phrase": "Renames, removals, required additions, status-code changes, and changes in meaning to a shipped contract need a successor",
+      "question": "Does every order response, in any currency, still include `total` and `items[].unitPrice` as numbers, with `total` still required in `openapi.yaml`?",
+      "polarity": "positive",
+      "tier": "must",
+      "look_at": "`toResponse` in `src/orders.js` and the `Order` schema in `openapi.yaml`",
+      "yes_when": "`total` and `unitPrice` are present and numeric for USD, CAD, and GBP orders, and the spec still lists `total` as required.",
+      "no_when": "`total` or `unitPrice` is dropped, made null, turned into a string or object, or made optional for some orders, unless the approved proposal chose that and said what the shipped iOS app does with it."
+    },
+    {
+      "id": "boundaries.currency_checked_at_entry",
+      "extends": "boundaries.parse_at_boundary",
+      "question": "Is the order's currency (the requested one, when the request accepts it, or the one from the customer's country) checked against the supported currencies once, before any price is looked up?",
+      "look_at": "`createOrder` in `src/orders.js` and the request handling in `src/server.js`",
+      "yes_when": "One check turns the input into one of USD, CAD, or GBP before `parseItems` or the catalog lookup uses it.",
+      "no_when": "An unchecked currency indexes the catalog's prices (so an unknown code yields `undefined` or `NaN`), or the check is repeated in several places."
+    },
+    {
+      "id": "boundaries.error_contract_kept",
+      "dimension": "boundaries",
+      "rules": [
+        "api.4"
+      ],
+      "key_phrase": "Preserve an existing service's representation and error contract.",
+      "question": "Does a rejected currency come back in the service's existing error body `{ \"error\": { \"code\", \"message\" } }`, for example by throwing `OrderError`, with a code of its own?",
+      "polarity": "positive",
+      "tier": "must",
+      "look_at": "New rejections in `src/orders.js` and `src/server.js`",
+      "yes_when": "Each new failure uses `OrderError` or the same body shape, with a code that names it. Yes also when the change adds no new rejection.",
+      "no_when": "A new failure returns a different body shape, reuses an unrelated code, or falls through to the 500 `internal` error."
+    },
+    {
+      "id": "boundaries.spec_matches_code",
+      "dimension": "boundaries",
+      "rules": [
+        "api.9"
+      ],
+      "key_phrase": "Source-of-truth docs are updated",
+      "question": "Does `openapi.yaml` describe the new money field and any new request field with the same names, types, and units the code uses?",
+      "polarity": "positive",
+      "tier": "must",
+      "look_at": "`openapi.yaml`, compared with `toResponse` and `createOrder` in `src/orders.js`",
+      "yes_when": "Each new response and request field is in the spec, with matching name, type, and unit (for example integer minor units plus an ISO currency code).",
+      "no_when": "`openapi.yaml` is unchanged, or a new field is missing from it or described with a different name, type, or unit than the code."
+    },
+    {
+      "id": "proof.currency_total_asserted",
+      "extends": "proof.rule_asserted",
+      "question": "Does at least one test create a CAD or GBP order and assert its total amount and currency, with the amount taken from that currency's catalog prices (for example one mug in CAD is 1600 minor units)?",
+      "yes_when": "A test creates a non-USD order and checks the new money field's amount and currency against the catalog's prices for that currency.",
+      "no_when": "No test covers a non-USD order, or a test checks only that some currency field exists, or its expected amount is a USD price or an exchange-rate result."
+    },
+    {
+      "id": "proof.failure_path",
+      "extends": "proof.failure_path"
+    },
+    {
+      "id": "proof.tests_intact",
+      "extends": "proof.tests_intact"
+    },
+    {
+      "id": "report.attention_first",
+      "extends": "report.attention_first"
+    },
+    {
+      "id": "report.ios_app_impact",
+      "dimension": "report",
+      "rules": [
+        "api.2"
+      ],
+      "key_phrase": "independent consumers",
+      "question": "Does the final message say what the shipped iOS app, which reads `total`, will show for CAD and GBP orders?",
+      "polarity": "positive",
+      "tier": "quality",
+      "look_at": "The agent's final message, compared with what `total` holds for non-USD orders in `src/orders.js`",
+      "yes_when": "The message states what the old app sees for non-USD orders (for example a CAD amount shown as a bare number with no currency) and whether that needs an app update.",
+      "no_when": "The message does not mention the iOS app, or says it is unaffected without saying what it shows for CAD and GBP orders."
+    },
+    {
+      "id": "report.criteria_listed",
+      "extends": "report.criteria_listed",
+      "look_at": "The agent's final message, compared with the brief (totals shown in the order's currency for Canadian and UK orders) and the shapes in the approved proposal, including keeping `total` working for the shipped iOS app"
+    },
+    {
+      "id": "report.claims_true",
+      "extends": "report.claims_true"
+    }
+  ]
+}

@@ -1,0 +1,148 @@
+{
+  "items": [
+    {
+      "id": "structure.fix_in_snapshot",
+      "dimension": "structure",
+      "rules": [
+        "debugging.5"
+      ],
+      "key_phrase": "The fix is one atomic change aimed at that cause",
+      "question": "Is the fix made in `snapshot` in `src/snapshot.js`, so the copies it makes no longer share widget `config` objects with the dashboard they were copied from?",
+      "polarity": "positive",
+      "tier": "must",
+      "look_at": "`src/snapshot.js`, and any changes to `src/store.js` and `src/editor.js`",
+      "yes_when": "`snapshot` now copies nested widget data (for example with `structuredClone`, or by also copying `config`), and that change is what stops the leak.",
+      "no_when": "`snapshot` still shares `config` objects and the leak is stopped elsewhere, such as by making `updateWidget` replace `config` instead of mutating it, or by adding a copy only in `duplicate` or `load`."
+    },
+    {
+      "id": "structure.full_depth_copy",
+      "dimension": "structure",
+      "rules": [
+        "debugging.5"
+      ],
+      "key_phrase": "aimed at that cause",
+      "question": "Does the corrected copy reach every nesting level of a dashboard (for example with `structuredClone`), rather than copying `config` one level deep, which would still share any object or array nested inside `config`?",
+      "polarity": "positive",
+      "tier": "quality",
+      "look_at": "The copy logic in `src/snapshot.js`",
+      "yes_when": "The copy shares no object or array at any depth with its source.",
+      "no_when": "The copy adds only one more level, such as `config: { ...widget.config }`, so nested values inside `config` are still shared."
+    },
+    {
+      "id": "structure.one_copy_rule",
+      "dimension": "structure",
+      "rules": [
+        "refactoring.7"
+      ],
+      "key_phrase": "duplicated rule with divergent meaning",
+      "question": "Is copying a dashboard still done by the one `snapshot` function that `save`, `load`, and `duplicate` use, without a second dashboard copy routine in `src/store.js`?",
+      "polarity": "positive",
+      "tier": "quality",
+      "look_at": "Copying code in `src/snapshot.js` and `src/store.js` after the change. Changes to `updateWidget` are judged by another item; ignore them here.",
+      "yes_when": "All dashboard copies go through `snapshot`.",
+      "no_when": "The change adds a separate dashboard copy in `src/store.js` (such as a `structuredClone` call in `save`, `load`, or `duplicate`) beside `snapshot`, so the copy rule lives in two places."
+    },
+    {
+      "id": "scope.no_new_surface",
+      "extends": "scope.no_unrequested_surface",
+      "question": "Does NOT add a flag or option (such as a deep-copy flag or a new parameter), config key, environment variable, or startup requirement? The bug report asks for none.",
+      "yes_when": "The changed functions keep their parameters and the change adds no setting.",
+      "no_when": "The change adds a parameter, an option, or any setting."
+    },
+    {
+      "id": "scope.only_fix",
+      "extends": "scope.no_unrequested_behavior",
+      "question": "Does NOT add user-visible behavior beyond stopping edits from leaking between dashboards, such as freezing returned dashboards, edit history or undo, or new validation of dashboards or widgets?",
+      "yes_when": "The only behavior change is that saved, duplicated, and loaded dashboards no longer share nested data.",
+      "no_when": "The change adds features or restrictions the report did not ask for."
+    },
+    {
+      "id": "scope.no_dependency",
+      "extends": "scope.no_unasked_dependency"
+    },
+    {
+      "id": "scope.no_drive_by",
+      "dimension": "scope",
+      "rules": [
+        "refactoring.1"
+      ],
+      "key_phrase": "Opportunistic tweaks and behavior fixes go in separate behavior commits or are left out.",
+      "question": "Does NOT change code in `src/store.js` that the leak does not depend on, such as id generation, `list`, or the `saved.get(id) ?? load(id)` lookup in `duplicate`, or reformat code the fix does not touch?",
+      "polarity": "negative",
+      "tier": "quality",
+      "look_at": "The diff of `src/store.js` and of any other file outside `src/snapshot.js`",
+      "yes_when": "Changes outside `snapshot` are limited to what the fix needs, or there are none.",
+      "no_when": "The diff tidies or rewrites store code unrelated to the leak, or reformats untouched lines."
+    },
+    {
+      "id": "scope.no_handrolled_clone",
+      "dimension": "scope",
+      "rules": [
+        "code-review.6"
+      ],
+      "key_phrase": "Hand-rolled versions of solved problems",
+      "question": "Does NOT add a hand-written general-purpose deep-clone function when the runtime's `structuredClone` (Node 17 and later; the task image runs Node 22) does the job?",
+      "polarity": "negative",
+      "tier": "quality",
+      "look_at": "The copy logic in `src/snapshot.js` and any new helper files",
+      "yes_when": "The copy uses `structuredClone`, or copies the dashboard's known levels directly without a generic recursive cloner.",
+      "no_when": "The change adds its own recursive clone of arbitrary values."
+    },
+    {
+      "id": "proof.reported_path",
+      "extends": "proof.regression_test",
+      "question": "Is there a test that follows the customer's steps (save a dashboard, duplicate it, load the copy, change its chart range with `updateWidget`, then load the original again) and asserts the original's range is unchanged?",
+      "yes_when": "A test drives `createStore`, `save`, `duplicate`, `load`, and `updateWidget` as the customer did, and checks the original kept its range, such as `24h`.",
+      "no_when": "No test follows that path (for example there is only a unit test of `snapshot`), or the test would pass on the original code."
+    },
+    {
+      "id": "proof.other_leaks",
+      "dimension": "proof",
+      "rules": [
+        "proof.2"
+      ],
+      "key_phrase": "A bug fix needs a regression test that fails before the fix, passes after, and stays in the suite.",
+      "question": "Do tests also cover the other ways the shared `config` leaked: editing the live dashboard after saving it, or editing a loaded dashboard without saving it?",
+      "polarity": "positive",
+      "tier": "quality",
+      "look_at": "Test files the diff adds or changes",
+      "yes_when": "At least one of those two paths has a test that asserts the saved dashboard is unchanged.",
+      "no_when": "Only the duplicate path is tested."
+    },
+    {
+      "id": "proof.real_code",
+      "extends": "proof.real_code"
+    },
+    {
+      "id": "proof.tests_intact",
+      "extends": "proof.tests_intact"
+    },
+    {
+      "id": "report.attention_first",
+      "extends": "report.attention_first"
+    },
+    {
+      "id": "report.criteria_listed",
+      "extends": "report.criteria_listed",
+      "look_at": "The agent's final message, compared with what the report implies: editing the duplicate must leave the saved \"Ops\" dashboard unchanged, and existing save, load, duplicate, list, and widget editing must keep working"
+    },
+    {
+      "id": "report.claims_true",
+      "extends": "report.claims_true"
+    },
+    {
+      "id": "report.root_cause",
+      "dimension": "report",
+      "rules": [
+        "debugging.4"
+      ],
+      "key_phrase": "The root cause is named in one sentence, explains every observed symptom",
+      "question": "Does the final message name the root cause: `snapshot` copied each widget only one level deep, so saved, duplicated, and loaded dashboards shared the same widget `config` objects?",
+      "polarity": "positive",
+      "tier": "must",
+      "look_at": "The agent's final message, compared with the original `src/snapshot.js`",
+      "yes_when": "The message says, in its own words, that the copies shared nested `config` objects because `snapshot` copied shallowly.",
+      "no_when": "The message names no cause, blames `updateWidget` or `duplicate` alone, or only describes the fix."
+    }
+  ]
+}

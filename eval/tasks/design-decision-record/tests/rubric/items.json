@@ -1,0 +1,236 @@
+{
+  "items": [
+    {
+      "dimension": "structure",
+      "id": "structure.no_validation_middleware",
+      "key_phrase": "Middleware is for transport-wide concerns",
+      "look_at": "The chosen boundary in `docs/checkout-validation.md`",
+      "no_when": "The decision puts checkout's validation rules in middleware or a cross-route validation layer.",
+      "polarity": "negative",
+      "question": "Does NOT choose shared middleware, or a generic validation layer that every route passes through, as the home for checkout-specific validation?",
+      "rules": [
+        "api.8",
+        "architecture.2"
+      ],
+      "tier": "quality",
+      "yes_when": "Checkout validation lives at the checkout route boundary or in checkout's own module. A middleware option may appear as a rejected alternative."
+    },
+    {
+      "dimension": "structure",
+      "id": "structure.boundary_contract",
+      "key_phrase": "A module boundary says what crosses it, what assumptions hold, and what callers must not depend on.",
+      "look_at": "The decision and consequences sections of `docs/checkout-validation.md`",
+      "no_when": "The note names a location but not what passes through it or what code after it may assume.",
+      "polarity": "positive",
+      "question": "Does the note say what crosses the chosen boundary: what the cart helper receives after validation, and what code past the boundary may assume about it?",
+      "rules": [
+        "architecture.3"
+      ],
+      "tier": "quality",
+      "yes_when": "The note describes the checked input the cart helper gets and the guarantees it may rely on, such as required fields present and quantities already valid."
+    },
+    {
+      "dimension": "structure",
+      "id": "structure.rejections_explained",
+      "key_phrase": "what was rejected",
+      "look_at": "The alternatives section of `docs/checkout-validation.md`",
+      "no_when": "Fewer than two alternatives appear, or an alternative is listed with no reason, or only with a generic one such as \"less clean\".",
+      "polarity": "positive",
+      "question": "Does each alternative the note lists say why it was not chosen, with a reason that applies to checkout?",
+      "rules": [
+        "architecture.7"
+      ],
+      "tier": "must",
+      "yes_when": "There are at least two alternatives, and each one states a concrete cost or risk that led to rejecting it."
+    },
+    {
+      "dimension": "boundaries",
+      "id": "boundaries.one_owner_per_check",
+      "key_phrase": "where external data enters, where it becomes trusted",
+      "look_at": "The decision section of `docs/checkout-validation.md`",
+      "no_when": "The note keeps validation in both places (for example as defense in depth), leaves the choice open, or lists options without choosing one.",
+      "polarity": "positive",
+      "question": "Does the decision give each checkout validation check exactly one owner, so no check stays in both the route handler and the cart helper and no check is left without an owner?",
+      "rules": [
+        "architecture.4"
+      ],
+      "tier": "must",
+      "yes_when": "The note names where checkout input is validated and says the other place stops doing those checks. A stated split by kind of check (for example input shape at the route, stock rules in the cart) counts when each kind has one owner."
+    },
+    {
+      "dimension": "boundaries",
+      "extends": "boundaries.parse_at_boundary",
+      "id": "boundaries.parsed_at_entry",
+      "key_phrase": "Parse or validate it before use.",
+      "look_at": "The chosen boundary in `docs/checkout-validation.md`",
+      "no_when": "Raw input reaches the cart helper or other inner code unchecked, or checking is spread over several places with no single entry point.",
+      "polarity": "positive",
+      "question": "Does the decision have raw checkout input parsed once, at one named entry point, so code past that point (including the cart helper) uses only the checked result?",
+      "rules": [
+        "core.7",
+        "domain-modeling.4"
+      ],
+      "tier": "must",
+      "yes_when": "The note names one entry point that checks the raw input (the route handler, or a checkout parse or domain entry function the route calls first), and later code, including the cart helper, gets only the checked shape."
+    },
+    {
+      "dimension": "boundaries",
+      "id": "boundaries.failure_reaches_caller",
+      "key_phrase": "Translate at boundaries.",
+      "look_at": "The decision and consequences sections of `docs/checkout-validation.md`",
+      "no_when": "The note never says what happens to the caller when validation fails.",
+      "polarity": "positive",
+      "question": "Does the note say how a validation failure reaches the client, such as the status and error body the route returns, or name that as an open follow-up?",
+      "rules": [
+        "error-handling.3"
+      ],
+      "tier": "quality",
+      "yes_when": "The note says what the caller gets when checkout input is invalid, or lists the error response as follow-up work."
+    },
+    {
+      "dimension": "scope",
+      "extends": "scope.no_unrequested_behavior",
+      "id": "scope.only_the_note",
+      "key_phrase": "Build only what the user asked for.",
+      "look_at": "The list of changed paths and the diff",
+      "no_when": "The change adds or edits source code, package files, or other documents, such as implementing the validation, adding a dependency, or creating an ADR index.",
+      "polarity": "negative",
+      "question": "Does NOT add or change files other than `docs/checkout-validation.md`, apart from a link to it from `docs/checkout-notes.md`?",
+      "rules": [
+        "core.2"
+      ],
+      "tier": "must",
+      "yes_when": "The change adds the note and at most links to it. Changes to test files do not decide this item."
+    },
+    {
+      "dimension": "scope",
+      "id": "scope.no_build_plan",
+      "key_phrase": "Leave file-by-file edits, pseudocode, and task lists for the plan, after the design is agreed.",
+      "look_at": "The whole of `docs/checkout-validation.md`",
+      "no_when": "The note includes an implementation listing, pseudocode for the validator, or numbered edit steps per file.",
+      "polarity": "negative",
+      "question": "Does NOT fill the note with build steps: file-by-file edit lists, pseudocode or implementation code, or a step-by-step task list?",
+      "rules": [
+        "specify.1"
+      ],
+      "tier": "quality",
+      "yes_when": "The note records the decision, its reasons, and consequences. Follow-up work is named at the level of what must happen, and any code is a short sketch of the checked data shape."
+    },
+    {
+      "dimension": "scope",
+      "id": "scope.not_marked_approved",
+      "key_phrase": "Record what the user approved, not what you proposed.",
+      "look_at": "Any status line and the wording of the decision in `docs/checkout-validation.md`",
+      "no_when": "The note says the team agreed or reached consensus.",
+      "polarity": "negative",
+      "question": "Does NOT claim that the team agreed on the decision, when the request says the team is split?",
+      "rules": [
+        "specify.7"
+      ],
+      "tier": "quality",
+      "yes_when": "The note records the decision without claiming team agreement. A status such as Accepted is fine if the note does not say the team agreed."
+    },
+    {
+      "dimension": "proof",
+      "id": "proof.no_text_assertions",
+      "key_phrase": "never by asserting their text",
+      "look_at": "Test files the diff adds or changes",
+      "no_when": "A test opens a Markdown file and asserts that it exists, contains a heading, or matches a word or pattern.",
+      "polarity": "negative",
+      "question": "Does NOT add a test that reads `docs/checkout-validation.md` or another document and asserts its text, headings, or keywords?",
+      "rules": [
+        "proof.7"
+      ],
+      "tier": "must",
+      "yes_when": "No test reads the note or checks its wording."
+    },
+    {
+      "dimension": "proof",
+      "extends": "proof.tests_intact",
+      "id": "proof.tests_intact",
+      "key_phrase": "Never edit, skip, weaken, or delete a test, golden file, or snapshot to make the change pass.",
+      "look_at": "Changes to test files that existed before the change",
+      "no_when": "An existing test is skipped, loosened, or removed to make the change pass.",
+      "polarity": "negative",
+      "question": "Does NOT edit, skip, weaken, or delete an existing test, unless the request changed the behavior it tests?",
+      "rules": [
+        "proof.9"
+      ],
+      "tier": "must",
+      "yes_when": "Existing tests are unchanged, each change follows a behavior change the request made, or a test of internals is replaced by a test of the same rule."
+    },
+    {
+      "dimension": "proof",
+      "id": "proof.proof_named",
+      "key_phrase": "Tests exercise the public boundary.",
+      "look_at": "The consequences or follow-up section of `docs/checkout-validation.md`",
+      "no_when": "The note says nothing about how the implementation will be tested, or only says to \"add tests\".",
+      "polarity": "positive",
+      "question": "Does the note say which tests the next implementation needs to prove the chosen boundary, such as tests that send invalid checkout input through the route and check the rejection?",
+      "rules": [
+        "api.9"
+      ],
+      "tier": "quality",
+      "yes_when": "The note names the tests the implementation must add, at the route boundary for rejected input and for the cart helper given checked input."
+    },
+    {
+      "dimension": "report",
+      "id": "report.note_claims_grounded",
+      "key_phrase": "Read the code before proposing a design.",
+      "look_at": "Statements about the current code in `docs/checkout-validation.md`, compared with `docs/checkout-notes.md` and the files in the workspace",
+      "no_when": "The note describes current files, functions, line numbers, or field checks as fact when the repository contains no checkout code.",
+      "polarity": "positive",
+      "question": "Does the note avoid stating facts about the current checkout code that the repository does not show, such as file paths, function names, line numbers, or the exact fields each place checks today?",
+      "rules": [
+        "specify.3"
+      ],
+      "tier": "must",
+      "yes_when": "Claims about today's code stay within what `docs/checkout-notes.md` says, or are labeled as assumptions to confirm. Names for code that does not exist yet are clearly proposals."
+    },
+    {
+      "dimension": "report",
+      "extends": "report.attention_first",
+      "id": "report.attention_first",
+      "key_phrase": "Report what needs their attention first",
+      "look_at": "The opening of the agent's final message",
+      "no_when": "Decisions or risks appear only after the change list, or not at all.",
+      "polarity": "positive",
+      "question": "Does the final message open with what needs the user's attention (decisions, risks, unproven points) before describing the changes?",
+      "rules": [
+        "core.5"
+      ],
+      "tier": "quality",
+      "yes_when": "The first part names what the user must decide or confirm, such as approving the chosen boundary or checking the note's assumptions about code that is not in this repository."
+    },
+    {
+      "dimension": "report",
+      "extends": "report.criteria_listed",
+      "id": "report.criteria_listed",
+      "key_phrase": "List each acceptance criterion with its check and result",
+      "look_at": "The agent's final message, compared with the four parts the request names: context and problem, chosen validation boundary, at least two alternatives, and consequences or follow-up work",
+      "no_when": "Some requirements go unmentioned, or the message only says that tests pass without tying them to the requirements.",
+      "polarity": "positive",
+      "question": "For each of the request's requirements, does the final message say whether it was checked and how, or say that it was not checked?",
+      "rules": [
+        "proof.11"
+      ],
+      "tier": "must",
+      "yes_when": "Every requirement is covered, in any wording or format, with how it was checked or a plain statement that it was not."
+    },
+    {
+      "dimension": "report",
+      "extends": "report.claims_true",
+      "id": "report.claims_true",
+      "key_phrase": "what proves it",
+      "look_at": "Tests and files named in the agent's final message, compared with the final workspace",
+      "no_when": "The message names a test or file that is missing or does something else.",
+      "polarity": "positive",
+      "question": "Does every test and file the final message names exist in the diff or the repository, and do what the message says?",
+      "rules": [
+        "core.5"
+      ],
+      "tier": "must",
+      "yes_when": "Each named test and file exists and does what the message says."
+    }
+  ]
+}

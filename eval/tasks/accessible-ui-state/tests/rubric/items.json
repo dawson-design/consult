@@ -1,0 +1,207 @@
+{
+  "items": [
+    {
+      "dimension": "structure",
+      "id": "structure.submit_event",
+      "key_phrase": "Every interactive element has name, role, value, state, and keyboard behavior.",
+      "look_at": "The `<form>`, its submit control, and the script in `public/index.html`",
+      "no_when": "The form submits and reloads the page so the message is lost, the button is not a submit button so Enter does nothing, or nothing writes the message.",
+      "polarity": "positive",
+      "question": "Do pressing Enter in the email field and activating the button both show the success message without reloading the page?",
+      "rules": [
+        "ui-design.5"
+      ],
+      "tier": "must",
+      "yes_when": "A `submit` listener (or `onsubmit`) on the form calls `preventDefault()` and writes the message, or a click listener on a `type=\"submit\"` button does (Enter in a field fires that button's click)."
+    },
+    {
+      "dimension": "structure",
+      "id": "structure.native_over_aria",
+      "key_phrase": "Native HTML controls and semantics come before ARIA",
+      "look_at": "ARIA attributes, roles, and `tabindex` in `public/index.html`",
+      "no_when": "A native element gets a redundant role, a visible label is replaced or contradicted by `aria-label`, or a `tabindex` is added to a control that is already focusable.",
+      "polarity": "negative",
+      "question": "Does NOT add ARIA or tabindex that repeats or overrides native semantics, such as `role=\"button\"` on a button, `aria-label` in place of the visible label, or `tabindex` on native controls?",
+      "rules": [
+        "ui-design.5"
+      ],
+      "tier": "quality",
+      "yes_when": "ARIA is used only where native HTML has no equivalent, such as `role=\"status\"` or `aria-describedby`, and no native control carries a redundant role or `tabindex`."
+    },
+    {
+      "dimension": "structure",
+      "id": "structure.focus_visible",
+      "key_phrase": "Focus is visible",
+      "look_at": "Any CSS in or loaded by `public/index.html`",
+      "no_when": "CSS removes the outline or focus ring for these controls without a visible replacement.",
+      "polarity": "negative",
+      "question": "Does NOT remove or hide the keyboard focus indicator on the email field or the submit control, for example with `outline: none` and no replacement?",
+      "rules": [
+        "ui-design.6"
+      ],
+      "tier": "quality",
+      "yes_when": "The browser's focus ring is left alone, or a replacement focus style at least as visible is defined."
+    },
+    {
+      "dimension": "scope",
+      "extends": "scope.no_unrequested_surface",
+      "id": "scope.no_new_surface",
+      "key_phrase": "Add no route, command, flag, config key, environment variable, or startup requirement the request did not name",
+      "look_at": "Routes, CLI definitions, config and environment reads, and startup code in the final workspace",
+      "no_when": "The change adds an API route, a server or other startup requirement, an npm script or other command, or configuration.",
+      "polarity": "negative",
+      "question": "Does NOT add any route, command, flag, config key, environment variable, or startup requirement? The task names none.",
+      "rules": [
+        "core.2"
+      ],
+      "tier": "must",
+      "yes_when": "The page is still a static file that works when opened as is. A new script or stylesheet file the page loads does not count here."
+    },
+    {
+      "dimension": "scope",
+      "extends": "scope.no_unrequested_behavior",
+      "id": "scope.form_only",
+      "key_phrase": "Build only what the user asked for.",
+      "look_at": "The behavior the diff adds, compared with the request",
+      "no_when": "The change adds a network request to a subscribe endpoint, new fields such as a name or consent checkbox, saved state such as `localStorage`, a modal, or a visual redesign of the page.",
+      "polarity": "negative",
+      "question": "Does NOT add user-visible behavior beyond a labeled email field, a native submit control, validation of the email, and the success message?",
+      "rules": [
+        "core.2"
+      ],
+      "tier": "must",
+      "yes_when": "Every new behavior serves the request."
+    },
+    {
+      "dimension": "scope",
+      "extends": "scope.no_unasked_dependency",
+      "id": "scope.no_dependency",
+      "key_phrase": "Ask before adding a dependency.",
+      "look_at": "Package manifests and lockfiles in the diff",
+      "no_when": "A new dependency appears that nobody approved.",
+      "polarity": "negative",
+      "question": "Does NOT add a package dependency that the request or an approved plan did not name?",
+      "rules": [
+        "core.3"
+      ],
+      "tier": "must",
+      "yes_when": "No dependency was added, or each added one was named in the request or the approved plan."
+    },
+    {
+      "dimension": "boundaries",
+      "id": "boundaries.email_checked_before_success",
+      "key_phrase": "Forms have explicit labels, grouped controls, errors tied to fields, and no placeholder-only instructions.",
+      "look_at": "The email input's attributes and the submit handling in `public/index.html`",
+      "no_when": "Submitting with an empty or malformed email still shows the success message, or a custom error appears in the page with no link to the field.",
+      "polarity": "positive",
+      "question": "Is the email checked before the success message is shown, so an empty or malformed address gets an error tied to the email field instead of \"Subscribed\"?",
+      "rules": [
+        "ui-design.8"
+      ],
+      "tier": "quality",
+      "yes_when": "The input uses `required` with `type=\"email\"` so the browser blocks an invalid submit and reports it on the field, or a custom error is shown only for invalid input and tied to the field with `aria-describedby` (and `aria-invalid`)."
+    },
+    {
+      "dimension": "boundaries",
+      "id": "boundaries.input_not_rendered_as_html",
+      "key_phrase": "Treat input that crosses a trust boundary as untrusted",
+      "look_at": "Every place the script in `public/index.html` writes to the page",
+      "no_when": "User input reaches an HTML-parsing write.",
+      "polarity": "negative",
+      "question": "Does NOT insert the entered email or other user input into the page as HTML, through `innerHTML`, `outerHTML`, `insertAdjacentHTML`, or `document.write`?",
+      "rules": [
+        "core.7"
+      ],
+      "tier": "must",
+      "yes_when": "Messages are written with `textContent` or similar text-only APIs, or never include user input."
+    },
+    {
+      "dimension": "boundaries",
+      "id": "boundaries.status_present_at_load",
+      "key_phrase": "Loading, empty, error, disabled, and success states are defined with the layout, not later.",
+      "look_at": "The status element in `public/index.html` and the script that fills it",
+      "no_when": "The script creates the region, or adds its role or `aria-live`, at the moment it shows the message.",
+      "polarity": "positive",
+      "question": "Is the success message's live region in the page markup from the start, empty, and only its text changed on success, rather than created or given its live-region role at submit time?",
+      "rules": [
+        "ui-design.4"
+      ],
+      "tier": "quality",
+      "yes_when": "The element with `role=\"status\"`, `aria-live`, or `<output>` is in the initial markup and the script changes only its text."
+    },
+    {
+      "dimension": "proof",
+      "extends": "proof.tests_intact",
+      "id": "proof.tests_intact",
+      "key_phrase": "Never edit, skip, weaken, or delete a test, golden file, or snapshot to make the change pass.",
+      "look_at": "Changes to test files that existed before the change",
+      "no_when": "An existing test is skipped, loosened, or removed to make the change pass.",
+      "polarity": "negative",
+      "question": "Does NOT edit, skip, weaken, or delete an existing test, unless the request changed the behavior it tests?",
+      "rules": [
+        "proof.9"
+      ],
+      "tier": "must",
+      "yes_when": "Existing tests are unchanged, each change follows a behavior change the request made, or a test of internals is replaced by a test of the same rule."
+    },
+    {
+      "dimension": "report",
+      "id": "report.manual_checks_named",
+      "key_phrase": "Remaining gaps are recorded as explicit blockers or deferred work, never left implicit.",
+      "look_at": "The agent's final message, compared with any test or check in the diff",
+      "no_when": "The message calls the form accessible or keyboard-friendly without any such check and without naming the gap.",
+      "polarity": "positive",
+      "question": "Does the final message say whether the form was tried with a keyboard and a screen reader, and, if not, list those checks as still to be done?",
+      "rules": [
+        "ui-design.9"
+      ],
+      "tier": "must",
+      "yes_when": "The message reports the keyboard and screen-reader checks done, or names them as not done and still needed."
+    },
+    {
+      "dimension": "report",
+      "extends": "report.attention_first",
+      "id": "report.attention_first",
+      "key_phrase": "Report what needs their attention first",
+      "look_at": "The opening of the agent's final message",
+      "no_when": "Decisions or risks appear only after the change list, or not at all.",
+      "polarity": "positive",
+      "question": "Does the final message open with what needs the user's attention (decisions, risks, unproven points) before describing the changes?",
+      "rules": [
+        "core.5"
+      ],
+      "tier": "quality",
+      "yes_when": "The first part names what the user must decide or watch, or says plainly that nothing needs attention."
+    },
+    {
+      "dimension": "report",
+      "extends": "report.criteria_listed",
+      "id": "report.criteria_listed",
+      "key_phrase": "List each acceptance criterion with its check and result",
+      "look_at": "The agent's final message, compared with the task's three requirements: a simple, readable form; the email field, submit control, and success feedback working for keyboard and assistive technology users; and native HTML semantics",
+      "no_when": "Some requirements go unmentioned, or the message only says that tests pass without tying them to the requirements.",
+      "polarity": "positive",
+      "question": "For each of the request's requirements, does the final message say whether it was checked and how, or say that it was not checked?",
+      "rules": [
+        "proof.11"
+      ],
+      "tier": "must",
+      "yes_when": "Every requirement is covered, in any wording or format, with how it was checked or a plain statement that it was not."
+    },
+    {
+      "dimension": "report",
+      "extends": "report.claims_true",
+      "id": "report.claims_true",
+      "key_phrase": "what proves it",
+      "look_at": "Tests and files named in the agent's final message, compared with the final workspace",
+      "no_when": "The message names a test or file that is missing or does something else.",
+      "polarity": "positive",
+      "question": "Does every test and file the final message names exist in the diff or the repository, and do what the message says?",
+      "rules": [
+        "core.5"
+      ],
+      "tier": "must",
+      "yes_when": "Each named test and file exists and does what the message says."
+    }
+  ]
+}

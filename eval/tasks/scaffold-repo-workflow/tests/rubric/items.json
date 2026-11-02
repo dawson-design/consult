@@ -1,0 +1,222 @@
+{
+  "items": [
+    {
+      "dimension": "structure",
+      "id": "structure.tsconfig_checks_js",
+      "key_phrase": "`typecheck` runs a real type checker using the config added for it.",
+      "look_at": "`tsconfig.json` and the `typecheck` script in `package.json`",
+      "no_when": "The config lacks `allowJs` or `checkJs` (so `tsc` finds no inputs or only parses the files), does not cover `src`, or lets `tsc` write compiled files.",
+      "polarity": "positive",
+      "question": "Does `tsconfig.json` make `tsc` type-check the package's JavaScript in `src` (with `allowJs` and `checkJs`, or an equivalent, and an `include` or `files` that covers `src/index.js`) without writing output files?",
+      "rules": [
+        "scaffolding.6"
+      ],
+      "tier": "must",
+      "yes_when": "The config includes `src`, turns on type checking of JavaScript, and sets `noEmit` in the config or on the `typecheck` command."
+    },
+    {
+      "dimension": "structure",
+      "id": "structure.lint_covers_files",
+      "key_phrase": "Commands are the contract",
+      "look_at": "The `lint` script in `package.json`",
+      "no_when": "The script checks only some files, or passes several files to one `node --check`, which checks only the first file and treats the rest as arguments.",
+      "polarity": "positive",
+      "question": "Does the `lint` script check every JavaScript file in `src` and `test`, and fail when any one of them has a syntax error?",
+      "rules": [
+        "scaffolding.5"
+      ],
+      "tier": "quality",
+      "yes_when": "The script checks each file, for example a shell loop that runs `node --check` per file and exits non-zero on the first failure."
+    },
+    {
+      "dimension": "scope",
+      "extends": "scope.no_unrequested_surface",
+      "id": "scope.no_new_surface",
+      "key_phrase": "Add no route, command, flag, config key, environment variable, or startup requirement the request did not name",
+      "look_at": "Routes, CLI definitions, config and environment reads, and startup code in the final workspace",
+      "no_when": "The change adds a CI workflow, a git hook, another script such as `format`, `check`, `coverage`, or `prepare`, or a config file for a tool that no script runs.",
+      "polarity": "negative",
+      "question": "Does NOT add any route, command, flag, config key, environment variable, or startup requirement beyond the `test`, `typecheck`, and `lint` scripts and the files `tsconfig.json`, `README.md`, and `COMMIT_PLAN.md`?",
+      "rules": [
+        "core.2"
+      ],
+      "tier": "must",
+      "yes_when": "The only new scripts are `typecheck` and `lint` (with `test` kept), and the only new config is `tsconfig.json`. A `.gitignore`, a `.nvmrc`, or an `engines` field that records the Node version already in use does not count."
+    },
+    {
+      "dimension": "scope",
+      "extends": "scope.no_unasked_dependency",
+      "id": "scope.no_dependency",
+      "key_phrase": "Ask before adding a dependency.",
+      "look_at": "Package manifests, lockfiles, and the scripts in `package.json`",
+      "no_when": "`typescript`, a linter, or any other package is added to `package.json` or a lockfile, or a script runs `npx`, `pnpm dlx`, or similar to fetch a package the project does not have.",
+      "polarity": "negative",
+      "question": "Does NOT add a package dependency, or a script that fetches a package when it runs?",
+      "rules": [
+        "core.3"
+      ],
+      "tier": "must",
+      "yes_when": "`package.json` has no `dependencies` or `devDependencies` added, no lockfile records a new package, and no script downloads one."
+    },
+    {
+      "dimension": "scope",
+      "id": "scope.source_unchanged",
+      "key_phrase": "Build only what the user asked for.",
+      "look_at": "`src/` in the diff",
+      "no_when": "The function's code changes, the file is renamed or rewritten as `.ts`, or new source modules are added.",
+      "polarity": "negative",
+      "question": "Does NOT change what `formatName` does, or rename or convert `src/index.js` (for example to TypeScript)?",
+      "rules": [
+        "core.2"
+      ],
+      "tier": "must",
+      "yes_when": "`src/index.js` keeps its name and behavior. JSDoc type comments added so the type checker can check it are fine."
+    },
+    {
+      "dimension": "scope",
+      "id": "scope.readme_commands",
+      "key_phrase": "README is purpose, install and run, minimal usage, and links onward.",
+      "look_at": "`README.md` and the scripts in `package.json`",
+      "no_when": "A command is missing, or the README names a command or script that `package.json` does not define.",
+      "polarity": "positive",
+      "question": "Does `README.md` give the local setup steps and all three verification commands as `package.json` defines them (`npm test`, `npm run typecheck`, `npm run lint`)?",
+      "rules": [
+        "documentation.5"
+      ],
+      "tier": "must",
+      "yes_when": "The README says how to set up locally and lists each of the three commands, and each one matches a script in `package.json`."
+    },
+    {
+      "dimension": "scope",
+      "id": "scope.readme_tsc_prerequisite",
+      "key_phrase": "install and run",
+      "look_at": "The setup and verification sections of `README.md`",
+      "no_when": "The README presents `npm run typecheck` as working after the listed setup, with no word that `tsc` must be installed separately.",
+      "polarity": "positive",
+      "question": "Does `README.md` say that `npm run typecheck` needs TypeScript's `tsc`, which the package does not install, and how a maintainer gets it?",
+      "rules": [
+        "documentation.5"
+      ],
+      "tier": "quality",
+      "yes_when": "The README names TypeScript as a prerequisite for `typecheck` and says how to install it, or `package.json` itself lists `typescript` so the README's install step provides it."
+    },
+    {
+      "dimension": "scope",
+      "id": "scope.commit_plan_grouped",
+      "key_phrase": "Group changes by behavior so one behavior can be reverted without dragging unrelated work.",
+      "look_at": "`COMMIT_PLAN.md`, compared with the changed paths",
+      "no_when": "The plan is one undivided list, leaves out changed files, puts a file in two groups, or names files the change does not touch.",
+      "polarity": "positive",
+      "question": "Does `COMMIT_PLAN.md` group the change into commits by purpose, naming the files in each, with every file the change touches in exactly one group?",
+      "rules": [
+        "commit.2"
+      ],
+      "tier": "quality",
+      "yes_when": "Each group has a purpose or commit subject and a file list, and together the groups cover every changed file once."
+    },
+    {
+      "dimension": "boundaries",
+      "id": "boundaries.checks_fail_loudly",
+      "key_phrase": "`typecheck` runs a real type checker using the config added for it.",
+      "look_at": "The `test`, `lint`, and `typecheck` scripts in `package.json`",
+      "no_when": "A script ends in `|| true` or `|| echo ...`, skips the check when `tsc` is absent (for example `command -v tsc && ...`), or falls back to `node --check` when `tsc` is missing.",
+      "polarity": "negative",
+      "question": "Does NOT let the `test`, `lint`, or `typecheck` script succeed when its tool is missing or reports errors?",
+      "rules": [
+        "scaffolding.6",
+        "error-handling.2"
+      ],
+      "tier": "must",
+      "yes_when": "Each script exits non-zero when its check fails or its tool cannot be found."
+    },
+    {
+      "dimension": "proof",
+      "id": "proof.no_text_assertions",
+      "key_phrase": "never by asserting their text",
+      "look_at": "Test files the diff adds or changes",
+      "no_when": "A test asserts that a script, a compiler option, a heading, or a command appears in one of those files.",
+      "polarity": "negative",
+      "question": "Does NOT add a test that reads `package.json`, `tsconfig.json`, `README.md`, or `COMMIT_PLAN.md` and asserts its text or keys?",
+      "rules": [
+        "proof.7"
+      ],
+      "tier": "must",
+      "yes_when": "No test reads those files to check their contents."
+    },
+    {
+      "dimension": "proof",
+      "extends": "proof.tests_intact",
+      "id": "proof.tests_intact",
+      "key_phrase": "Never edit, skip, weaken, or delete a test, golden file, or snapshot to make the change pass.",
+      "look_at": "Changes to test files that existed before the change",
+      "no_when": "An existing test is skipped, loosened, or removed to make the change pass.",
+      "polarity": "negative",
+      "question": "Does NOT edit, skip, weaken, or delete an existing test, unless the request changed the behavior it tests?",
+      "rules": [
+        "proof.9"
+      ],
+      "tier": "must",
+      "yes_when": "Existing tests are unchanged, each change follows a behavior change the request made, or a test of internals is replaced by a test of the same rule."
+    },
+    {
+      "dimension": "report",
+      "extends": "report.attention_first",
+      "id": "report.attention_first",
+      "key_phrase": "Report what needs their attention first",
+      "look_at": "The opening of the agent's final message",
+      "no_when": "Decisions or risks appear only after the change list, or not at all.",
+      "polarity": "positive",
+      "question": "Does the final message open with what needs the user's attention (decisions, risks, unproven points) before describing the changes?",
+      "rules": [
+        "core.5"
+      ],
+      "tier": "quality",
+      "yes_when": "The first part names what the user must decide or watch, such as how to provide TypeScript for `typecheck`, or says plainly that nothing needs attention."
+    },
+    {
+      "dimension": "report",
+      "id": "report.typecheck_needs_tsc",
+      "key_phrase": "Adding one is a dependency under core rule 3.",
+      "look_at": "The agent's final message, compared with `package.json`",
+      "no_when": "The message reports typecheck as passing or working with no word that the package lacks TypeScript, or never mentions the gap.",
+      "polarity": "positive",
+      "question": "Does the final message say that the package does not include TypeScript, so `npm run typecheck` fails on a clean checkout until `tsc` is available, and propose or ask about adding it?",
+      "rules": [
+        "core.3",
+        "core.8"
+      ],
+      "tier": "must",
+      "yes_when": "The message says `tsc` is not provided by the package, says what `npm run typecheck` does without it, and proposes adding `typescript` as a dev dependency or asks the user how to provide it. If the change itself added `typescript` to `package.json`, yes when the message says so plainly."
+    },
+    {
+      "dimension": "report",
+      "extends": "report.criteria_listed",
+      "id": "report.criteria_listed",
+      "key_phrase": "List each acceptance criterion with its check and result",
+      "look_at": "The agent's final message, compared with the request's requirements: test, typecheck, and lint scripts; a minimal `tsconfig.json` used by typecheck; a README with setup and verification commands; a short `COMMIT_PLAN.md`; and no external dependencies",
+      "no_when": "Some requirements go unmentioned, or the message only says that tests pass without tying them to the requirements.",
+      "polarity": "positive",
+      "question": "For each of the request's requirements, does the final message say whether it was checked and how, or say that it was not checked?",
+      "rules": [
+        "proof.11"
+      ],
+      "tier": "must",
+      "yes_when": "Every requirement is covered, in any wording or format, with how it was checked or a plain statement that it was not."
+    },
+    {
+      "dimension": "report",
+      "extends": "report.claims_true",
+      "id": "report.claims_true",
+      "key_phrase": "what proves it",
+      "look_at": "Tests and files named in the agent's final message, compared with the final workspace",
+      "no_when": "The message names a test or file that is missing or does something else.",
+      "polarity": "positive",
+      "question": "Does every test and file the final message names exist in the diff or the repository, and do what the message says?",
+      "rules": [
+        "core.5"
+      ],
+      "tier": "must",
+      "yes_when": "Each named test and file exists and does what the message says."
+    }
+  ]
+}

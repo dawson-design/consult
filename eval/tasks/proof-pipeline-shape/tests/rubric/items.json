@@ -1,0 +1,269 @@
+{
+  "items": [
+    {
+      "dimension": "structure",
+      "extends": "structure.pure_calculation",
+      "id": "structure.pure_pipeline",
+      "key_phrase": "push I/O, database access, network calls, and mutation to the edges of the code you write",
+      "look_at": "`processCustomers` and its helpers in `src/pipeline.js`",
+      "no_when": "It assigns normalized values onto the input records (for example `record.email = ...`), sorts or splices the input array, logs, or reads outside state.",
+      "polarity": "positive",
+      "question": "Does `processCustomers` build `valid` and `errors` without changing the input array or the input records, and without logging or reading the clock, files, or the network?",
+      "rules": [
+        "core.1",
+        "domain-modeling.3"
+      ],
+      "tier": "must",
+      "yes_when": "Normalized values go into new record objects, and the input array and records are left as they were."
+    },
+    {
+      "dimension": "structure",
+      "id": "structure.steps_separate",
+      "key_phrase": "Functions do one thing",
+      "look_at": "`src/pipeline.js`",
+      "no_when": "Two or more of the steps are written inline in one loop body in `processCustomers`.",
+      "polarity": "positive",
+      "question": "Are email normalization, phone normalization, and duplicate removal each their own function, with `processCustomers` combining them?",
+      "rules": [
+        "core.4"
+      ],
+      "tier": "quality",
+      "yes_when": "Each of the three steps has its own named function, and `processCustomers` only wires them together and splits the results."
+    },
+    {
+      "dimension": "scope",
+      "extends": "scope.no_unrequested_surface",
+      "id": "scope.no_new_surface",
+      "key_phrase": "Add no route, command, flag, config key, environment variable, or startup requirement the request did not name",
+      "look_at": "Routes, CLI definitions, config and environment reads, and startup code in the final workspace",
+      "no_when": "The change adds an options parameter, a default country setting, or any setting.",
+      "polarity": "negative",
+      "question": "Does NOT add a flag or option (such as a default country code or an options parameter), config key, environment variable, or startup requirement? The task names only `processCustomers(records)`.",
+      "rules": [
+        "core.2"
+      ],
+      "tier": "must",
+      "yes_when": "`processCustomers` keeps its one parameter and the change adds no setting."
+    },
+    {
+      "dimension": "scope",
+      "extends": "scope.no_unrequested_behavior",
+      "id": "scope.only_requested_rules",
+      "key_phrase": "Build only what the user asked for.",
+      "look_at": "The behavior the diff adds, compared with the request",
+      "no_when": "The change adds a rule, a transformation, or a result field beyond the task's five requirements.",
+      "polarity": "negative",
+      "question": "Does NOT add rules or output the task did not ask for, such as validating email format, rejecting records for problems with `name`, changing `name`, sorting the output, accepting numbers from outside the US, or adding fields such as counts or a duplicates list to the result?",
+      "rules": [
+        "core.2"
+      ],
+      "tier": "must",
+      "yes_when": "Records leave `valid` only for an unnormalizable phone or a duplicate email, and the result has only `valid` and `errors`. How an 11-digit number starting with 1 is handled does not count here."
+    },
+    {
+      "dimension": "scope",
+      "extends": "scope.no_unasked_dependency",
+      "id": "scope.no_dependency",
+      "key_phrase": "Ask before adding a dependency.",
+      "look_at": "Package manifests and lockfiles in the diff",
+      "no_when": "A new dependency appears that nobody approved.",
+      "polarity": "negative",
+      "question": "Does NOT add a package dependency that the request or an approved plan did not name?",
+      "rules": [
+        "core.3"
+      ],
+      "tier": "must",
+      "yes_when": "No dependency was added, or each added one was named in the request or the approved plan."
+    },
+    {
+      "dimension": "scope",
+      "extends": "scope.no_speculative_abstraction",
+      "id": "scope.no_pipeline_framework",
+      "key_phrase": "Extract an abstraction only when code in more than one place serves the same purpose.",
+      "look_at": "New helpers, classes, and modules in the diff, and their call sites",
+      "no_when": "The change adds reusable machinery for chaining or registering steps that only this import uses.",
+      "polarity": "negative",
+      "question": "Does NOT add a generic pipeline or stage framework, such as a `pipe` or `compose` helper, a stage registry, or a validator class, for this one import?",
+      "rules": [
+        "core.2"
+      ],
+      "tier": "must",
+      "yes_when": "The steps are plain functions called directly by `processCustomers`."
+    },
+    {
+      "dimension": "boundaries",
+      "id": "boundaries.error_names_record",
+      "key_phrase": "Failure is part of the function contract.",
+      "look_at": "Where `src/pipeline.js` builds entries for `errors`",
+      "no_when": "Entries hold only a reason, or a reason and a value that does not identify the input record.",
+      "polarity": "positive",
+      "question": "Does each `errors` entry carry the record that failed (the original record, its fields, or its index) together with `reason`?",
+      "rules": [
+        "error-handling.1"
+      ],
+      "tier": "must",
+      "yes_when": "A caller can tell from each entry which input record failed, for example `{ record, reason }` or `{ ...record, reason }`."
+    },
+    {
+      "dimension": "boundaries",
+      "id": "boundaries.reason_says_why",
+      "key_phrase": "User-facing errors are actionable",
+      "look_at": "The reason strings in `src/pipeline.js`",
+      "no_when": "Every bad phone gets the same generic reason, such as \"invalid phone\".",
+      "polarity": "positive",
+      "question": "Does each `reason` say what is wrong with the phone, such as how many digits it had against the 10 expected, rather than only \"invalid phone\"?",
+      "rules": [
+        "error-handling.5"
+      ],
+      "tier": "quality",
+      "yes_when": "The reason names the specific problem, such as the digit count or that no digits were found."
+    },
+    {
+      "dimension": "boundaries",
+      "id": "boundaries.phone_failure_value",
+      "key_phrase": "not routine control flow",
+      "look_at": "The phone normalization function and its caller in `src/pipeline.js`",
+      "no_when": "A bad phone is signalled by a thrown error caught per record, or by `null` or `false` with the reason written elsewhere.",
+      "polarity": "positive",
+      "question": "Does phone normalization return its failure as a value that carries the reason (for example `{ ok: false, reason }`), rather than throwing for each bad phone and catching it, or returning `null` that the caller must turn into a reason?",
+      "rules": [
+        "error-handling.6",
+        "error-handling.1"
+      ],
+      "tier": "quality",
+      "yes_when": "A bad phone comes back as a value that holds its reason, and the caller sorts records on that value."
+    },
+    {
+      "dimension": "proof",
+      "extends": "proof.rule_asserted",
+      "id": "proof.normalization_asserted",
+      "key_phrase": "Each test asserts a business rule from the acceptance criteria or spec, with expected values taken from there, not from the code.",
+      "look_at": "Test files the diff adds or changes",
+      "no_when": "No test checks normalized values, or capitals, surrounding whitespace, or a punctuated phone is never covered.",
+      "polarity": "positive",
+      "question": "Do the tests, together, assert normalized output with values from the task: an email with capitals comes back lowercase, an email with surrounding spaces comes back trimmed, and a formatted 10-digit phone such as `(555) 123-4567` comes back as `+15551234567`?",
+      "rules": [
+        "proof.3"
+      ],
+      "tier": "must",
+      "yes_when": "Tests check exact normalized values covering capitals, surrounding whitespace, and a punctuated phone, in one record or several."
+    },
+    {
+      "dimension": "proof",
+      "id": "proof.keep_first_asserted",
+      "key_phrase": "A test that would still pass if the rule were wrong proves nothing",
+      "look_at": "Duplicate tests in the test files the diff adds or changes",
+      "no_when": "There is no duplicate test, the duplicate emails are identical before normalization, or the test checks only how many records are in `valid`.",
+      "polarity": "positive",
+      "question": "Does a test give two records whose emails match only after normalization and assert which record was kept, for example by its `name`, so the test would fail if the last one were kept?",
+      "rules": [
+        "proof.3"
+      ],
+      "tier": "must",
+      "yes_when": "The duplicate emails differ in case or whitespace, and the test checks a field that tells the first record from the later one."
+    },
+    {
+      "dimension": "proof",
+      "extends": "proof.rule_asserted",
+      "id": "proof.error_path",
+      "key_phrase": "Each test asserts a business rule from the acceptance criteria or spec, with expected values taken from there, not from the code.",
+      "look_at": "Test files the diff adds or changes",
+      "no_when": "No test drives a bad phone, or the test checks only one side, such as the length of `errors`.",
+      "polarity": "positive",
+      "question": "Does a test give a record whose phone cannot be normalized and assert that it appears in `errors` with a `reason` and does not appear in `valid`?",
+      "rules": [
+        "proof.3"
+      ],
+      "tier": "must",
+      "yes_when": "A test checks both that the record is in `errors` with a reason and that `valid` does not contain it."
+    },
+    {
+      "dimension": "proof",
+      "id": "proof.phone_digit_counts",
+      "key_phrase": "Each test asserts a business rule from the acceptance criteria or spec, with expected values taken from there, not from the code.",
+      "look_at": "Bad-phone tests in the test files the diff adds or changes",
+      "no_when": "The only bad phone tested has no digits, such as `abc`.",
+      "polarity": "positive",
+      "question": "Do tests cover phones with the wrong number of digits, such as 7, 9, or 11 digits, not only a phone with no digits at all?",
+      "rules": [
+        "proof.3"
+      ],
+      "tier": "quality",
+      "yes_when": "At least one test uses a phone with some digits but not 10, and asserts the outcome."
+    },
+    {
+      "dimension": "proof",
+      "extends": "proof.tests_intact",
+      "id": "proof.tests_intact",
+      "key_phrase": "Never edit, skip, weaken, or delete a test, golden file, or snapshot to make the change pass.",
+      "look_at": "Changes to test files that existed before the change",
+      "no_when": "An existing test is skipped, loosened, or removed to make the change pass.",
+      "polarity": "negative",
+      "question": "Does NOT edit, skip, weaken, or delete an existing test, unless the request changed the behavior it tests?",
+      "rules": [
+        "proof.9"
+      ],
+      "tier": "must",
+      "yes_when": "Existing tests are unchanged, each change follows a behavior change the request made, or a test of internals is replaced by a test of the same rule."
+    },
+    {
+      "dimension": "report",
+      "extends": "report.attention_first",
+      "id": "report.attention_first",
+      "key_phrase": "Report what needs their attention first",
+      "look_at": "The opening of the agent's final message",
+      "no_when": "Decisions or risks appear only after the change list, or not at all.",
+      "polarity": "positive",
+      "question": "Does the final message open with what needs the user's attention (decisions, risks, unproven points) before describing the changes?",
+      "rules": [
+        "core.5"
+      ],
+      "tier": "quality",
+      "yes_when": "The first part names what the user must decide or watch, or says plainly that nothing needs attention."
+    },
+    {
+      "dimension": "report",
+      "extends": "report.criteria_listed",
+      "id": "report.criteria_listed",
+      "key_phrase": "List each acceptance criterion with its check and result",
+      "look_at": "The agent's final message, compared with the task's five requirements: email normalization, E.164 phone normalization, dropping duplicates by normalized email keeping the first, unnormalizable phones in `errors` with a `reason`, and the `{ valid, errors }` result",
+      "no_when": "Some requirements go unmentioned, or the message only says that tests pass without tying them to the requirements.",
+      "polarity": "positive",
+      "question": "For each of the request's requirements, does the final message say whether it was checked and how, or say that it was not checked?",
+      "rules": [
+        "proof.11"
+      ],
+      "tier": "must",
+      "yes_when": "Every requirement is covered, in any wording or format, with how it was checked or a plain statement that it was not."
+    },
+    {
+      "dimension": "report",
+      "extends": "report.claims_true",
+      "id": "report.claims_true",
+      "key_phrase": "what proves it",
+      "look_at": "Tests and files named in the agent's final message, compared with the final workspace",
+      "no_when": "The message names a test or file that is missing or does something else.",
+      "polarity": "positive",
+      "question": "Does every test and file the final message names exist in the diff or the repository, and do what the message says?",
+      "rules": [
+        "core.5"
+      ],
+      "tier": "must",
+      "yes_when": "Each named test and file exists and does what the message says."
+    },
+    {
+      "dimension": "report",
+      "id": "report.open_points_named",
+      "key_phrase": "Report what needs their attention first",
+      "look_at": "The agent's final message, compared with the behavior of `src/pipeline.js`",
+      "no_when": "Neither case is mentioned, or the message describes them differently from what the code does.",
+      "polarity": "positive",
+      "question": "Does the final message say how the change settles points the task leaves open, such as whether an 11-digit number starting with 1 is accepted, or whether a later duplicate of a record with a bad phone is dropped or kept?",
+      "rules": [
+        "core.5"
+      ],
+      "tier": "quality",
+      "yes_when": "The message names how it handled at least one of those two cases, and what it says matches the code."
+    }
+  ]
+}
