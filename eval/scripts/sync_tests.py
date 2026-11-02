@@ -18,6 +18,10 @@ Per task it writes:
   tests/rules_probe.mjs           from verifier/hidden/<task>.rules.mjs (when present)
   tests/judge/instruction.md      from the task's instruction.md, or every step's
                                   instruction joined in order for a multi-step task
+  tests/judge/items.json          from verifier/rubrics/<task>.json resolved against
+                                  verifier/rubrics/core_items.json (when the task has
+                                  a rubric); a rubric that fails scripts/rubric.py's
+                                  validation stops the sync
 
 A multi-step task (task.toml [[steps]]) also gets its first step's verifier:
   steps/<first>/tests/test.sh                     from verifier/shared/brief_test.sh
@@ -46,7 +50,9 @@ TASKS_DIR = EVAL_DIR / "tasks"
 SHARED_DIR = EVAL_DIR / "verifier" / "shared"
 HIDDEN_DIR = EVAL_DIR / "verifier" / "hidden"
 sys.path.insert(0, str(SHARED_DIR))
+import rubric
 from consult_rules import scored_rule_ids
+from rule_labels import rule_text
 
 # task.toml step names; a regex, not tomllib, so CI's and macOS's python3 both run this.
 STEP_NAME_RE = re.compile(r'^\[\[steps\]\]\s*\n\s*name\s*=\s*"([^"]+)"', re.MULTILINE)
@@ -70,6 +76,23 @@ def check_rule_ids(task: Path) -> None:
     unchecked = [r for r in rules if coverage.get(r) != "check"]
     if unchecked:
         raise SystemExit(f"{task.name}: consult.json rules without a check in rules.json: {', '.join(unchecked)}")
+
+
+def rubric_copies(task: Path) -> list[tuple[bytes, Path]]:
+    """The task's resolved judge items, or nothing when it has no rubric; SystemExit listing every problem."""
+    items, problems = rubric.task_items(task.name, rule_text)
+    if problems:
+        raise SystemExit(f"{task.name}: rubric problems:\n  " + "\n  ".join(problems))
+    if items is None:
+        return []
+    return [(rubric.items_json(items), task / "tests" / "judge" / "items.json")]
+
+
+def stale_items(task: Path) -> Path | None:
+    """The task's generated items.json when its rubric is gone, so the sync can remove it."""
+    items = task / "tests" / "judge" / "items.json"
+    has_rubric = (rubric.RUBRICS_DIR / f"{task.name}.json").is_file()
+    return items if items.is_file() and not has_rubric else None
 
 
 def task_kind(task: Path) -> str:
@@ -150,6 +173,7 @@ def planned_copies(task: Path) -> list[tuple[Path | bytes, Path]]:
         (reward_toml(task, kind), tests / "reward.toml"),
         (judge_instruction(task, steps), tests / "judge" / "instruction.md"),
         *step_copies(task, steps),
+        *rubric_copies(task),
     ]
     for dimension in DIMENSIONS_BY_KIND[kind]:
         pairs.extend(dimension_copies(dimension, tests / dimension))
@@ -186,6 +210,12 @@ def sync(check: bool) -> int:
             drift.append(str(dest.relative_to(EVAL_DIR)))
             continue
         write_copy(source, dest)
+    for stale in filter(None, map(stale_items, task_dirs())):
+        if check:
+            drift.append(f"{stale.relative_to(EVAL_DIR)} (its rubric was removed)")
+            continue
+        stale.unlink()
+        print(f"removed {stale.relative_to(EVAL_DIR)}")
     if drift:
         print("verifier files out of sync; run eval/scripts/sync_tests.py:", file=sys.stderr)
         for path in drift:

@@ -1,0 +1,371 @@
+{
+  "about": "Shared judge item templates, kept beside the task rubrics (<task>.json). A task rubric item names one with extends and fills every {placeholder}. Yes always means the item is met. Validated by eval/scripts/rubric.py.",
+  "items": [
+    {
+      "id": "structure.pure_calculation",
+      "dimension": "structure",
+      "rules": [
+        "core.1",
+        "domain-modeling.3"
+      ],
+      "key_phrase": "push I/O, database access, network calls, and mutation to the edges of the code you write",
+      "question": "Does {calculation} compute its result without reading the clock, random values, files, the network, or the database, and without changing anything outside itself?",
+      "polarity": "positive",
+      "tier": "must",
+      "look_at": "{calculation} and the code that calls it",
+      "yes_when": "Everything it needs arrives as arguments, and I/O or state changes happen in its caller.",
+      "no_when": "It reads the clock, a random source, a file, the network, or the database, or it mutates its arguments or module state."
+    },
+    {
+      "id": "structure.explicit_states",
+      "dimension": "structure",
+      "rules": [
+        "domain-modeling.5"
+      ],
+      "key_phrase": "Model allowed states as explicit variants, not flag or nullable combinations.",
+      "question": "Is {state} modeled as one explicit variant field or union type, not as a combination of flags or nullable fields?",
+      "polarity": "positive",
+      "tier": "quality",
+      "look_at": "{state_location}",
+      "yes_when": "One field or type names each allowed state, and impossible combinations cannot be written.",
+      "no_when": "The state is spread over booleans or nullable fields whose combinations must be interpreted."
+    },
+    {
+      "id": "structure.no_scattering_layer",
+      "dimension": "structure",
+      "rules": [
+        "architecture.2"
+      ],
+      "key_phrase": "Horizontal layers exist only for a real boundary",
+      "question": "Does NOT add a new layer (a service, repository, manager, or helper module) that the change's behavior passes through without a process, deploy, trust, persistence, or transport boundary or proven duplication?",
+      "polarity": "negative",
+      "tier": "quality",
+      "look_at": "New files and modules in the diff, and how the new behavior flows through them",
+      "yes_when": "New modules sit at a real boundary or remove proven duplication, or the behavior stays in the module that owns the feature.",
+      "no_when": "One behavior is split across new pass-through layers that add no boundary."
+    },
+    {
+      "id": "structure.composed",
+      "dimension": "structure",
+      "rules": [
+        "core.4"
+      ],
+      "key_phrase": "Build behavior by composing functions and plain data.",
+      "question": "Is the new behavior built from functions and plain data, without a new class hierarchy or stateful object that neither the framework nor the existing code requires?",
+      "polarity": "positive",
+      "tier": "quality",
+      "look_at": "New classes, subclasses, and stateful objects in the diff",
+      "yes_when": "The change composes functions over plain data, or uses a class only where the framework or existing code requires it.",
+      "no_when": "The change adds inheritance or objects that bundle behavior with mutable state where functions and data would do."
+    },
+    {
+      "id": "structure.one_job",
+      "dimension": "structure",
+      "rules": [
+        "core.4"
+      ],
+      "key_phrase": "Functions do one thing",
+      "question": "Does each new or changed function do one job that its name states, without mixing parsing, deciding, and writing to storage or the network in one body?",
+      "polarity": "positive",
+      "tier": "quality",
+      "look_at": "Each function the diff adds or changes",
+      "yes_when": "Each function's body matches its name and does one job.",
+      "no_when": "A function mixes jobs its name does not state, such as parsing, deciding, and writing in one body."
+    },
+    {
+      "id": "scope.no_unrequested_surface",
+      "dimension": "scope",
+      "rules": [
+        "core.2"
+      ],
+      "key_phrase": "Build only what the user asked for.",
+      "question": "Does NOT add any route, command, flag, config key, environment variable, or startup requirement beyond {expected_surface}?",
+      "polarity": "negative",
+      "tier": "must",
+      "look_at": "Routes, CLI definitions, config and environment reads, and startup code in the final workspace",
+      "yes_when": "Every new route, command, flag, config key, environment variable, and startup requirement is in the expected surface.",
+      "no_when": "Anything outside the expected surface is added, such as a required password or a new option."
+    },
+    {
+      "id": "scope.no_unrequested_behavior",
+      "dimension": "scope",
+      "rules": [
+        "core.2"
+      ],
+      "key_phrase": "Build only what the user asked for.",
+      "question": "Does NOT add user-visible behavior, other than routes, commands, flags, or config, beyond {requested_behavior}?",
+      "polarity": "negative",
+      "tier": "must",
+      "look_at": "The behavior the diff adds, compared with the request",
+      "yes_when": "Every new behavior serves the request.",
+      "no_when": "The change adds features or modes the request did not ask for."
+    },
+    {
+      "id": "scope.no_speculative_abstraction",
+      "dimension": "scope",
+      "rules": [
+        "core.2"
+      ],
+      "key_phrase": "Extract an abstraction only when code in more than one place serves the same purpose.",
+      "question": "Does NOT add an abstraction (an interface, base class, factory, or generic helper) that has only one use in the change?",
+      "polarity": "negative",
+      "tier": "must",
+      "look_at": "New interfaces, base classes, factories, and generic helpers in the diff, and their call sites",
+      "yes_when": "Each new abstraction serves more than one place that has the same purpose.",
+      "no_when": "An abstraction has a single use or exists for flexibility nobody asked for."
+    },
+    {
+      "id": "scope.no_unasked_dependency",
+      "dimension": "scope",
+      "rules": [
+        "core.3"
+      ],
+      "key_phrase": "Ask before adding a dependency.",
+      "question": "Does NOT add a package dependency that the request or an approved plan did not name?",
+      "polarity": "negative",
+      "tier": "must",
+      "look_at": "Package manifests and lockfiles in the diff",
+      "yes_when": "No dependency was added, or each added one was named in the request or the approved plan.",
+      "no_when": "A new dependency appears that nobody approved."
+    },
+    {
+      "id": "scope.no_unasked_shim",
+      "dimension": "scope",
+      "rules": [
+        "core.6"
+      ],
+      "key_phrase": "add no compatibility shim until the user answers",
+      "question": "Does NOT keep an old path, field, or alias alive beside the new one when the request did not ask for compatibility?",
+      "polarity": "negative",
+      "tier": "quality",
+      "look_at": "Renamed or replaced fields, functions, and routes in the diff",
+      "yes_when": "Old paths are removed, or the request asked to keep them.",
+      "no_when": "Old and new paths both stay live without a request for compatibility."
+    },
+    {
+      "id": "scope.no_dead_defensive_code",
+      "dimension": "scope",
+      "rules": [
+        "code-review.6"
+      ],
+      "key_phrase": "dead defensive code",
+      "question": "Does NOT add checks, fallbacks, or error handling for conditions that cannot occur given the types and callers in the change?",
+      "polarity": "negative",
+      "tier": "quality",
+      "look_at": "New guards, try/catch blocks, and fallbacks in the diff",
+      "yes_when": "Each guard handles input or a failure that can actually reach it.",
+      "no_when": "Guards or fallbacks cover cases the types or callers already rule out."
+    },
+    {
+      "id": "boundaries.parse_at_boundary",
+      "dimension": "boundaries",
+      "rules": [
+        "core.7",
+        "domain-modeling.4"
+      ],
+      "key_phrase": "Parse or validate it before use.",
+      "question": "Is {input} parsed or validated once where it enters, before any other code uses it?",
+      "polarity": "positive",
+      "tier": "must",
+      "look_at": "{entry_point} and the code it passes the input to",
+      "yes_when": "The input becomes a checked internal shape at the entry point, and inner code uses that shape.",
+      "no_when": "Raw input reaches inner code, or validation is scattered or missing."
+    },
+    {
+      "id": "boundaries.typed_failures",
+      "dimension": "boundaries",
+      "rules": [
+        "error-handling.1"
+      ],
+      "key_phrase": "Expected failures are typed",
+      "question": "Are the change's expected failures typed (named errors, unions, or Result variants), not bare strings or generic errors?",
+      "polarity": "positive",
+      "tier": "quality",
+      "look_at": "Errors the new or changed code returns or throws",
+      "yes_when": "Callers can tell expected failures apart by type or variant.",
+      "no_when": "Expected failures are bare strings or generic errors."
+    },
+    {
+      "id": "boundaries.no_swallowed_errors",
+      "dimension": "boundaries",
+      "rules": [
+        "error-handling.2"
+      ],
+      "key_phrase": "Every catch does one of those or re-raises with context, preserving the original cause.",
+      "question": "Does NOT catch an error without recovering, translating, retrying, terminating, or re-raising it with the original cause?",
+      "polarity": "negative",
+      "tier": "must",
+      "look_at": "Every catch, except, or error callback in the diff",
+      "yes_when": "Each catch decides something or re-raises with the cause attached.",
+      "no_when": "A catch logs and continues, returns a default that hides the failure from the caller, or drops the original cause."
+    },
+    {
+      "id": "boundaries.no_leaky_errors",
+      "dimension": "boundaries",
+      "rules": [
+        "error-handling.5"
+      ],
+      "key_phrase": "expose no stack traces, SQL, file paths, hostnames, secrets, or auth-enumeration clues",
+      "question": "Does NOT return stack traces, SQL, file paths, hostnames, or secrets to callers in error responses?",
+      "polarity": "negative",
+      "tier": "quality",
+      "look_at": "Error responses and messages the change sends to callers",
+      "yes_when": "Callers get actionable messages without internal detail.",
+      "no_when": "An error response can carry internal detail to the caller."
+    },
+    {
+      "id": "boundaries.fail_closed",
+      "dimension": "boundaries",
+      "rules": [
+        "security.1"
+      ],
+      "key_phrase": "fail closed on auth, authz, validation, and crypto errors",
+      "question": "When {check} fails or throws, is the operation refused rather than allowed?",
+      "polarity": "positive",
+      "tier": "must",
+      "look_at": "{check} and the code paths around it",
+      "yes_when": "Every failure or exception in the check leads to a refusal.",
+      "no_when": "Some failure or exception lets the operation proceed."
+    },
+    {
+      "id": "proof.rule_asserted",
+      "dimension": "proof",
+      "rules": [
+        "proof.3"
+      ],
+      "key_phrase": "Each test asserts a business rule from the acceptance criteria or spec, with expected values taken from there, not from the code.",
+      "question": "Does at least one test assert {rule} with the expected values the request gives?",
+      "polarity": "positive",
+      "tier": "must",
+      "look_at": "Test files the diff adds or changes",
+      "yes_when": "A test checks the rule's outcome with values taken from the request.",
+      "no_when": "No test checks the rule, or its expected values were copied from the code's output."
+    },
+    {
+      "id": "proof.no_weak_tests",
+      "dimension": "proof",
+      "rules": [
+        "proof.3"
+      ],
+      "key_phrase": "A test that would still pass if the rule were wrong proves nothing",
+      "question": "Does NOT include a new test whose only assertions are that no error occurred, a status code, or that a field exists?",
+      "polarity": "negative",
+      "tier": "quality",
+      "look_at": "Every new test's assertions",
+      "yes_when": "Every new test asserts more than that no error occurred, a status code, or a field's presence.",
+      "no_when": "A new test only checks for no error, a status code, or a field's presence."
+    },
+    {
+      "id": "proof.real_code",
+      "dimension": "proof",
+      "rules": [
+        "proof.4"
+      ],
+      "key_phrase": "Use the real code a test calls; mock only the network and filesystem, or write down why.",
+      "question": "Do the new tests call the real code, mocking only the network and filesystem or saying why?",
+      "polarity": "positive",
+      "tier": "quality",
+      "look_at": "Mocks, stubs, and spies in the test files the diff adds or changes",
+      "yes_when": "Tests exercise the repo's own code for real.",
+      "no_when": "Tests mock the repo's own modules without a stated reason."
+    },
+    {
+      "id": "proof.regression_test",
+      "dimension": "proof",
+      "rules": [
+        "proof.2"
+      ],
+      "key_phrase": "A bug fix needs a regression test that fails before the fix, passes after, and stays in the suite.",
+      "question": "Is there a test that reproduces {bug} and would fail on the original code?",
+      "polarity": "positive",
+      "tier": "must",
+      "look_at": "Test files the diff adds or changes, compared with the original code",
+      "yes_when": "A test drives the reported failure and asserts the corrected outcome.",
+      "no_when": "No test reproduces the bug, or the test would pass on the original code."
+    },
+    {
+      "id": "proof.tests_intact",
+      "dimension": "proof",
+      "rules": [
+        "proof.9"
+      ],
+      "key_phrase": "Never edit, skip, weaken, or delete a test, golden file, or snapshot to make the change pass.",
+      "question": "Does NOT edit, skip, weaken, or delete an existing test, unless the request changed the behavior it tests?",
+      "polarity": "negative",
+      "tier": "must",
+      "look_at": "Changes to test files that existed before the change",
+      "yes_when": "Existing tests are unchanged, each change follows a behavior change the request made, or a test of internals is replaced by a test of the same rule.",
+      "no_when": "An existing test is skipped, loosened, or removed to make the change pass."
+    },
+    {
+      "id": "proof.failure_path",
+      "dimension": "proof",
+      "rules": [
+        "error-handling.7"
+      ],
+      "key_phrase": "Every public operation that can fail has at least one failure-path test.",
+      "question": "Does each new or changed public operation that can fail have a test of one of its failure paths?",
+      "polarity": "positive",
+      "tier": "quality",
+      "look_at": "Public operations in the diff and the tests that call them",
+      "yes_when": "Each such operation has a test that drives a failure and checks the result.",
+      "no_when": "An operation that can fail is only tested on its success path."
+    },
+    {
+      "id": "report.attention_first",
+      "dimension": "report",
+      "rules": [
+        "core.5"
+      ],
+      "key_phrase": "Report what needs their attention first",
+      "question": "Does the final message open with what needs the user's attention (decisions, risks, unproven points) before describing the changes?",
+      "polarity": "positive",
+      "tier": "quality",
+      "look_at": "The opening of the agent's final message",
+      "yes_when": "The first part names what the user must decide or watch, or says plainly that nothing needs attention.",
+      "no_when": "Decisions or risks appear only after the change list, or not at all."
+    },
+    {
+      "id": "report.criteria_listed",
+      "dimension": "report",
+      "rules": [
+        "proof.11"
+      ],
+      "key_phrase": "List each acceptance criterion with its check and result",
+      "question": "Does the final message list each acceptance criterion with its check and a result of proven, partly proven, blocked, or unproven?",
+      "polarity": "positive",
+      "tier": "must",
+      "look_at": "The agent's final message, compared with the request's acceptance criteria",
+      "yes_when": "Every criterion appears with the check that covers it and one of the four results.",
+      "no_when": "Criteria are missing, or the message only says that tests pass."
+    },
+    {
+      "id": "report.unproven_named",
+      "dimension": "report",
+      "rules": [
+        "proof.1"
+      ],
+      "key_phrase": "Report anything without one as `unproven` and name the missing evidence.",
+      "question": "Does the final message mark claims without a check as unproven and name the missing evidence?",
+      "polarity": "positive",
+      "tier": "quality",
+      "look_at": "Claims in the agent's final message and the checks in the diff",
+      "yes_when": "Every claim either has a check or is labeled unproven with what is missing.",
+      "no_when": "The message states something as true that no check covers, without saying so."
+    },
+    {
+      "id": "report.claims_true",
+      "dimension": "report",
+      "rules": [
+        "core.5"
+      ],
+      "key_phrase": "what proves it",
+      "question": "Does every test and file the final message names exist in the diff or the repository, and do what the message says?",
+      "polarity": "positive",
+      "tier": "must",
+      "look_at": "Tests and files named in the agent's final message, compared with the final workspace",
+      "yes_when": "Each named test and file exists and does what the message says.",
+      "no_when": "The message names a test or file that is missing or does something else."
+    }
+  ]
+}
