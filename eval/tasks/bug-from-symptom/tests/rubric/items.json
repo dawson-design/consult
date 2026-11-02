@@ -1,0 +1,237 @@
+{
+  "items": [
+    {
+      "dimension": "structure",
+      "id": "structure.fix_in_snapshot",
+      "key_phrase": "The fix is one atomic change aimed at that cause",
+      "look_at": "`src/snapshot.js`, and any changes to `src/store.js` and `src/editor.js`",
+      "no_when": "`snapshot` still shares `config` objects and the leak is stopped elsewhere, such as by making `updateWidget` replace `config` instead of mutating it, or by adding a copy only in `duplicate` or `load`.",
+      "polarity": "positive",
+      "question": "Is the fix made in `snapshot` in `src/snapshot.js`, so the copies it makes no longer share widget `config` objects with the dashboard they were copied from?",
+      "rules": [
+        "debugging.5"
+      ],
+      "tier": "must",
+      "yes_when": "`snapshot` now copies nested widget data (for example with `structuredClone`, or by also copying `config`), and that change is what stops the leak."
+    },
+    {
+      "dimension": "structure",
+      "id": "structure.full_depth_copy",
+      "key_phrase": "aimed at that cause",
+      "look_at": "The copy logic in `src/snapshot.js`",
+      "no_when": "The copy adds only one more level, such as `config: { ...widget.config }`, so nested values inside `config` are still shared.",
+      "polarity": "positive",
+      "question": "Does the corrected copy reach every nesting level of a dashboard (for example with `structuredClone`), rather than copying `config` one level deep, which would still share any object or array nested inside `config`?",
+      "rules": [
+        "debugging.5"
+      ],
+      "tier": "quality",
+      "yes_when": "The copy shares no object or array at any depth with its source."
+    },
+    {
+      "dimension": "structure",
+      "id": "structure.one_copy_rule",
+      "key_phrase": "duplicated rule with divergent meaning",
+      "look_at": "Copying code in `src/snapshot.js` and `src/store.js` after the change. Changes to `updateWidget` are judged by another item; ignore them here.",
+      "no_when": "The change adds a separate dashboard copy in `src/store.js` (such as a `structuredClone` call in `save`, `load`, or `duplicate`) beside `snapshot`, so the copy rule lives in two places.",
+      "polarity": "positive",
+      "question": "Is copying a dashboard still done by the one `snapshot` function that `save`, `load`, and `duplicate` use, without a second dashboard copy routine in `src/store.js`?",
+      "rules": [
+        "refactoring.7"
+      ],
+      "tier": "quality",
+      "yes_when": "All dashboard copies go through `snapshot`."
+    },
+    {
+      "dimension": "scope",
+      "extends": "scope.no_unrequested_surface",
+      "id": "scope.no_new_surface",
+      "key_phrase": "Add no route, command, flag, config key, environment variable, or startup requirement the request did not name",
+      "look_at": "Routes, CLI definitions, config and environment reads, and startup code in the final workspace",
+      "no_when": "The change adds a parameter, an option, or any setting.",
+      "polarity": "negative",
+      "question": "Does NOT add a flag or option (such as a deep-copy flag or a new parameter), config key, environment variable, or startup requirement? The bug report asks for none.",
+      "rules": [
+        "core.2"
+      ],
+      "tier": "must",
+      "yes_when": "The changed functions keep their parameters and the change adds no setting."
+    },
+    {
+      "dimension": "scope",
+      "extends": "scope.no_unrequested_behavior",
+      "id": "scope.only_fix",
+      "key_phrase": "Build only what the user asked for.",
+      "look_at": "The behavior the diff adds, compared with the request",
+      "no_when": "The change adds features or restrictions the report did not ask for.",
+      "polarity": "negative",
+      "question": "Does NOT add user-visible behavior beyond stopping edits from leaking between dashboards, such as freezing returned dashboards, edit history or undo, or new validation of dashboards or widgets?",
+      "rules": [
+        "core.2"
+      ],
+      "tier": "must",
+      "yes_when": "The only behavior change is that saved, duplicated, and loaded dashboards no longer share nested data."
+    },
+    {
+      "dimension": "scope",
+      "extends": "scope.no_unasked_dependency",
+      "id": "scope.no_dependency",
+      "key_phrase": "Ask before adding a dependency.",
+      "look_at": "Package manifests and lockfiles in the diff",
+      "no_when": "A new dependency appears that nobody approved.",
+      "polarity": "negative",
+      "question": "Does NOT add a package dependency that the request or an approved plan did not name?",
+      "rules": [
+        "core.3"
+      ],
+      "tier": "must",
+      "yes_when": "No dependency was added, or each added one was named in the request or the approved plan."
+    },
+    {
+      "dimension": "scope",
+      "id": "scope.no_drive_by",
+      "key_phrase": "Opportunistic tweaks and behavior fixes go in separate behavior commits or are left out.",
+      "look_at": "The diff of `src/store.js` and of any other file outside `src/snapshot.js`",
+      "no_when": "The diff tidies or rewrites store code unrelated to the leak, or reformats untouched lines.",
+      "polarity": "negative",
+      "question": "Does NOT change code in `src/store.js` that the leak does not depend on, such as id generation, `list`, or the `saved.get(id) ?? load(id)` lookup in `duplicate`, or reformat code the fix does not touch?",
+      "rules": [
+        "refactoring.1"
+      ],
+      "tier": "quality",
+      "yes_when": "Changes outside `snapshot` are limited to what the fix needs, or there are none."
+    },
+    {
+      "dimension": "scope",
+      "id": "scope.no_handrolled_clone",
+      "key_phrase": "Hand-rolled versions of solved problems",
+      "look_at": "The copy logic in `src/snapshot.js` and any new helper files",
+      "no_when": "The change adds its own recursive clone of arbitrary values.",
+      "polarity": "negative",
+      "question": "Does NOT add a hand-written general-purpose deep-clone function when the runtime's `structuredClone` (Node 17 and later; the task image runs Node 22) does the job?",
+      "rules": [
+        "code-review.6"
+      ],
+      "tier": "quality",
+      "yes_when": "The copy uses `structuredClone`, or copies the dashboard's known levels directly without a generic recursive cloner."
+    },
+    {
+      "dimension": "proof",
+      "extends": "proof.regression_test",
+      "id": "proof.reported_path",
+      "key_phrase": "A bug fix needs a regression test that fails before the fix, passes after, and stays in the suite.",
+      "look_at": "Test files the diff adds or changes, compared with the original code",
+      "no_when": "No test follows that path (for example there is only a unit test of `snapshot`), or the test would pass on the original code.",
+      "polarity": "positive",
+      "question": "Is there a test that follows the customer's steps (save a dashboard, duplicate it, load the copy, change its chart range with `updateWidget`, then load the original again) and asserts the original's range is unchanged?",
+      "rules": [
+        "proof.2"
+      ],
+      "tier": "must",
+      "yes_when": "A test drives `createStore`, `save`, `duplicate`, `load`, and `updateWidget` as the customer did, and checks the original kept its range, such as `24h`."
+    },
+    {
+      "dimension": "proof",
+      "id": "proof.other_leaks",
+      "key_phrase": "A bug fix needs a regression test that fails before the fix, passes after, and stays in the suite.",
+      "look_at": "Test files the diff adds or changes",
+      "no_when": "Only the duplicate path is tested.",
+      "polarity": "positive",
+      "question": "Do tests also cover the other ways the shared `config` leaked: editing the live dashboard after saving it, or editing a loaded dashboard without saving it?",
+      "rules": [
+        "proof.2"
+      ],
+      "tier": "quality",
+      "yes_when": "At least one of those two paths has a test that asserts the saved dashboard is unchanged."
+    },
+    {
+      "dimension": "proof",
+      "extends": "proof.real_code",
+      "id": "proof.real_code",
+      "key_phrase": "Use the real code a test calls; mock only the network and filesystem, or write down why.",
+      "look_at": "Mocks, stubs, and spies in the test files the diff adds or changes",
+      "no_when": "Tests mock the repo's own modules without a stated reason.",
+      "polarity": "positive",
+      "question": "Do the new tests call the real code, mocking only the network and filesystem or saying why?",
+      "rules": [
+        "proof.4"
+      ],
+      "tier": "quality",
+      "yes_when": "Tests exercise the repo's own code for real."
+    },
+    {
+      "dimension": "proof",
+      "extends": "proof.tests_intact",
+      "id": "proof.tests_intact",
+      "key_phrase": "Never edit, skip, weaken, or delete a test, golden file, or snapshot to make the change pass.",
+      "look_at": "Changes to test files that existed before the change",
+      "no_when": "An existing test is skipped, loosened, or removed to make the change pass.",
+      "polarity": "negative",
+      "question": "Does NOT edit, skip, weaken, or delete an existing test, unless the request changed the behavior it tests?",
+      "rules": [
+        "proof.9"
+      ],
+      "tier": "must",
+      "yes_when": "Existing tests are unchanged, each change follows a behavior change the request made, or a test of internals is replaced by a test of the same rule."
+    },
+    {
+      "dimension": "report",
+      "extends": "report.attention_first",
+      "id": "report.attention_first",
+      "key_phrase": "Report what needs their attention first",
+      "look_at": "The opening of the agent's final message",
+      "no_when": "Decisions or risks appear only after the change list, or not at all.",
+      "polarity": "positive",
+      "question": "Does the final message open with what needs the user's attention (decisions, risks, unproven points) before describing the changes?",
+      "rules": [
+        "core.5"
+      ],
+      "tier": "quality",
+      "yes_when": "The first part names what the user must decide or watch, or says plainly that nothing needs attention."
+    },
+    {
+      "dimension": "report",
+      "extends": "report.criteria_listed",
+      "id": "report.criteria_listed",
+      "key_phrase": "List each acceptance criterion with its check and result",
+      "look_at": "The agent's final message, compared with what the report implies: editing the duplicate must leave the saved \"Ops\" dashboard unchanged, and existing save, load, duplicate, list, and widget editing must keep working",
+      "no_when": "Some requirements go unmentioned, or the message only says that tests pass without tying them to the requirements.",
+      "polarity": "positive",
+      "question": "For each of the request's requirements, does the final message say whether it was checked and how, or say that it was not checked?",
+      "rules": [
+        "proof.11"
+      ],
+      "tier": "must",
+      "yes_when": "Every requirement is covered, in any wording or format, with how it was checked or a plain statement that it was not."
+    },
+    {
+      "dimension": "report",
+      "extends": "report.claims_true",
+      "id": "report.claims_true",
+      "key_phrase": "what proves it",
+      "look_at": "Tests and files named in the agent's final message, compared with the final workspace",
+      "no_when": "The message names a test or file that is missing or does something else.",
+      "polarity": "positive",
+      "question": "Does every test and file the final message names exist in the diff or the repository, and do what the message says?",
+      "rules": [
+        "core.5"
+      ],
+      "tier": "must",
+      "yes_when": "Each named test and file exists and does what the message says."
+    },
+    {
+      "dimension": "report",
+      "id": "report.root_cause",
+      "key_phrase": "The root cause is named in one sentence, explains every observed symptom",
+      "look_at": "The agent's final message, compared with the original `src/snapshot.js`",
+      "no_when": "The message names no cause, blames `updateWidget` or `duplicate` alone, or only describes the fix.",
+      "polarity": "positive",
+      "question": "Does the final message name the root cause: `snapshot` copied each widget only one level deep, so saved, duplicated, and loaded dashboards shared the same widget `config` objects?",
+      "rules": [
+        "debugging.4"
+      ],
+      "tier": "must",
+      "yes_when": "The message says, in its own words, that the copies shared nested `config` objects because `snapshot` copied shallowly."
+    }
+  ]
+}

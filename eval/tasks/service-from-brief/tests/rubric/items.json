@@ -1,0 +1,301 @@
+{
+  "items": [
+    {
+      "dimension": "structure",
+      "extends": "structure.pure_calculation",
+      "id": "structure.url_check_separate",
+      "key_phrase": "push I/O, database access, network calls, and mutation to the edges of the code you write",
+      "look_at": "The code that decides whether a submitted URL is acceptable, and the handler that calls it",
+      "no_when": "The URL check is written inline in the request handler, or the checking function also stores the link, reads the request, or writes the response.",
+      "polarity": "positive",
+      "question": "Is the check of a submitted long URL a function separate from the HTTP handler that takes the input as an argument and returns the checked URL or a rejection, without I/O or state changes?",
+      "rules": [
+        "core.1",
+        "domain-modeling.3"
+      ],
+      "tier": "quality",
+      "yes_when": "A function receives the submitted value and returns the normalized URL or a rejection, and the handler does the reading, storing, and responding."
+    },
+    {
+      "dimension": "structure",
+      "extends": "structure.no_scattering_layer",
+      "id": "structure.no_scattering_layer",
+      "key_phrase": "Horizontal layers exist only for a real boundary",
+      "look_at": "New files and modules in the diff, and how the new behavior flows through them",
+      "no_when": "One behavior is split across new pass-through layers that add no boundary.",
+      "polarity": "negative",
+      "question": "Does NOT add a new layer (a service, repository, manager, or helper module) that the change's behavior passes through without a process, deploy, trust, persistence, or transport boundary or proven duplication?",
+      "rules": [
+        "architecture.2"
+      ],
+      "tier": "quality",
+      "yes_when": "New modules sit at a real boundary or remove proven duplication, or the behavior stays in the module that owns the feature."
+    },
+    {
+      "dimension": "structure",
+      "extends": "structure.one_job",
+      "id": "structure.one_job",
+      "key_phrase": "Functions do one thing",
+      "look_at": "Each function the diff adds or changes",
+      "no_when": "A function mixes jobs its name does not state, such as parsing, deciding, and writing in one body.",
+      "polarity": "positive",
+      "question": "Does each new or changed function do one job that its name states, without mixing parsing, deciding, and writing to storage or the network in one body?",
+      "rules": [
+        "core.4"
+      ],
+      "tier": "quality",
+      "yes_when": "Each function's body matches its name and does one job."
+    },
+    {
+      "dimension": "scope",
+      "extends": "scope.no_unrequested_surface",
+      "id": "scope.no_new_surface",
+      "key_phrase": "Add no route, command, flag, config key, environment variable, or startup requirement the request did not name",
+      "look_at": "Routes, CLI definitions, config and environment reads, and startup code in the final workspace",
+      "no_when": "The change adds something neither names, such as a `BASE_URL`, `DATABASE_URL`, `ADMIN_PASSWORD`, or API-key variable, a delete or edit route, a required config file, or a database or other service that must be running.",
+      "polarity": "negative",
+      "question": "Does NOT add any route, command, flag, config key, environment variable, or startup requirement beyond `PORT`, the page where a long URL is pasted, the request that creates a short link, the short-link redirect, the click-count view, and the scripts and settings the approved proposal named?",
+      "rules": [
+        "core.2"
+      ],
+      "tier": "must",
+      "yes_when": "Every route, environment variable, script, and startup requirement is one the brief or the approved proposal names. The app starts with only `PORT` set, or with defaults for anything else the proposal named. If the earlier reply built the feature instead of proposing it, judge against the request alone."
+    },
+    {
+      "dimension": "scope",
+      "extends": "scope.no_unrequested_behavior",
+      "id": "scope.no_unrequested_behavior",
+      "key_phrase": "Build only what the user asked for.",
+      "look_at": "The behavior the diff adds, compared with the request",
+      "no_when": "The change adds behavior neither the brief nor the approved proposal asked for, such as custom aliases, link expiry, accounts or login, QR codes, rate limiting, or per-click analytics beyond a count (referrers, user agents, timestamps).",
+      "polarity": "negative",
+      "question": "Does NOT add user-visible behavior, other than routes, commands, flags, or config, beyond shortening a pasted URL on a web page, redirecting short links, and showing click counts, as the approved proposal describes?",
+      "rules": [
+        "core.2"
+      ],
+      "tier": "must",
+      "yes_when": "Every new behavior serves the request."
+    },
+    {
+      "dimension": "scope",
+      "extends": "scope.no_unasked_dependency",
+      "id": "scope.no_dependency",
+      "key_phrase": "Ask before adding a dependency.",
+      "look_at": "Package manifests and lockfiles in the diff",
+      "no_when": "A new dependency appears that nobody approved.",
+      "polarity": "negative",
+      "question": "Does NOT add a package dependency that the request or an approved plan did not name?",
+      "rules": [
+        "core.3"
+      ],
+      "tier": "must",
+      "yes_when": "No dependency was added, or each added one was named in the request or the approved plan."
+    },
+    {
+      "dimension": "scope",
+      "extends": "scope.no_speculative_abstraction",
+      "id": "scope.no_store_interface",
+      "key_phrase": "Extract an abstraction only when code in more than one place serves the same purpose.",
+      "look_at": "The code that keeps links and click counts, and every place that creates or calls it",
+      "no_when": "There is an interface, abstract class, or adapter over a single storage implementation, a factory that chooses between storage implementations when only one exists, or a storage driver option that only one value can take.",
+      "polarity": "negative",
+      "question": "Does NOT add a storage interface, adapter, repository, or base class with only one implementation, for example a `Store` interface and an in-memory class so a database can be swapped in later?",
+      "rules": [
+        "core.2"
+      ],
+      "tier": "must",
+      "yes_when": "Links and counts are kept by one concrete store, created by a function or module, with no interface or base class over it."
+    },
+    {
+      "dimension": "scope",
+      "id": "scope.matches_approved",
+      "key_phrase": "Approval covers the contract or data shape that was shown, nothing more.",
+      "look_at": "The approved proposal, compared with the server code, `package.json`, and any API description in the workspace",
+      "no_when": "Something the proposal named is renamed, takes another shape or status, uses a different store (for example in-memory where a file was proposed), or is missing.",
+      "polarity": "positive",
+      "question": "Do the routes, request and response shapes, storage, and scripts in the build match what the approved proposal showed?",
+      "rules": [
+        "contract-first.3"
+      ],
+      "tier": "must",
+      "yes_when": "Each route, field, status, storage choice, and script the proposal named is built as shown. Extra additions do not decide this item. If the earlier reply built the feature instead of proposing it, judge against the request alone."
+    },
+    {
+      "dimension": "boundaries",
+      "extends": "boundaries.parse_at_boundary",
+      "id": "boundaries.url_parsed_at_entry",
+      "key_phrase": "Parse or validate it before use.",
+      "look_at": "The create-link handler, the function it calls to check the URL, and the redirect handler",
+      "no_when": "The raw submitted string is stored or redirected to, the scheme check relies only on a prefix or regular expression, or checks are split between create and redirect.",
+      "polarity": "positive",
+      "question": "Is the submitted long URL parsed once, where the create request enters, into an absolute `http` or `https` URL before it is stored, so the redirect only ever sends a stored, checked URL?",
+      "rules": [
+        "core.7",
+        "domain-modeling.4"
+      ],
+      "tier": "must",
+      "yes_when": "The handler parses the value with a URL parser such as `new URL` (not a regular expression alone), checks the scheme, and stores only the result. The redirect reads that stored value without re-checking."
+    },
+    {
+      "dimension": "boundaries",
+      "id": "boundaries.html_escaped",
+      "key_phrase": "Treat input that crosses a trust boundary as untrusted",
+      "look_at": "Every place the server builds HTML, such as the result after shortening and any click-count page",
+      "no_when": "A submitted or stored long URL, or a value built from a request header such as the short link's host, is put into HTML by plain string concatenation or interpolation without escaping.",
+      "polarity": "positive",
+      "question": "Does every HTML response escape each value that comes from the request (the body, or headers such as Host) or from a stored link before putting it into the markup?",
+      "rules": [
+        "core.7"
+      ],
+      "tier": "must",
+      "yes_when": "Such values are HTML-escaped, rendered through a template engine that escapes by default, or left out of HTML responses. Slugs the server generates from a fixed safe alphabet need no escaping."
+    },
+    {
+      "dimension": "boundaries",
+      "id": "boundaries.bad_body_4xx",
+      "key_phrase": "Use `4xx` for consumer-side conditions such as invalid input",
+      "look_at": "How the create handler reads and parses the request body, and what it returns when that fails",
+      "no_when": "A parse error is thrown out of the handler unhandled, ends as a 500, or leaves the request hanging.",
+      "polarity": "positive",
+      "question": "Does a malformed or incomplete create request, such as invalid JSON or a body with no URL, get a 4xx response rather than a 500 or a crashed process?",
+      "rules": [
+        "api.3"
+      ],
+      "tier": "must",
+      "yes_when": "Body parsing failures and a missing URL field lead to a 4xx response."
+    },
+    {
+      "dimension": "boundaries",
+      "extends": "boundaries.no_swallowed_errors",
+      "id": "boundaries.no_swallowed_errors",
+      "key_phrase": "Every catch does one of those or re-raises with context, preserving the original cause.",
+      "look_at": "Every catch, except, or error callback in the diff",
+      "no_when": "A catch logs and continues, returns a default that hides the failure from the caller, or drops the original cause.",
+      "polarity": "negative",
+      "question": "Does NOT catch an error without recovering, translating, retrying, terminating, or re-raising it with the original cause?",
+      "rules": [
+        "error-handling.2"
+      ],
+      "tier": "must",
+      "yes_when": "Each catch decides something or re-raises with the cause attached."
+    },
+    {
+      "dimension": "proof",
+      "extends": "proof.rule_asserted",
+      "id": "proof.redirect_and_count_asserted",
+      "key_phrase": "Each test asserts a business rule from the acceptance criteria or spec, with expected values taken from there, not from the code.",
+      "look_at": "Test files the diff adds or changes",
+      "no_when": "No test follows a short link, or a test checks the redirect status without its target, or never checks the count.",
+      "polarity": "positive",
+      "question": "Does at least one test create a short link, visit it, and assert both that it redirects to the submitted long URL and that its click count rose by the number of visits?",
+      "rules": [
+        "proof.3"
+      ],
+      "tier": "must",
+      "yes_when": "A test checks the redirect's target URL and the click count after a known number of visits, through the app's own routes or functions."
+    },
+    {
+      "dimension": "proof",
+      "id": "proof.unsafe_targets_tested",
+      "key_phrase": "ships with a negative test that fails on the unguarded code and passes with the guard",
+      "look_at": "Test files the diff adds",
+      "no_when": "No test submits an unsafe target, or the test only checks that safe URLs work.",
+      "polarity": "positive",
+      "question": "Is there a test that submits a `javascript:` URL or another non-http(s) target and asserts that it is refused?",
+      "rules": [
+        "security.3"
+      ],
+      "tier": "must",
+      "yes_when": "A test sends at least one script-scheme or otherwise non-http(s) target and checks the rejection."
+    },
+    {
+      "dimension": "proof",
+      "extends": "proof.real_code",
+      "id": "proof.real_code",
+      "key_phrase": "Use the real code a test calls; mock only the network and filesystem, or write down why.",
+      "look_at": "Mocks, stubs, and spies in the test files the diff adds or changes",
+      "no_when": "Tests mock the repo's own modules without a stated reason.",
+      "polarity": "positive",
+      "question": "Do the new tests call the real code, mocking only the network and filesystem or saying why?",
+      "rules": [
+        "proof.4"
+      ],
+      "tier": "quality",
+      "yes_when": "Tests exercise the repo's own code for real."
+    },
+    {
+      "dimension": "proof",
+      "extends": "proof.no_weak_tests",
+      "id": "proof.no_weak_tests",
+      "key_phrase": "A test that would still pass if the rule were wrong proves nothing",
+      "look_at": "Every new test's assertions",
+      "no_when": "A new test only checks for no error, a status code, or a field's presence.",
+      "polarity": "negative",
+      "question": "Does NOT include a new test whose only assertions are that no error occurred, a status code, or that a field exists?",
+      "rules": [
+        "proof.3"
+      ],
+      "tier": "quality",
+      "yes_when": "Every new test asserts more than that no error occurred, a status code, or a field's presence."
+    },
+    {
+      "dimension": "report",
+      "extends": "report.attention_first",
+      "id": "report.attention_first",
+      "key_phrase": "Report what needs their attention first",
+      "look_at": "The opening of the agent's final message",
+      "no_when": "Decisions or risks appear only after the change list, or not at all.",
+      "polarity": "positive",
+      "question": "Does the final message open with what needs the user's attention (decisions, risks, unproven points) before describing the changes?",
+      "rules": [
+        "core.5"
+      ],
+      "tier": "quality",
+      "yes_when": "The first part names what the user must decide or watch, or says plainly that nothing needs attention."
+    },
+    {
+      "dimension": "report",
+      "id": "report.storage_lifetime",
+      "key_phrase": "Report what needs their attention first",
+      "look_at": "The agent's final message, compared with how the code stores links",
+      "no_when": "The message does not say, or says links persist when the code keeps them only in memory.",
+      "polarity": "positive",
+      "question": "Does the final message say where links and click counts are kept and whether they survive a restart?",
+      "rules": [
+        "core.5"
+      ],
+      "tier": "quality",
+      "yes_when": "The message names the storage and states whether a restart keeps or loses the links and counts, and the code agrees."
+    },
+    {
+      "dimension": "report",
+      "extends": "report.criteria_listed",
+      "id": "report.criteria_listed",
+      "key_phrase": "List each acceptance criterion with its check and result",
+      "look_at": "The agent's final message, compared with the brief (paste a long URL on a web page and get a short link, the short link redirects, click counts are visible, runs on Node 22, listens on `PORT`) and the approved proposal",
+      "no_when": "Some requirements go unmentioned, or the message only says that tests pass without tying them to the requirements.",
+      "polarity": "positive",
+      "question": "For each of the request's requirements, does the final message say whether it was checked and how, or say that it was not checked?",
+      "rules": [
+        "proof.11"
+      ],
+      "tier": "must",
+      "yes_when": "Every requirement is covered, in any wording or format, with how it was checked or a plain statement that it was not."
+    },
+    {
+      "dimension": "report",
+      "extends": "report.claims_true",
+      "id": "report.claims_true",
+      "key_phrase": "what proves it",
+      "look_at": "Tests and files named in the agent's final message, compared with the final workspace",
+      "no_when": "The message names a test or file that is missing or does something else.",
+      "polarity": "positive",
+      "question": "Does every test and file the final message names exist in the diff or the repository, and do what the message says?",
+      "rules": [
+        "core.5"
+      ],
+      "tier": "must",
+      "yes_when": "Each named test and file exists and does what the message says."
+    }
+  ]
+}

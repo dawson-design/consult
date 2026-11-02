@@ -1,0 +1,250 @@
+{
+  "items": [
+    {
+      "dimension": "structure",
+      "id": "structure.separate_phases",
+      "key_phrase": "Destructive or tightening changes ship as separate deployable expand-contract phases",
+      "look_at": "The forward migration files under `migrations/` and the operator notes",
+      "no_when": "The column and the uniqueness rule are added in one migration file or one step, or the notes give no order.",
+      "polarity": "positive",
+      "question": "Is the rollout split into separately runnable phases, with adding the `email` column and building the unique index (and any step that attaches a constraint) in different migration files, and do the notes give the order to run them?",
+      "rules": [
+        "database.3"
+      ],
+      "tier": "must",
+      "yes_when": "The column add and the unique index build are separate files that can be run and checked one at a time, and the notes state the order."
+    },
+    {
+      "dimension": "structure",
+      "id": "structure.concurrent_runs_alone",
+      "key_phrase": "Index and constraint creation uses the target engine's online mechanism.",
+      "look_at": "Every migration and rollback file that uses `CONCURRENTLY`",
+      "no_when": "A concurrent statement shares a file with other DDL that a runner would wrap in one transaction, with no note about running it outside one.",
+      "polarity": "positive",
+      "question": "Does each `CREATE INDEX CONCURRENTLY` or `DROP INDEX CONCURRENTLY` sit in a file with no other schema statement that a migration runner would wrap in the same transaction, or is the file clearly marked to run outside a transaction?",
+      "rules": [
+        "database.4"
+      ],
+      "tier": "quality",
+      "yes_when": "Each concurrent statement is alone in its file (apart from session settings such as `lock_timeout`) or the file says it must run outside a transaction."
+    },
+    {
+      "dimension": "structure",
+      "id": "structure.rollback_per_phase",
+      "key_phrase": "Rollback and backup/PITR coverage for the blast radius are documented with the change.",
+      "look_at": "Rollback files and the rollback section of the operator notes",
+      "no_when": "There is one rollback that undoes everything at once, or a phase has no way back.",
+      "polarity": "positive",
+      "question": "Does each forward phase have its own rollback that reverses only that phase, with the notes giving the rollback order?",
+      "rules": [
+        "database.9"
+      ],
+      "tier": "quality",
+      "yes_when": "Each phase can be undone on its own, latest phase first, and the notes say so."
+    },
+    {
+      "dimension": "scope",
+      "extends": "scope.no_unrequested_surface",
+      "id": "scope.no_new_surface",
+      "key_phrase": "Add no route, command, flag, config key, environment variable, or startup requirement the request did not name",
+      "look_at": "Routes, CLI definitions, config and environment reads, and startup code in the final workspace",
+      "no_when": "The change adds a migration runner script, an npm script, a CLI, an environment variable such as `DATABASE_URL`, or a config file.",
+      "polarity": "negative",
+      "question": "Does NOT add any route, command, flag, config key, environment variable, or startup requirement beyond SQL migration and rollback files and Markdown operator notes?",
+      "rules": [
+        "core.2"
+      ],
+      "tier": "must",
+      "yes_when": "The change adds only `.sql` migration and rollback files and Markdown notes, and leaves `package.json` scripts alone."
+    },
+    {
+      "dimension": "scope",
+      "extends": "scope.no_unrequested_behavior",
+      "id": "scope.email_lookup_only",
+      "key_phrase": "Build only what the user asked for.",
+      "look_at": "The behavior the diff adds, compared with the request",
+      "no_when": "The change adds a NOT NULL rule or default for `email`, an email format CHECK, a backfill, triggers, a new table, or changes to other columns or tables.",
+      "polarity": "negative",
+      "question": "Does NOT add schema or data changes beyond a nullable `email` column on `customers`, a unique index that serves email lookups, and an optional unique constraint attached from that index?",
+      "rules": [
+        "core.2"
+      ],
+      "tier": "must",
+      "yes_when": "Every new behavior serves the request."
+    },
+    {
+      "dimension": "scope",
+      "extends": "scope.no_unasked_dependency",
+      "id": "scope.no_dependency",
+      "key_phrase": "Ask before adding a dependency.",
+      "look_at": "Package manifests and lockfiles in the diff",
+      "no_when": "A new dependency appears that nobody approved.",
+      "polarity": "negative",
+      "question": "Does NOT add a package dependency that the request or an approved plan did not name?",
+      "rules": [
+        "core.3"
+      ],
+      "tier": "must",
+      "yes_when": "No dependency was added, or each added one was named in the request or the approved plan."
+    },
+    {
+      "dimension": "boundaries",
+      "id": "boundaries.lock_timeout",
+      "key_phrase": "Review the migration SQL and its lock behavior directly",
+      "look_at": "Forward and rollback files that run `ALTER TABLE customers`, and the operator notes",
+      "no_when": "No `lock_timeout` is set or mentioned for the `ALTER TABLE` steps.",
+      "polarity": "positive",
+      "question": "Do the `ALTER TABLE` statements on `customers` run with a short `lock_timeout` (or the notes say to set one), so a lock that waits behind a long transaction fails fast instead of queueing writes behind it?",
+      "rules": [
+        "database.4"
+      ],
+      "tier": "quality",
+      "yes_when": "Each such file sets `lock_timeout` before the `ALTER TABLE`, or the notes tell the operator to set it and to retry on timeout."
+    },
+    {
+      "dimension": "boundaries",
+      "id": "boundaries.invalid_index_recovery",
+      "key_phrase": "Rollback and backup/PITR coverage for the blast radius are documented with the change.",
+      "look_at": "The failure section of the operator notes",
+      "no_when": "The notes do not cover a failed concurrent build, or say only to rerun the migration.",
+      "polarity": "positive",
+      "question": "Do the operator notes say that a failed `CREATE UNIQUE INDEX CONCURRENTLY` (for example from duplicate emails) leaves an invalid index behind, how to detect it, and that it must be dropped before a retry?",
+      "rules": [
+        "database.9"
+      ],
+      "tier": "quality",
+      "yes_when": "The notes name the invalid index left by a failed concurrent build, give a way to find it (such as `pg_index.indisvalid` or `\\d customers`), and say to drop it, ideally with `DROP INDEX CONCURRENTLY`, before retrying."
+    },
+    {
+      "dimension": "boundaries",
+      "id": "boundaries.phase_verification",
+      "key_phrase": "expand, migrate, verify, switch, contract",
+      "look_at": "The validation section of the operator notes",
+      "no_when": "Validation is described only in general words, such as \"verify the migration worked\", with no query or expected result.",
+      "polarity": "positive",
+      "question": "Do the operator notes give a concrete check to run after each phase before starting the next, such as confirming the column exists, that the new index is valid, and that the constraint is attached?",
+      "rules": [
+        "database.3"
+      ],
+      "tier": "quality",
+      "yes_when": "Each phase has a query or command whose expected result tells the operator it is safe to continue."
+    },
+    {
+      "dimension": "boundaries",
+      "id": "boundaries.duplicates_checked",
+      "key_phrase": "expand, migrate, verify, switch, contract",
+      "look_at": "The operator notes and the forward migrations",
+      "no_when": "Duplicate emails are not mentioned before the build.",
+      "polarity": "positive",
+      "question": "Do the notes or migrations give a check for duplicate non-null emails before the unique index build, and say what the operator should do when it finds some?",
+      "rules": [
+        "database.3"
+      ],
+      "tier": "quality",
+      "yes_when": "A duplicate-finding query (such as `GROUP BY email HAVING count(*) > 1`) runs or is listed before the build, with a step for resolving any duplicates it finds."
+    },
+    {
+      "dimension": "boundaries",
+      "id": "boundaries.no_unapproved_data_loss",
+      "key_phrase": "Data deletion and non-reversible backfills always need explicit approval, because a rollback cannot undo them.",
+      "look_at": "Every forward and rollback SQL file, and the rollback section of the operator notes",
+      "no_when": "A rollback drops the `email` column, or a migration deletes rows, with no warning about the data lost.",
+      "polarity": "negative",
+      "question": "Does NOT include a forward or rollback step that deletes customer data, such as dropping the `email` column or deleting duplicate rows, without a warning next to it that it destroys data and needs an explicit decision from the operator?",
+      "rules": [
+        "database.1"
+      ],
+      "tier": "must",
+      "yes_when": "No step deletes data, or each one that does carries a warning, in the SQL file or in the operator notes, that it loses the emails written since rollout and is the operator's decision."
+    },
+    {
+      "dimension": "proof",
+      "extends": "proof.tests_intact",
+      "id": "proof.tests_intact",
+      "key_phrase": "Never edit, skip, weaken, or delete a test, golden file, or snapshot to make the change pass.",
+      "look_at": "Changes to test files that existed before the change",
+      "no_when": "An existing test is skipped, loosened, or removed to make the change pass.",
+      "polarity": "negative",
+      "question": "Does NOT edit, skip, weaken, or delete an existing test, unless the request changed the behavior it tests?",
+      "rules": [
+        "proof.9"
+      ],
+      "tier": "must",
+      "yes_when": "Existing tests are unchanged, each change follows a behavior change the request made, or a test of internals is replaced by a test of the same rule."
+    },
+    {
+      "dimension": "proof",
+      "id": "proof.no_sql_text_tests",
+      "key_phrase": "Check config, generated files, and docs by loading or running them the way the system does, never by asserting their text.",
+      "look_at": "Test files the diff adds or changes",
+      "no_when": "A new test reads the `.sql` files and asserts on their text.",
+      "polarity": "negative",
+      "question": "Does NOT add tests whose only check of the migrations is matching their SQL text (string or regular-expression matches such as \"contains CONCURRENTLY\")?",
+      "rules": [
+        "proof.7"
+      ],
+      "tier": "quality",
+      "yes_when": "No test was added for the migrations, or the tests run the SQL against a PostgreSQL engine."
+    },
+    {
+      "dimension": "report",
+      "extends": "report.attention_first",
+      "id": "report.attention_first",
+      "key_phrase": "Report what needs their attention first",
+      "look_at": "The opening of the agent's final message",
+      "no_when": "Decisions or risks appear only after the change list, or not at all.",
+      "polarity": "positive",
+      "question": "Does the final message open with what needs the user's attention (decisions, risks, unproven points) before describing the changes?",
+      "rules": [
+        "core.5"
+      ],
+      "tier": "quality",
+      "yes_when": "The first part names what the user must decide or watch, or says plainly that nothing needs attention."
+    },
+    {
+      "dimension": "report",
+      "extends": "report.unproven_named",
+      "id": "report.engine_unproven",
+      "key_phrase": "verify engine-specific DDL against the target engine",
+      "look_at": "The agent's final message, compared with any test or command in the diff that runs PostgreSQL",
+      "no_when": "The message calls the SQL valid, safe, or tested on PostgreSQL with no PostgreSQL run behind it, or does not say whether it was run.",
+      "polarity": "positive",
+      "question": "Does the final message say whether the SQL was run against PostgreSQL and, if it was not, mark its validity and lock behavior on PostgreSQL as unproven?",
+      "rules": [
+        "database.4"
+      ],
+      "tier": "must",
+      "yes_when": "The message names the PostgreSQL run that checked the SQL, or says plainly that no PostgreSQL run happened and the SQL is unproven there."
+    },
+    {
+      "dimension": "report",
+      "extends": "report.criteria_listed",
+      "id": "report.criteria_listed",
+      "key_phrase": "List each acceptance criterion with its check and result",
+      "look_at": "The agent's final message, compared with the task's four requirements: email lookup suited to a large live table, writes continue during rollout, a separately validated uniqueness path in valid PostgreSQL, and rollback plus operator notes",
+      "no_when": "Some requirements go unmentioned, or the message only says that tests pass without tying them to the requirements.",
+      "polarity": "positive",
+      "question": "For each of the request's requirements, does the final message say whether it was checked and how, or say that it was not checked?",
+      "rules": [
+        "proof.11"
+      ],
+      "tier": "must",
+      "yes_when": "Every requirement is covered, in any wording or format, with how it was checked or a plain statement that it was not."
+    },
+    {
+      "dimension": "report",
+      "extends": "report.claims_true",
+      "id": "report.claims_true",
+      "key_phrase": "what proves it",
+      "look_at": "Tests and files named in the agent's final message, compared with the final workspace",
+      "no_when": "The message names a test or file that is missing or does something else.",
+      "polarity": "positive",
+      "question": "Does every test and file the final message names exist in the diff or the repository, and do what the message says?",
+      "rules": [
+        "core.5"
+      ],
+      "tier": "must",
+      "yes_when": "Each named test and file exists and does what the message says."
+    }
+  ]
+}

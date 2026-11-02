@@ -38,7 +38,7 @@ paths:
           application/x-www-form-urlencoded: { schema: { type: object, required: [url], properties: { url: { type: string } } } }
       responses:
         "201": { description: Created; JSON {slug, shortUrl} or an HTML fragment }
-        "400": { description: The URL is not an absolute http(s) URL }
+        "400": { description: "JSON {error}: the body is not valid JSON, or the URL is not an absolute http(s) URL" }
   /{slug}:
     get:
       responses:
@@ -97,10 +97,20 @@ async function readBody(req) {
   let raw = "";
   for await (const chunk of req) raw += chunk;
   const type = req.headers["content-type"] ?? "";
-  if (type.includes("json")) {
-    try { return JSON.parse(raw || "{}"); } catch { return {}; }
+  if (!type.includes("json")) return Object.fromEntries(new URLSearchParams(raw));
+  try {
+    return JSON.parse(raw || "{}");
+  } catch {
+    return null;
   }
-  return Object.fromEntries(new URLSearchParams(raw));
+}
+
+const HTML_ESCAPES = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
+const escapeHtml = (text) => text.replace(/[&<>"']/g, (c) => HTML_ESCAPES[c]);
+
+function sendError(res, status, message) {
+  res.writeHead(status, { "content-type": "application/json" });
+  res.end(JSON.stringify({ error: message }));
 }
 
 export function createServer(links = createLinks()) {
@@ -116,15 +126,14 @@ export function createServer(links = createLinks()) {
       return res.end(JSON.stringify(links.all()));
     }
     if (req.method === "POST" && pathname === "/links") {
-      const target = parseTarget((await readBody(req)).url);
-      if (!target) {
-        res.writeHead(400, { "content-type": "application/json" });
-        return res.end(JSON.stringify({ error: "url must be an absolute http or https URL" }));
-      }
+      const body = await readBody(req);
+      if (body === null) return sendError(res, 400, "request body must be valid JSON");
+      const target = parseTarget(body.url);
+      if (!target) return sendError(res, 400, "url must be an absolute http or https URL");
       const slug = links.add(target);
       const shortUrl = `http://${req.headers.host}/${slug}`;
       res.writeHead(201, { "content-type": wantsJson ? "application/json" : "text/html; charset=utf-8" });
-      return res.end(wantsJson ? JSON.stringify({ slug, shortUrl }) : `<p><a href="/${slug}">${shortUrl}</a></p>`);
+      return res.end(wantsJson ? JSON.stringify({ slug, shortUrl }) : `<p><a href="/${slug}">${escapeHtml(shortUrl)}</a></p>`);
     }
     const target = req.method === "GET" ? links.visit(pathname.slice(1)) : null;
     if (target) {
@@ -145,6 +154,7 @@ JS
 cat > test/links.test.js <<'JS'
 import test from "node:test";
 import assert from "node:assert/strict";
+import http from "node:http";
 import { createServer } from "../src/server.js";
 
 async function withServer(fn) {
@@ -175,6 +185,43 @@ test("refuses targets that are not absolute http(s) URLs", () =>
     for (const bad of ["javascript:alert(1)", "data:text/html,x", "//evil.example", "https:evil.example"]) {
       assert.equal((await shorten(base, bad)).status, 400, bad);
     }
+  }));
+
+test("says why when the body is not valid JSON", () =>
+  withServer(async (base) => {
+    const response = await fetch(`${base}/links`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: "{not json",
+    });
+    assert.equal(response.status, 400);
+    assert.deepEqual(await response.json(), { error: "request body must be valid JSON" });
+  }));
+
+test("escapes the short link it writes into the page", () =>
+  withServer(async (base) => {
+    // fetch drops a custom Host header, so send the request with node:http.
+    const { port } = new URL(base);
+    const html = await new Promise((resolve, reject) => {
+      const request = http.request(
+        {
+          host: "127.0.0.1",
+          port,
+          path: "/links",
+          method: "POST",
+          headers: { host: 'x"><script>', "content-type": "application/x-www-form-urlencoded" },
+        },
+        (response) => {
+          let text = "";
+          response.on("data", (chunk) => (text += chunk));
+          response.on("end", () => resolve(text));
+        },
+      );
+      request.on("error", reject);
+      request.end("url=https%3A%2F%2Fexample.com%2Fa");
+    });
+    assert.ok(html.includes("x&quot;&gt;&lt;script&gt;"), html);
+    assert.ok(!html.includes("<script>"), html);
   }));
 JS
 cat > README.md <<'MD'

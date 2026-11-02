@@ -1,0 +1,163 @@
+{
+  "items": [
+    {
+      "id": "structure.pure_merge",
+      "extends": "structure.pure_calculation",
+      "question": "Do `mergeProfile` and the helpers it calls build a new result without changing `existing`, `patch`, or anything nested inside them, and without reading module state, the clock, or other outside sources?",
+      "look_at": "`mergeProfile` and its helpers in `src/profile.js`",
+      "yes_when": "The merge writes only to objects and arrays it creates itself.",
+      "no_when": "It assigns into `existing`, `patch`, or one of their nested objects or arrays (for example `Object.assign(existing.preferences, patch.preferences)`), or reads or writes module state."
+    },
+    {
+      "id": "structure.named_merge_check",
+      "dimension": "structure",
+      "rules": [
+        "core.4"
+      ],
+      "key_phrase": "gets a name that says what it means in plain English",
+      "question": "Is the decision of which values merge key by key made by one named check (such as an `isPlainObject` predicate) that excludes arrays and `null`, rather than repeated inline `typeof` and `Array.isArray` conditions?",
+      "polarity": "positive",
+      "tier": "quality",
+      "look_at": "The conditions in `src/profile.js` that choose between merging and replacing a value",
+      "yes_when": "One named predicate or named local decides it, and it treats arrays and `null` as values to replace.",
+      "no_when": "The same compound type condition is written inline in more than one place, or the check lets arrays or `null` be merged key by key."
+    },
+    {
+      "id": "structure.patch_values_copied",
+      "dimension": "structure",
+      "rules": [
+        "domain-modeling.2"
+      ],
+      "key_phrase": "Prefer immutable records, sums, and maps.",
+      "question": "Does the result hold its own copies of the arrays and objects it takes from `patch`, so that changing the result later cannot change the patch?",
+      "polarity": "positive",
+      "tier": "quality",
+      "look_at": "How `src/profile.js` places patch arrays and objects into the result",
+      "yes_when": "Patch arrays and objects are copied (for example with `map`, a spread, a recursive copy, or `structuredClone`) before they go into the result.",
+      "no_when": "The result holds the same array or object instance as `patch`, such as `result.tags = patch.tags`."
+    },
+    {
+      "id": "scope.no_new_surface",
+      "extends": "scope.no_unrequested_surface",
+      "question": "Does NOT add a flag or option (such as an array merge mode or a third parameter), config key, environment variable, or startup requirement? The task names only `mergeProfile(existing, patch)`.",
+      "yes_when": "`mergeProfile` keeps its two parameters and the change adds no setting.",
+      "no_when": "The change adds a third parameter, an options object, or any setting."
+    },
+    {
+      "id": "scope.only_requested_behavior",
+      "extends": "scope.no_unrequested_behavior",
+      "question": "Does NOT add merge behavior the task did not ask for, such as deleting a key when the patch value is `null`, concatenating arrays or merging them by index, an allowlist of profile fields, or dropping fields that are not prototype keys?",
+      "yes_when": "Plain objects merge key by key, every other patch value (arrays and `null` included) replaces the existing value, and only prototype keys are blocked.",
+      "no_when": "The change adds merge semantics or field filtering beyond the task, such as `null` meaning delete, array concatenation, or a list of allowed profile keys."
+    },
+    {
+      "id": "scope.no_dependency",
+      "extends": "scope.no_unasked_dependency"
+    },
+    {
+      "id": "scope.no_generic_helper",
+      "extends": "scope.no_speculative_abstraction",
+      "tier": "quality",
+      "question": "Does NOT add a new module or exported general-purpose helper (such as a reusable `deepMerge` or `isSafeKey` utility in its own file) that only `mergeProfile` uses? Private functions inside `src/profile.js` do not count.",
+      "look_at": "New files and new exports in the diff, and their call sites",
+      "yes_when": "The merge logic lives in `src/profile.js`, with any helpers private to it.",
+      "no_when": "A new utility module or exported helper is added whose only caller is `mergeProfile`."
+    },
+    {
+      "id": "boundaries.patch_checked",
+      "extends": "boundaries.parse_at_boundary",
+      "question": "Does `mergeProfile` check that `patch` is a plain JSON object before merging, and reject or explicitly handle `null`, an array, or a primitive?",
+      "look_at": "The start of `mergeProfile` in `src/profile.js`",
+      "yes_when": "A non-object patch is refused with an error, or handled by one stated rule, before any of its keys are read.",
+      "no_when": "A `null`, array, or string patch is iterated or spread as if it were an object, or fails with a native TypeError from inside the merge."
+    },
+    {
+      "id": "boundaries.guard_every_level",
+      "dimension": "boundaries",
+      "rules": [
+        "core.7",
+        "security.1"
+      ],
+      "key_phrase": "Treat input that crosses a trust boundary as untrusted, even when the request does not mention security.",
+      "question": "Is the prototype-key guard applied at every nesting level, so that a parsed patch such as `{\"preferences\": {\"__proto__\": {\"polluted\": true}}}` cannot change `Object.prototype` or the prototype of any object in the result?",
+      "polarity": "positive",
+      "tier": "must",
+      "look_at": "The key handling in every recursive step of the merge in `src/profile.js`, including any copying of nested patch values",
+      "yes_when": "Every level skips or rejects `__proto__` (and `constructor` or `prototype` where they could reach a prototype), or writes keys in a way that cannot set a prototype, such as `Object.defineProperty`, including inside nested objects and objects copied from arrays.",
+      "no_when": "The guard runs only on top-level keys, or a nested `__proto__` key can reach an assignment such as `result[key] = value` that sets a prototype."
+    },
+    {
+      "id": "proof.nested_regression",
+      "extends": "proof.regression_test",
+      "question": "Is there a test that patches one nested value, such as `preferences.email`, and asserts that sibling nested values, such as `preferences.theme`, are kept, which would fail on the original shallow spread?",
+      "yes_when": "A test merges a patch that changes one nested setting and asserts the whole nested object, including the untouched sibling.",
+      "no_when": "No test patches a nested value, or the test checks only the changed value, which the original code also got right."
+    },
+    {
+      "id": "proof.arrays_and_inputs",
+      "extends": "proof.rule_asserted",
+      "question": "Does a test assert that an array in the patch replaces the existing array, and that `existing` is unchanged after the merge?",
+      "yes_when": "A test checks the merged array equals the patch's array, and compares `existing` after the merge with its original values.",
+      "no_when": "No test covers array replacement, or no test checks that `existing` is left unchanged."
+    },
+    {
+      "id": "proof.guard_negative_test",
+      "dimension": "proof",
+      "rules": [
+        "security.3"
+      ],
+      "key_phrase": "ships with a negative test that fails on the unguarded code and passes with the guard",
+      "question": "Is there a test that merges a patch built with `JSON.parse` containing a `__proto__` key and asserts that neither `Object.prototype` nor the result's prototype gained the attacker's property?",
+      "polarity": "positive",
+      "tier": "must",
+      "look_at": "Prototype-pollution tests in the test files the diff adds or changes, and the merge code they exercise",
+      "yes_when": "The patch comes from `JSON.parse` (so `__proto__` is a real key), and the test asserts `Object.prototype` and the merged result's prototype are unchanged.",
+      "no_when": "There is no such test, or the patch is an object literal such as `{ __proto__: {...} }`, which sets the patch's own prototype instead of creating a key and so tests nothing."
+    },
+    {
+      "id": "proof.nested_guard_test",
+      "dimension": "proof",
+      "rules": [
+        "security.3"
+      ],
+      "key_phrase": "Every custom guard (sanitizer, validator, prototype guard, redirect check, redaction helper, crypto wrapper) ships with a negative test",
+      "question": "Does a test send a prototype key below the top level, such as `__proto__` inside `preferences`, and assert that no prototype changed?",
+      "polarity": "positive",
+      "tier": "quality",
+      "look_at": "Prototype-pollution tests in the test files the diff adds or changes",
+      "yes_when": "A parsed patch carries `__proto__` or `constructor.prototype` inside a nested object, and the test checks the prototypes afterward.",
+      "no_when": "Every pollution test puts the attack key only at the top level."
+    },
+    {
+      "id": "proof.tests_intact",
+      "extends": "proof.tests_intact"
+    },
+    {
+      "id": "report.attention_first",
+      "extends": "report.attention_first"
+    },
+    {
+      "id": "report.criteria_listed",
+      "extends": "report.criteria_listed",
+      "look_at": "The agent's final message, compared with the task's requirements: nested settings preserved, predictable arrays, input immutability, and JSON values, and untrusted keys unable to affect global prototypes"
+    },
+    {
+      "id": "report.claims_true",
+      "extends": "report.claims_true"
+    },
+    {
+      "id": "report.cause_named",
+      "dimension": "report",
+      "rules": [
+        "debugging.4"
+      ],
+      "key_phrase": "The root cause is named in one sentence",
+      "question": "Does the final message name the cause: the shallow spread `{ ...existing, ...patch }` replaced a whole nested object, such as `preferences`, with the patch's partial version?",
+      "polarity": "positive",
+      "tier": "quality",
+      "look_at": "The agent's final message, compared with the original `src/profile.js`",
+      "yes_when": "The message says, in its own words, that the top-level spread replaced nested objects instead of merging them.",
+      "no_when": "The message names no cause, names a different one, or only describes the new code."
+    }
+  ]
+}

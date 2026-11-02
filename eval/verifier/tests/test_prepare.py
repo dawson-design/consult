@@ -90,6 +90,11 @@ class CodePrepareTests(PrepareCase):
 
     task = "api-error-contract"
 
+    def setUp(self) -> None:
+        super().setUp()
+        # Start from a task without a rubric; give_rubric adds one.
+        (self.tests / "rubric" / "items.json").unlink(missing_ok=True)
+
     def give_rubric(self) -> None:
         (self.tests / "rubric" / "items.json").write_text('{"items": []}\n')
 
