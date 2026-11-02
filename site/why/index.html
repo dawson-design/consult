@@ -1,0 +1,139 @@
+<!doctype html>
+<!-- why/index.html: the "Why Consult" essay, written by hand in the maintainer's voice. It shares
+     the skills page's book layout, margin rail (rail.js), and styles (site.css), and plays the
+     Simple Made Easy talk only on request (video.js). The site nav and the home page link here. -->
+<html lang="en" class="no-js">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Why Consult</title>
+<meta name="description" content="Understand your code again. How Consult turns your agent into an expert you consult on every change, and the ideas it is built on.">
+<link rel="canonical" href="https://dawson-design.github.io/consult/why/">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@800..900&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="../base.css">
+<link rel="stylesheet" href="../site.css">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs><g id="q-open" transform="translate(0 10)"><path d="M18 20 H30 V32 A12 12 0 0 1 18 44 Z" transform="rotate(180 24 32)"/><path d="M34 20 H46 V32 A12 12 0 0 1 34 44 Z" transform="rotate(180 40 32)"/></g><g id="q-close" transform="translate(-2.5 -10)"><path d="M54 56 H66 V68 A12 12 0 0 1 54 80 Z"/><path d="M70 56 H82 V68 A12 12 0 0 1 70 80 Z"/></g></defs></svg>
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><div class="wrap wrap-wide top-inner">
+<a class="brand" href="../" aria-label="Consult home"><svg class="logo" viewBox="18 30 61.5 40" aria-hidden="true" focusable="false"><use href="#q-open" class="q-open"/><use href="#q-close" class="q-close"/></svg>consult</a>
+<nav class="nav" aria-label="Main"><a href="../skills/">Skills</a><a href="./" aria-current="page">Why Consult</a><a class="star" href="https://github.com/dawson-design/consult"><svg class="gh" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"/></svg>Star on GitHub</a></nav>
+</div></header>
+<main id="main">
+<article class="catalog essay"><div class="wrap wrap-wide catalog-grid">
+<div class="catalog-text">
+<h1>Understand your code again</h1>
+<p>METR is a research group that evaluates AI models. In August 2026, it <a href="https://metr.org/blog/2026-08-31-security-update/">disclosed</a> that one of its researchers had put an AI-built app online behind a Google login. A flaw in the code quietly switched the login off. An attacker got in, took an API key, and over about three weeks used up model credits worth around $600,000. The app was meant to be protected. The code did something else.</p>
+<p>If people who evaluate AI for a living can miss that, anyone can. Agents now produce code faster than anyone can absorb it, and failures like this one hide in the gap. Consult turns your agent into an expert you consult. It plans each change with you, builds in small tested steps, has the work checked, and walks you through the result. You give up a little speed, and you get code you can explain.</p>
+
+<h2 id="problem">A mile wide and an inch deep</h2>
+<p>Agents let you ship more, and the pressure to ship comes from your team, your manager, or yourself on a side project. As the code grows, the share of it you understand shrinks. If you arrived after the foundations were laid, you also never learned why the code has its shape. Your understanding ends up a mile wide and an inch deep, and you can drown in two inches of water.</p>
+<p>In <em>Programming as Theory Building</em> (1985), Peter Naur argued that a program is a theory held in its builders’ heads, and the code records only part of it. The theory is what lets you change a program safely: why it is shaped this way, and what breaks if you move a piece. When an agent lays the foundations, its theory ends with the session, and unless you were there, you never form one of your own.</p>
+<p>A small <a href="https://www.anthropic.com/research/AI-assistance-coding-skills">Anthropic study</a> suggests the cost. Among 52 mostly junior engineers, those who learned a new library with AI scored 50% on a quiz about it, against 67% for those who coded by hand. The biggest gap was in debugging, the skill you need when code behaves differently from how you believe it does. The METR incident had its own causes, but it shows how expensive that kind of wrong belief can get.</p>
+
+<h2 id="consult">An expert to consult on every change</h2>
+<p>It does not have to go this way. The central finding of <a href="https://cloud.google.com/blog/products/ai-machine-learning/announcing-the-2025-dora-report">Google’s 2025 DORA research</a> is that AI amplifies what a team already has. With good tests and fast feedback, AI makes you faster. Without them, you ship more change, and more of it breaks.</p>
+<p>How you use the agent matters too. In the Anthropic study, engineers who asked the AI questions and had it explain its code scored 65% or more, about the same as those who coded by hand. Those who handed it the whole task scored below 40%. The groups were small and the study cannot prove cause. Still, it points to a practical choice: treat the AI as an expert to consult.</p>
+<p>That idea gave Consult its name. A frontier agent has read more about software engineering than any one person could. Consult distils that knowledge to what high-quality engineering needs and writes it into the agent’s skills, so it applies to every change. It then brings that knowledge to you as a conversation.</p>
+<p>For a change to that login, the conversation might start like this:</p>
+<figure class="plan">
+<dl>
+<dt>Touches</dt><dd>The auth middleware and the admin routes.</dd>
+<dt>May affect</dt><dd>The health check, which skips auth today.</dd>
+<dt>Existing rule</dt><dd>The session check also lives in the API layer. I suggest moving it to one place instead of adding a third copy.</dd>
+<dt>Your decision</dt><dd>If the identity provider is unreachable, should requests be refused, or should current sessions keep working?</dd>
+<dt>Proof</dt><dd>A test that a stranger cannot get past the login, and a test that the app refuses to start when the auth config is missing.</dd>
+</dl>
+<figcaption>An illustration. The agent’s wording varies, but it covers the same ground: what changes, what else it affects, what you need to decide, and how it will be checked.</figcaption>
+</figure>
+<p>The agent then builds in small steps, with a check for each requirement. A second agent with a fresh context tries to break the work, and the first explains what changed, why, and what proves it.</p>
+<p>Those checks show that the code works. Your understanding comes from the conversation, and Consult cannot do that part for you. Read the plan, make the decisions, and ask about anything you could not explain to a teammate.</p>
+<p>Careful engineers have always worked this way, and Consult makes it your agent’s default. Each change takes longer than letting the agent run alone. But the time goes on decisions you would otherwise make later, in code you no longer understand.</p>
+
+<h2 id="north-star">The north star: Simple Made Easy</h2>
+<p>In <a href="https://www.youtube.com/watch?v=SxdOUGdseq4">Simple Made Easy</a>, Rich Hickey separates two words we use as if they meant the same thing. <em>Simple</em> means not tangled together: one role, one concept, one job. <em>Easy</em> means close at hand and familiar. Easy things can still be complex, and simple things can take work to reach.</p>
+<p>Code spreads wide when easy wins over simple, and agents excel at easy. They learned from vast amounts of public code, so they reach first for the pattern they saw most, which may not be the best one. Copying a rule is easy. Giving it one home is simple, but it takes a decision about where the rule belongs, and agents skip that step.</p>
+<p>So the rule Consult puts above every other is its Iron Law: <q>Complexity is the enemy: keep software simple enough to understand, change, and prove.</q> Much of the rest follows from it. Keep unrelated parts separate. Make state and effects explicit. Build only what was asked for. Before adding a layer, name what it couples to.</p>
+<figure class="video">
+<a class="video-poster" href="https://www.youtube.com/watch?v=SxdOUGdseq4" data-video="SxdOUGdseq4" data-title="Simple Made Easy, Rich Hickey, Strange Loop 2011">
+<span class="video-play" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M8 5v14l11-7z"/></svg></span>
+<span class="video-text"><span class="vh video-verb">Watch </span><span class="video-title">Simple Made Easy</span><span class="vh">, </span><span class="video-meta">Rich Hickey<span aria-hidden="true"> · </span><span class="vh">, </span>Strange Loop 2011<span aria-hidden="true"> · </span><span class="vh">, </span>1 hour</span><span class="vh video-where"> on YouTube</span></span>
+</a>
+<figcaption>The video comes from YouTube. Nothing loads from YouTube until you press play. You can also <a href="https://www.youtube.com/watch?v=SxdOUGdseq4">watch it on YouTube</a>.</figcaption>
+</figure>
+
+<h2 id="opinions">Defaults that suit agents</h2>
+<p>A consultant who answers every question with “it depends” is no use. Neither is an agent left to choose, which falls back on the most common pattern. Consult picks a default for the choices every project faces, based on what works best when an agent writes the code and a person has to understand it. In an existing codebase it follows what the project already uses. On new code, it starts here.</p>
+<dl class="glossary reasons">
+<dt>Group by feature</dt><dd><p>A feature’s data, rules, and tests live together, instead of spreading across controller, service, and repository folders. The agent, and you, can find one behaviour in one place and change it without touching the rest. A layer has to justify itself with a real boundary, such as a separate process, deploy, or trust boundary.</p></dd>
+<dt>Tests that read like specs</dt><dd><p>Left alone, an agent tests that its code runs, not that the feature works, and tests written by reading the code tend to confirm its bugs. Consult has the agent test each requirement through its behaviour, not its internals, and its reviews favour behaviour-style test libraries, such as RSpec for Ruby and Vitest’s <code>describe</code> and <code>it</code> for TypeScript, where each test states what the feature should do for its user. The test fails when the feature is wrong, and you can review the tests as a list of requirements.</p></dd>
+<dt>Frameworks with less to write</dt><dd><p>On a new frontend, Consult starts from a framework with the basics built in, such as Svelte, which includes scoped styles, transitions, and reactive state. Fewer add-ons should mean less for the agent to write and for you to review. This default is a judgement call, and a project that already uses React stays on React.</p></dd>
+<dt>The API spec comes first</dt><dd><p>You and the agent write the OpenAPI spec ahead of the handler, which settles the contract while it is cheap to change. New resource APIs default to JSON:API, because it already answers questions an agent would otherwise improvise for each endpoint, such as response shape, pagination, and error format.</p></dd>
+<dt>Start from a design system</dt><dd><p>An agent left to style a screen invents one-off values. Consult starts from the product’s own design system, or an established one such as IBM Carbon when there is none, so every screen uses the same tested components.</p></dd>
+<dt>One tool per job</dt><dd><p>Use uv for Python, and the framework’s own bundler for TypeScript. Every extra tool is more configuration for the agent to get wrong and for you to check.</p></dd>
+</dl>
+
+<h2 id="influences">On the shoulders of giants</h2>
+<p>Consult comes from my 25 years of writing web apps, running production systems, and building developer platforms. Like every engineer, I stand on the shoulders of people who shared what they learned, and Rich Hickey is only one of them. These are the ones the skills draw on most.</p>
+
+<h3>Programming</h3>
+<dl class="glossary">
+<dt>Rich Hickey</dt><dd><p><a href="https://www.youtube.com/watch?v=SxdOUGdseq4">Simple Made Easy</a></p><p>Simple over easy, and the Iron Law.</p></dd>
+<dt>Gary Bernhardt</dt><dd><p><a href="https://www.destroyallsoftware.com/talks/boundaries">Boundaries</a></p><p>Functional core, imperative shell: pure logic in the middle, effects at the edges.</p></dd>
+<dt>Alistair Cockburn</dt><dd><p><a href="https://alistair.cockburn.us/hexagonal-architecture">Hexagonal Architecture</a></p><p>Ports and adapters, so the core does not know about databases or HTTP.</p></dd>
+<dt>Yaron Minsky</dt><dd><p><a href="https://blog.janestreet.com/effective-ml-revisited/">Effective ML</a></p><p>Make illegal states unrepresentable.</p></dd>
+<dt>Alexis King</dt><dd><p><a href="https://lexi-lambda.github.io/blog/2019/11/05/parse-don-t-validate/">Parse, don’t validate</a></p><p>Check input once at the boundary and keep the result in a type that proves it.</p></dd>
+<dt>Scott Wlaschin</dt><dd><p><a href="https://fsharpforfunandprofit.com/series/designing-with-types/">Designing with Types</a></p><p>Domain modelling with types.</p></dd>
+<dt>Yehonathan Sharvit</dt><dd><p><a href="https://www.manning.com/books/data-oriented-programming">Data-Oriented Programming</a></p><p>Plain data, kept separate from the code that works on it.</p></dd>
+<dt>Cory Benfield</dt><dd><p><a href="https://sans-io.readthedocs.io/how-to-sans-io.html">How to sans-IO</a></p><p>Protocol logic that never touches a socket, so it can be tested alone.</p></dd>
+<dt>Michael Feathers</dt><dd><p>Working Effectively with Legacy Code</p><p>Seams, and getting untested code under test before changing it.</p></dd>
+<dt>Martin Fowler</dt><dd><p><a href="https://martinfowler.com/articles/practical-test-pyramid.html">The Practical Test Pyramid</a> and <a href="https://martinfowler.com/eaaCatalog/money.html">Money</a></p><p>Where tests belong, and money as an amount and a currency that travel together.</p></dd>
+</dl>
+
+<h3>Testing</h3>
+<dl class="glossary">
+<dt>John Hughes and Koen Claessen</dt><dd><p><a href="https://dl.acm.org/doi/10.1145/351240.351266">QuickCheck</a></p><p>Property-based testing: state the rule, let the tool find the counterexample.</p></dd>
+<dt>Sandi Metz</dt><dd><p><a href="https://www.youtube.com/watch?v=URSWYvyc42M">The Magic Tricks of Testing</a></p><p>Test what a unit does for its callers, not how it does it.</p></dd>
+<dt>Ian Cooper</dt><dd><p><a href="https://www.youtube.com/watch?v=EZ05e7EMOLM">TDD, Where Did It All Go Wrong</a></p><p>Test behaviour, not implementation details.</p></dd>
+<dt>Vladimir Khorikov</dt><dd><p><a href="https://www.manning.com/books/unit-testing">Unit Testing: Principles, Practices, and Patterns</a></p><p>Observable behaviour, and when a mock is the wrong tool.</p></dd>
+<dt>Hillel Wayne</dt><dd><p><a href="https://www.hillelwayne.com/talks/beyond-unit-tests/">Beyond Unit Tests</a></p><p>Invariants and properties as tests.</p></dd>
+<dt>Kent Beck, Simon Willison, Birgitta Böckeler, and Emily Bache</dt><dd><p>Writing on <a href="https://newsletter.kentbeck.com/p/augmented-coding-beyond-the-vibes">agents</a> and <a href="https://simonwillison.net/guides/agentic-engineering-patterns/red-green-tdd/">test-first work</a></p><p>The live debate on how tests and agents fit together. Consult sides with what they agree on: tests the agent cannot weaken are what matter.</p></dd>
+</dl>
+
+<h3>Planning</h3>
+<dl class="glossary">
+<dt>Bill Wake</dt><dd><p><a href="https://xp123.com/articles/invest-in-good-stories-and-smart-tasks/">INVEST in Good Stories</a></p><p>What makes a piece of work small and testable.</p></dd>
+<dt>Mike Cohn, Richard Lawrence, and Peter Green</dt><dd><p><a href="https://www.mountaingoatsoftware.com/agile/five-simple-but-powerful-ways-to-split-user-stories">SPIDR</a> and <a href="https://www.humanizingwork.com/the-humanizing-work-guide-to-splitting-user-stories/">the Humanizing Work guide</a> to splitting stories</p><p>Split work into thin end-to-end slices, not layers.</p></dd>
+</dl>
+
+<h3>Design and typography</h3>
+<dl class="glossary">
+<dt>Dieter Rams</dt><dd><p>Ten Principles for Good Design</p><p>Less, but better: the deletion pass on every screen.</p></dd>
+<dt>Don Norman and Nielsen Norman Group</dt><dd><p>The Design of Everyday Things and <a href="https://www.nngroup.com/articles/ten-usability-heuristics/">10 Usability Heuristics</a></p><p>Design from the user’s task, and review screens against known failures.</p></dd>
+<dt>Josef Müller-Brockmann, Emil Ruder, and Karl Gerstner</dt><dd><p>Grid Systems, Typographie, and Designing Programmes</p><p>Grids and design as a system of rules.</p></dd>
+<dt>Robert Bringhurst, Richard Rutter, and Matthew Butterick</dt><dd><p>The Elements of Typographic Style, <a href="https://webtypography.net/">its web edition</a>, and <a href="https://practicaltypography.com/">Practical Typography</a></p><p>Type scale, measure, and rhythm.</p></dd>
+<dt>IBM Carbon and GOV.UK</dt><dd><p><a href="https://carbondesignsystem.com/">Carbon</a> and the <a href="https://design-system.service.gov.uk/">GOV.UK Design System</a></p><p>Defaults for web tools, and plain, accessible public services.</p></dd>
+<dt>W3C</dt><dd><p><a href="https://www.w3.org/TR/WCAG22/">WCAG 2.2</a></p><p>The accessibility floor every interface has to meet.</p></dd>
+<dt>Peter Saville, Massimo Vignelli, and Jan Tschichold</dt><dd><p>Record sleeves and the modernist canon</p><p>Brand and release pages, this site included.</p></dd>
+</dl>
+
+<p>The <code>proof</code> skill also draws on recent research into testing code that agents write. The papers are listed in its <a href="https://github.com/dawson-design/consult/blob/main/agents/.agents/skills/proof/references/black-box.md#canon">black-box testing reference</a>.</p>
+
+<h2 id="next">Try it on your next change</h2>
+<p>Consult is free, open source, and <a href="../">quick to install</a>. Give your agent a real feature, read its plan, and make the decisions it brings you. Then <a href="../skills/">read every skill and rule</a>, and <a href="https://github.com/dawson-design/consult/issues">open an issue</a> if you find a gap.</p>
+<p class="signoff">Alastair Dawson</p>
+</div>
+<aside class="rail-col" aria-hidden="true"><canvas class="hex-rail"></canvas></aside>
+</div></article>
+</main>
+<footer class="foot"><div class="wrap wrap-wide foot-inner">
+<a class="brand" href="../" aria-label="Consult home"><svg class="logo" viewBox="18 30 61.5 40" aria-hidden="true" focusable="false"><use href="#q-open" class="q-open"/><use href="#q-close" class="q-close"/></svg>consult</a>
+<ul><li><a href="https://github.com/dawson-design/consult">Source</a></li><li><a href="https://github.com/dawson-design/consult/blob/main/CHANGELOG.md">Changelog</a></li><li><a href="https://github.com/dawson-design/consult/issues">Issues</a></li><li><a href="https://github.com/dawson-design/consult/blob/main/LICENSE">MIT licence</a></li></ul>
+<p class="credit">© 2026 Dawson Design Ltd.</p></div></footer>
+<script>document.documentElement.classList.remove('no-js');</script>
+<script src="../rail.js" defer></script>
+<script src="../video.js" defer></script>
+</body>
+</html>
