@@ -42,6 +42,11 @@ def code_rewards(reward: float, verification: float = 1.0, judge: float | None =
     return rewards if judge is None else {**rewards, "judge": judge}
 
 
+def rubric(reward: float, score: float) -> dict:
+    """Code rewards scored by the rubric judges instead of the generic judge."""
+    return {**code_rewards(reward, judge=None), "rubric": score}
+
+
 def arm_rewards(*values: float, judge: float | None = 0.5) -> list[dict]:
     return [code_rewards(v, judge=judge) for v in values]
 
@@ -185,6 +190,24 @@ class LiftTests(unittest.TestCase):
         summary = self.summary(bare, consult)
         self.assertTrue(summary["judge_excluded"])
         self.assertAlmostEqual(summary["suite_lift"], 0.0)
+
+    def test_a_trial_whose_rubric_judges_failed_strips_model_scores_from_that_task_only(self):
+        bare = self.job(
+            "bare",
+            {"proof-first-bugfix": [rubric(0.5, 0.2), rubric(0.5, 0.2)], "api-error-contract": [rubric(0.5, 0.2)]},
+        )
+        consult = self.job(
+            "consult",
+            {
+                "proof-first-bugfix": [rubric(0.9, 0.9), code_rewards(0.9, judge=None)],
+                "api-error-contract": [rubric(0.9, 0.9)],
+            },
+        )
+        summary = self.summary(bare, consult)
+        self.assertTrue(summary["judge_excluded"])
+        rows = {r["task"]: r for r in summary["tasks"]}
+        self.assertNotIn("rubric", rows["consult/proof-first-bugfix"]["dimensions"])
+        self.assertIn("rubric", rows["consult/api-error-contract"]["dimensions"])
 
     def test_judge_free_rescoring_uses_the_tasks_own_reward_weights(self):
         """A task's vendored reward.toml can differ from the shared one: sync_tests zeroes rules where none score."""

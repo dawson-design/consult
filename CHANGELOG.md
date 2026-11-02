@@ -21,10 +21,25 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   tied to the Consult rules it applies by a verbatim key phrase. Items can
   extend shared templates in `eval/verifier/rubrics/core_items.json`.
   `eval/scripts/sync_tests.py` validates each rubric and writes the resolved
-  items into the task. No task has a rubric yet, and nothing judges them yet.
+  items into the task. No task has a rubric yet.
+- The eval's rubric judges (`eval/verifier/shared/judge_runner.py`). For a
+  code task with a rubric, one locked-down `claude -p` call per rubric
+  dimension answers that dimension's items yes, no, or unknown, with evidence.
+  Each judge reads a blinded copy of the workspace with Consult's names
+  scrubbed, and only the report judge sees the agent's final message. A
+  failed call is retried once; a trial whose judges still fail gets no rubric
+  score, and `lift.py` then compares that task without model scores in both
+  jobs. The new `rubric` dimension scores the answers and takes the 0.45 model
+  share of a code task's reward.
 
 ### Changed
 
+- Code tasks in the eval no longer use the four generic judge criteria. A code
+  task without a rubric scores on its deterministic dimensions alone, and
+  rescoring keeps an old run's judge score at the same 0.45 share. Routing
+  tasks keep the generic judge.
+- Code tasks in the eval give each agent turn 45 minutes and the verifier 60
+  minutes, so a long Opus turn or a slow judge is not cut off.
 - The README groups the skills by the kind of work: process and proof, design,
   interfaces and docs, backend and security, production, and repo and tools.
 - The README covers the Claude Code desktop app and the Claude desktop app

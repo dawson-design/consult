@@ -10,11 +10,15 @@ description = "Build a self-hosted link shortener from a product brief, with scr
 kind = "code"
 features = ["workflow", "scaffolding", "specify", "contract-first", "domain-modeling", "api", "security", "ui-design", "proof", "code-review"]
 
+# Generous on purpose: an Opus turn at xhigh effort can run long, and a cut-off
+# turn scores the harness, not the agent.
 [agent]
-timeout_sec = 900.0
+timeout_sec = 2700.0
 
+# The verifier runs the rubric judges: up to five calls, two at a time, each
+# capped by CONSULT_JUDGE_TIMEOUT_SEC.
 [verifier]
-timeout_sec = 600.0
+timeout_sec = 3600.0
 
 [verifier.env]
 CLAUDE_CODE_OAUTH_TOKEN = "${CLAUDE_CODE_OAUTH_TOKEN:-}"
@@ -25,20 +29,20 @@ REWARDKIT_JUDGE = "${CONSULT_EVAL_JUDGE:-claude-code}"
 [[steps]]
 name = "brief"
 [steps.agent]
-timeout_sec = 900.0
+timeout_sec = 2700.0
 [steps.verifier]
 timeout_sec = 300.0
 
 [[steps]]
 name = "approve"
 [steps.agent]
-timeout_sec = 2400.0
+timeout_sec = 2700.0
 [steps.verifier]
 timeout_sec = 60.0
 
 [[steps]]
 name = "continue"
 [steps.agent]
-timeout_sec = 2400.0
+timeout_sec = 2700.0
 [steps.verifier]
-timeout_sec = 900.0
+timeout_sec = 3600.0

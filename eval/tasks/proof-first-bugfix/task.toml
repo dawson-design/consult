@@ -8,11 +8,15 @@ description = "Improve a small maintenance change and leave executable evidence.
 kind = "code"
 features = ["workflow", "proof", "domain-modeling", "refactoring"]
 
+# Generous on purpose: an Opus turn at xhigh effort can run long, and a cut-off
+# turn scores the harness, not the agent.
 [agent]
-timeout_sec = 900.0
+timeout_sec = 2700.0
 
+# The verifier runs the rubric judges: up to five calls, two at a time, each
+# capped by CONSULT_JUDGE_TIMEOUT_SEC.
 [verifier]
-timeout_sec = 600.0
+timeout_sec = 3600.0
 
 [verifier.env]
 CLAUDE_CODE_OAUTH_TOKEN = "${CLAUDE_CODE_OAUTH_TOKEN:-}"

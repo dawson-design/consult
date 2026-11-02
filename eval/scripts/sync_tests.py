@@ -16,12 +16,17 @@ Per task it writes:
   tests/<dimension>/...           from verifier/shared/<dimension>/ (kind-dependent set)
   tests/hidden.mjs                from verifier/hidden/<task>.mjs (code tasks)
   tests/rules_probe.mjs           from verifier/hidden/<task>.rules.mjs (when present)
-  tests/judge/instruction.md      from the task's instruction.md, or every step's
-                                  instruction joined in order for a multi-step task
-  tests/judge/items.json          from verifier/rubrics/<task>.json resolved against
-                                  verifier/rubrics/core_items.json (when the task has
-                                  a rubric); a rubric that fails scripts/rubric.py's
+  tests/judge_runner.py           from verifier/shared/judge_runner.py (code tasks)
+  tests/<model>/instruction.md    from the task's instruction.md, or every step's
+                                  instruction joined in order for a multi-step task;
+                                  <model> is rubric for code tasks, judge for routing
+  tests/rubric/items.json         from verifier/rubrics/<task>.json resolved against
+                                  verifier/rubrics/core_items.json (code tasks with a
+                                  rubric); a rubric that fails scripts/rubric.py's
                                   validation stops the sync
+
+It removes generated files it no longer writes: a code task's tests/judge/
+(the generic judge the rubric replaced) and an items.json whose rubric is gone.
 
 A multi-step task (task.toml [[steps]]) also gets its first step's verifier:
   steps/<first>/tests/test.sh                     from verifier/shared/brief_test.sh
@@ -58,10 +63,12 @@ from rule_labels import rule_text
 STEP_NAME_RE = re.compile(r'^\[\[steps\]\]\s*\n\s*name\s*=\s*"([^"]+)"', re.MULTILINE)
 RULES_WEIGHT_RE = re.compile(r"(\brules\s*=\s*)[0-9.]+")
 
-COMMON_DIMENSIONS = ("skill_triggering", "non_interruption", "rules", "judge")
+COMMON_DIMENSIONS = ("skill_triggering", "non_interruption", "rules")
+# The model-scored dimension: the rubric judges for code, the generic judge for routing.
+MODEL_DIMENSION = {"code": "rubric", "routing": "judge"}
 DIMENSIONS_BY_KIND = {
-    "code": ("verification", "proof", "change_quality", *COMMON_DIMENSIONS),
-    "routing": ("no_file_writes", *COMMON_DIMENSIONS),
+    "code": ("verification", "proof", "change_quality", *COMMON_DIMENSIONS, MODEL_DIMENSION["code"]),
+    "routing": ("no_file_writes", *COMMON_DIMENSIONS, MODEL_DIMENSION["routing"]),
 }
 
 
@@ -78,21 +85,34 @@ def check_rule_ids(task: Path) -> None:
         raise SystemExit(f"{task.name}: consult.json rules without a check in rules.json: {', '.join(unchecked)}")
 
 
-def rubric_copies(task: Path) -> list[tuple[bytes, Path]]:
+def rubric_copies(task: Path, kind: str) -> list[tuple[bytes, Path]]:
     """The task's resolved judge items, or nothing when it has no rubric; SystemExit listing every problem."""
     items, problems = rubric.task_items(task.name, rule_text)
     if problems:
         raise SystemExit(f"{task.name}: rubric problems:\n  " + "\n  ".join(problems))
     if items is None:
         return []
-    return [(rubric.items_json(items), task / "tests" / "judge" / "items.json")]
+    if kind != "code":
+        raise SystemExit(
+            f"{task.name}: only code tasks have rubrics; remove {rubric.RUBRICS_DIR.name}/{task.name}.json"
+        )
+    return [(rubric.items_json(items), task / "tests" / "rubric" / "items.json")]
 
 
-def stale_items(task: Path) -> Path | None:
-    """The task's generated items.json when its rubric is gone, so the sync can remove it."""
-    items = task / "tests" / "judge" / "items.json"
-    has_rubric = (rubric.RUBRICS_DIR / f"{task.name}.json").is_file()
-    return items if items.is_file() and not has_rubric else None
+def stale_paths(task: Path, kind: str) -> list[Path]:
+    """Generated files the sync no longer writes for this task, so it can remove them.
+
+    That is the other kind's model dimension directory, which a code task kept
+    from before the rubric replaced its generic judge, and items.json once its
+    rubric is gone.
+    """
+    tests = task / "tests"
+    other = next(name for k, name in MODEL_DIMENSION.items() if k != kind)
+    stale = [tests / other] if (tests / other).exists() else []
+    items = tests / "rubric" / "items.json"
+    if items.is_file() and not (rubric.RUBRICS_DIR / f"{task.name}.json").is_file():
+        stale.append(items)
+    return stale
 
 
 def task_kind(task: Path) -> str:
@@ -171,13 +191,14 @@ def planned_copies(task: Path) -> list[tuple[Path | bytes, Path]]:
         (SHARED_DIR / "consult_lib.py", tests / "consult_lib.py"),
         (SHARED_DIR / "consult_rules.py", tests / "consult_rules.py"),
         (reward_toml(task, kind), tests / "reward.toml"),
-        (judge_instruction(task, steps), tests / "judge" / "instruction.md"),
+        (judge_instruction(task, steps), tests / MODEL_DIMENSION[kind] / "instruction.md"),
         *step_copies(task, steps),
-        *rubric_copies(task),
+        *rubric_copies(task, kind),
     ]
     for dimension in DIMENSIONS_BY_KIND[kind]:
         pairs.extend(dimension_copies(dimension, tests / dimension))
     if kind == "code":
+        pairs.append((SHARED_DIR / "judge_runner.py", tests / "judge_runner.py"))
         hidden = HIDDEN_DIR / f"{task.name}.mjs"
         if not hidden.is_file():
             raise SystemExit(f"{task.name}: missing hidden check {hidden}")
@@ -210,11 +231,14 @@ def sync(check: bool) -> int:
             drift.append(str(dest.relative_to(EVAL_DIR)))
             continue
         write_copy(source, dest)
-    for stale in filter(None, map(stale_items, task_dirs())):
+    for stale in chain.from_iterable(stale_paths(task, task_kind(task)) for task in task_dirs()):
         if check:
-            drift.append(f"{stale.relative_to(EVAL_DIR)} (its rubric was removed)")
+            drift.append(f"{stale.relative_to(EVAL_DIR)} (no longer generated)")
             continue
-        stale.unlink()
+        if stale.is_dir():
+            shutil.rmtree(stale)
+        else:
+            stale.unlink()
         print(f"removed {stale.relative_to(EVAL_DIR)}")
     if drift:
         print("verifier files out of sync; run eval/scripts/sync_tests.py:", file=sys.stderr)

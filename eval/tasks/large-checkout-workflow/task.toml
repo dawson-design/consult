@@ -8,11 +8,15 @@ description = "Harden a multi-module checkout workflow without changing the publ
 kind = "code"
 features = ["workflow", "domain-modeling", "architecture", "api", "security", "database", "error-handling", "observability", "release", "proof", "code-review", "documentation"]
 
+# Generous on purpose: an Opus turn at xhigh effort can run long, and a cut-off
+# turn scores the harness, not the agent.
 [agent]
-timeout_sec = 900.0
+timeout_sec = 2700.0
 
+# The verifier runs the rubric judges: up to five calls, two at a time, each
+# capped by CONSULT_JUDGE_TIMEOUT_SEC.
 [verifier]
-timeout_sec = 600.0
+timeout_sec = 3600.0
 
 [verifier.env]
 CLAUDE_CODE_OAUTH_TOKEN = "${CLAUDE_CODE_OAUTH_TOKEN:-}"

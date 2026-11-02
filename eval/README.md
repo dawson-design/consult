@@ -190,22 +190,25 @@ the low end next to the mean:
   step's tokens, which already include the earlier steps, and no cost, until
   a real trial shows whether Harbor's per-step cost covers one step or all.
 
-When one job has judge scores and the other does not, as in a fast run
-against a release baseline, both are rescored from their shared
-deterministic dimensions. `lift.py --baseline-consult <job>` adds the same
+When a task's trials do not all carry the same model scores, as in a fast
+run against a release baseline, an old generic-judge job against a rubric
+job, or a trial whose judges failed, that task is rescored from its
+deterministic dimensions in both jobs. `lift.py --baseline-consult <job>` adds the same
 comparison between an earlier Consult job and this one. `lift.py --stub <job>`
 adds consult against stub and stub against bare, with a verdict on skill
 content. A trial without a reward in either job withholds the verdict.
 
-Judge routing: the default judge is RewardKit's `claude-code` agent judge
-running `claude-sonnet-5` through the subscription token. It installs the
+Judge routing: code tasks are judged by the rubric judges (see
+[Rubric judges](#rubric-judges)). Routing tasks keep RewardKit's `claude-code`
+agent judge running `claude-sonnet-5` through the subscription token. It installs the
 Claude Code CLI in the verifier container, because Anthropic answers a
 subscription token sent straight from LiteLLM with a bare 429. Set
 `CONSULT_EVAL_JUDGE=openai/gpt-5.5` and pass `--ve OPENAI_API_KEY=...` to use
-another provider as a plain LLM judge. Set
+another provider as a plain LLM judge for routing tasks; the rubric judges
+always run on Claude. Set
 `CONSULT_EVAL_SKIP_JUDGE=1` to score deterministic dimensions only. When the
-environment holds no judge credential, the verifier skips the judge and the
-reward excludes it.
+environment holds no judge credential, the verifier skips the judges and the
+reward excludes them.
 
 ## Suites and tasks
 
@@ -225,13 +228,13 @@ tasks/<name>/
     hidden.mjs              hidden implementation check (code tasks)
     rules_probe.mjs         runtime probe some rule checks read (when present)
     proof/submitted.py      per-task submitted-proof regex
-    ...                     synced dimension scripts and judge rubric
+    ...                     synced dimension scripts, judge prompts, and rubric items
 ```
 
 Two kinds of task exist. `code` tasks change a small Node repository; their
-score covers verification, proof, change quality, and the judge. `routing`
-tasks ask for a read-only planning note; their score covers an untouched
-workspace plus the judge.
+score covers verification, proof, change quality, and the rubric judges.
+`routing` tasks ask for a read-only planning note; their score covers an
+untouched workspace plus the generic judge.
 
 - `smoke`: one routing task, for wiring checks.
 - `core`: always-on and core design skills (4 tasks).
@@ -277,7 +280,7 @@ A rule task adds these keys to `tests/consult.json`:
 
 RewardKit combines dimension scores with `tests/reward.toml`. The weights keep
 the split from the previous harness: 55 percent deterministic, 45 percent
-judge.
+model-judged.
 
 | Dimension | Kind | Weight | What it measures |
 | --- | --- | ---: | --- |
@@ -285,7 +288,8 @@ judge.
 | `proof` | code | 0.1925 | 1.0 submitted proof and a post-write test command, 0.85 submitted only, 0.6 post-write only, 0.35 verification passed, else 0.15 |
 | `change_quality` | code | 0.0825 | 1.0 source and tests changed, 0.7 source only, else 0.25 |
 | `no_file_writes` | routing | 0.55 | Workspace unchanged and no write tool calls |
-| `judge` | both | 0.45 | Claude Code judge, four numeric criteria: engineering maturity 0.35, proof quality 0.25, simplicity 0.2, risk handling 0.2 |
+| `rubric` | code | 0.45 | The task's rubric items: must-have met rate x 0.6 plus quality met rate x 0.4, unknown answers left out. Dropped until the task has a rubric |
+| `judge` | routing | 0.45 | Claude Code judge, four numeric criteria: engineering maturity 0.35, proof quality 0.25, simplicity 0.2, risk handling 0.2 |
 | `skill_triggering` | both | 0 | Share of intended skills the agent read or invoked |
 | `non_interruption` | both | 0 | 1 minus 0.25 per agent message after the last user turn that ends with a question |
 | `rules` | both | 0 | One criterion per rule id in `consult.json` `rules` |
@@ -339,13 +343,14 @@ Consult arms, as `release-lift-<agent>-light.svg` and `-dark.svg`. Its footer
 notes any task left out, failed trial, or judge exclusion. Regenerate it from
 each release's summary instead of editing the SVGs.
 
-The judge receives the task instruction and a bundle with the git diff, new
-files, and the agent's final message. `consult_lib.py prepare` writes both
-into the prompt, so the `claude-code` judge scores in one turn at low effort
-(`CLAUDE_CODE_EFFORT_LEVEL` in `test.sh`). It does not receive the trajectory.
-Reading the trajectory with tool calls cost about 440k input tokens per trial,
-and the `proof` dimension already scores the process from it. The rubric and
-prompt are `verifier/shared/judge/quality.toml` and `prompt.md`.
+The routing tasks' judge receives the task instruction and a bundle with the
+git diff, new files, and the agent's final message. `consult_lib.py prepare`
+writes both into the prompt, so the `claude-code` judge scores in one turn at
+low effort (`CLAUDE_CODE_EFFORT_LEVEL` in `test.sh`). It does not receive the
+trajectory. Reading the trajectory with tool calls cost about 440k input
+tokens per trial, and the `proof` dimension already scores the process from
+it. The criteria and prompt are `verifier/shared/judge/quality.toml` and
+`prompt.md`.
 
 The task image preinstalls the Claude Code and Codex CLIs at the versions
 pinned in `agents/*.yaml`, so Harbor skips its install and the judge reuses
@@ -363,7 +368,10 @@ uv run scripts/sync_tests.py --check  # fail on drift; run in CI and `make eval`
 ```
 
 - `verifier/shared/consult_lib.py`: trajectory parsing, git helpers, judge
-  bundle, and the `prepare` step that drops the judge when it cannot run.
+  bundle, and the `prepare` step that drops a judge when it cannot run.
+- `verifier/shared/judge_runner.py`: the rubric judges (see below).
+- `verifier/shared/rubric/`: the rubric dimension (`score.py`) and the judge
+  prompts: `system.md` for every judge and one `<dimension>.md` per judge.
 - `verifier/shared/consult_rules.py`: the rule checks, keyed by rule id.
 - `verifier/shared/<dimension>/`: one RewardKit script per dimension.
 - `verifier/hidden/<task>.mjs`: the hidden check for each code task, keyed by
@@ -371,7 +379,7 @@ uv run scripts/sync_tests.py --check  # fail on drift; run in CI and `make eval`
 - `verifier/hidden/<task>.rules.mjs`: a runtime probe for rule checks. It
   prints `{"<rule id>": 0|1}` as its last line.
 - `verifier/rubrics/<task>.json`: the task's judge rubric (see below). The
-  sync validates it and writes the resolved items to `tests/judge/items.json`.
+  sync validates it and writes the resolved items to `tests/rubric/items.json`.
 - `verifier/rubrics/core_items.json`: shared rubric item templates.
 - `verifier/rules.json`: every rule of every skill, marked `check`,
   `judge-only`, or `untested`. `scripts/validate_skill_anatomy.py` fails when
@@ -406,7 +414,7 @@ atomic items, each a yes/no question tied to the Consult rules it applies.
 
 - `id`: a dotted slug, such as `scope.no_new_env`.
 - `dimension`: one of `structure`, `scope`, `boundaries`, `proof`, `report`.
-  Each dimension will get its own isolated judge.
+  Each dimension has its own isolated judge.
 - `rules`: the rule ids the item applies, such as `core.2`.
 - `key_phrase`: a phrase quoted verbatim from one of those rules.
 - `question`, `look_at`, `yes_when`, `no_when`: what the judge answers, where
@@ -432,6 +440,69 @@ The sync stops on any problem `scripts/rubric.py` finds, for example:
 - duplicate ids;
 - fewer than 12 or more than 20 items;
 - no must-have item.
+
+Only code tasks have rubrics.
+
+### Rubric judges
+
+When a code task has a rubric, `test.sh` runs `judge_runner.py` before
+RewardKit. It starts one `claude -p` call per dimension that has items, two
+at a time. Each call gets:
+
+- the shared `system.md` prompt, and its own `<dimension>.md` guidance;
+- the task instruction and only its own items, without their tier or the
+  rule's key phrase (the Consult arm often repeats rule wording, and a judge
+  shown it would reward the echo);
+- on a multi-step task, the agent's reply that each later turn answered, such
+  as the proposal the user approved;
+- the changed paths with their git status, then the agent's changes (the diff
+  plus new files), fenced as data;
+- a blinded copy of the final workspace as its working directory, to read
+  with Read, Grep, and Glob.
+
+Only the report judge also sees the agent's final message, so the agent's
+description of its code cannot sway the judges of the code. Each judge answers
+every item yes, no, or unknown, with a `path:line` quote as evidence. Something
+the judge searched for and did not find is a definite answer, not unknown.
+
+The blinded copy leaves out `.git`, `node_modules`, symlinks, and files over
+1 MB. It renames `CLAUDE.md`, `AGENTS.md`, and `.claude/` so the judge does
+not load them, and moves `docs/plans/` to `docs/notes/`. In every text file,
+the changes, and the final message, it replaces Consult's names for its own
+parts (Consult, core rule N, Iron Law, skill names and paths, fresh-context)
+with "the project conventions", which the bare arm could also write. Both arms
+get the same replacements.
+
+The call is locked down: `--restricted` removes every tool that runs commands
+and loads no user or project settings, so no hook or plugin runs. It also
+passes `--strict-mcp-config`, `--disable-slash-commands`, `--permission-mode
+dontAsk`, `--no-session-persistence`, and a turn cap. It runs with an empty
+home directory and one credential, the subscription token when one is set.
+`--bare` is not used, because it cannot read a subscription token. The agent
+ran as root in the same container, so the runner refuses to start the judges
+when a `CLAUDE.md`, `AGENTS.md`, or `.claude` sits in a parent of the view, or
+a managed settings directory exists.
+
+A failed call is retried once. The answers, each call's errors, attempts,
+turns, and usage go to `/logs/verifier/judge-items.json`, and each attempt's
+message stream to `/logs/verifier/judge/<dimension>.<attempt>.jsonl` for
+reading transcripts. An item the judge skipped or answered outside the schema
+counts as unknown. When a call still fails, or no item gets a yes or no, the
+trial gets no rubric score and the reward drops the rubric dimension. `lift.py`
+then compares that task without model scores in both jobs, so a failed judge
+never mixes deterministic-only rewards with judged ones. Rescoring keeps the
+original answers and transcripts beside the kept score.
+
+`judge_runner.py` reads these settings from its environment:
+`CONSULT_JUDGE_MODEL` (default `claude-opus-5-5`), `CONSULT_JUDGE_EFFORT`
+(`high`), `CONSULT_JUDGE_MAX_TURNS` (30), `CONSULT_JUDGE_TIMEOUT_SEC` (900 per
+call), and `CONSULT_JUDGE_CONCURRENCY` (2). A Harbor trial passes the verifier
+only what `task.toml` lists under `[verifier.env]`, so trials use the
+defaults.
+
+Code tasks give each agent turn 45 minutes and the verifier 60 minutes. Both
+are generous on purpose: a cut-off Opus turn, or a judge stopped mid-read,
+would score the harness instead of the agent.
 
 Check the task with the oracle before spending model calls:
 

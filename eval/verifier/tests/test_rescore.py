@@ -167,11 +167,47 @@ class MergeTests(unittest.TestCase):
         self.assertEqual(merged["judge"], 0.8)
         self.assertAlmostEqual(merged["reward"], 0.55 + 0.45 * 0.8, places=4)
 
+    def test_an_old_judge_score_keeps_its_share_under_the_rubric_weights(self):
+        """The task's reward.toml now weighs rubric, not judge; the old judge takes the rubric's 0.45."""
+        rubric_weights = {("rubric" if d == "judge" else d): w for d, w in CODE_WEIGHTS.items()}
+        new = {"verification": 1.0, "proof": 1.0, "change_quality": 1.0, "reward": 1.0}
+        merged = rescore.merge_rewards({**OLD_REWARDS, "judge": 0.8}, new, rubric_weights)
+        self.assertEqual(merged["judge"], 0.8)
+        self.assertAlmostEqual(merged["reward"], 0.55 + 0.45 * 0.8, places=4)
+
+    def test_a_rubric_score_is_kept_like_a_judge_score(self):
+        rubric_weights = {("rubric" if d == "judge" else d): w for d, w in CODE_WEIGHTS.items()}
+        new = {"verification": 1.0, "proof": 1.0, "change_quality": 1.0, "rubric": 0.0, "reward": 1.0}
+        merged = rescore.merge_rewards({"rubric": 0.5, "reward": 0.3}, new, rubric_weights)
+        self.assertEqual(merged["rubric"], 0.5)
+        self.assertAlmostEqual(merged["reward"], 0.55 + 0.45 * 0.5, places=4)
+
     def test_a_trial_whose_verifier_skipped_the_judge_is_rewarded_on_its_deterministic_dimensions(self):
         new = {"verification": 0.0, "proof": 1.0, "change_quality": 1.0, "reward": 0.5}
         merged = rescore.merge_rewards({"verification": 0.0, "reward": 0.1}, new, CODE_WEIGHTS)
         self.assertNotIn("judge", merged)
         self.assertAlmostEqual(merged["reward"], 0.275 / 0.55, places=4)
+
+
+class KeepJudgeAnswersTests(unittest.TestCase):
+    def test_the_judges_answers_and_transcripts_follow_the_kept_score(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            original, new = Path(tmp) / "original", Path(tmp) / "new"
+            (original / "judge").mkdir(parents=True)
+            (original / "judge-items.json").write_text('{"score": 0.5}')
+            (original / "judge" / "scope.1.jsonl").write_text("{}\n")
+            new.mkdir()
+            rescore.keep_judge_answers(original, new)
+            self.assertEqual((new / "judge-items.json").read_text(), '{"score": 0.5}')
+            self.assertTrue((new / "judge" / "scope.1.jsonl").is_file())
+
+    def test_a_trial_without_rubric_judges_copies_nothing(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            original, new = Path(tmp) / "original", Path(tmp) / "new"
+            original.mkdir()
+            new.mkdir()
+            rescore.keep_judge_answers(original, new)
+            self.assertEqual(list(new.iterdir()), [])
 
 
 class RescoredJobTests(RescoreTestCase):
