@@ -3,6 +3,7 @@
 
   uv run --project eval eval/scripts/rescore.py runs/<job> [runs/<job> ...]
                         [--tasks a,b] [--concurrency 4] [--dry-run]
+                        [--rejudge [--yes] [--suffix rejudged]]
 
 Per trial it rebuilds the final workspace: the task image's /app scaffold
 with the final step's judge-bundle.md applied. It then runs the task's current
@@ -26,6 +27,17 @@ environment/ check covers that.
 
 --dry-run builds the images, rebuilds every workspace, and prints the flags.
 It runs no verifier and writes nothing.
+
+--rejudge runs the rubric judges again instead of keeping the original judge
+score. The verifier gets CLAUDE_CODE_OAUTH_TOKEN and no CONSULT_EVAL_SKIP_JUDGE,
+so tests/test.sh calls tests/judge_runner.py as a live run does, and the trial
+takes the new rubric score and judge-items.json. Each judge call bills the
+maintainer's Claude subscription through the official `claude` CLI, so
+--rejudge prints the planned call count and stops unless --yes is given.
+Trials run one at a time: the runner already makes two calls at once. Only
+code tasks with a rubric can be rejudged; the original run needs no recorded
+reward. Output goes to <job>-rejudged/, or <job>-<suffix>/ with --suffix, so a
+repeat pass can sit beside the first.
 """
 
 from __future__ import annotations
@@ -60,7 +72,10 @@ VERIFIER_ENV = {"CONSULT_EVAL_SKIP_JUDGE": "1"}
 # Harbor's build_execution_command for /tests/test.sh with the verifier's stdout path.
 VERIFIER_COMMAND = "(/tests/test.sh) > /logs/verifier/test-stdout.txt 2>&1"
 VERIFIER_TIMEOUT_SEC = 900
+# A live verifier gets 60 minutes (task.toml); the judges dominate it.
+REJUDGE_TIMEOUT_SEC = 3600
 SUMMARY_KEYS = ("verification", "proof", "change_quality", "reward")
+REJUDGE_SUMMARY_KEYS = ("verification", "proof", "change_quality", "rubric", "reward")
 
 
 class DockerError(RuntimeError):
@@ -74,6 +89,7 @@ class Trial:
     task: str
     steps: tuple[str, ...]
     result: dict
+    suffix: str = "rescored"
 
     @property
     def name(self) -> str:
@@ -93,7 +109,7 @@ class Trial:
 
     @property
     def out_dir(self) -> Path:
-        return self.job.with_name(f"{self.job.name}-rescored")
+        return self.job.with_name(f"{self.job.name}-{self.suffix}")
 
 
 # ------------------------------------------------------------------- bundle
@@ -164,10 +180,14 @@ def write_new_file(workspace: Path, rel: str, content: str) -> None:
     path.write_text(content, encoding="utf-8")
 
 
-def original_flags(trial: Trial) -> list[str]:
-    """Why the original run cannot be rescored: no bundle, no judge score to keep, or a changed scaffold."""
+def original_flags(trial: Trial, rejudge: bool = False) -> list[str]:
+    """Why the original run cannot be rescored: no bundle, no judge score to keep, no rubric, or a changed scaffold."""
     if not trial.bundle_path.is_file():
         return ["no judge-bundle.md: the original verifier did not run"]
+    if rejudge:
+        if not rubric_path(trial.task).is_file():
+            return [f"tasks/{trial.task} has no rubric (tests/rubric/items.json): there is nothing to rejudge"]
+        return environment_flags(trial)
     if "reward" not in trial.old_rewards:
         error = (trial.result.get("exception_info") or {}).get("exception_type") or "no exception recorded"
         return [f"the original verifier recorded no reward ({error}): there is no judge score to keep"]
@@ -179,9 +199,7 @@ def environment_flags(trial: Trial) -> list[str]:
     started = trial.result.get("started_at")
     if not started:
         return ["result.json has no started_at: cannot tell whether the task environment changed since the run"]
-    environment = TASKS_DIR / trial.task / "environment"
-    newest = max(p.lstat().st_mtime for p in [environment, *environment.rglob("*")])
-    if newest > datetime.fromisoformat(started).timestamp():
+    if environment_changed_at(trial.task) > datetime.fromisoformat(started).timestamp():
         return [
             (
                 f"tasks/{trial.task}/environment changed after the trial started: "
@@ -191,9 +209,36 @@ def environment_flags(trial: Trial) -> list[str]:
     return []
 
 
-def rebuild(trial: Trial, scaffold: Path, workspace: Path) -> list[str]:
+def environment_changed_at(task: str) -> float:
+    """When tasks/<task>/environment last changed, as a Unix time.
+
+    The last commit that touched it, so a fresh checkout or worktree does not
+    look newer than every trial. When the directory has uncommitted changes,
+    or git cannot say, the newest file time there.
+    """
+    environment = TASKS_DIR / task / "environment"
+    status = git(EVAL_DIR, "status", "--porcelain", "--", str(environment))
+    log = git(EVAL_DIR, "log", "-1", "--format=%ct", "--", str(environment))
+    if status.returncode or log.returncode or status.stdout.strip() or not log.stdout.strip():
+        return max(p.lstat().st_mtime for p in [environment, *environment.rglob("*")])
+    return float(log.stdout)
+
+
+def rubric_path(task: str) -> Path:
+    return TASKS_DIR / task / "tests" / "rubric" / "items.json"
+
+
+def rubric_calls(task: str) -> int:
+    """Judge calls one rejudge of this task makes: one per rubric dimension, retries aside."""
+    path = rubric_path(task)
+    if not path.is_file():
+        return 0
+    return len({item["dimension"] for item in json.loads(path.read_text())["items"]})
+
+
+def rebuild(trial: Trial, scaffold: Path, workspace: Path, rejudge: bool = False) -> list[str]:
     """Rebuild the trial's final workspace from a copy of the scaffold; the flags say why it could not."""
-    flags = original_flags(trial)
+    flags = original_flags(trial, rejudge)
     if flags:
         return flags
     shutil.copytree(scaffold, workspace, symlinks=True)
@@ -331,34 +376,44 @@ def load_container(name: str, trial: Trial, workspace: Path) -> None:
     docker("exec", name, "chmod", "+x", "/tests/test.sh")
 
 
-def run_container(trial: Trial, workspace: Path, final_dest: Path) -> list[str]:
+def verifier_env(rejudge: bool) -> list[str]:
+    """docker exec -e flags. A rejudge passes the token by name, so its value never appears in argv."""
+    if rejudge:
+        return ["-e", "CLAUDE_CODE_OAUTH_TOKEN"]
+    return list(chain.from_iterable(["-e", f"{k}={v}"] for k, v in VERIFIER_ENV.items()))
+
+
+def run_container(trial: Trial, workspace: Path, final_dest: Path, rejudge: bool = False) -> list[str]:
     """Run the verifier on the rebuilt workspace; outputs land in final_dest/verifier. Returns failure flags."""
     name = f"consult-rescore-{os.getpid()}-{trial.name}"
     logs = final_dest.resolve()
     mounts = ["-v", f"{logs / 'agent'}:/logs/agent", "-v", f"{logs / 'verifier'}:/logs/verifier"]
-    env = list(chain.from_iterable(["-e", f"{k}={v}"] for k, v in VERIFIER_ENV.items()))
+    env = verifier_env(rejudge)
+    timeout = REJUDGE_TIMEOUT_SEC if rejudge else VERIFIER_TIMEOUT_SEC
     try:
         docker("run", "-d", "--name", name, *mounts, image_tag(trial.task), "sleep", "infinity")
         load_container(name, trial, workspace)
         subprocess.run(
             ["docker", "exec", "-w", "/app", *env, name, "bash", "-c", VERIFIER_COMMAND],
             capture_output=True,
-            timeout=VERIFIER_TIMEOUT_SEC,
+            timeout=timeout,
             check=False,
         )
     except DockerError as error:
         return [str(error)]
     except subprocess.TimeoutExpired:
-        return [f"verifier timed out after {VERIFIER_TIMEOUT_SEC}s"]
+        return [f"verifier timed out after {timeout}s"]
     finally:
         subprocess.run(["docker", "rm", "-f", name], capture_output=True, check=False)
     return []
 
 
-def verifier_flags(trial: Trial, verifier_dir: Path) -> list[str]:
-    """The verifier scored, and the bundle it rebuilt matches the one the judge read."""
+def verifier_flags(trial: Trial, verifier_dir: Path, rejudge: bool = False) -> list[str]:
+    """The verifier scored, the bundle it rebuilt matches the one the judge read, and a rejudge left answers."""
     if not (verifier_dir / "reward.json").is_file():
         return ["verifier wrote no reward.json; see test-stdout.txt"]
+    if rejudge and not (verifier_dir / "judge-items.json").is_file():
+        return ["the rubric judges wrote no judge-items.json; see test-stdout.txt"]
     rebuilt = verifier_dir / "judge-bundle.md"
     if not rebuilt.is_file() or rebuilt.read_bytes() != trial.bundle_path.read_bytes():
         return ["rebuilt judge-bundle.md differs from the original: the workspace is not the one judged"]
@@ -368,15 +423,15 @@ def verifier_flags(trial: Trial, verifier_dir: Path) -> list[str]:
 # ------------------------------------------------------------------- trials
 
 
-def load_trial(trial_dir: Path) -> Trial:
+def load_trial(trial_dir: Path, suffix: str = "rescored") -> Trial:
     result = json.loads((trial_dir / "result.json").read_text())
     task = (result.get("task_name") or trial_dir.name.split("__")[0]).split("/")[-1]
     steps = tuple(s["step_name"] for s in result.get("step_results") or [])
-    return Trial(job=trial_dir.parent, dir=trial_dir, task=task, steps=steps, result=result)
+    return Trial(job=trial_dir.parent, dir=trial_dir, task=task, steps=steps, result=result, suffix=suffix)
 
 
-def load_job(job_dir: Path, tasks: set[str]) -> list[Trial]:
-    trials = [load_trial(p.parent) for p in sorted(job_dir.glob("*/result.json"))]
+def load_job(job_dir: Path, tasks: set[str], suffix: str = "rescored") -> list[Trial]:
+    trials = [load_trial(p.parent, suffix) for p in sorted(job_dir.glob("*/result.json"))]
     return [t for t in trials if not tasks or t.task in tasks]
 
 
@@ -391,16 +446,16 @@ def copy_trial(trial: Trial, dest: Path) -> Path:
     return final_dest
 
 
-def verify(trial: Trial, scaffold: Path, final_dest: Path) -> tuple[list[str], list[str]]:
+def verify(trial: Trial, scaffold: Path, final_dest: Path, rejudge: bool = False) -> tuple[list[str], list[str]]:
     """(flags that stop the trial being scored, notes on checks the rebuild may not reproduce)."""
     with tempfile.TemporaryDirectory(prefix="consult-rescore-") as tmp:
         workspace = Path(tmp) / "app"
-        flags = rebuild(trial, scaffold, workspace)
+        flags = rebuild(trial, scaffold, workspace, rejudge)
         if flags:
             return flags, []
         notes = dependency_notes(workspace)
-        flags = run_container(trial, workspace, final_dest)
-    return flags or verifier_flags(trial, final_dest / "verifier"), notes
+        flags = run_container(trial, workspace, final_dest, rejudge)
+    return flags or verifier_flags(trial, final_dest / "verifier", rejudge), notes
 
 
 def rescored_result(result: dict, record: dict) -> dict:
@@ -415,25 +470,31 @@ def rescored_result(result: dict, record: dict) -> dict:
     return out
 
 
-def rescore_trial(trial: Trial, scaffold: Path) -> dict:
+RUBRIC_DROPPED = "the rubric judges failed: the reward excludes the rubric (judge-items.json has the details)"
+
+
+def rescore_trial(trial: Trial, scaffold: Path, rejudge: bool = False) -> dict:
     dest = trial.out_dir / trial.name
     final_dest = copy_trial(trial, dest)
-    flags, notes = verify(trial, scaffold, final_dest)
-    record = {
-        "old": trial.old_rewards,
-        "new": None if flags else merge_final(trial, final_dest / "verifier"),
-        "flags": flags,
-        "notes": notes,
-    }
+    flags, notes = verify(trial, scaffold, final_dest, rejudge)
+    if flags:
+        new = None
+    elif rejudge:
+        # The verifier's own rewards: the rubric score is the new judges', and no original model score is kept.
+        new = json.loads((final_dest / "verifier" / "reward.json").read_text())
+        notes = notes if "rubric" in new else [*notes, RUBRIC_DROPPED]
+    else:
+        new = merge_final(trial, final_dest / "verifier")
+    record = {"old": trial.old_rewards, "new": new, "flags": flags, "notes": notes}
     (dest / "result.json").write_text(json.dumps(rescored_result(trial.result, record), indent=4))
     print(f"{trial.job.name}/{trial.name}: {row_text(record)}", flush=True)
     return record
 
 
-def dry_run_trial(trial: Trial, scaffold: Path) -> list[str]:
+def dry_run_trial(trial: Trial, scaffold: Path, rejudge: bool = False) -> list[str]:
     with tempfile.TemporaryDirectory(prefix="consult-rescore-") as tmp:
         workspace = Path(tmp) / "app"
-        flags = rebuild(trial, scaffold, workspace)
+        flags = rebuild(trial, scaffold, workspace, rejudge)
         notes = [] if flags else dependency_notes(workspace)
     print(f"{trial.job.name}/{trial.name}: {'; '.join(flags + notes) or 'rebuilds cleanly'}", flush=True)
     return flags
@@ -460,21 +521,28 @@ def summary_rows(out_dir: Path) -> list[dict]:
     return rows
 
 
-def summary_line(row: dict) -> str:
-    values = " | ".join(value_pair(row, k) for k in SUMMARY_KEYS)
+def summary_line(row: dict, keys: tuple[str, ...] = SUMMARY_KEYS) -> str:
+    values = " | ".join(value_pair(row, k) for k in keys)
     return f"| {row['trial']} | {values} | {'; '.join(row['flags'])} | {'; '.join(row.get('notes') or [])} |"
 
 
 def render_summary(summary: dict) -> str:
     rows = summary["trials"]
+    rejudge = summary.get("rejudge", False)
+    keys = REJUDGE_SUMMARY_KEYS if rejudge else SUMMARY_KEYS
+    about = (
+        "Deterministic dimensions rerun with the current task tests; the rubric judges ran again."
+        if rejudge
+        else "Deterministic dimensions rerun with the current task tests; judge scores are the originals."
+    )
     lines = [
-        f"# Rescore: {Path(summary['job']).name}",
+        f"# {'Rejudge' if rejudge else 'Rescore'}: {Path(summary['job']).name}",
         "",
-        "Deterministic dimensions rerun with the current task tests; judge scores are the originals.",
+        about,
         "",
-        f"| trial | {' | '.join(SUMMARY_KEYS)} | flags | notes |",
-        f"| --- |{' ---: |' * len(SUMMARY_KEYS)} --- | --- |",
-        *map(summary_line, rows),
+        f"| trial | {' | '.join(keys)} | flags | notes |",
+        f"| --- |{' ---: |' * len(keys)} --- | --- |",
+        *(summary_line(row, keys) for row in rows),
     ]
     scored = [r for r in rows if r["new"] is not None]
     changed = [r for r in scored if abs(float(r["new"]["reward"]) - float(r["old"].get("reward") or 0.0)) > 0.001]
@@ -482,8 +550,8 @@ def render_summary(summary: dict) -> str:
     return "\n".join(lines) + "\n"
 
 
-def write_summary(out_dir: Path, job: Path) -> str:
-    summary = {"job": str(job), "rescored": str(out_dir), "trials": summary_rows(out_dir)}
+def write_summary(out_dir: Path, job: Path, rejudge: bool = False) -> str:
+    summary = {"job": str(job), "rescored": str(out_dir), "rejudge": rejudge, "trials": summary_rows(out_dir)}
     markdown = render_summary(summary)
     (out_dir / "rescore.json").write_text(json.dumps(summary, indent=2))
     (out_dir / "rescore.md").write_text(markdown)
@@ -497,11 +565,21 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("jobs", nargs="+", type=Path, help="Harbor job dirs")
     parser.add_argument("--tasks", default="", help="comma-separated task names (default: all)")
-    parser.add_argument("--concurrency", type=int, default=4)
+    parser.add_argument("--concurrency", type=int, default=None, help="trials at once (default 4; 1 with --rejudge)")
     parser.add_argument(
         "--dry-run", action="store_true", help="rebuild the workspaces and print flags; run no verifier"
     )
-    return parser.parse_args(argv)
+    parser.add_argument("--rejudge", action="store_true", help="run the rubric judges again (bills the subscription)")
+    parser.add_argument("--yes", action="store_true", help="with --rejudge: make the judge calls")
+    parser.add_argument("--suffix", default=None, help="output dir suffix (default rescored, or rejudged)")
+    args = parser.parse_args(argv)
+    if args.rejudge and args.concurrency not in (None, 1):
+        parser.error("--rejudge runs one trial at a time: the runner already makes two judge calls at once")
+    if args.yes and not args.rejudge:
+        parser.error("--yes only applies to --rejudge")
+    args.concurrency = args.concurrency or (1 if args.rejudge else 4)
+    args.suffix = args.suffix or ("rejudged" if args.rejudge else "rescored")
+    return args
 
 
 def select_trials(args: argparse.Namespace) -> list[Trial]:
@@ -509,29 +587,44 @@ def select_trials(args: argparse.Namespace) -> list[Trial]:
     unknown = sorted(t for t in tasks if not (TASKS_DIR / t / "tests").is_dir())
     if unknown:
         raise SystemExit(f"--tasks names no task under {TASKS_DIR}: {', '.join(unknown)}")
-    trials = list(chain.from_iterable(load_job(job, tasks) for job in dict.fromkeys(args.jobs)))
+    trials = list(chain.from_iterable(load_job(job, tasks, args.suffix) for job in dict.fromkeys(args.jobs)))
     if not trials:
         raise SystemExit("no trials to rescore")
     return trials
 
 
-def rescore(trials: list[Trial], scaffolds: dict[str, Path], concurrency: int) -> int:
+def rescore(trials: list[Trial], scaffolds: dict[str, Path], concurrency: int, rejudge: bool = False) -> int:
     with ThreadPoolExecutor(max_workers=concurrency) as pool:
-        records = list(pool.map(lambda t: rescore_trial(t, scaffolds[t.task]), trials))
+        records = list(pool.map(lambda t: rescore_trial(t, scaffolds[t.task], rejudge), trials))
     for out_dir, job in {t.out_dir: t.job for t in trials}.items():
-        print(f"\n{write_summary(out_dir, job)}{out_dir}", flush=True)
+        print(f"\n{write_summary(out_dir, job, rejudge)}{out_dir}", flush=True)
     return 1 if any(r["flags"] for r in records) else 0
+
+
+def judge_plan(trials: list[Trial]) -> tuple[int, str]:
+    """(planned judge calls, the line that states them) for a rejudge of these trials."""
+    calls = sum(rubric_calls(t.task) for t in trials)
+    return calls, f"{len(trials)} trials, {calls} judge calls (up to {2 * calls} with retries)"
 
 
 def main(argv: list[str]) -> int:
     args = parse_args(argv[1:])
     trials = select_trials(args)
+    if args.rejudge:
+        _, line = judge_plan(trials)
+        print(line, flush=True)
+        if not (args.dry_run or args.yes):
+            print("Nothing run. Pass --dry-run to check the rebuilds, or --yes to run the judges.")
+            return 0
+        if args.yes and not os.environ.get("CLAUDE_CODE_OAUTH_TOKEN"):
+            print("CLAUDE_CODE_OAUTH_TOKEN is not set; the judges bill the subscription through it.", file=sys.stderr)
+            return 2
     with tempfile.TemporaryDirectory(prefix="consult-rescore-") as tmp:
         scaffolds = build_scaffolds(sorted({t.task for t in trials}), Path(tmp))
         if args.dry_run:
-            flagged = [t for t in trials if dry_run_trial(t, scaffolds[t.task])]
+            flagged = [t for t in trials if dry_run_trial(t, scaffolds[t.task], args.rejudge)]
             return 1 if flagged else 0
-        return rescore(trials, scaffolds, args.concurrency)
+        return rescore(trials, scaffolds, args.concurrency, args.rejudge)
 
 
 if __name__ == "__main__":

@@ -528,6 +528,48 @@ uv run scripts/oracle_judge.py --tasks <task> --yes      # run the judges (bills
 
 Results go to `runs/oracle-judge/<timestamp>/`.
 
+### Calibrating the judges
+
+A rubric dimension carries a claim only after its judge agrees with the
+maintainer. Saved trials are judged again offline, then a sample of answers is
+hand-labelled.
+
+`scripts/rescore.py --rejudge` rebuilds each trial's final workspace, as a
+plain rescore does, and runs the verifier with the subscription token, so the
+rubric judges answer as in a live run. The trial takes the new rubric score;
+the original judge score is dropped. Trials run one at a time, because the
+runner already makes two calls at once. Without `--yes` it prints the call
+count and stops. Output goes to `<job>-rejudged/`, or `<job>-<suffix>/` with
+`--suffix`, so a repeat pass can sit beside the first. The task environment
+check compares each trial's start with the last commit that touched the
+task's `environment/`, so a fresh checkout or worktree can rescore old runs.
+
+```sh
+uv run scripts/rescore.py runs/<job> --rejudge             # print the judge call count
+uv run scripts/rescore.py runs/<job> --rejudge --dry-run   # rebuild the workspaces, no judge
+uv run scripts/rescore.py runs/<job> --rejudge --yes       # run the judges (bills the subscription)
+```
+
+`scripts/judge_labels.py` turns the rejudged jobs into a blind label sheet:
+
+```sh
+uv run scripts/judge_labels.py export runs/labels/judge.csv runs/<bare-job>-rejudged runs/<consult-job>-rejudged
+uv run scripts/judge_labels.py agree runs/labels/judge.csv
+uv run scripts/judge_labels.py repeat runs/<job>-rejudged runs/<job>-rejudged-repeat
+```
+
+`export` samples 50 answers per dimension by default, half from each arm and
+spread across tasks. The sheet shows each item and the judge's evidence quote,
+but not the judge's answer, its reason, or the arm. Each case's request,
+earlier replies, diff, and final message are in `<sheet>-cases/<case>.md`,
+scrubbed as the judges' view is. The hidden fields go to `<sheet>.key.json`.
+Write `yes` or `no` in the `human` column. `agree` reports per dimension
+Cohen's kappa against the judge, each arm's bias (the judge's yes-rate minus
+the human's), and the judge's unknown rate. `repeat` reports how often two
+rejudge passes give the same answer. A dimension passes the gate with kappa
+at least 0.7, each arm's bias under 0.1 in size, unknown under 10%, and
+repeat agreement at least 0.9.
+
 ## Known gaps
 
 - `large-checkout-workflow` and `large-link-shortener` have no `solution/`
