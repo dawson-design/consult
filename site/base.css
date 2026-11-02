@@ -160,8 +160,8 @@ h2 { font-size: var(--t-head); font-weight: 400; line-height: 1.1; letter-spacin
 .section p { max-width: 62ch; text-wrap: pretty; }
 
 .steps { display: grid; gap: var(--s-1); counter-reset: n; }
-.steps li { display: grid; grid-template-columns: 2rem minmax(0, 1fr); gap: var(--s-2); padding-block: 0.375rem; }
-.steps li::before { counter-increment: n; content: counter(n); color: var(--accent); font-weight: 600; font-variant-numeric: tabular-nums; }
+.steps li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--s-1); padding-block: 0.375rem; }
+.steps li::before { counter-increment: n; content: counter(n) "."; color: var(--accent); font-weight: 600; font-variant-numeric: tabular-nums; }
 .steps b { font-weight: 500; }
 .steps span { color: var(--ink-2); }
 
