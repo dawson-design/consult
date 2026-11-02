@@ -222,7 +222,7 @@ PAGE = """<!doctype html>
 <article class="catalog"><div class="wrap wrap-wide catalog-grid">
 <div class="catalog-text">
 <h1>Skills and core rules</h1>
-<p class="section-lead">Every rule and skill follows from one Iron Law: complexity is the enemy. {rule_count} core rules apply to every change, whether or not a skill loads, and for each task the workflow skill loads only the subset of the <a href="#skills-title">{skill_count} skills</a> it needs.</p>
+<p class="section-lead">Every rule and skill serves one Iron Law: complexity is the enemy. {rule_count} core rules apply to every change, whether or not a skill loads, and for each task the workflow skill loads only the subset of the <a href="#skills-title">{skill_count} skills</a> it needs.</p>
 <h2 id="core-title">Core rules</h2>
 <p class="law-label">Iron Law</p>
 <p class="law law-lead">{iron}</p>
