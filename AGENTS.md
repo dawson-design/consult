@@ -142,6 +142,13 @@ make lint
 
 # Repo-owned tests.
 python3 -m unittest discover -s tests
+
+# Preview the marketing site in `site/` with live reload at http://localhost:8000.
+python3 scripts/serve_site.py
+
+# Regenerate the site's skills page (`site/skills/index.html`) from core.md,
+# the README skill list, and each SKILL.md. The test suite fails while it is stale.
+python3 scripts/build_site_skills.py
 ```
 
 There is no product application test suite; the repo's unittest suite, the
@@ -317,6 +324,8 @@ Adding or renaming a skill needs five updates, in order:
    with status `check`, `judge-only`, or `untested`. The validator fails until
    every rule has one and no entry names a missing rule.
 3. `README.md`: add or rename the skill in the grouped list under `## Skills`.
+   Then run `python3 scripts/build_site_skills.py` so the site's skills page
+   lists it; the test suite fails until you do.
 4. `workflow`: update the meta-skill only when the new or renamed skill changes
    the broad Consult routing workflow.
 5. `./setup.sh` to regenerate `plugin/skills/<name>` and refresh or prune
@@ -340,8 +349,9 @@ Feature and fix commits describe their change under `## [Unreleased]` in
 `CHANGELOG.md` and leave the versions alone. A release is a separate
 `Release X.Y.Z` commit on `main`: it promotes `## [Unreleased]` to a dated
 `## [X.Y.Z] (YYYY-MM-DD)` section, leaves a fresh empty `## [Unreleased]`
-above it, and bumps every manifest. The `ship` skill runs this flow. Classify
-the bump from everything since the last release:
+above it, bumps every manifest, and updates the release line and its changelog
+link in `site/index.html` (a test fails until it matches). The `ship` skill runs
+this flow. Classify the bump from everything since the last release:
 
 | Bump | Trigger |
 |---|---|
