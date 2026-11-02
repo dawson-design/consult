@@ -124,15 +124,15 @@
       "extends": "scope.no_speculative_abstraction",
       "id": "scope.no_speculative_abstraction",
       "key_phrase": "Extract an abstraction only when code in more than one place serves the same purpose.",
-      "look_at": "New interfaces, base classes, factories, and generic helpers in the diff, and their call sites",
+      "look_at": "New interfaces, base classes, factories, generic helpers, and named functions whose whole body is one call, and their call sites",
       "no_when": "The change adds a discount-rule engine, a strategy interface or class hierarchy for discounts, or a coupon registry built for the single `WELCOME` coupon.",
       "polarity": "negative",
-      "question": "Does NOT add an abstraction (an interface, base class, factory, or generic helper) that has only one use in the change?",
+      "question": "Does NOT add an abstraction that has only one use in the change, such as an interface, base class, factory, generic helper, or a named function that only renames one existing call?",
       "rules": [
         "core.2"
       ],
       "tier": "must",
-      "yes_when": "Each new abstraction serves more than one place that has the same purpose."
+      "yes_when": "Each new abstraction serves more than one place that has the same purpose. A private function with logic of its own that holds one step split out of a longer function is not an abstraction, even with one caller."
     },
     {
       "dimension": "boundaries",

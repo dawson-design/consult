@@ -45,6 +45,7 @@ test("totals item prices in cents", () => {
 
 test("applies SAVE10 and returns the final total in cents", () => {
   assert.equal(totalCents([{ priceCents: 500, quantity: 2 }], "SAVE10"), 900);
+  assert.equal(totalCents([{ priceCents: 333, quantity: 3 }], "SAVE10"), 899);
 });
 
 test("rejects malformed carts", () => {
