@@ -6,6 +6,11 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- The README groups the skills by the kind of work: process and proof, design,
+  interfaces and docs, backend and security, production, and repo and tools.
+
 ## [19.0.0] (2026-11-01)
 
 ### Changed
