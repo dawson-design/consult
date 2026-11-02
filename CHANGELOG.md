@@ -28,6 +28,17 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `consult` marketplace already exists, or the installed one shows an old
   version.
 
+### Removed
+
+- Core rule 1, "Consult sets the engineering bar, and the host owns the
+  mechanics", is gone, and rules 2-9 are now 1-8. It was the only core rule
+  about Consult rather than the code, and it asked the agent to weigh
+  Consult against the host instead of stating what the code should look
+  like. No rule now says how to settle a conflict between Consult and the
+  host; Workflow Rule 2 still lists the approval gates without conditions.
+  Skill citations, the eval's `core.*` rule ids, and the site's rule counts
+  follow the new numbering.
+
 ## [19.0.0] (2026-11-01)
 
 ### Changed

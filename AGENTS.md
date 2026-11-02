@@ -252,7 +252,7 @@ a junior engineer, keep one short "because" clause, not a paragraph.
 
 Core and workflow scope. `agents/.agents/core.md` is the Consult core:
 the plugin's SessionStart hook prints it into every session, so it holds the
-rules every code change needs, such as core rule 5's code-shape thresholds,
+rules every code change needs, such as core rule 4's code-shape thresholds,
 whether or not a skill loads. Its numbered rules have eval ids `core.<n>`.
 `workflow` loads on non-trivial code tasks, so it holds the gates, the
 process, and routing to the other skills. Process detail for narrower
