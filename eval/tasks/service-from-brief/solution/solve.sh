@@ -57,8 +57,8 @@ const ABSOLUTE_HTTP = /^https?:\/\/[^\s/\\?#]+[^\s\\]*$/i;
 /** @returns {string | null} the normalized URL, or null when it is not an absolute http(s) URL */
 export function parseTarget(input) {
   if (typeof input !== "string" || !ABSOLUTE_HTTP.test(input.trim())) return null;
-  const url = new URL(input.trim());
-  return url.protocol === "http:" || url.protocol === "https:" ? url.href : null;
+  const url = URL.parse(input.trim());
+  return url?.protocol === "http:" || url?.protocol === "https:" ? url.href : null;
 }
 
 export function newSlug() {
@@ -182,9 +182,13 @@ test("a short link redirects and counts clicks", () =>
 
 test("refuses targets that are not absolute http(s) URLs", () =>
   withServer(async (base) => {
-    for (const bad of ["javascript:alert(1)", "data:text/html,x", "//evil.example", "https:evil.example"]) {
-      assert.equal((await shorten(base, bad)).status, 400, bad);
+    const bad = ["javascript:alert(1)", "data:text/html,x", "//evil.example", "https:evil.example", "http://a:99999", "http://:80"];
+    for (const url of bad) {
+      const response = await shorten(base, url);
+      assert.equal(response.status, 400, url);
+      assert.deepEqual(await response.json(), { error: "url must be an absolute http or https URL" }, url);
     }
+    assert.deepEqual(await (await fetch(`${base}/stats`)).json(), []);
   }));
 
 test("says why when the body is not valid JSON", () =>

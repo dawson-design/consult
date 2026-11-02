@@ -12,30 +12,16 @@ cat > src/redirect.js <<'JS'
 const TRUSTED_ORIGIN = "https://app.example.com";
 const FALLBACK = "/";
 
-// Resolves the target against the app, as a browser would. Returns null when
-// the target cannot be parsed, so the caller falls back.
-function resolveFromApp(target) {
-  try {
-    return new URL(target, TRUSTED_ORIGIN);
-  } catch {
-    return null;
-  }
-}
-
-function isAbsoluteUrl(target) {
-  return URL.canParse(target);
-}
-
 // Returns the target when it stays on the trusted HTTPS origin: a same-site
 // path, or an absolute https URL on the trusted host. Anything else, such as
 // another host, another scheme, `//host`, `/\host`, or an unparseable value,
 // returns "/".
 export function resolveRedirect(target) {
   if (typeof target !== "string" || target === "") return FALLBACK;
-  const url = resolveFromApp(target);
-  const staysOnTrustedOrigin = url !== null && url.origin === TRUSTED_ORIGIN;
-  if (!staysOnTrustedOrigin) return FALLBACK;
-  return isAbsoluteUrl(target) ? url.href : url.pathname + url.search + url.hash;
+  // Resolve against the app, as a browser would; null when it cannot parse.
+  const url = URL.parse(target, TRUSTED_ORIGIN);
+  if (url?.origin !== TRUSTED_ORIGIN) return FALLBACK;
+  return URL.canParse(target) ? url.href : url.pathname + url.search + url.hash;
 }
 JS
 cat >> test/redirect.test.js <<'JS'
