@@ -18,6 +18,7 @@ description: "Deciding where code or logic should live: module boundaries, layer
 - Choosing API style or data store family before a specialist skill designs
   the details.
 - Deciding whether DDD tactical patterns are worth their cost.
+- Choosing a transport for live updates or event streams.
 - Reviewing code where one behavior is scattered across many files for no
   technical reason.
 

@@ -71,7 +71,7 @@ cases:
       next= parameter pointing at someone else's domain. After logging in, people
       should only ever end up back on our own pages.
     code_change: true
-    required_any: [error-handling]
+    required_any: [proof, domain-modeling]
     expect_silent: [release, commit, git-workflow, documentation]
 
   - name: g-column-change

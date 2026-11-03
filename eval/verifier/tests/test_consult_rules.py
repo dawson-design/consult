@@ -237,6 +237,11 @@ class DebuggingTests(WorkspaceCase):
         traj = trajectory(claude_write("s", "repro.js"), claude_write("f", "src/a.js"))
         self.assertEqual(self.part(cr.reproduced_before_fix, traj), 0.0)
 
+    def test_proof_2_passes_when_a_failing_repro_precedes_a_fix_its_test_proves(self):
+        self.write_files({"src/a.js": "export const double = (n) => n * 2;\n", "test/a.test.js": self.test_file})
+        traj = trajectory(codex_command("t", "node repro.js", 1), codex_patch("p", "Update File: /app/src/a.js"))
+        self.assertEqual(self.check("proof.2", traj), 1.0)
+
     def test_regression_test_passes_when_the_test_fails_before_and_passes_after(self):
         self.write_files({"src/a.js": "export const double = (n) => n * 2;\n", "test/a.test.js": self.test_file})
         self.assertEqual(self.part(cr.regression_test_flips), 1.0)

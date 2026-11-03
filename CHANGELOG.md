@@ -154,6 +154,9 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   passes after. Eval tasks, trigger cases, and rubric items that named the
   deleted skills now name the skill that holds the rule. The description
   ceiling drops from 2,400 to 2,000 characters, and the pack is at 1,766.
+  `error-handling` now loads for auth, permissions, and secrets work, and
+  `architecture` for live-update transport choices, so the moved rules are
+  reached.
 
 - Core rule 1, "Consult sets the engineering bar, and the host owns the
   mechanics", is gone, and rules 2-9 are now 1-8. It was the only core rule

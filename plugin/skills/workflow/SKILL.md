@@ -69,11 +69,11 @@ rules apply with these.
    | `specify` | A significant or hard-to-change choice is unsettled. |
    | `contract-first` | A caller-facing interface or shared structure needs approval. |
    | `domain-modeling` | Data shape, states, invariants, transitions, or effects. |
-   | `architecture` | Module boundaries, ownership, layering, cross-component structure. |
+   | `architecture` | Module boundaries, ownership, layering, cross-component structure, live-update transport. |
    | `refactoring` | Structure must change while preserving behavior. |
    | `api` | HTTP/API shape, status codes, pagination, idempotency, webhooks. |
    | `database` | Persisted data, migrations, transactions, deletion, queries. |
-   | `error-handling` | Error types, propagation, recovery, retries, user-facing failures. |
+   | `error-handling` | Error types, propagation, recovery, retries, user-facing failures, auth, permissions, secrets. |
    | `ui-design` | Any user-facing UI surface, including basic styling, keyboard, focus, ARIA, contrast. |
    | `documentation` | Existing-code docs are the deliverable or a validator-required obligation. |
    | `scaffolding` | New project setup or baseline tooling. |

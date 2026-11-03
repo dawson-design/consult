@@ -1,6 +1,6 @@
 ---
 name: error-handling
-description: "How code fails: error types, error messages and responses, validation errors, retries. Load before editing."
+description: "How code fails: error types, responses, validation, retries, auth failures, secrets. Load before editing."
 ---
 
 # Error Handling
@@ -14,6 +14,8 @@ description: "How code fails: error types, error messages and responses, validat
 - Designing or reviewing typed errors, Result/Either flows, domain error
   boundaries, wrapping, retries, remote-call failures, user-facing
   errors, or swallowed failures.
+- Code touching auth, permissions, secrets, or other trust boundaries:
+  fail-closed behavior, redaction, and what an error may reveal.
 
 ## When NOT to Use
 

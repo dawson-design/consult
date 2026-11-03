@@ -41,7 +41,9 @@ against it.
    no clear leader exists. A pure passthrough proxy with no domain logic may
    forward the payload unparsed. Do not roll your own auth, crypto, token
    validation, sanitization, CSRF, parsers, or signature schemes. Use the
-   framework primitive or a maintained library that owns the problem.
+   framework primitive or a maintained library that owns the problem. This
+   covers parsers of security-sensitive input such as URLs and tokens; custom
+   security logic needs a documented need, a threat model, and negative tests.
 5. Model allowed states as explicit variants, not flag or nullable
    combinations. Split a nullable that means both "missing" and "not loaded"
    into named states. A single independent toggle with no illegal

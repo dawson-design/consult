@@ -46,7 +46,7 @@ cases:
     kind: positive
     source: {task: security-boundary-fix}
     code_change: true
-    required_any: [error-handling]
+    required_any: [proof, domain-modeling]
     expect_silent: [release, commit, git-workflow, documentation]
 
   - name: debugging-regression

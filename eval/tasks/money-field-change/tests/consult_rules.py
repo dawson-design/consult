@@ -117,7 +117,7 @@ def package_scripts(workspace: Path) -> dict:
     return json.loads(package.read_text()).get("scripts") or {} if package.exists() else {}
 
 
-# debugging
+# proof (bug fixes)
 
 
 def reproduced_before_fix(workspace: Path, trajectory: cl.Trajectory, meta: dict) -> float:
@@ -148,7 +148,9 @@ def regression_test_flips(workspace: Path, trajectory: cl.Trajectory, meta: dict
 
 def proof_2(workspace: Path, trajectory: cl.Trajectory, meta: dict) -> float:
     """A bug fix starts from a failing reproduction, and its regression test fails before the fix and passes after."""
-    return reproduced_before_fix(workspace, trajectory, meta) * regression_test_flips(workspace, trajectory, meta)
+    if not reproduced_before_fix(workspace, trajectory, meta):
+        return 0.0
+    return regression_test_flips(workspace, trajectory, meta)
 
 
 def run_on_scaffold_source(workspace: Path, sha: str, fixed: list[str], command: str) -> tuple[bool, str]:

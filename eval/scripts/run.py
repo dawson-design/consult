@@ -38,7 +38,7 @@ Tiers are presets:
 A baseline is reused only when agent, model, effort, CLI version, and every
 task dir match; otherwise the bare arm runs and the reason is printed.
 
---drop-references code-review,security runs the consult arm without those
+--drop-references code-review,ui-design runs the consult arm without those
 skills' references/ dirs. It needs a reusable baseline whose consult arm ran
 today's full pack (compared by the snapshot's content hash), so the lift
 report's comparison against that arm is the full pack against the ablation and

@@ -96,7 +96,7 @@ resolve a suite lift of about 0.1.
 
 ### Reference ablation
 
-`--drop-references code-review,security` runs the consult arm without those
+`--drop-references code-review,ui-design` runs the consult arm without those
 skills' `references/` directories; the SKILL.md bodies still name the files.
 Write a suite file under `eval/suites/` listing the tasks whose trials opened
 those references (`scripts/reference_reads.py` shows which), then run it on
@@ -274,7 +274,7 @@ A rule task adds these keys to `tests/consult.json`:
 - `rules`: the rule ids the task scores, such as `api.1` for Rule 1 of `api`.
 - `expect_silent`: skills the agent should not read on this task.
 - `gated_paths`: paths that must not change before the approval turn.
-- `test_file_cmd`: runs only the agent's own test files, for `debugging.5`.
+- `test_file_cmd`: runs only the agent's own test files, for `proof.2`.
 
 ## Scoring
 
@@ -575,8 +575,8 @@ repeat agreement at least 0.9.
 - `large-checkout-workflow` and `large-link-shortener` have no `solution/`
   and no rubric, so neither `-a oracle` nor `oracle_judge.py` can check them.
 - The oracle leaves no trajectory, so trajectory-based rules such as `api.1`
-  and `debugging.1` score 0 on it.
-- Rule checks are heuristics until calibrated. `debugging.5` misses a fix that
+  and `proof.2` score 0 on it.
+- Rule checks are heuristics until calibrated. `proof.2` misses a fix that
   renames the source file it repairs. `api.1` skips schema, migration, and
   model files by name, so it still counts a data-stage edit as handler code
   when the file also renders responses, as `money-field-change`'s
