@@ -6,27 +6,39 @@ It serves the blind sheet and its case files on 127.0.0.1 only, and writes
 each answer straight into the sheet, so labelling can stop and resume at any
 point. It never reads the key file, so it cannot show the judge's answer, its
 reason, or the arm. Every API call carries a random token from the page URL,
-so another site open in the browser cannot write labels. Standard library
+so another site open in the browser cannot write labels. Keep the sheet closed
+in any spreadsheet while the page runs: a spreadsheet that saves its older
+copy later would erase the labels saved since it opened the file. Standard library
 only; judge_labels.py holds the sheet format.
 """
 
 from __future__ import annotations
 
+import codecs
 import csv
 import json
 import os
 import re
 import secrets
+import threading
 import webbrowser
 from functools import partial
 from http import HTTPStatus
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
 CASE_RE = re.compile(r"^c\d{3}$")
 ANSWERS = ("yes", "no", "")
 SHOWN = ("row", "case", "task", "dimension", "item", "question", "look_at", "yes_when", "no_when", "human", "note")
+# Only the report judge reads the agent's messages, so a code item's case hides them too.
+SEES_MESSAGES = frozenset({"report"})
+REPLY_HEADING = "## The agent's reply at the end of"
+CHANGE_HEADING = "## The change and the final message"
+FINAL_HEADING = "\n## Final agent message\n"
+HIDDEN_NOTE = "(The agent's messages are hidden for this item, as they are from the code judges.)"
+# Threads serve requests, so saves take this lock: two must never rewrite the sheet at once.
+SAVE_LOCK = threading.Lock()
 
 
 def read_rows(sheet: Path) -> tuple[list[str], list[dict]]:
@@ -45,35 +57,82 @@ def page_rows(sheet: Path) -> list[dict]:
 def write_label(sheet: Path, row_id: str, human: str, note: str) -> str | None:
     """Set one row's human label and note; returns an error message, or None when saved.
 
-    The sheet is rewritten to a temporary file and moved into place, so a crash
-    mid-write cannot leave a half-written sheet.
+    It re-reads the sheet first, so an edit already saved from a spreadsheet is
+    kept. The sheet is rewritten to a temporary file and moved into place, so a
+    crash mid-write cannot leave a half-written sheet, and a byte-order mark
+    the sheet had is kept.
     """
     if human not in ANSWERS:
         return f"human must be yes, no, or empty, got {human!r}"
-    header, rows = read_rows(sheet)
-    target = next((row for row in rows if row.get("row") == row_id), None)
-    if target is None:
-        return f"no row {row_id!r} in the sheet"
-    target["human"], target["note"] = human, note
-    staged = sheet.with_name(f".{sheet.name}.saving")
-    with staged.open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=header)
-        writer.writeheader()
-        writer.writerows(rows)
-    os.replace(staged, sheet)
+    with SAVE_LOCK:
+        try:
+            header, rows = read_rows(sheet)
+        except (OSError, UnicodeDecodeError) as error:
+            return f"cannot read the sheet ({error}); is it saved as UTF-8 CSV?"
+        if "human" not in header or "note" not in header:
+            return "the sheet has no human or note column; was its header renamed?"
+        target = next((row for row in rows if row.get("row") == row_id), None)
+        if target is None:
+            return f"no row {row_id!r} in the sheet"
+        target["human"], target["note"] = human, note
+        staged = sheet.with_name(f".{sheet.name}.saving")
+        encoding = "utf-8-sig" if sheet.read_bytes().startswith(codecs.BOM_UTF8) else "utf-8"
+        try:
+            with staged.open("w", newline="", encoding=encoding) as handle:
+                writer = csv.DictWriter(handle, fieldnames=header, extrasaction="ignore")
+                writer.writeheader()
+                writer.writerows(rows)
+            os.replace(staged, sheet)
+        except OSError as error:
+            staged.unlink(missing_ok=True)
+            return f"cannot write the sheet ({error}); is it open in a spreadsheet?"
     return None
 
 
-def case_text(cases: Path, case: str) -> str | None:
-    """One case file's text, or None for an id that is not a case (so no other path can be read)."""
+def case_text(cases: Path, case: str, dimension: str = "report") -> str | None:
+    """One case file's text as a judge of this dimension sees it; None for an id that is not a case.
+
+    The id must look like a case, so no other path can be read. For a code
+    dimension the agent's replies and final message are cut out, because the
+    code judges never read them.
+    """
     if not CASE_RE.match(case):
         return None
     path = cases / f"{case}.md"
-    return path.read_text(encoding="utf-8") if path.is_file() else None
+    if not path.is_file():
+        return None
+    text = path.read_text(encoding="utf-8")
+    return text if dimension in SEES_MESSAGES else without_messages(text)
+
+
+def without_messages(text: str) -> str:
+    """The case without the agent's replies or final message.
+
+    A reply can hold its own headings, so a reply section runs until the next
+    section the export writes, not the next heading; the final message is the
+    last section of the bundle.
+    """
+    final = text.rfind(FINAL_HEADING)
+    if final != -1:
+        text = f"{text[: final + 1]}\n{HIDDEN_NOTE}\n"
+    kept, skipping = [], False
+    for line in text.split("\n"):
+        if line.startswith(REPLY_HEADING):
+            if not skipping:
+                kept += [HIDDEN_NOTE, ""]
+            skipping = True
+        elif line.startswith(CHANGE_HEADING):
+            skipping = False
+        if not skipping:
+            kept.append(line)
+    return "\n".join(kept)
 
 
 class LabelHandler(BaseHTTPRequestHandler):
-    """GET / (the page), GET /api/rows, GET /api/case/<id>, POST /api/label."""
+    """GET / (the page), GET /api/rows, GET /api/case/<id>?dimension=, POST /api/label."""
+
+    # A browser's idle spare connection must not hold a request thread forever.
+    timeout = 30
 
     def __init__(self, *args, sheet: Path, cases: Path, token: str, **kwargs) -> None:
         self.sheet, self.cases, self.token = sheet, cases, token
@@ -94,24 +153,36 @@ class LabelHandler(BaseHTTPRequestHandler):
         self.send(status, json.dumps(value).encode(), "application/json")
 
     def authorized(self) -> bool:
-        if secrets.compare_digest(self.headers.get("X-Label-Token", ""), self.token):
+        sent = self.headers.get("X-Label-Token", "").encode("utf-8", "replace")
+        if secrets.compare_digest(sent, self.token.encode()):
             return True
         self.send_json(HTTPStatus.FORBIDDEN, {"error": "missing or wrong token; open the URL the server printed"})
         return False
 
     def do_GET(self) -> None:
-        path = urlparse(self.path).path
+        url = urlparse(self.path)
+        path = url.path
         if path == "/":
             self.send(HTTPStatus.OK, PAGE.encode(), "text/html; charset=utf-8")
-        elif path == "/api/rows" and self.authorized():
-            self.send_json(HTTPStatus.OK, page_rows(self.sheet))
-        elif path.startswith("/api/case/") and self.authorized():
-            text = case_text(self.cases, path.removeprefix("/api/case/"))
+            return
+        if not path.startswith("/api/"):
+            self.send_json(HTTPStatus.NOT_FOUND, {"error": "not found"})
+            return
+        if not self.authorized():
+            return
+        if path == "/api/rows":
+            try:
+                self.send_json(HTTPStatus.OK, page_rows(self.sheet))
+            except (OSError, UnicodeDecodeError) as error:
+                self.send_json(HTTPStatus.INTERNAL_SERVER_ERROR, {"error": f"cannot read the sheet ({error})"})
+        elif path.startswith("/api/case/"):
+            dimension = (parse_qs(url.query).get("dimension") or ["report"])[0]
+            text = case_text(self.cases, path.removeprefix("/api/case/"), dimension)
             if text is None:
                 self.send_json(HTTPStatus.NOT_FOUND, {"error": "no such case"})
             else:
                 self.send(HTTPStatus.OK, text.encode(), "text/plain; charset=utf-8")
-        elif not path.startswith("/api/"):
+        else:
             self.send_json(HTTPStatus.NOT_FOUND, {"error": "not found"})
 
     def do_POST(self) -> None:
@@ -122,9 +193,11 @@ class LabelHandler(BaseHTTPRequestHandler):
             return
         try:
             body = json.loads(self.rfile.read(int(self.headers.get("Content-Length") or 0)))
-            error = write_label(self.sheet, str(body["row"]), str(body["human"]), str(body.get("note") or ""))
+            row, human, note = str(body["row"]), str(body["human"]), str(body.get("note") or "")
         except (ValueError, KeyError, TypeError):
-            error = "the body must be JSON with row and human"
+            self.send_json(HTTPStatus.BAD_REQUEST, {"error": "the body must be JSON with row and human"})
+            return
+        error = write_label(self.sheet, row, human, note)
         if error:
             self.send_json(HTTPStatus.BAD_REQUEST, {"error": error})
         else:
@@ -138,7 +211,7 @@ def serve(sheet: Path, cases: Path, port: int, open_browser: bool) -> int:
         return 2
     token = secrets.token_urlsafe(16)
     handler = partial(LabelHandler, sheet=sheet.resolve(), cases=cases.resolve(), token=token)
-    server = HTTPServer(("127.0.0.1", port), handler)
+    server = ThreadingHTTPServer(("127.0.0.1", port), handler)
     url = f"http://127.0.0.1:{server.server_address[1]}/#t={token}"
     print(f"Labelling {sheet.name}: {url}\nAnswers save to the sheet as you go. Press Ctrl+C to stop.", flush=True)
     if open_browser:
@@ -182,6 +255,7 @@ main { display: grid; grid-template-columns: minmax(320px, 420px) 1fr; height: 1
 @media (max-width: 860px) { main { grid-template-columns: 1fr; height: auto; } }
 #item { padding: var(--space-5); border-right: 1px solid var(--border); overflow-y: auto; }
 #case { overflow-y: auto; padding: var(--space-4) var(--space-5); }
+#case:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
 h1 { font-size: 13px; font-weight: 600; color: var(--muted); margin: 0 0 var(--space-2); }
 h2 { font-size: 20px; line-height: 1.3; margin: 0 0 var(--space-4); }
 dl { margin: 0 0 var(--space-5); }
@@ -191,7 +265,8 @@ dd { margin: var(--space-1) 0 0; }
 button { font: inherit; padding: var(--space-2) var(--space-4); border-radius: var(--radius);
   border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; }
 button.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); font-weight: 600; }
-button[aria-pressed="true"] { outline: 2px solid var(--text); outline-offset: 2px; }
+button[aria-pressed="true"] { background: var(--text); color: var(--bg); border-color: var(--text); }
+button[aria-pressed="true"]::before { content: "\2713  "; }
 button:focus-visible, textarea:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 @media (forced-colors: active) { button:focus-visible, textarea:focus-visible { outline: 2px solid transparent; } }
 label { display: block; font-size: 13px; font-weight: 600; color: var(--muted); margin: var(--space-4) 0 var(--space-1); }
@@ -239,11 +314,11 @@ pre span { display: block; }
       Keys are off while you type a note. Yes means the requirement is met. For a report item, the report is
       everything the agent told the user across its replies; the later reply stands where two conflict.</p>
   </section>
-  <section id="case" aria-label="Case"><pre id="case-text">Loading…</pre></section>
+  <section id="case" aria-label="Case" tabindex="0"><pre id="case-text">Loading…</pre></section>
 </main>
 <script>
 const token = new URLSearchParams(location.hash.slice(1)).get("t") || "";
-let rows = [], index = 0, shownCase = null;
+let rows = [], index = 0, shownCase = null, saving = false, caseRequest = 0;
 const $ = (id) => document.getElementById(id);
 
 async function api(path, options = {}) {
@@ -288,49 +363,80 @@ async function show(i) {
   for (const button of document.querySelectorAll("[data-answer]")) {
     button.setAttribute("aria-pressed", String(row.human !== "" && button.dataset.answer === row.human));
   }
-  if (row.case !== shownCase) {
+  // A code item's case hides the agent's messages, as the code judges never read them.
+  const view = row.dimension === "report" ? "report" : "code";
+  const wanted = `${row.case}/${view}`;
+  if (wanted !== shownCase) {
+    const request = ++caseRequest;
     $("case-text").textContent = "Loading the case…";
     try {
-      renderCase(await (await api(`/api/case/${row.case}`)).text());
-      shownCase = row.case;
+      const text = await (await api(`/api/case/${row.case}?dimension=${view === "report" ? "report" : "code"}`)).text();
+      if (request !== caseRequest) return;
+      renderCase(text);
+      shownCase = wanted;
       $("case").scrollTop = 0;
     } catch (error) {
-      $("case-text").textContent = `Could not load case ${row.case}: ${error.message}`;
+      if (request === caseRequest) $("case-text").textContent = `Could not load case ${row.case}: ${error.message}`;
     }
   }
 }
 
+async function save(row, human, note) {
+  await api("/api/label", { method: "POST", body: JSON.stringify({ row: row.row, human, note }) });
+  row.human = human; row.note = note;
+}
+
+function nextUnlabelled(after) {
+  const later = rows.findIndex((r, i) => i > after && !r.human);
+  return later !== -1 ? later : rows.findIndex((r) => !r.human);
+}
+
 async function answer(value) {
-  const row = rows[index];
-  const note = $("note").value;
+  // One save at a time: a second key press must not label this row again or skip the next one.
+  if (saving || !rows.length) return;
+  saving = true;
+  const at = index, row = rows[at];
   setStatus("Saving…");
   try {
-    await api("/api/label", { method: "POST", body: JSON.stringify({ row: row.row, human: value, note }) });
-    row.human = value; row.note = note;
+    await save(row, value, $("note").value);
     setStatus(value ? `Saved ${row.row}: ${value}.` : `Saved ${row.row}: can't tell (left unlabelled).`);
-    const next = rows.findIndex((r, i) => i > index && !r.human);
-    if (next === -1 && rows.every((r) => r.human)) {
-      await show(index);
+    const next = value ? nextUnlabelled(at) : at + 1;
+    if (next === -1) {
+      await show(at);
       setStatus("Every item is labelled. Run judge_labels.py agree on the sheet.");
     } else {
-      await show(value ? (next === -1 ? index + 1 : next) : index + 1);
+      await show(next);
     }
   } catch (error) {
-    setStatus(`Not saved: ${error.message}. Is the server still running?`, true);
+    setStatus(`Not saved: ${error.message}`, true);
+  } finally {
+    saving = false;
   }
 }
+
+// A note typed without answering is saved when the field loses focus, so moving on never drops it.
+$("note").addEventListener("blur", async () => {
+  const row = rows[index];
+  if (!row || $("note").value === (row.note || "")) return;
+  try {
+    await save(row, row.human, $("note").value);
+    setStatus(`Saved the note on ${row.row}.`);
+  } catch (error) {
+    setStatus(`Note not saved: ${error.message}`, true);
+  }
+});
 
 document.querySelectorAll("[data-answer]").forEach((b) => b.addEventListener("click", () => answer(b.dataset.answer)));
 $("prev").addEventListener("click", () => show(index - 1));
 $("next").addEventListener("click", () => show(index + 1));
 $("unlabelled").addEventListener("click", () => {
-  const next = rows.findIndex((r, i) => i > index && !r.human);
-  const first = rows.findIndex((r) => !r.human);
-  if (next !== -1 || first !== -1) show(next !== -1 ? next : first);
+  const next = nextUnlabelled(index);
+  if (next !== -1) show(next);
   else setStatus("Every item is labelled.");
 });
 document.addEventListener("keydown", (event) => {
-  if (event.target.tagName === "TEXTAREA" || event.metaKey || event.ctrlKey || event.altKey) return;
+  if (event.target.tagName === "TEXTAREA" || event.metaKey || event.ctrlKey || event.altKey || event.repeat) return;
+  if (!rows.length) return;
   const actions = { y: () => answer("yes"), n: () => answer("no"), s: () => answer(""), j: () => show(index + 1), k: () => show(index - 1) };
   if (actions[event.key]) { event.preventDefault(); actions[event.key](); }
 });

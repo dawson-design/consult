@@ -567,7 +567,10 @@ scrubbed as the judges' view is. The hidden fields go to `<sheet>.key.json`.
 `serve` opens a local page (only on 127.0.0.1) with each item beside its
 case, grouped so each case is read once; keys `y`, `n`, and `s` answer yes,
 no, or can't tell, and each answer saves into the sheet, so labelling can
-stop and resume. The page never reads the key file. The sheet also opens in
+stop and resume. The page never reads the key file. For a code item it hides
+the agent's replies and final message, as the code judges never read them.
+Keep the sheet closed in any spreadsheet while the page runs: a spreadsheet
+that later saves its older copy would erase the labels saved since. The sheet also opens in
 a spreadsheet: write `yes` or `no` in the `human` column. `agree` reports per dimension
 Cohen's kappa against the judge, each arm's bias (the judge's yes-rate minus
 the human's), and the judge's unknown rate. `repeat` reports how often two

@@ -16,7 +16,7 @@ import unittest
 import urllib.error
 import urllib.request
 from functools import partial
-from http.server import HTTPServer
+from http.server import ThreadingHTTPServer
 from pathlib import Path
 
 EVAL_DIR = Path(__file__).resolve().parents[2]
@@ -26,6 +26,32 @@ import judge_labels as jl
 import label_page as lp
 
 TOKEN = "test-token"
+# A case as judge_labels.py export writes it; the reply holds a heading of its own.
+CASE = """# Case c001: t
+
+## Request
+
+Fix the bug.
+
+## The agent's reply at the end of the request turn, which turn 2 (approve) answered
+
+## Plan
+REPLY-TEXT: all tests pass.
+
+## The change and the final message
+
+# Changes against the starting repository
+
+## Diff
+
+```diff
++added
+```
+
+## Final agent message
+
+FINAL-TEXT: done.
+"""
 
 
 def write_sheet(path: Path) -> None:
@@ -50,12 +76,12 @@ class LabelPageTests(unittest.TestCase):
         write_sheet(self.sheet)
         self.cases = jl.cases_dir(self.sheet)
         self.cases.mkdir()
-        (self.cases / "c001.md").write_text("# Case c001\n\n```diff\n+added\n```\n")
+        (self.cases / "c001.md").write_text(CASE)
         (root / "secret.md").write_text("not a case")
         # A key file beside the sheet holds the judge's answers; the page must never serve it.
         jl.key_path(self.sheet).write_text(json.dumps({"rows": {"r001": {"answer": "JUDGE-ANSWER", "arm": "consult"}}}))
         handler = partial(lp.LabelHandler, sheet=self.sheet, cases=self.cases, token=TOKEN)
-        self.server = HTTPServer(("127.0.0.1", 0), handler)
+        self.server = ThreadingHTTPServer(("127.0.0.1", 0), handler)
         threading.Thread(target=self.server.serve_forever, daemon=True).start()
         self.addCleanup(self.server.server_close)
         self.addCleanup(self.server.shutdown)
@@ -122,11 +148,50 @@ class LabelPageTests(unittest.TestCase):
             with self.subTest(path=path):
                 self.assertEqual(self.request(path)[0], 404)
 
+    def test_a_code_items_case_hides_the_agents_messages_as_the_code_judges_never_read_them(self):
+        _, code = self.request("/api/case/c001?dimension=code")
+        self.assertIn(b"+added", code)
+        self.assertIn(b"Fix the bug.", code)
+        self.assertNotIn(b"REPLY-TEXT", code)
+        self.assertNotIn(b"FINAL-TEXT", code)
+        self.assertIn(b"hidden for this item", code)
+
+    def test_a_report_items_case_shows_every_reply_and_the_final_message(self):
+        _, report = self.request("/api/case/c001?dimension=report")
+        self.assertIn(b"REPLY-TEXT", report)
+        self.assertIn(b"FINAL-TEXT", report)
+
+    def test_saves_arriving_together_all_land(self):
+        rows = ["r001", "r002", "r003"] * 4
+        threads = [
+            threading.Thread(target=self.request, args=("/api/label", {"row": r, "human": "yes", "note": r}))
+            for r in rows
+        ]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join()
+        self.assertEqual(self.labels(), {r: ("yes", r) for r in ("r001", "r002", "r003")})
+        self.assertEqual(list(self.sheet.parent.glob(".*.saving")), [])
+
+    def test_a_sheet_that_cannot_be_written_says_so_and_leaves_no_temporary_file(self):
+        self.sheet.parent.chmod(0o555)
+        self.addCleanup(self.sheet.parent.chmod, 0o755)
+        status, body = self.request("/api/label", {"row": "r001", "human": "yes"})
+        self.assertEqual(status, 400)
+        self.assertIn(b"cannot write the sheet", body)
+        self.assertEqual(list(self.sheet.parent.glob(".*.saving")), [])
+
+    def test_unknown_api_paths_and_odd_tokens_get_an_answer(self):
+        self.assertEqual(self.request("/api/nothing")[0], 404)
+        self.assertEqual(self.request("/api/rows", token="t\u00e9")[0], 403)
+
     def test_a_sheet_with_a_byte_order_mark_keeps_its_header(self):
         self.sheet.write_bytes(b"\xef\xbb\xbf" + self.sheet.read_bytes())
         self.request("/api/label", {"row": "r001", "human": "yes"})
         self.assertEqual(lp.read_rows(self.sheet)[0][0], "row")
         self.assertEqual(self.labels()["r001"], ("yes", ""))
+        self.assertTrue(self.sheet.read_bytes().startswith(b"\xef\xbb\xbf"))
 
 
 if __name__ == "__main__":
