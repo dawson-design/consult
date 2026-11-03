@@ -1,8 +1,5 @@
 # Item Templates and Splitting
 
-Load this reference to draft any tracker item, or to split work that is too
-large for one sprint.
-
 ## Rule
 
 The project's own templates and required fields win over these. Use the
@@ -62,9 +59,8 @@ closes, record which Rule 9 condition closed it.
 <Design doc, ADR, or plan file.>
 ```
 
-An Epic is a feature with an end. Names such as Tech debt, Bugs, Misc,
-Platform, or Q3 describe a category, a team, or a period, and such an Epic
-never closes. Use a label for the category instead.
+An Epic named for a category, team, or period, such as Tech debt, Platform,
+or Q3, never closes. Use a label instead.
 
 ## Issue
 
@@ -90,16 +86,11 @@ two sentences.>
 
 Do not add an "As a user" story unless the project's template asks for one.
 The Problem section names who has the problem and what it costs them. A
-story's "As a" and "so that" clauses hold the same facts. A child Issue's
-Problem can be one sentence. Link its Epic for the larger reason. Do not copy
-the Epic's Goal, scope, or background into the Issue.
+story's "As a" and "so that" clauses hold the same facts.
 
 Write each acceptance criterion as one line. Use Given/When/Then only when a
 precondition changes the result, or when the team runs BDD tests from the
 criteria.
-
-Record blockers with the tracker's dependency links. The body names only the
-impact of a blocker.
 
 ## Refactor or chore
 
@@ -158,8 +149,6 @@ spike that `specify` governs.
 <The decision, where it is recorded, and the Issues drafted from it.>
 ```
 
-A research Issue ships no production code.
-
 ## Approval preview
 
 Mark every item new, existing, or changed. Name each change to an existing
@@ -181,47 +170,11 @@ Initiative (existing #40): Cut checkout abandonment from 18% to 12% by Q1
 
 ## Splitting
 
-Signals that an Issue is too large:
-
-- It breaks a Rule 3 size limit, or no one can estimate it.
-- Its body passes Rule 5's 200 words even with the parent's context linked.
-- Its title needs "and".
-- No single test could show it working.
+An Issue whose body passes Rule 5's 200 words, even with the parent's context
+linked, is too large. Split it.
 
 Some work takes under half a day and changes nothing anyone can see. Put it
 in the Change section of the sibling Issue that needs it.
 
-Ways to split, each producing slices a user, caller, or operator can see:
-
-| Split by | Example |
-|---|---|
-| Workflow step | Search, then filter, then save a search. |
-| Business rule | Flat discounts first, then percentage, then stacked. |
-| Data variation | One currency first, then multi-currency. |
-| Interface | Web form first, then the API, then the CLI. |
-| Path | The main path first, then each failure path. |
-| Unknown | A research Issue answers the question, then Issues follow. |
-| Performance | Correct first, then fast enough. |
-
-Three kinds of split produce no slice that can ship:
-
-- by layer, such as backend, frontend, and tests
-- by role, such as development and QA
-- "phase 1" and "phase 2" with no behavior named for either
-
-## Canon
-
-- Bill Wake, [INVEST in Good Stories, and SMART Tasks](https://xp123.com/articles/invest-in-good-stories-and-smart-tasks/)
-  (2003): the source of Independent, Negotiable, Valuable, Estimable, Small,
-  Testable. Load when judging whether an Issue is well formed.
-- Bill Wake, [Twenty Ways to Split Stories](https://xp123.com/twenty-ways-to-split-stories/)
-  (2005): get a thin end-to-end path in place first.
-- Richard Lawrence and Peter Green,
-  [The Humanizing Work Guide to Splitting User Stories](https://www.humanizingwork.com/the-humanizing-work-guide-to-splitting-user-stories/):
-  patterns for splitting, and why not to split by layer.
-- Mike Cohn,
-  [Five Simple but Powerful Ways to Split User Stories](https://www.mountaingoatsoftware.com/agile/five-simple-but-powerful-ways-to-split-user-stories):
-  SPIDR (spikes, paths, interfaces, data, rules).
-- [The Scrum Guide](https://scrumguides.org/scrum-guide.html): sprints of one
-  month or less, the definition of done, and sprint scope set with the
-  product owner.
+A split into "phase 1" and "phase 2" with no behavior named for either ships
+nothing.

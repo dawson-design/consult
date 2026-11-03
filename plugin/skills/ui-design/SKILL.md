@@ -71,17 +71,14 @@ description: "Frontend UI: forms, components, layout, styling, accessibility, ke
 
 ## References
 
-- `references/accessibility.md`: load when the diff touches focus, dialogs,
-  ARIA, forms, live regions, or a WCAG criterion you need to quote.
-- `references/canon.md`: load when choosing product or tool defaults, or
-  reviewing a screen against common failure modes.
-- `references/typography.md`: load when setting type scale, measure, or
-  rhythm.
-- `references/css.md`: load when a layout or interaction is about to reach
-  for JavaScript that modern CSS can do.
-- `references/frameworks.md`: load when the user asks to compare frontend
-  frameworks.
+- `references/accessibility.md`: load before writing live regions, menus,
+  tooltips, composite widgets, required or error fields, SVG icons, focus
+  rings, or reduced-motion and forced-colors CSS.
+- `references/canon.md`: load when choosing a framework, font, type scale,
+  or spacing default, or before building a tool, dashboard, admin, or CRUD
+  screen.
 - `references/platforms.md`: load for native platforms, government design
-  systems, or web patterns Carbon lacks.
-- `references/editorial.md`: load for brand, editorial, and release pages,
-  not tools.
+  systems, or web tool patterns Carbon lacks (menus, toolbars, undo, drag
+  and drop).
+- `references/editorial.md`: load for brand, marketing, landing, editorial,
+  release, and docs home pages, not tools.

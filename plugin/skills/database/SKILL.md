@@ -61,6 +61,5 @@ description: Migrations, schema changes, indexes, queries, transactions, or lock
 
 ## References
 
-- `references/online-ddl.md`: load before any DDL on a production table.
-- `references/explain-and-isolation.md`: load when reading a query plan or
-  choosing an isolation level.
+- `references/online-ddl.md`: load before any DDL on a production table, or
+  when configuring SQLite for concurrent writes.

@@ -81,4 +81,4 @@ description: Use to draft, split, or track tickets, issues, epics, and initiativ
 
 - `references/templates.md`: load when drafting an item or splitting work.
 - `references/github.md`, `jira.md`, and `other-trackers.md`: load for that
-  tracker's levels, fields, and commands.
+  tracker's levels, fields, commands, and commit keywords.

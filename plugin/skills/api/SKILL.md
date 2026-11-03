@@ -61,7 +61,8 @@ description: Adding or changing an HTTP endpoint, handler, status code, response
    REST resource API with no established format, default to JSON:API unless a
    domain standard or client interoperability need favors another documented
    choice. New APIs use the chosen model's native error format; document
-   deviations.
+   deviations. A model with no native error format uses RFC 9457 Problem
+   Details. Never claim conformance to a standard the API does not meet.
 5. Middleware is for transport-wide concerns (logging, tracing, rate limits).
    Endpoint-specific validation, ownership checks, privileged authorization,
    and domain invariants stay at the route or domain boundary.
@@ -84,11 +85,8 @@ description: Adding or changing an HTTP endpoint, handler, status code, response
 
 Load only the one the feature needs:
 
-- `references/api-evolution.md`: evolution rules and versioning strategies.
 - `references/rest-error-status-codes.md`: which codes each endpoint
-  documents, and detail behind the Rule 3 table.
-- `references/data-models.md`: JSON:API default; FHIR, HAL, JSON-LD.
-- `references/middleware-vs-handler.md`: request-pipeline placement.
+  documents, and how to report several failures in one response.
 - `../security/references/web-app.md`: CSRF middleware, security headers, CORS.
 - `../security/references/api-and-auth.md`: handler-level authorization for
   privileged endpoints.

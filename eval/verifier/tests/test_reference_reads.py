@@ -100,13 +100,13 @@ class ReferenceReadsTests(unittest.TestCase):
 
     def test_the_report_shows_each_reference_per_job_including_ones_nobody_opened(self):
         self.trial("bare", "t__0")
-        self.trial("consult", "t__0", claude_read(f"{CLAUDE_SKILLS}/workflow/references/long-runs.md"))
+        self.trial("consult", "t__0", claude_read(f"{CLAUDE_SKILLS}/workflow/references/plans.md"))
         self.trial("consult", "t__1")
         with redirect_stdout(io.StringIO()) as out:
             reference_reads.main(["reference_reads.py", str(self.root / "bare"), str(self.root / "consult")])
         report = out.getvalue()
-        self.assertIn("| workflow/references/long-runs.md | 0/1 | 1/2 |", report)
-        self.assertIn("| workflow/references/simple-not-easy.md | 0/1 | 0/2 |", report)
+        self.assertIn("| workflow/references/plans.md | 0/1 | 1/2 |", report)
+        self.assertIn("| workflow/references/long-runs.md | 0/1 | 0/2 |", report)
 
 
 if __name__ == "__main__":

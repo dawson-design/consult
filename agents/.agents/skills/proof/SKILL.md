@@ -92,9 +92,6 @@ not count until you can say which criterion each test proves.
 - `references/black-box.md`: load when choosing test inputs or outputs, or
   writing a black-box or integration test, a golden file, or a bug's
   regression guard.
-- `references/data-shape-boundaries.md`: load when placing checks in
-  pipelines, parsers, validators, middleware, or functional-core splits.
-- `references/recipes.md`: load when the right check depends on the domain.
-- `references/removals.md`: load for removals and replacements.
 - `references/test-theater.md`: load when a test asserts how the code is
-  built instead of what it does.
+  built instead of what it does, when placing checks in a pipeline, parser,
+  validator, or middleware chain, and for removals and replacements.
