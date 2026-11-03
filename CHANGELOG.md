@@ -47,6 +47,19 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Consult's review, proof, and stage process is bounded, because eval traces
+  showed it drove most of the consult arm's 4.9x wall time with no quality
+  gain. `workflow` runs one fresh-context review per change, after the last
+  stage, and a second review only for Critical or High findings, on the fix
+  diff alone. An approved plan now covers every stage it shows; the build
+  stops again only when a stage changes a Rule 2 item from what the plan
+  showed. `proof` Rule 6 asks for one hand-made failure per acceptance
+  criterion and rules out scripted bulk mutation runs unless the user asks.
+  `specify` Rule 5 and workflow's `plans`, `stages`, and `long-runs`
+  references match. Three workflow tripwires that restated core rules 2 and
+  3 (helper layers, future flexibility, hand-rolled solved problems) are
+  removed.
+
 - Code tasks in the eval no longer use the four generic judge criteria. A code
   task without a rubric scores on its deterministic dimensions alone, and
   rescoring keeps an old run's judge score at the same 0.45 share. Routing

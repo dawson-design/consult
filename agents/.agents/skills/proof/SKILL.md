@@ -54,8 +54,11 @@ not count until you can say which criterion each test proves.
    same input gives the same output. Do not test the framework or the
    language.
 5. Fix a flaky test at its cause, never with sleeps or retries.
-6. See each new test fail once for the right reason. If you wrote it before
-   the code, run it first; if after, revert or break the change and run it.
+6. See the check for each acceptance criterion fail once for the right
+   reason. If you wrote it before the code, run it first; if after, break
+   the change once by hand, run it, and restore the change. One failure per
+   criterion is enough. Do not script bulk break-and-restore mutation runs
+   unless the user asks, because they cost more than the change they check.
    A test you have never seen fail may not test anything.
 7. Check config, generated files, and docs by loading or running them the
    way the system does, never by asserting their text.
@@ -86,7 +89,8 @@ not count until you can say which criterion each test proves.
 | "The types already prove it" | Test the rule the types do not enforce. | The criterion is exactly what the type checker enforces. |
 | "There's no way to test this, so skip proof" | Run it by hand and record the command, the output, and the criterion it proves. | An existing check already loads or runs it. |
 | "The test mentions the changed code, so it counts" | Ask whether it would fail if the rule were wrong; rewrite it if not. | It fails when the rule is broken. |
-| "The test passed first time" | Revert or break the change and watch it fail (Rule 6). | You saw it fail before the code existed. |
+| "The test passed first time" | Break the change once by hand and watch it fail (Rule 6). | You saw it fail before the code existed. |
+| "Break every guard with a script to be sure" | See one hand-made failure per acceptance criterion (Rule 6). | The user asked for mutation testing. |
 
 ## Handoffs
 

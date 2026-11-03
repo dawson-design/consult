@@ -9,8 +9,8 @@ Save the approved plan as Markdown: the host's plan file when the host
 writes one, otherwise `docs/plans/<slug>.md`. Include intent, acceptance
 criteria, constraints, approved Rule 2 items, steps in Rule 4 stage
 order, and proof obligations, so a fresh session can build it without the planning
-conversation. Record later stages' Rule 2 items as proposed, and mark each
-approved when its gate clears.
+conversation. Record any Rule 2 item the plan leaves open as proposed, and
+mark it approved when its gate clears.
 
 ## Handoffs
 
