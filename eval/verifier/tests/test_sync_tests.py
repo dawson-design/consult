@@ -5,6 +5,7 @@ python3 -m unittest discover eval/verifier/tests
 
 from __future__ import annotations
 
+import json
 import shutil
 import sys
 import tempfile
@@ -80,6 +81,38 @@ class StepVerifierTests(unittest.TestCase):
 
     def test_the_final_step_keeps_the_shared_verifier(self):
         self.assertNotIn("continue", self.step_test_sources("money-field-change"))
+
+
+class FollowUpTurnTests(unittest.TestCase):
+    """An agent that stops to ask for sign-off must hear back, or the trial scores the harness."""
+
+    def setUp(self) -> None:
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        self.task = Path(self._tmp.name) / "single"
+        (self.task / "tests").mkdir(parents=True)
+
+    def write_meta(self, **fields) -> None:
+        (self.task / "tests" / "consult.json").write_text(json.dumps({"kind": "code", **fields}))
+
+    def test_every_code_task_in_the_suite_has_follow_up_turns_or_a_reason(self):
+        for task in sync_tests.task_dirs():
+            if sync_tests.task_kind(task) == "code" and len(sync_tests.step_names(task)) < 2:
+                meta = json.loads((task / "tests" / "consult.json").read_text())
+                self.assertTrue(meta.get("single_turn"), task.name)
+
+    def test_a_single_turn_code_task_is_refused(self):
+        self.write_meta()
+        with self.assertRaisesRegex(SystemExit, "needs follow-up turns"):
+            sync_tests.check_follow_up_turns(self.task, "code", [])
+
+    def test_a_stated_reason_allows_a_single_turn(self):
+        self.write_meta(single_turn="a one-line typo fix with no contract or data shape")
+        sync_tests.check_follow_up_turns(self.task, "code", [])
+
+    def test_routing_tasks_stay_single_turn(self):
+        self.write_meta(kind="routing")
+        sync_tests.check_follow_up_turns(self.task, "routing", [])
 
 
 if __name__ == "__main__":

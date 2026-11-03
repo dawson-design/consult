@@ -17,7 +17,7 @@ reason, its evidence (whose form differs by answer: a quote for yes or no, the
 files checked for a missing thing, what it could not find for unknown), or the
 arm. Each case's material is
 in <sheet>-cases/<case>.md: the task instruction, the agent's earlier replies
-the judges read, and the judge bundle (the diff and the final message), with
+(only the report judge reads them), and the judge bundle (the diff and the final message), with
 Consult's names scrubbed as the judges' view scrubs them. The labeller may
 still recognise an arm from its style. The answers, reasons, evidence, and arms
 go to <sheet>.key.json, which agree reads. export refuses to overwrite any of these,

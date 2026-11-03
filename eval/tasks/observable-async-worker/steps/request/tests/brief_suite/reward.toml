@@ -1,0 +1,7 @@
+# Synced from eval/verifier/shared/reward.brief.toml. Do not edit in tests/.
+# Step-1 (brief) reward: the sign-off score only. multi_step_reward_strategy =
+# "final" keeps it out of the trial reward; lift.py reads it from step_results.
+[[reward]]
+name = "reward"
+aggregation = "weighted-mean"
+weights = { signoff = 1.0 }

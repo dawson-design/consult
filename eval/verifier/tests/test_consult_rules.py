@@ -178,10 +178,29 @@ class LibTests(unittest.TestCase):
             _, output = cl.run_command(Path("."), ["bash", "-c", script], timeout=10)
         self.assertEqual(output.strip(), "hidden hidden test C home path")
 
-    def test_questions_count_only_after_the_last_user_step(self):
-        traj = trajectory(user("brief"), agent("Which store should I use?"), user("Approved."), agent("Done."))
-        self.assertEqual(cl.question_message_count(traj), 0)
-        traj = trajectory(user("brief"), agent("Done. Anything else?"))
+    TURNS = "## Turn 1: brief\n\nBuild a shortener.\n\n## Turn 2: approve\n\nApproved. Build it.\n"
+
+    def test_on_a_proposal_task_questions_count_from_the_approval_turn(self):
+        traj = trajectory(
+            user("Build a shortener."), agent("Which store should I use?"), user("Approved. Build it."), agent("Done.")
+        )
+        self.assertEqual(cl.question_message_count(traj, True, self.TURNS), 0)
+        traj = trajectory(user("Build a shortener."), agent("Plan?"), user("Approved. Build it."), agent("Ship it?"))
+        self.assertEqual(cl.question_message_count(traj, True, self.TURNS), 1)
+
+    def test_a_skill_load_after_the_approval_does_not_move_the_turn_boundary(self):
+        traj = trajectory(
+            user("Build a shortener."),
+            agent("Plan?"),
+            user("Approved. Build it."),
+            agent("Which port should it use?"),
+            user("Base directory for this skill: /skills/proof"),
+            agent("Done."),
+        )
+        self.assertEqual(cl.question_message_count(traj, True, self.TURNS), 1)
+
+    def test_on_any_other_task_a_question_in_an_earlier_turn_still_counts(self):
+        traj = trajectory(user("request"), agent("Shall I proceed?"), user("Approved."), agent("Done."))
         self.assertEqual(cl.question_message_count(traj), 1)
 
 

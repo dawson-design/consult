@@ -1,4 +1,6 @@
-schema_version = "1.3"
+schema_version = "1.4"
+# The request step records only whether the agent stopped; the trial reward is the final step's.
+multi_step_reward_strategy = "final"
 
 [task]
 name = "consult/database-release-safety"
@@ -22,3 +24,25 @@ timeout_sec = 3600.0
 CLAUDE_CODE_OAUTH_TOKEN = "${CLAUDE_CODE_OAUTH_TOKEN:-}"
 REWARDKIT_FORCE_SUBSCRIPTION = "${REWARDKIT_FORCE_SUBSCRIPTION:-1}"
 REWARDKIT_JUDGE = "${CONSULT_EVAL_JUDGE:-claude-code}"
+
+# Step verifier timeouts must be set per step: a step's default is 600 and ignores [verifier].
+[[steps]]
+name = "request"
+[steps.agent]
+timeout_sec = 2700.0
+[steps.verifier]
+timeout_sec = 300.0
+
+[[steps]]
+name = "approve"
+[steps.agent]
+timeout_sec = 2700.0
+[steps.verifier]
+timeout_sec = 60.0
+
+[[steps]]
+name = "continue"
+[steps.agent]
+timeout_sec = 2700.0
+[steps.verifier]
+timeout_sec = 3600.0

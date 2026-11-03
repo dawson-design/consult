@@ -230,10 +230,22 @@ def changes_section(changes: str) -> str:
     return changes[:CHANGES_LIMIT] + note
 
 
+def replies_shown(dimension: str, inputs: Inputs) -> tuple[tuple[str, str], ...]:
+    """The agent's earlier replies a judge reads.
+
+    The report judge reads them all: the report can span turns, and it checks
+    the build against what the agent proposed and the user approved. A code
+    judge reads none, so the agent's description of its own work cannot sway
+    it; an agent that builds in the first turn would otherwise have its report
+    read as the approved proposal.
+    """
+    return inputs.earlier_replies if dimension in SEES_MESSAGE else ()
+
+
 def dimension_prompt(dimension: str, items: list[dict], inputs: Inputs, guidance: str) -> str:
     """The user prompt for one judge: its guidance, the task, its items, then the fenced agent output."""
     output = []
-    for heading, reply in inputs.earlier_replies:
+    for heading, reply in replies_shown(dimension, inputs):
         output += [f"## {heading}", "", reply or "No message.", ""]
     output += ["## The agent's changes", "", changes_section(inputs.changes)]
     if dimension in SEES_MESSAGE:
@@ -555,7 +567,8 @@ def refused(dimension: str, items: list[dict], planted: list[str]) -> dict:
     return {"dimension": dimension, "error": error, "attempts": 0, "answers": answers}
 
 
-TURN_RE = re.compile(r"^## Turn (\d+): (\S+)\n\n(.*?)(?=^## Turn \d+: |\Z)", re.MULTILINE | re.DOTALL)
+TURN_RE = cl.TURN_RE
+same_start = cl.same_start
 
 
 def earlier_replies(instruction: str, steps: list[dict]) -> list[tuple[str, str]]:
@@ -579,12 +592,6 @@ def earlier_replies(instruction: str, steps: list[dict]) -> list[tuple[str, str]
             (f"The agent's reply at the end of the {previous} turn, which turn {number} ({name}) answered", reply)
         )
     return replies
-
-
-def same_start(step: dict, text: str) -> bool:
-    """The user step's message opens with the turn's instruction (whitespace-insensitive)."""
-    wanted = " ".join(text.split())[:200]
-    return bool(wanted) and " ".join(str(step.get("message") or "").split()).startswith(wanted)
 
 
 def changed_paths_text(workspace: Path) -> str:

@@ -10,10 +10,10 @@ except report: the oracle writes no final message. Every must-have item must
 answer yes on the oracle. One that does not is a bug in the rubric or the
 oracle, to fix before any trial is judged.
 
-On a multi-step task the judges also read the agent's reply that each later
-turn answered, such as the approved proposal. The oracle has no conversation,
-so the check writes one: each step's instruction as the user's turn, and
-steps/<step>/solution/reply.md, when present, as the oracle's reply.
+The oracle has no conversation, so the check writes one: each step's
+instruction as the user's turn, and steps/<step>/solution/reply.md, when
+present, as the oracle's reply. Only the report judge reads replies, and the
+check skips it, so a reply is passed along but not judged.
 
 Judge calls bill the maintainer's Claude subscription through the official
 `claude` CLI in the container: one call per code dimension per task, plus up

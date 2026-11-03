@@ -184,8 +184,8 @@ the low end next to the mean:
   0 is labelled "not distinguishable from noise".
 - **Cost and effort**: each arm's mean output tokens, cost, agent seconds,
   turns, lines changed, and questions asked, with the change and its interval.
-  Questions count agent messages that end in a question after the last user
-  turn, the gate-fatigue number. Cost is the agent's API-equivalent estimate,
+  Questions count agent messages that end in a question, in every turn except
+  before the approval on a brief task, the gate-fatigue number. Cost is the agent's API-equivalent estimate,
   since runs bill a subscription. A resumed multi-step trial reports its final
   step's tokens, which already include the earlier steps, and no cost, until
   a real trial shows whether Harbor's per-step cost covers one step or all.
@@ -218,8 +218,8 @@ Suites live in `suites/*.yaml` and list task names. Tasks live in
 ```text
 tasks/<name>/
   task.toml                 name, kind, features, timeouts, judge env, [[steps]]
-  instruction.md            the prompt the agent receives (single-step tasks)
-  steps/<name>/             instruction.md per turn, and solution/ (multi-step tasks)
+  instruction.md            the prompt the agent receives (routing tasks, one turn)
+  steps/<name>/             instruction.md per turn, and solution/ (every code task)
   environment/Dockerfile    synced; Node 22, git, python3, rewardkit
   environment/workspace/    the starting repository, committed at build time
   solution/solve.sh         oracle reference (routing: no-op)
@@ -254,7 +254,9 @@ The `rules` suite measures whether each skill's rules change what the agent
 does. Its prompts are product briefs or user reports, not specs, so a pass
 means the agent noticed a requirement the prompt never stated.
 
-- `bug-from-symptom`: a customer report that names no file. One step.
+- `bug-from-symptom`: a customer report that names no file. One step, by
+  design: it scores `workflow.1`, which fails an agent that stops for sign-off
+  on a narrow fix.
 - `money-field-change`: multi-currency orders in a service whose `total` field
   an iOS app reads. Three steps.
 - `service-from-brief`: a link shortener built from an empty repository. Three
@@ -268,6 +270,34 @@ data stage exists, so the agent stops again at the contracts gate. The
 `continue` step answers it: "Approved. Continue." An agent that built
 everything in the `approve` step gets the same reply. The agent fragments set
 `resume_trajectory: true`, so each step continues the same session.
+
+Every other code task has three turns too, because Consult stops for sign-off
+before a contract, data shape, or migration, and a task that never answers
+scores the half-built workspace instead of the agent. The `request` step sends
+the task. The `approve` step sends: "Approved within the request as written:
+anything it rules out stays out. Use your recommended option for any choice it
+leaves open. If you have finished, say so." The `continue` step sends:
+"Approved within the request as written. Continue with anything still
+unfinished. If you have finished, say so." Both arms get the same turns. The
+reply approves only within the request, so an agent that asks to add a
+dependency the request rules out gets no permission to add it, and the judges
+treat an approval as settling open choices, never as adding scope. An agent
+that finished early still answers two more turns, and a question it asks in
+any turn counts in the `questions` readout. The `request` step records whether
+the agent stopped (`signoff_mode`) without scoring it. `sync_tests.py --check`
+fails on a code task with no follow-up turns unless its `consult.json` gives a
+`single_turn` reason. Calibration runs before this change were single-turn;
+rejudging them shows the judges the two later turns the agent never received.
+
+A brief task (`money-field-change`, `service-from-brief`) sets
+`proposal_turn: true` in `consult.json`: its first turn is a brief, and
+Consult answers it with a proposal that the next turn approves, so a question
+before that approval is the gate working, not an interruption. Questions
+count from the approve turn, found by matching its text, since skill loads
+and task notifications are user steps too. No code judge reads the proposal:
+on a brief task a bare agent builds in the first turn, so its first reply is
+its own report. The report judge checks the build against what was proposed
+and approved (`report.matches_approved`).
 
 A rule task adds these keys to `tests/consult.json`:
 
@@ -291,7 +321,7 @@ model-judged.
 | `rubric` | code | 0.45 | The task's rubric items: must-have met rate x 0.6 plus quality met rate x 0.4, unknown answers left out. Dropped until the task has a rubric |
 | `judge` | routing | 0.45 | Claude Code judge, four numeric criteria: engineering maturity 0.35, proof quality 0.25, simplicity 0.2, risk handling 0.2 |
 | `skill_triggering` | both | 0 | Share of intended skills the agent read or invoked |
-| `non_interruption` | both | 0 | 1 minus 0.25 per agent message after the last user turn that ends with a question |
+| `non_interruption` | both | 0 | 1 minus 0.25 per agent message that ends with a question, counted as in the cost table |
 | `rules` | both | 0 | One criterion per rule id in `consult.json` `rules` |
 
 The zero-weight readouts stay in `reward.json` for regression tracking without
@@ -400,10 +430,13 @@ To add a task:
 3. Edit `tests/consult.json`.
 4. For a code task, write `verifier/hidden/<task>.mjs`, `tests/proof/submitted.py`,
    `solution/solve.sh`, and a rubric in `verifier/rubrics/<task>.json`.
-5. For a rule task, add the rule-task keys to `consult.json`. A multi-step
-   task also needs `steps/brief/`, `steps/approve/`, `steps/continue/`, and a
-   no-op `solution/solve.sh` in `brief` and `continue`, so the oracle proposes
-   first and builds once, in `approve`.
+5. For a rule task, add the rule-task keys to `consult.json`. Every code task
+   has three turns (see above): `steps/request/`, `steps/approve/`, and
+   `steps/continue/`, each with its `instruction.md`, and a no-op
+   `solution/solve.sh` in `approve` and `continue`, so the oracle builds once,
+   in the first turn, from the task's `solution/solve.sh`. A brief task that
+   must propose before building names its steps `brief`, `approve`, and
+   `continue` instead, with the no-op in `brief` and `continue`.
 6. Add the name to a suite and run the sync.
 
 ### Judge rubrics
@@ -454,8 +487,10 @@ at a time. Each call gets:
 - the task instruction and only its own items, without their tier or the
   rule's key phrase (the Consult arm often repeats rule wording, and a judge
   shown it would reward the echo);
-- on a multi-step task, the agent's reply that each later turn answered, such
-  as the proposal the user approved;
+- on a multi-step task, the report judge reads the agent's reply at the end of
+  every earlier turn, since the report can span turns and includes any
+  proposal the user approved. A code judge reads none of the agent's
+  messages;
 - the changed paths with their git status, then the agent's changes (the diff
   plus new files), fenced as data;
 - a blinded copy of the final workspace as its working directory, to read
@@ -516,9 +551,10 @@ each task's `solution/solve.sh` in the task image, checks it passes the
 visible tests and the hidden check, and runs the rubric judges on every
 dimension but report, since the oracle writes no final message. Every
 must-have item must answer yes. One that does not is a bug in the rubric or
-the oracle. A multi-step task's judges also read the reply each later turn
-answered, so its oracle keeps that reply, such as the approved proposal, in
-`steps/<step>/solution/reply.md`, and the check passes it to them.
+the oracle. Only the report judge reads the agent's replies, and the check
+skips it, so a brief task's `steps/<step>/solution/reply.md` (the oracle's
+proposal) is passed along but not judged: the oracle check cannot test
+`report.matches_approved`.
 
 ```sh
 uv run scripts/oracle_judge.py --tasks <task>            # print the judge call count
@@ -563,7 +599,9 @@ spread across tasks. The sheet shows each item, but not the judge's answer,
 reason, or evidence (whose form gives the answer away), nor the arm. Each case's request,
 earlier replies, diff, and final message are in `<sheet>-cases/<case>.md`,
 scrubbed as the judges' view is. The hidden fields go to `<sheet>.key.json`.
-Write `yes` or `no` in the `human` column. `agree` reports per dimension
+Write `yes` or `no` in the `human` column. For a report item, as for the
+report judge, the agent's report is everything it told the user across its
+replies; the later reply stands where two conflict. `agree` reports per dimension
 Cohen's kappa against the judge, each arm's bias (the judge's yes-rate minus
 the human's), and the judge's unknown rate. `repeat` reports how often two
 rejudge passes give the same answer. A dimension passes the gate with kappa
@@ -582,8 +620,8 @@ repeat agreement at least 0.9.
   when the file also renders responses, as `money-field-change`'s
   `src/orders.js` does. It also skips a request-validation schema, which
   belongs to the contracts stage.
-- The question readout counts only questions after the `continue` turn, so it
-  misses a needless question asked in `approve`. One `continue` turn answers
+- On a brief task the question readout starts at the `approve` turn, so a
+  needless question asked in the brief turn is not counted. One `continue` turn answers
   one more gate; an agent that splits the work into behavior slices can stop
   at a later gate and leave the build unfinished.
 - The previous harness could execute the migration in a real Postgres given

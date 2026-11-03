@@ -35,6 +35,9 @@ A multi-step task (task.toml [[steps]]) also gets its first step's verifier:
 and an unscored verifier for each step between the first and the last:
   steps/<middle>/tests/test.sh                    from verifier/shared/step_test.sh
 
+Every code task must have follow-up turns, or a "single_turn" reason in
+tests/consult.json; see check_follow_up_turns.
+
 Per-task files it never touches: task.toml, instruction.md, steps/*/instruction.md,
 steps/*/solution/, environment/workspace, solution/, tests/consult.json,
 tests/proof/submitted.py.
@@ -83,6 +86,26 @@ def check_rule_ids(task: Path) -> None:
     unchecked = [r for r in rules if coverage.get(r) != "check"]
     if unchecked:
         raise SystemExit(f"{task.name}: consult.json rules without a check in rules.json: {', '.join(unchecked)}")
+
+
+def check_follow_up_turns(task: Path, kind: str, steps: list[str]) -> None:
+    """A code task must let the agent hear back after it stops to ask.
+
+    Consult stops for sign-off before a contract, data shape, or migration
+    (workflow Rule 7). A single-turn task leaves that question unanswered and
+    scores the half-built workspace, which measures the harness, not the
+    agent. So every code task needs follow-up turns ([[steps]] in task.toml),
+    or a "single_turn" reason in tests/consult.json saying why it cannot hit a
+    sign-off gate.
+    """
+    if kind != "code" or len(steps) > 1:
+        return
+    meta = json.loads((task / "tests" / "consult.json").read_text())
+    if not str(meta.get("single_turn") or "").strip():
+        raise SystemExit(
+            f"{task.name}: a code task needs follow-up turns ([[steps]] in task.toml) so an agent that stops "
+            'for sign-off hears back, or a "single_turn" reason in tests/consult.json'
+        )
 
 
 def rubric_copies(task: Path, kind: str) -> list[tuple[bytes, Path]]:
@@ -184,6 +207,7 @@ def planned_copies(task: Path) -> list[tuple[Path | bytes, Path]]:
     kind = task_kind(task)
     check_rule_ids(task)
     steps = step_names(task)
+    check_follow_up_turns(task, kind, steps)
     tests = task / "tests"
     pairs: list[tuple[Path | bytes, Path]] = [
         (SHARED_DIR / "Dockerfile", task / "environment" / "Dockerfile"),

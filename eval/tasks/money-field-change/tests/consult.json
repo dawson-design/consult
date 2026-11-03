@@ -1,6 +1,7 @@
 {
   "task": "money-field-change",
   "kind": "code",
+  "proposal_turn": true,
   "intended_skills": ["workflow", "specify", "contract-first", "api", "domain-modeling", "proof", "code-review"],
   "expect_silent": [
     "scaffolding", "documentation", "observability", "database", "async-systems",

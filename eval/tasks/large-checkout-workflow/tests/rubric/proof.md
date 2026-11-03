@@ -4,4 +4,4 @@ were wrong. Read the tests and the code they call. You cannot run them. If
 the agent added or changed no tests, an item that asks whether a test does
 something is "no". You
 see the task, the agent's changes, and the workspace after the change. You
-do not see the agent's final message.
+do not see any of the agent's messages.

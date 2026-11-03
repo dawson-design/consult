@@ -217,14 +217,25 @@ class PromptTests(unittest.TestCase):
         self.assertNotRegex(prompt, r"\b(must|quality)\b")
         self.assertNotIn("Build only what the user asked for.", prompt)
 
-    def test_every_judge_sees_the_replies_earlier_turns_answered(self):
-        inputs = jr.Inputs(
-            instruction="x", changes="c", final_message=FINAL_MESSAGE, earlier_replies=(("Turn 1 reply", "PROPOSAL"),)
-        )
-        prompt = jr.dimension_prompt("scope", ITEMS[2:3], inputs, "G")
+    REPLIES = (("Turn 1 reply", "PROPOSAL"), ("Turn 2 reply", "REPORT: all cases covered"))
+
+    def replies_prompt(self, dimension: str) -> str:
+        inputs = jr.Inputs(instruction="x", changes="c", final_message=FINAL_MESSAGE, earlier_replies=self.REPLIES)
+        return jr.dimension_prompt(dimension, ITEMS[2:3], inputs, "G")
+
+    def test_the_report_judge_reads_every_earlier_reply(self):
+        prompt = self.replies_prompt("report")
         self.assertIn("## Turn 1 reply\n\nPROPOSAL", prompt)
+        self.assertIn("REPORT: all cases covered", prompt)
         self.assertLess(prompt.index("PROPOSAL"), prompt.index(cl.BUNDLE_END))
-        self.assertNotIn(FINAL_MESSAGE, prompt)
+
+    def test_a_code_judge_reads_no_reply_so_the_agents_own_report_cannot_sway_it(self):
+        for dimension in ("structure", "scope", "boundaries", "proof"):
+            prompt = self.replies_prompt(dimension)
+            with self.subTest(dimension=dimension):
+                self.assertNotIn("PROPOSAL", prompt)
+                self.assertNotIn("REPORT", prompt)
+                self.assertNotIn(FINAL_MESSAGE, prompt)
 
     def test_agent_output_cannot_close_the_fence(self):
         prompt = self.prompt("scope")
@@ -416,15 +427,21 @@ class JudgeTrialTests(unittest.TestCase):
         self.assertIn("- A CLAUDE.md (in your working directory as CLAUDE.md.txt)", stdin)
         self.assertIn("- A docs/notes/shortener.md\n", stdin)
 
-    def test_every_judge_sees_the_proposal_the_user_approved(self):
+    def test_the_report_judge_sees_the_proposal_the_user_approved(self):
         (self.rubric / "instruction.md").write_text(TWO_TURN_INSTRUCTION)
         self.run_trial(steps=TWO_TURN_STEPS)
-        for dimension in ("structure", "scope", "report"):
-            stdin = self.call(dimension)["stdin"]
+        stdin = self.call("report")["stdin"]
+        self.assertIn("reply at the end of the brief turn, which turn 2 (approve) answered", stdin)
+        self.assertIn("PROPOSAL-MARKER: a /links route.", stdin)
+        self.assertEqual(MARKER_RE.findall(stdin), [])
+
+    def test_only_the_report_judge_sees_earlier_replies(self):
+        (self.rubric / "instruction.md").write_text(TWO_TURN_INSTRUCTION)
+        self.run_trial(steps=TWO_TURN_STEPS)
+        self.assertIn("PROPOSAL-MARKER", self.call("report")["stdin"])
+        for dimension in ("structure", "scope"):
             with self.subTest(dimension=dimension):
-                self.assertIn("reply at the end of the brief turn, which turn 2 (approve) answered", stdin)
-                self.assertIn("PROPOSAL-MARKER: a /links route.", stdin)
-                self.assertEqual(MARKER_RE.findall(stdin), [])
+                self.assertNotIn("PROPOSAL-MARKER", self.call(dimension)["stdin"])
 
     def test_a_failed_call_is_retried_once(self):
         result = self.run_trial(mode="flaky")
