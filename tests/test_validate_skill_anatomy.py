@@ -47,12 +47,6 @@ description: Good test skill
 2. Run the smallest check that proves the claim.
 3. Report the evidence and any blocker.
 4. Keep changes scoped to the request.
-
-## Tripwires
-
-| Trigger | Do this instead | False alarm |
-|---|---|---|
-| "Skip the check" | Run the check before making a completion claim. | Research notes with no completion claim. |
 """
 
 BAD_SKILL = """---
@@ -78,31 +72,6 @@ Stuff.
 
 - "Probably fine"
 """
-
-LONG_TRIPWIRES_SKILL = """---
-name: long-tripwires
-description: Long tripwire table
----
-
-# Long Tripwires
-
-## When to Use
-
-- trigger
-
-## When NOT to Use
-
-- other
-
-## Rules
-
-1. check
-
-## Tripwires
-
-| Trigger | Do this instead | False alarm |
-|---|---|---|
-""" + "".join(f'| "Shortcut {n}" | Do the thing. | None. |\n' for n in range(1, 10))
 
 EM_DASH_SKILL = """---
 name: dashy
@@ -408,11 +377,6 @@ class SkillAnatomyTests(ValidatorTestCase):
         self.assertNotIn("bom/SKILL.md", result.stdout)
         self.assertNotIn("folded/SKILL.md", result.stdout)
 
-    def test_rejects_more_than_eight_tripwire_rows(self) -> None:
-        make_skill(self.skills_dir, "long-tripwires", LONG_TRIPWIRES_SKILL)
-
-        self.assert_fails_with(self.validate(), "long-tripwires/SKILL.md", "Tripwires has 9 rows (max 8)")
-
     def test_rejects_legacy_rule_sections_once_a_skill_has_rules(self) -> None:
         legacy = "## Verification\n\n- [ ] check\n\n## Core Ideas\n\n1. idea\n\n## Workflow"
         make_skill(self.skills_dir, "stale", GOOD_SKILL.replace("## Workflow", legacy))
@@ -440,15 +404,21 @@ class SkillAnatomyTests(ValidatorTestCase):
         self.assert_fails_with(result, "pinned/SKILL.md", "frontmatter sets model")
         self.assertNotIn("mentions/SKILL.md", result.stdout)
 
-    def test_rejects_bullet_format_tripwires_sections(self) -> None:
-        head = GOOD_SKILL[: GOOD_SKILL.index("## Tripwires")]
-        make_skill(self.skills_dir, "bullets", head + "## Tripwires\n\n- A bullet tripwire.\n")
-
-        self.assert_fails_with(
-            self.validate(),
-            "bullets/SKILL.md",
-            "Tripwires must use the '| Trigger | Do this instead | False alarm |' table format",
+    def test_rejects_a_tripwires_section_and_its_trigger_table(self) -> None:
+        table = '| Trigger | Do this instead | False alarm |\n|---|---|---|\n| "Skip it" | Run it. | None. |\n'
+        make_skill(
+            self.skills_dir,
+            "tripwires",
+            GOOD_SKILL.replace("name: good\n", "name: tripwires\n") + "\n## Tripwires\n\n" + table,
         )
+        make_skill(
+            self.skills_dir, "loose-table", GOOD_SKILL.replace("name: good\n", "name: loose-table\n") + "\n" + table
+        )
+
+        result = self.validate()
+
+        self.assert_fails_with(result, "tripwires/SKILL.md", "obsolete section: ## Tripwires")
+        self.assert_fails_with(result, "loose-table/SKILL.md", "obsolete table header")
 
     def test_rejects_em_dashes_and_drifted_approval_sentences(self) -> None:
         skill = make_skill(self.skills_dir, "dashy", EM_DASH_SKILL)

@@ -41,7 +41,8 @@ description: Only when asked to prepare a release, or when a project check requi
 4. Release artifacts move together: manifests, committed lockfile, CHANGELOG
    entry, tag plan, dependency ranges, package metadata, publish order.
    Validate dependency resolution, dry-run packaging, and registry state
-   before any tag plan.
+   before any tag plan. Check bundled dependencies and the packed tarball
+   contents, not only the manifest.
 5. Ask before keeping lockfile or package-manager changes produced by a
    validation run.
 6. Prove a release script's scope matches the selected release units before
@@ -63,18 +64,6 @@ description: Only when asked to prepare a release, or when a project check requi
 4. Edit the approved artifacts together, validate, then plan rollout and
    rollback with named artifact, environment, operator, and gates. For
    deprecation or removal, load `references/deprecation-and-migration.md`.
-
-## Tripwires
-
-| Trigger | Do this instead | False alarm |
-|---|---|---|
-| "This might need a release, start release work" | Load `release` only at an explicit release-prep decision. | The user asked for release prep. |
-| "I can run the deploy/rollback myself" | Prepare it for a human operator. | The user directed the agent to run that command against a non-shared environment. |
-| "The release script knows what to bump" | Prove the script's scope matches the selected release units first. | The script's scope is already proven for these units. |
-| "Keep whatever the validation run changed" | Ask before keeping lockfile or package-manager changes. | The user requested those exact changes. |
-| "The manifest is updated, we're done" | Check lockfiles, bundled dependencies, plugin metadata, tarball contents, and publish order. | None. |
-| "Reverting the code is rollback enough" | Name rollback for data, caches, config, and external side effects. | The release touches none of those. |
-| "Default the new flag on" | Default off, with owner, expiry, and cleanup. | The flag is a kill-switch for existing behavior. |
 
 ## Handoffs
 

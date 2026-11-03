@@ -73,16 +73,6 @@ description: Adding or changing an HTTP endpoint, handler, status code, response
    `references/pagination.md`, or `references/webhooks.md`. Load the one that
    applies before writing the handler.
 
-## Tripwires
-
-| Trigger | Do this instead | False alarm |
-|---|---|---|
-| "Renaming this field is harmless" | Keep shipped consumers working with a successor or a deprecation path. | The field never shipped, or no running consumer can see the change. |
-| "Any error can be a 400 (or a 500)" | Pick the status from the Rule 3 table by where the failure starts. | None. |
-| "Pass the upstream error through" | Map it to `502`, `503`, or `504` in this API's error shape (Rule 3). | None. |
-| "Return whatever the handler has" | Define response and error bodies in the spec first. | None. |
-| "Put the check in middleware so it's global" | Keep route-specific validation, ownership, and domain rules in handler or domain code. | The concern is genuinely transport-wide. |
-
 ## Handoffs
 
 - `contract-first`: approval of API contracts consumers depend on.

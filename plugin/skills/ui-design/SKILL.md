@@ -30,23 +30,30 @@ description: "Frontend UI: forms, components, layout, styling, accessibility, ke
 
 1. One screen has one visually dominant primary action and an information
    order that survives a squint test. Remove elements that do not improve
-   comprehension, trust, or action.
+   comprehension, trust, or action. Use a card only to group repeated peer
+   items or to frame a tool surface.
 2. Define the user task, state, and flow before choosing a framework. Use
    the product's or jurisdiction's design system, else the HIG on Apple
    platforms, Material 3 on Android, and Carbon for web tools.
 3. A small token system covers spacing, type, color, radius, and motion. No
-   stray one-off values in committed CSS.
+   stray one-off values in committed CSS. Extend the tokens instead; only a
+   browser or platform quirk gets a local value, with a comment saying why.
 4. Loading, empty, error, disabled, and success states are defined with the
    layout, not later.
 5. Accessibility is a design input, not a later review pass. Native HTML
    controls and semantics come before ARIA: `<button type="button">` for
    actions, `<a href>` for navigation, `<nav>` with links for site
    navigation, `<dialog>` with `.showModal()` for modals. Every interactive
-   element has name, role, value, state, and keyboard behavior.
+   element has name, role, value, state, and keyboard behavior. A
+   design-system control that already provides these may stand in for the
+   native one. Where target browsers lack `<dialog>`, document the fallback.
+   Visible text is the accessible name; use `aria-label` only on icon-only
+   controls.
 6. Focus is visible: at least a 2px outline at 3:1 contrast against both
    adjacent surfaces, with a transparent fallback for Forced Colors. Tab
    order follows DOM order; positive `tabindex` has no safe use. Focus is
-   restored after a modal or overlay closes.
+   restored after a modal or overlay closes. An equivalent indicator that
+   meets the same size and contrast also passes.
 7. Forms have explicit labels, grouped controls, errors tied to fields, and
    no placeholder-only instructions. Dragging has a single-pointer
    alternative. Authentication never depends on a cognitive test.
@@ -54,19 +61,6 @@ description: "Frontend UI: forms, components, layout, styling, accessibility, ke
    manual keyboard testing, and custom controls, dialogs, menus, tabs, forms,
    and live updates get screen-reader testing. Remaining gaps are recorded as
    explicit blockers or deferred work, never left implicit.
-
-## Tripwires
-
-| Trigger | Do this instead | False alarm |
-|---|---|---|
-| "Add a card/section so it looks richer" | Start from the user task and hierarchy. | The card groups repeated peer items or frames a real tool surface. |
-| "We'll add loading/error/empty states later" | Define the required states with the layout. | The component cannot load, fail, or be empty. |
-| "One-off spacing fixes this screen" | Use or extend the token system. | A browser or platform quirk needs a documented local fix. |
-| "A styled div works as a button" | Use the native control. | A design-system control that already proves semantics and keyboard behavior. |
-| "Hand-roll the modal focus trap" | Use native `<dialog>` and `.showModal()`. | Target browsers lack `<dialog>` support and the fallback is documented. |
-| "Remove the ugly focus outline" | Replace `outline: none` with a measured 2px outline and Forced Colors fallback. | An equivalent focus indicator meeting contrast is applied. |
-| "Add an `aria-label` to be safe" | Keep visible text as the accessible name; `aria-label` only for icon-only controls. | The control is icon-only. |
-| "Fix the order with `tabindex='1'`" | Fix tab order by DOM order. | None. |
 
 ## Handoffs
 

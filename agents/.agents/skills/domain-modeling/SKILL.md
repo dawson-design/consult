@@ -38,14 +38,17 @@ against it.
    Internal code never handles raw strings or maps. Use the ecosystem's
    de-facto schema library (Pydantic in Python, Zod in TypeScript), honoring
    any existing project choice; hand-roll with the same discipline only where
-   no clear leader exists.
+   no clear leader exists. A pure passthrough proxy with no domain logic may
+   forward the payload unparsed.
 5. Model allowed states as explicit variants, not flag or nullable
    combinations. Split a nullable that means both "missing" and "not loaded"
-   into named states.
+   into named states. A single independent toggle with no illegal
+   combinations can stay a boolean.
 6. Names carry the model. A method states its role in the domain process:
    `settleInvoice` or `expireHold`, not `process`, `handle`, or `execute`. A
    suffix like `Service` or `Manager` is fine only with a domain word saying
-   what kind.
+   what kind. Keep a generic name only where a framework or interop boundary
+   requires it.
 7. Get approval before implementing a core model, shared invariant, state
    machine, or glossary term future work will bind to; `contract-first` owns
    the approval scope. Disposable or local shapes are not gated.
@@ -55,16 +58,6 @@ against it.
 9. Name domain concepts with the project glossary's terms, else the issue's
    or spec's words. Use one term per concept in each bounded context. Record
    approved terms in the glossary, asking to start one if none exists.
-
-## Tripwires
-
-| Trigger | Do this instead | False alarm |
-|---|---|---|
-| "Validate it again wherever it's used" | Parse once at each external boundary; internal code takes the parsed type. | A second boundary genuinely receives external data. |
-| "Add another boolean flag" | Model allowed states as explicit variants. | The flag is one independent toggle with no illegal combinations. |
-| "Pass the request JSON through to the domain" | Convert to an internal domain shape before domain work. | A pure passthrough proxy with no domain logic. |
-| "Name it `process`, `handle`, or `execute`" | Name the method's role in the domain process. | A framework or interop boundary requires the generic name. |
-| "Hand-roll the boundary validator" | Use the ecosystem's schema library, honoring any existing project choice. | No clear ecosystem leader exists. |
 
 ## Handoffs
 

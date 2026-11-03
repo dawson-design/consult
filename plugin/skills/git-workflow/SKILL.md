@@ -50,7 +50,8 @@ gates: recoverability and approval of published text.
    approval; force pushes use `--force-with-lease --force-if-includes`.
 5. Resolve conflicts by preserving intent from both sides, then run the
    relevant checks. Verify with `range-diff` or log inspection that intended
-   commits remain.
+   commits remain. For a generated file, resolve its source conflict, then
+   regenerate the file.
 6. Test hook policy, not hook wrappers. A hook that only execs a repo script
    needs no test; the script that selects commands, blocks branches, or
    routes files does.
@@ -60,17 +61,6 @@ gates: recoverability and approval of published text.
    or handed to the user; report it instead if the work is unfinished. Leave
    host-managed worktrees to the host, and ask before removing a worktree
    you did not create.
-
-## Tripwires
-
-| Trigger | Do this instead | False alarm |
-|---|---|---|
-| "Force push should fix it" | Verify the branch is local/solo or approved, then use lease and inclusion protection. | Disposable local-only branch with no remote. |
-| "Rewrite this shared branch" | Stop and ask for explicit approval plus a recovery point. | The branch is confirmed local and unpublished. |
-| "Resolve conflict by taking ours/theirs" | Preserve intent from both sides, then run checks. | A generated file regenerated after the source conflict is resolved. |
-| "The host approved `gh` once, so publish freely" | Host permission covers access; publishing user-owned text still needs the user's approval of that text. | The user already approved that exact text and operation. |
-| "`gh` isn't installed, so GitHub is out of reach" | Check for a GitHub MCP server or host tools and go through the host's permission flow. | The host exposes no GitHub tools. |
-| "Just open the PR with a quick title" | Draft title and body, get approval, then create it. | The user already approved that exact title and body. |
 
 ## Handoffs
 

@@ -32,6 +32,9 @@ the baseline without local knowledge.
    1. Approve: create files, install packages, run generators
    2. Refine: change the scaffold plan
    3. Cancel: stop scaffolding
+
+   Skip the gate only when the request already names every material setup
+   choice.
 2. Research is free. Audit candidate dependencies without asking, then get
    approval before selecting or installing a structural runtime dependency
    (framework, database, ORM, auth client, SDK, state library, job queue),
@@ -42,19 +45,24 @@ the baseline without local knowledge.
    user asks for smaller.
 4. Requested file, directory, script, and job names are literal. Create
    `tsconfig.json`, `package.json`, `pyproject.toml`, CI, or README by name;
-   substitute a nearby config only with approval.
+   substitute a nearby config only with approval. The scaffold is done when
+   each requested file, directory, and command exists, not only when the
+   commands pass.
 5. Commands are the contract: `test`, `lint`, `format`, `typecheck`, and
    `coverage` where applicable. CI runs the same checks developers run, and a
    pre-push hook runs format, lint, typecheck, and the fast tests locally, so
    commits stay quick. Every added config is consumed by a standard command.
 6. `typecheck` runs a real type checker using the config added for it. A
-   syntax check such as `node --check` is lint, not typecheck.
+   syntax check such as `node --check` is lint, not typecheck. For a
+   language with no type checker, wire `typecheck` to its documented
+   equivalent.
 7. Fresh scaffolds get git and `.gitignore` before feature code, one package
    manager with a committed lockfile, the language version pinned in the
    ecosystem's file (`.python-version`, `.nvmrc`, `rust-toolchain.toml`,
    `go.mod`), one smoke test that can fail and pass,
    secret hygiene with `.env.example` placeholders, and a README with
-   purpose, install, run, and test.
+   purpose, install, run, and test. When the user or environment blocks repo
+   creation, skip git and report the skip.
 8. Prototypes keep the same command names even when checks are lightweight,
    and are promoted to the full checklist before production or collaboration.
 
@@ -66,17 +74,6 @@ the baseline without local knowledge.
    `references/language-defaults.md` or official sources, naming the fallback.
 3. After approval: git, package manager, standard commands, smoke test, CI,
    README, in that order.
-
-## Tripwires
-
-| Trigger | Do this instead | False alarm |
-|---|---|---|
-| "A similar config file will do" | Use the requested name, or ask before substituting. | The user approved the substitute. |
-| "`node --check` counts as typecheck" | Wire `typecheck` to a real type checker. | The language has no type checker and the documented equivalent is used. |
-| "The command passed, so the scaffold works" | Check that each requirement has the file, directory, or command it asked for, not only that commands succeed. | None. |
-| "Set up git later" | Initialize git and `.gitignore` before feature code. | The user or environment blocks repo creation and the skip is reported. |
-| "Approval would slow this down, just create the files" | Present Approve, Refine, and Cancel before scaffold mutation. | The request already specified every material setup choice. |
-| "I'll pick the framework/ORM myself" | Research candidates freely; get approval before selecting or installing one. | The user or selected stack already named the choice, or it is a small dev-only utility. |
 
 ## Handoffs
 

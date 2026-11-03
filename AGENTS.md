@@ -208,21 +208,19 @@ Every `SKILL.md` must have:
 - No `model:` key in frontmatter. A skill that names a model makes the host
   switch models when it loads, which throws away the prompt cache.
 - Required sections: `## When to Use`, `## When NOT to Use`, `## Rules`.
-- Body budget: 700 words after frontmatter. Raised for four skills, each
-  with a reason recorded next to the constant: 720 for `api`, whose status
-  table and routing to its floors are rule text; 850 for `code-review`, 1,010
-  for `proof`, and 910 for `workflow`, which carry the routing table and
-  sign-off list plus the fresh-context-review, plan-handoff,
-  delegated-model, build-stage, test-level, and test-oracle policy. Table
-  pipes and separator rows do not count. The budget is the regression guard for the
+- Body budget: 700 words after frontmatter. Raised for two skills, each with
+  a reason recorded next to the constant: 880 for `workflow`, which carries
+  the routing table, sign-off list, and plan-handoff, delegated-model, and
+  build-stage policy; and 810 for `proof`, which carries the
+  fresh-context-review, test-level, and test-oracle policy. Table pipes and
+  separator rows do not count. The budget is the regression guard for the
   knowledge-vs-policy rule below. Raise a single skill's budget only with a
   stated reason.
-- Optional section: `## Tripwires` when a skill has known agent failure modes.
-  Table format only, at most 8 rows, with this header:
-  `| Trigger | Do this instead | False alarm |`. Use them only for
-  high-probability moments where agents weaken, skip, or misapply the skill.
-  Put rare exceptions and detailed taxonomies in references. Omit the section
-  when no row pays for its tokens.
+- A rule states its own exceptions as positive clauses ("...; a collection
+  that is provably bounded needs none"). Do not add a separate table of
+  triggers or bad reasoning: the validator rejects `## Tripwires`,
+  `## Common Rationalizations`, and `## Red Flags`, because those tables
+  mostly restated their rule and quoted the reasoning they warned against.
 - No inline `per <Expert Name>` attribution outside a `## References` or
   `## Canon` section: move citations there.
 - No em dashes in a skill body or its `references/` files. Use a period,
@@ -240,12 +238,11 @@ engineering practice unprompted. A sentence earns its place in a skill body
 only if it is one of:
 
 1. Policy: a rule this pack wants that the model would not pick on its own
-   (sign-off gates, thresholds, house defaults, what counts as done).
-2. Tripwire: a pressure phrase paired with the corrective action and a
-   false-alarm escape.
-3. Philosophy: Simple Made Easy, data/calculations/actions, functional core,
+   (sign-off gates, thresholds, house defaults, what counts as done), with
+   its exceptions stated in the rule.
+2. Philosophy: Simple Made Easy, data/calculations/actions, functional core,
    contract-first, illegal states unrepresentable.
-4. Routing: when to load, when not, handoffs, reference load triggers.
+3. Routing: when to load, when not, handoffs, reference load triggers.
 
 To check whether a rule is policy, ask whether a competent engineer could
 reasonably choose otherwise. If no reasonable alternative exists, the model
@@ -285,15 +282,14 @@ Each rule is stated once. Section ownership:
   the validator fails until you do.
 - `## Workflow`: ordered actions, only when ordering itself is the policy.
   Apply the Rules without restating them.
-- `## Tripwires`: short positive corrective actions for high-probability
-  failure moments where agents skip, weaken, or misapply the skill.
 - `## Handoffs`: route unresolved neighboring concerns in one line each. Do
   not summarize the neighbor skill's body.
 - `## References` / `## Canon`: citations, deeper examples, recipes, and
   ecosystem detail. Every entry names when to load it.
 
 `## Core Ideas`, `## Verification`, and `## Before Saying Done` are retired.
-The validator rejects them once a skill has `## Rules`.
+The validator rejects them once a skill has `## Rules`. `## Tripwires` is
+retired too; fold an exception into its rule.
 
 Keep skills short and directive. A `SKILL.md` is steering context, not a book:
 every paragraph competes with the repo, diff, user request, and proof evidence

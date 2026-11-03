@@ -36,10 +36,11 @@ description: "Deciding where code or logic should live: module boundaries, layer
    running the whole suite.
 2. Horizontal layers exist only for a real boundary: process, deploy, trust,
    persistence, transport, or proven duplication. A layer that scatters one
-   behavior by default is harmful.
+   behavior by default is harmful. Share code across features only when the
+   shared value has the same meaning and rules in each.
 3. A module boundary says what crosses it, what assumptions hold, and what
    callers must not depend on. Callers depend on the contract, never the
-   internals.
+   internals. Decide a shared boundary before moving files toward it.
 4. Data flow is explicit: where external data enters, where it becomes
    trusted, where domain work happens, what output leaves. These are
    roles, not required folders. Raw external payloads do not leak past the
@@ -47,17 +48,6 @@ description: "Deciding where code or logic should live: module boundaries, layer
 5. DDD patterns (aggregates, repositories, factories, domain services) and
    bounded contexts are used only when they protect a real invariant,
    workflow, or a word that means different things in different places.
-
-## Tripwires
-
-| Trigger | Do this instead | False alarm |
-|---|---|---|
-| "Start with controller/service/repository/DTO layers" | Group by capability first; add a layer only where a real technical boundary justifies it. | The layer maps to a process, deploy, trust, persistence, or transport boundary. |
-| "These two features look the same, share the code" | Share code only when the reused value has the same meaning and rules in both contexts. | One domain rule with one authoritative home. |
-| "Add a repository/factory/aggregate for structure" | Add DDD patterns only when they protect a named invariant, workflow, or boundary. | The pattern guards a named invariant. |
-| "Move the files now, decide the boundary later" | Decide the boundary before using `refactoring` to move files. | The move is private organization that creates no shared boundary. |
-| "Create the shared package; asking can wait" | Ask before locking in a contract future work will depend on (`contract-first`). | Private file moves that establish no boundary. |
-| "Another layer will make this cleaner" | Add a layer only for a boundary Rule 2 lists. | The layer maps to a real boundary Rule 2 lists. |
 
 ## Handoffs
 

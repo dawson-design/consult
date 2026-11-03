@@ -54,17 +54,6 @@ description: Queues, workers, batch jobs, concurrency limits, retries, streams, 
 9. Silent async failure is a bug. Exhausted jobs, lag, dropped events, and
    dead work have visible signals and tests.
 
-## Tripwires
-
-| Trigger | Do this instead | False alarm |
-|---|---|---|
-| "Pass the session/request object to the job" | Pass stable IDs and immutable parameters; reload live state inside the job. | The payload already is stable IDs and immutable data. |
-| "Rescue the job failure and log it" | Re-raise, mark terminal, or record the failure so exhausted work is visible. | Best-effort work with an explicit drop policy. |
-| "Enqueue inside the transaction" | Enqueue after commit or use a transactional outbox when the job reads transaction-written state. | The job reads none of the transaction's writes. |
-| "One queue is enough for everything" | Isolate user-facing work from bulk queues with priority, concurrency, timeout, or separate workers. | The workload is uniform with no user-facing latency expectation. |
-| "We need Kafka for this" | Name the requirement polling, SSE, or WebSockets cannot meet before choosing a broker. | The requirement is named and recorded. |
-| "It's just JSON on a topic" | Define a versioned message schema and check consumer compatibility, using the existing registry when present. | The channel is in-process, with no retained messages or independent consumer. |
-
 ## Handoffs
 
 - `contract-first`: approval for the message contracts Rule 7 routes there.

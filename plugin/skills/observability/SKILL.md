@@ -47,17 +47,6 @@ description: Adding or changing production logs, metrics, traces, health checks,
 9. A prototype may defer observability only if the deferral is recorded and
    the path is promoted before real users reach it.
 
-## Tripwires
-
-| Trigger | Do this instead | False alarm |
-|---|---|---|
-| "We logged the error, so it is observable" | Add stable event name, outcome, severity, and correlation ID. | The project logger adds those fields automatically and tests prove it. |
-| "Put user ID / request ID / path in a metric label" | Bound the labels; put high-cardinality values in logs or traces. | The label set is proven bounded. |
-| "Alert on every error" | Alert on user impact, SLO burn, or actionable dependency failure. | Low-volume critical security or data-loss event. |
-| "Health check should test the database" | Keep liveness local; put dependencies in readiness. | The endpoint is explicitly readiness. |
-| "The collector will redact it" | Redact at the source. | Source redaction is impossible and the risk is documented. |
-| "Dashboard later" | Add the view needed to find current health and fault location. | Local-only prototype with the deferral recorded. |
-
 ## Handoffs
 
 - `documentation`: runbook structure.

@@ -41,17 +41,9 @@ The host owns git invocation; this skill sets the packaging standard.
 5. Attribution trailers are host configuration, not message content. When a
    host adds `Co-Authored-By` or similar by default, point the user at the
    setting that disables it (`includeCoAuthoredBy: false` in Claude Code)
-   rather than overriding the host from inside the message.
+   rather than overriding the host from inside the message. Add a specific
+   trailer only when the user asks for it.
 6. Never skip hooks. Run the hook, or fix and report its blocker.
-
-## Tripwires
-
-| Trigger | Do this instead | False alarm |
-|---|---|---|
-| "git add . is faster" | Stage named files or approved pathspecs only. | Fresh scaffold with a clean tree where every file belongs. |
-| "Commit everything dirty" | Separate reviewed work from unrelated files first. | The user explicitly approved the full dirty tree. |
-| "Skip hooks to save time" | Run the hook or fix and report its blocker. | None. |
-| "Add Co-Authored-By or AI attribution" | Suggest the host setting that disables generated trailers, such as `includeCoAuthoredBy: false` in Claude Code. | The user explicitly requested a specific trailer. |
 
 ## Handoffs
 
