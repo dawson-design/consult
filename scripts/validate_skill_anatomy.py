@@ -94,8 +94,10 @@ MAX_BODY_WORDS = 700
 # so the cut cannot creep back. api then rose to 715 for the Rule 3 status
 # table (agents often get 400 vs 422, 403 vs 404, and 502/503/504 wrong) and
 # the Rule 6 routing to the idempotency, pagination, and webhook floors.
-BODY_WORD_EXCEPTIONS = {"workflow": 910, "proof": 1010, "code-review": 850, "api": 720}
-MAX_TRIPWIRE_ROWS = 8
+# Folding the Tripwires tables into Rules then cut every skill: api (597)
+# and code-review (695) fell back under the default, and workflow (877) and
+# proof (804) keep budgets just above their new sizes.
+BODY_WORD_EXCEPTIONS = {"workflow": 880, "proof": 810}
 MAX_DESCRIPTION_LENGTH = 120
 # ~600 tokens of routing surface that every host loads before picking a skill.
 # Chosen deliberately once the measurement was honest: the previous 2,000 was
@@ -121,8 +123,11 @@ ABSOLUTE_SYMLINK_PROBLEM = "symlink target is an absolute path -- use a relative
 # cannot drift file by file.
 APPROVAL_CONCEPT_RE = re.compile(r"approving design or RFC", re.IGNORECASE)
 CANONICAL_APPROVAL_SENTENCE = "An approving design or RFC approves the direction, not the concrete shapes"
-TRIPWIRES_TABLE_HEADER_RE = re.compile(r"^\|\s*Trigger\s*\|\s*Do this instead\s*\|\s*False alarm\s*\|", re.MULTILINE)
-TRIPWIRES_FORMAT_PROBLEM = "Tripwires must use the '| Trigger | Do this instead | False alarm |' table format"
+# Retired in the slim-down: trigger tables mostly restated their rule and quoted the
+# bad reasoning. A rule carries its own exception as a positive clause.
+RETIRED_TRIGGER_SECTIONS = ["Tripwires", "Common Rationalizations", "Red Flags"]
+TRIGGER_TABLE_RE = re.compile(r"^\|\s*(?:Trigger\s*\|\s*Do this instead|Excuse\s*\|\s*Reality)\s*\|", re.MULTILINE)
+RETIRED_TRIGGER_FIX = "fold any exception into its rule under ## Rules as a positive clause"
 NO_MANIFEST_HOOKS = "must not declare hooks; the Consult SessionStart hook lives in plugin/hooks/hooks.json"
 GENERATOR_COMMAND = "python3 scripts/generate_plugin_symlinks.py"
 RULE_STATUSES = {"check", "judge-only", "untested"}
@@ -211,21 +216,6 @@ def first_index(lines: list[str], pattern: str) -> int | None:
 def section_re(name: str) -> re.Pattern[str]:
     """Return a pattern matching a `##` (or deeper) heading named exactly `name`."""
     return re.compile(rf"^##+\s+{re.escape(name)}\s*$", re.MULTILINE)
-
-
-def tripwire_row_count(body: str) -> int:
-    """Count the quoted-trigger rows in the `## Tripwires` table."""
-    lines = lines_of(body)
-    start = first_index(lines, r"##\s+Tripwires\s*$")
-    if start is None:
-        return 0
-    rows = 0
-    for line in lines[start + 1 :]:
-        if re.match(r"##\s+", line):
-            break
-        if re.match(r'\|\s*"', line):
-            rows += 1
-    return rows
 
 
 def rule_numbers(body: str) -> list[int]:
@@ -329,22 +319,15 @@ def section_problems(body: str, head: str) -> list[str]:
     return problems
 
 
-def tripwire_problems(body: str) -> list[str]:
-    """Check for retired rationalization sections and the Tripwires table's format and size."""
-    problems = []
-    if section_re("Common Rationalizations").search(body):
-        problems.append("obsolete section: ## Common Rationalizations -- use ## Tripwires")
-    if section_re("Red Flags").search(body):
-        problems.append("obsolete section: ## Red Flags -- fold into ## Tripwires")
-    if re.search(r"^\|\s*Excuse\s*\|\s*Reality\s*\|", body, re.MULTILINE):
-        problems.append("obsolete table header: use the '| Trigger | Do this instead | False alarm |' Tripwires table")
-    if section_re("Tripwires").search(body) and not TRIPWIRES_TABLE_HEADER_RE.search(body):
-        problems.append(TRIPWIRES_FORMAT_PROBLEM)
-    rows = tripwire_row_count(body)
-    if rows > MAX_TRIPWIRE_ROWS:
-        problems.append(
-            f"Tripwires has {rows} rows (max {MAX_TRIPWIRE_ROWS}) -- keep only high-probability failure moments"
-        )
+def trigger_section_problems(body: str) -> list[str]:
+    """Reject the retired trigger sections and tables (Tripwires, rationalizations, red flags)."""
+    problems = [
+        f"obsolete section: ## {name} -- {RETIRED_TRIGGER_FIX}"
+        for name in RETIRED_TRIGGER_SECTIONS
+        if section_re(name).search(body)
+    ]
+    if TRIGGER_TABLE_RE.search(body):
+        problems.append(f"obsolete table header: {RETIRED_TRIGGER_FIX}")
     return problems
 
 
@@ -375,7 +358,7 @@ def validate_skill_file(path: str) -> Finding | None:
     problems = [
         *frontmatter_problems(body, head),
         *section_problems(body, head),
-        *tripwire_problems(body),
+        *trigger_section_problems(body),
         *prose_problems(body),
     ]
     return Finding(path, problems) if problems else None
@@ -1003,7 +986,7 @@ Stuff.
 - "Probably fine"
 
 ## Tripwires
-- Bullet tripwires are no longer allowed.
+- A retired trigger section.
 """
 
 ROUTER_FIXTURE = """---
@@ -1077,7 +1060,6 @@ description: "{QUOTED_DESCRIPTION}"
 1. check
 """
 
-STALE_ROWS = "\n".join(f'| "Shortcut {i}" | Do the thing. | None. |' for i in range(MAX_TRIPWIRE_ROWS + 1))
 STALE_FIXTURE = f"""---
 name: stale
 description: Skill that migrated to Rules but kept a Verification mirror.
@@ -1096,12 +1078,6 @@ description: Skill that migrated to Rules but kept a Verification mirror.
 
 ## Verification
 - [ ] the same rule again
-
-## Tripwires
-
-| Trigger | Do this instead | False alarm |
-|---|---|---|
-{STALE_ROWS}
 
 {" ".join(["word"] * MAX_BODY_WORDS)}
 """
@@ -1131,13 +1107,12 @@ SELF_TEST_EXPECTED = [
     "description too long",
     "stale/SKILL.md",
     "obsolete section: ## Verification",
-    f"Tripwires has {MAX_TRIPWIRE_ROWS + 1} rows",
     "body too long",
     "per <expert>",
     "Common Rationalizations",
     "Red Flags",
     "obsolete table header",
-    TRIPWIRES_FORMAT_PROBLEM,
+    "obsolete section: ## Tripwires",
     "em dash found",
     "bad/references/notes.md",
     "canonical sentence",

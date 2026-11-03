@@ -9,6 +9,8 @@ or documented workflows.
 Compatibility paths carry maintenance cost until they have an owner and an
 expiry. Deprecation must name who is affected, what replaces the old path,
 when removal can happen, and how the release can recover if migration fails.
+A stable public API that keeps both paths on purpose is exempt from the
+expiry.
 
 ## Classification
 
@@ -33,6 +35,9 @@ when removal can happen, and how the release can recover if migration fails.
    - notify: warnings, changelog, docs, headers, metrics, or operator notice;
    - migrate: move callers/data and track completion;
    - contract: remove the old path only after proof says it is unused.
+     Proof is telemetry, search, ownership records, support policy, or the
+     user's explicit confirmation. For a private path, tests and repository
+     search that show it is unreachable are enough.
 5. Name rollback or recovery: how to re-enable the old path, restore data,
    stop the rollout, or communicate accepted irreversibility.
 
@@ -49,12 +54,3 @@ when removal can happen, and how the release can recover if migration fails.
       remain before removal.
 - [ ] Rollback or recovery path is documented, or irreversibility is named and
       accepted by a human.
-
-## Tripwires
-
-| Trigger | Do this instead | False alarm |
-|---|---|---|
-| "No one uses this" | Prove it with telemetry, search, ownership records, support policy, or explicit user confirmation. | Private code path proven unreachable by tests and repository search. |
-| "We can keep both forever" | Add owner, expiry, and removal condition for the compatibility path. | Stable public API where both paths are intentionally supported. |
-| "The changelog says deprecated" | Add replacement, removal version/condition, and migration steps. | Internal-only cleanup with no user-facing note. |
-| "Removal is just cleanup" | Classify the public surface and bump major if existing users must change. | Unsupported experimental surface clearly marked as disposable. |

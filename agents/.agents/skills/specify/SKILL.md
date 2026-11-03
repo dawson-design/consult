@@ -43,7 +43,8 @@ description: A new service or feature from a brief, or a design choice with open
    question at a time, and only questions whose answer would change the
    design. Give your recommendation and its main tradeoff, and ask the user
    to approve, revise, or rule it out. Put smaller doubts in notes. Ask
-   questions that block the design now, not in code review.
+   questions that block the design now, not in code review. When the host
+   has a plan or approval mode, hold the design discussion inside it.
 4. In a design doc, mark each contract and data shape approved, proposed, or
    pending. A shape the user approved in the design or plan stays approved
    through every stage. Mark it pending when an earlier stage changes it,
@@ -66,17 +67,6 @@ description: A new service or feature from a brief, or a design choice with open
    anything else.
 5. Repeat until the user agrees on the design or rules it out, then move to
    planning, building, proof, or review.
-
-## Tripwires
-
-| Trigger | Do this instead | False alarm |
-|---|---|---|
-| "I already know what the design should be" | Read and cite the current code first. | No code exists yet, and the nearby convention is named. |
-| "I'll build it to find the design" | Ask first; keep spikes local, small, and disposable. | The user approved a disposable spike. |
-| "The design file exists, so the contract is approved" | Get the explicit decision on each contract and data shape. | The user approved them in the design or plan, and no earlier stage changed them. |
-| "Ask about everything at once" | One recommended decision with notes. | None. |
-| "The human should come up with the design" | Propose concrete options; the user approves, revises, or rules out. | None. |
-| "Run the design discussion alongside the host's plan mode" | Hold it inside the host's plan mode. | The host has no plan or approval mode. |
 
 ## Handoffs
 

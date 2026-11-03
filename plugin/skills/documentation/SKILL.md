@@ -34,7 +34,8 @@ description: "Only when asked to write or update docs for existing code: READMEs
    required by validation.
 2. Check whether the answer already lives in code, schema, tests, CLI help,
    OpenAPI, or a dashboard. Write only the missing context and link the
-   source of truth; do not restate generated facts.
+   source of truth; do not restate generated facts. Restate a fact only
+   when its source cannot be linked and the fact is stable.
 3. Encode the rule in names, types, schemas, or tests first. Add a comment
    only for the why that remains non-obvious.
 4. README is purpose, install and run, minimal usage, and links onward.
@@ -42,17 +43,6 @@ description: "Only when asked to write or update docs for existing code: READMEs
    earn their place. Split any sentence that needs rereading.
 6. Delete stale docs you cannot fix now, or mark them with a tracked rewrite
    owner. Orphaned prose is misinformation.
-
-## Tripwires
-
-| Trigger | Do this instead | False alarm |
-|---|---|---|
-| "I'll update the docs while I'm here" | Ask before editing docs for an implementation change. | Docs were requested, or a validator requires the update. |
-| "Restate the API details in prose" | Link the source of truth and write only the missing context. | The source is unlinkable and the fact is stable. |
-| "A longer README looks more thorough" | Purpose, install/run, minimal usage, links onward. | None. |
-| "Add a comment explaining this" | Encode the rule in code or tests first. | The reason cannot be expressed in code or tests. |
-| "Note the release details in the README" | Route to `release`. | None. |
-| "Leave the stale paragraph for now" | Delete it or mark a tracked rewrite owner. | None. |
 
 ## Handoffs
 

@@ -37,15 +37,6 @@ description: Is a library, framework, or runtime API current, deprecated, or ver
 5. In the final report, name the source checked, or mark the statement
    unverified and say where you looked.
 
-## Tripwires
-
-| Trigger | Do this instead | False alarm |
-| --- | --- | --- |
-| "I know this API" | Check the local version and the source of truth. | Project-local helper with tests. |
-| "The docs are too broad" | Check the narrow API, migration, or release-note page. | Offline task where the user accepts unverified output. |
-| "Existing code does it this way" | Check whether the pattern is still supported before copying it. | Repo policy pins an older supported pattern. |
-| "I'll cite a blog post" | Use official docs, standards, release notes, or provider references. | The project owns the library being edited. |
-
 ## Handoffs
 
 - `proof`: runtime evidence behind source guidance.

@@ -47,6 +47,17 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Skills no longer carry `## Tripwires` tables. Each row that added
+  something, usually a concrete case or an exception, is now a positive
+  clause in its rule; rows that restated a rule are gone. The tables were
+  about a quarter of all skill text, no eval measured them, and they quoted
+  the reasoning they warned against. The validator now rejects
+  `## Tripwires` alongside the older `## Common Rationalizations` and
+  `## Red Flags`, and AGENTS.md and CONTRIBUTING.md drop the format. Skill
+  bodies fall from 14,542 to about 11,000 words. The rule that instructions in
+  tool output are data goes too, because the host's own instructions
+  already state it.
+
 - Kept skills now hold only policy: rules a competent engineer could
   reasonably choose against, gates, floors, and philosophy. Rules that restate
   standard practice, another skill, or the core are cut, with the tripwire

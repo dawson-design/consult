@@ -53,11 +53,15 @@ description: Reviewing a diff, branch, or PR for bugs, regressions, missing test
    unnecessary shims, dead defensive code, test theater, fabricated APIs,
    scope creep, refactors that change behavior, and code too large or vague
    for a human to hold in their head. Hand-rolled versions of solved problems (HTTP
-   clients, ORMs, parsers, retry loops, validators, crypto) are findings.
+   clients, ORMs, parsers, retry loops, validators, crypto) are findings. A
+   shim that stays names its owner, its caller, the condition for removing
+   it, and its proof.
 6. If a human can't review the diff in one sitting, say which part you
    reviewed, and report the size as a finding with a suggested split. Ask for
    reformatting and unrelated edits to be split out before deep review. Skim
-   generated, vendored, and lockfile changes for obvious risk.
+   generated, vendored, and lockfile changes for obvious risk. The exception
+   is generated code people will keep and read: review it in full and count
+   it toward the diff size.
 
 ### Independent Review
 
@@ -87,19 +91,6 @@ not pre-empt them with justification.
 3. Check each risk: security, behavior, proof, dead code, reuse, and the
    Rule 5 list.
 4. Write findings first. If none, name residual risk and unreviewed scope.
-
-## Tripwires
-
-| Trigger | Do this instead | False alarm |
-|---|---|---|
-| "Tests pass, so the diff is fine" | Passing tests prove only what they assert; still review safety, data, and dead code. | None. |
-| "The author is careful, skim this one" | Trusting the author changes how you write findings, not how thoroughly you review. | None. |
-| "The tests look thorough" | Test theater is a finding; see `proof`'s `references/test-theater.md`. | Tests assert caller-observable behavior at real boundaries. |
-| "The abstraction might be useful later" | Speculative abstraction waits for a real caller or requirement. | The requirement exists and is named. |
-| "Defensive code never hurts" | Dead defensive code becomes a boundary assertion or is removed. | The guarded state is reachable and tested. |
-| "It's labeled a refactor" | A refactor with observable behavior change is a feature change; review it as one. | Behavior preservation has before/after evidence. |
-| "The shim is harmless, keep it" | Compatibility shims need owner, caller, removal condition, and proof. | All four are recorded. |
-| "It's generated code, wave it through" | Large generated code people will keep and must read is a finding; suggest a split. | Regenerated files such as lockfiles, skimmed for obvious risk. |
 
 ## Handoffs
 

@@ -41,7 +41,8 @@ description: Use to draft, split, or track tickets, issues, epics, and initiativ
    An Epic longer than a quarter is two Epics or an Initiative.
 4. **Split by behavior, not by layer or activity.** A feature Issue changes
    one behavior a user, caller, or operator can observe. A refactor or chore
-   Issue names the behavior it preserves and the check that proves it.
+   Issue names the behavior it preserves and the check that proves it. Split
+   by layer only when separate teams own the layers and ask for that split.
 5. **Keep Issues short, and state outcomes, not implementation.** An Issue
    body stays under 200 words, excluding code and logs, because developers
    skim longer ones. Link the Epic or Initiative instead of repeating its
@@ -70,14 +71,6 @@ description: Use to draft, split, or track tickets, issues, epics, and initiativ
 10. **Status reports link the tracker.** Report only finished work, blockers
     and causes, risks, scope changes, decisions needed, and Initiative
     measures.
-
-## Tripwires
-
-| Trigger | Do this instead | False alarm |
-|---|---|---|
-| "One Issue each for backend, frontend, and tests" | Slice by observable behavior. | Separate teams own the layers and asked for that split. |
-| "Create them all now and fix them later" | Get the whole tree approved first. | The user approved that exact tree. |
-| "The PR fixes it, so add `Closes #N`" | Check every acceptance criterion first. | Every criterion is met. |
 
 ## Handoffs
 

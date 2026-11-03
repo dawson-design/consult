@@ -34,7 +34,10 @@ description: Migrations, schema changes, indexes, queries, transactions, or lock
 3. Review the migration SQL and its lock behavior directly, not just the
    ORM code. Index and constraint creation uses the target engine's online
    mechanism. SQLite passing is not proof of Postgres behavior; verify
-   engine-specific DDL against the target engine.
+   engine-specific DDL against the target engine. Measure lock duration on
+   representative load, or assume the worst case. Skip the online mechanism
+   only when table size and write rate are verified negligible, and record
+   why.
 4. Every uniqueness invariant is enforced by a DB-level `UNIQUE`, `EXCLUDE`,
    composite, or partial constraint, because application-layer checks race
    under concurrency.
@@ -46,15 +49,6 @@ description: Migrations, schema changes, indexes, queries, transactions, or lock
    change and the event or job it publishes share a transactional outbox
    when the two must not diverge, never a dual write.
 
-## Tripwires
-
-| Trigger | Do this instead | False alarm |
-|---|---|---|
-| "The table is small, ALTER it in place" | Use the engine's online mechanism, or record why size and write rate cannot matter. | Size and write rate are verified negligible and the reasoning is recorded. |
-| "The migration will be quick" | Measure lock behavior on representative load or assume the worst case. | None. |
-| "The app already checks uniqueness" | Enforce it with a DB constraint. | The invariant is advisory and duplicates are explicitly acceptable. |
-| "It's just another column" | Load `security` before adding password, token, API key, MFA, recovery-code, or sensitive-PII storage. | The column holds no credentials or sensitive data. |
-
 ## Handoffs
 
 - `contract-first`: schema and migration approval.
@@ -62,7 +56,8 @@ description: Migrations, schema changes, indexes, queries, transactions, or lock
 - `performance`: measured query latency or throughput change.
 - `observability`: migration and query dashboards and alerts.
 - `async-systems`: stream or worker consumers after durable handoff.
-- `security`: credentials, secrets, tokens, MFA factors, sensitive PII.
+- `security`: load before adding columns that store credentials, secrets,
+  tokens, MFA factors, recovery codes, or sensitive PII.
 
 ## References
 

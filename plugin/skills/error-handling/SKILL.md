@@ -30,7 +30,8 @@ description: "How code fails: error types, error messages and responses, validat
    or anonymous generic errors.
 2. Catch only where you can decide: recover, translate, retry, or terminate.
    Every catch does one of those or re-raises with context, preserving the
-   original cause.
+   original cause. Best-effort telemetry with an explicit drop policy may log
+   and continue.
 3. Translate at boundaries. Domain, infrastructure, API, CLI, and UI errors do
    not leak across a boundary unchanged.
 4. Remote calls declare timeout, retry, idempotency, and dependency-failure
@@ -42,15 +43,6 @@ description: "How code fails: error types, error messages and responses, validat
    paths, hostnames, secrets, or auth-enumeration clues. Diagnostic detail
    stays reachable by correlation ID.
 6. Every public operation that can fail has at least one failure-path test.
-
-## Tripwires
-
-| Trigger | Do this instead | False alarm |
-|---|---|---|
-| "Log and continue is fine" | Decide: recover, translate, retry, or terminate. | Best-effort telemetry with an explicit drop policy. |
-| "This can't fail in practice" | Declare the failure-capable contract and test a representative failure. | The state is impossible by type or value construction. |
-| "Swallow at the boundary" | Translate for the caller and preserve the cause for diagnostics. | A security boundary deliberately hides details while logging a correlation ID. |
-| "We'll add remote-call protection later" | Define timeout, retry budget, idempotency guard, and dependency-failure behavior now. | Local in-memory call with no blocking I/O. |
 
 ## Handoffs
 

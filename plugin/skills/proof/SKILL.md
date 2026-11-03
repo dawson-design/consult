@@ -49,7 +49,8 @@ not count until you can say which criterion each test proves.
    checks only for no error, a 200, or that a field exists. For each rule,
    choose the level that shows it most directly (unit for pure domain logic,
    integration for real dependencies, black-box for behavior across the
-   system) and say why.
+   system) and say why. Where the type checker enforces a criterion exactly,
+   it is the check; test the rules the types do not enforce.
 4. Use the real code a test calls; mock only the network and filesystem, or
    write down why. Fix the clock, random values, and generated IDs so the
    same input gives the same output. Do not test the framework or the
@@ -72,20 +73,8 @@ not count until you can say which criterion each test proves.
    each changed file as it is now, and rerun the checks, with the whole
    suite once. Report a failure unrelated to the change separately; it does
    not block. List each acceptance criterion with its check and result:
-   proven, partly proven, blocked, or unproven.
-
-## Tripwires
-
-| Trigger | Do this instead | False alarm |
-|---|---|---|
-| "The suite is green, so it's done" | Name the acceptance criterion each passing test proves. | Every criterion already maps to a passing check. |
-| "Add a unit test for every helper" | Test each business rule at the level that shows it most directly (Rule 3). | The helper is pure domain logic reached through its module's public functions. |
-| "Update the test or snapshot so it passes" | Fix the change, or get the user's approval for the behavior change. | The test checks internals; replace it with a test of the same rule. |
-| "The types already prove it" | Test the rule the types do not enforce. | The criterion is exactly what the type checker enforces. |
-| "There's no way to test this, so skip proof" | Run it by hand and record the command, the output, and the criterion it proves. | An existing check already loads or runs it. |
-| "The test mentions the changed code, so it counts" | Ask whether it would fail if the rule were wrong; rewrite it if not. | It fails when the rule is broken. |
-| "The test passed first time" | Break the change once by hand and watch it fail (Rule 6). | You saw it fail before the code existed. |
-| "Break every guard with a script to be sure" | See one hand-made failure per acceptance criterion (Rule 6). | The user asked for mutation testing. |
+   proven, partly proven, blocked, or unproven. For a check run by hand,
+   record the command and its output.
 
 ## Handoffs
 

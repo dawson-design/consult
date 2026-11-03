@@ -43,17 +43,6 @@ description: A bug report, wrong output, crash, failing or flaky test, or regres
    error" is never the root cause.
 9. A root cause or fix you have not proven is reported as unproven.
 
-## Tripwires
-
-| Trigger | Do this instead | False alarm |
-|---|---|---|
-| "Probably X, let me try fixing" | Gather evidence that confirms X before editing. | The user asked for a speculative explanation, not a fix. |
-| "No time to reproduce" | Create the smallest reproduction or state why it is blocked. | Production-only incident where logs and traces are the reproduction. |
-| "One more guess and it'll work" | Stop editing. Collect a new observation that changes the model. | A syntax or wiring typo visible in the failing output. |
-| "Fixed it locally, ship it" | Name the root cause and run the regression guard. | The local run is the requested diagnostic, not a report that the work is done. |
-| "Flake, just retry" | Treat it as a bug and find which of test, code, or environment failed. | Infrastructure outage already confirmed outside the code under review. |
-| "Probably a race condition" | Show interleaving, shared state, or timing evidence before touching concurrency code. | A failing sanitizer or trace already demonstrates the race. |
-
 ## Handoffs
 
 - `proof`: evidence that the fix works, and the regression test's design.

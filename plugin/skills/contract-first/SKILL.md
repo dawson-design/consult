@@ -37,6 +37,8 @@ description: Before adding or changing a field, signature, schema, CLI flag, eve
    For a rename or removal, get a separate decision on what happens to
    existing callers.
 4. An approving design or RFC approves the direction, not the concrete shapes.
+   It approves a contract only when it lists that exact contract and the
+   person approved it.
 5. Silence is not approval. Wait for the person to approve, revise, or reject.
    If nobody can answer in this run, stop and report what needs approval.
 6. If you find while building that the approved contract must change, stop
@@ -54,15 +56,6 @@ description: Before adding or changing a field, signature, schema, CLI flag, eve
    proposed version, and what changes for callers. Then ask once: approve,
    revise, or reject.
 5. Build the contract exactly as approved.
-
-## Tripwires
-
-| Trigger | Do this instead | False alarm |
-|---|---|---|
-| "The design doc already covers this interface" | Follow Workflow step 4 for each contract. | The design listed this exact contract, and the person approved it. |
-| "I'll implement it first and show the interface after" | Show the contract first and wait for approval. | Nothing outside the change uses it yet (Rule 1), or the change is additive and easy to undo (Rule 2). |
-| "No objection means it's approved" | Wait for the person to approve, revise, or reject. | The person approved this contract in words. |
-| "The rename is implied by the approved contract" | Ask what happens to existing callers (Workflow step 3). | The approval already said what happens to existing callers. |
 
 ## Handoffs
 

@@ -12,10 +12,10 @@ need to know before opening a PR.
   regenerate with `./setup.sh`.
 - Each skill must conform to the anatomy enforced by
   `scripts/validate_skill_anatomy.py`: frontmatter (name + description),
-  `# Title`, `## When to Use`, `## When NOT to Use`, `## Rules`,
-  optional `## Tripwires` (table, at most 8 rows), and a body budget of 700
-  words. Use the section ownership and knowledge-versus-policy rules in
-  `AGENTS.md` when choosing what belongs.
+  `# Title`, `## When to Use`, `## When NOT to Use`, `## Rules` (each rule
+  states its own exceptions), and a body budget of 700 words. Use the
+  section ownership and knowledge-versus-policy rules in `AGENTS.md` when
+  choosing what belongs.
 - Keep skill descriptions concise (120 characters or fewer) and trigger-rich.
   Lead with verbs and named scenarios; avoid marketing language.
 - Names of authors, books, papers, or external products belong in the
@@ -55,12 +55,6 @@ One non-negotiable rule, if the skill has one.
 ## Workflow
 
 1. Optional. Ordered actions, only when the ordering is itself the policy.
-
-## Tripwires
-
-| Trigger | Do this instead | False alarm |
-|---|---|---|
-| "The pressure phrase" | The corrective action. | When the trigger is legitimate. |
 
 ## Handoffs
 
@@ -106,9 +100,9 @@ git config core.hooksPath .githooks
   opening.
 - Reference any related issue and explain the engineering motivation.
   PR descriptions should make tradeoffs visible.
-- New skills require: a clear risk profile, named tripwires, a
-  verification checklist, and at least one handoff to an existing
-  skill.
+- New skills require: a clear risk profile, numbered rules in checkable
+  form that state their own exceptions, and at least one handoff to an
+  existing skill.
 
 ## Reporting bugs
 

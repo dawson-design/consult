@@ -47,18 +47,6 @@ description: "Code is slow, times out, or must get faster: latency, throughput, 
 8. Cache tests cover stale data and invalidation, not only the warm-cache
    happy path.
 
-## Tripwires
-
-| Trigger | Do this instead | False alarm |
-|---|---|---|
-| "This code looks slow" | Measure first and name the target metric. | The user asked only for a hypothesis. |
-| "Average latency improved" | Check p95/p99 and adjacent metrics before keeping the change. | Batch-only workload where tail latency is irrelevant. |
-| "Micro-benchmark is faster, so the app is faster" | Prove the end-to-end path or say the speedup applies only to the code measured. | The report covers only the measured code. |
-| "Add a cache" | Name source of truth, invalidation trigger, stale tolerance, and metrics first. | A bounded per-request memo with no cross-request staleness. |
-| "TTL handles invalidation" | Use event or key-based expiration; TTL is the safety net. | Best-effort cache where stale data is explicitly acceptable. |
-| "The hot key is rare" | Add stampede protection or prove concurrency cannot pile up. | Single-process local cache with bounded callers. |
-| "No need to re-measure" | Re-measure under the same workload. | The change was reverted or not kept. |
-
 ## Handoffs
 
 - `database`: query plans, indexes, migration risk.
