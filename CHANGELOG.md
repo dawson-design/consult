@@ -44,6 +44,8 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   trials, and `eval/scripts/judge_labels.py` exports a blind sample of their
   answers for hand labels, then reports each dimension's agreement with the
   labeller (kappa, per-arm bias, unknown rate) and between two rejudge passes.
+  `judge_labels.py serve` opens a local page for labelling the sheet in the
+  browser, saving each answer as it is given.
 
 ### Changed
 

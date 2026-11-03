@@ -554,6 +554,7 @@ uv run scripts/rescore.py runs/<job> --rejudge --yes       # run the judges (bil
 
 ```sh
 uv run scripts/judge_labels.py export runs/labels/judge.csv runs/<bare-job>-rejudged runs/<consult-job>-rejudged
+uv run scripts/judge_labels.py serve runs/labels/judge.csv   # label in the browser
 uv run scripts/judge_labels.py agree runs/labels/judge.csv
 uv run scripts/judge_labels.py repeat runs/<job>-rejudged runs/<job>-rejudged-repeat
 ```
@@ -563,7 +564,14 @@ spread across tasks. The sheet shows each item, but not the judge's answer,
 reason, or evidence (whose form gives the answer away), nor the arm. Each case's request,
 earlier replies, diff, and final message are in `<sheet>-cases/<case>.md`,
 scrubbed as the judges' view is. The hidden fields go to `<sheet>.key.json`.
-Write `yes` or `no` in the `human` column. `agree` reports per dimension
+`serve` opens a local page (only on 127.0.0.1) with each item beside its
+case, grouped so each case is read once; keys `y`, `n`, and `s` answer yes,
+no, or can't tell, and each answer saves into the sheet, so labelling can
+stop and resume. The page never reads the key file. For a code item it hides
+the agent's replies and final message, as the code judges never read them.
+Keep the sheet closed in any spreadsheet while the page runs: a spreadsheet
+that later saves its older copy would erase the labels saved since. The sheet also opens in
+a spreadsheet: write `yes` or `no` in the `human` column. `agree` reports per dimension
 Cohen's kappa against the judge, each arm's bias (the judge's yes-rate minus
 the human's), and the judge's unknown rate. `repeat` reports how often two
 rejudge passes give the same answer. A dimension passes the gate with kappa
