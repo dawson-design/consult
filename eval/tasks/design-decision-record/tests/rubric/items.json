@@ -38,7 +38,7 @@
       "polarity": "positive",
       "question": "Does each alternative the note lists say why it was not chosen, with a reason that applies to checkout?",
       "rules": [
-        "specify.3"
+        "workflow.1"
       ],
       "tier": "must",
       "yes_when": "There are at least two alternatives, and each one states a concrete cost or risk that led to rejecting it."
@@ -103,34 +103,6 @@
       "yes_when": "The change adds the note and at most links to it. Changes to test files do not decide this item."
     },
     {
-      "dimension": "scope",
-      "id": "scope.no_build_plan",
-      "key_phrase": "Leave file-by-file edits, pseudocode, and task lists for the plan, after the design is agreed.",
-      "look_at": "The whole of `docs/checkout-validation.md`",
-      "no_when": "The note includes an implementation listing, pseudocode for the validator, or numbered edit steps per file.",
-      "polarity": "negative",
-      "question": "Does NOT fill the note with build steps: file-by-file edit lists, pseudocode or implementation code, or a step-by-step task list?",
-      "rules": [
-        "specify.1"
-      ],
-      "tier": "quality",
-      "yes_when": "The note records the decision, its reasons, and consequences. Follow-up work is named at the level of what must happen, and any code is a short sketch of the checked data shape."
-    },
-    {
-      "dimension": "scope",
-      "id": "scope.not_marked_approved",
-      "key_phrase": "Record what the user approved, not what you proposed.",
-      "look_at": "Any status line and the wording of the decision in `docs/checkout-validation.md`",
-      "no_when": "The note says the team agreed or reached consensus.",
-      "polarity": "negative",
-      "question": "Does NOT claim that the team agreed on the decision, when the request says the team is split?",
-      "rules": [
-        "specify.6"
-      ],
-      "tier": "quality",
-      "yes_when": "The note records the decision without claiming team agreement. A status such as Accepted is fine if the note does not say the team agreed."
-    },
-    {
       "dimension": "proof",
       "id": "proof.no_text_assertions",
       "key_phrase": "never by asserting their text",
@@ -172,20 +144,6 @@
       ],
       "tier": "quality",
       "yes_when": "The note names the tests the implementation must add, at the route boundary for rejected input and for the cart helper given checked input."
-    },
-    {
-      "dimension": "report",
-      "id": "report.note_claims_grounded",
-      "key_phrase": "Read the code before proposing a design.",
-      "look_at": "Statements about the current code in `docs/checkout-validation.md`, compared with `docs/checkout-notes.md` and the files in the workspace",
-      "no_when": "The note describes current files, functions, line numbers, or field checks as fact when the repository contains no checkout code.",
-      "polarity": "positive",
-      "question": "Does the note avoid stating facts about the current checkout code that the repository does not show, such as file paths, function names, line numbers, or the exact fields each place checks today?",
-      "rules": [
-        "specify.2"
-      ],
-      "tier": "must",
-      "yes_when": "Claims about today's code stay within what `docs/checkout-notes.md` says, or are labeled as assumptions to confirm. Names for code that does not exist yet are clearly proposals."
     },
     {
       "dimension": "report",

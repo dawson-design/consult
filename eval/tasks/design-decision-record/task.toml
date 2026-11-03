@@ -6,7 +6,7 @@ description = "Capture a design choice for a small service change."
 
 [metadata]
 kind = "code"
-features = ["workflow", "specify", "architecture", "documentation"]
+features = ["workflow", "architecture", "documentation"]
 
 # Generous on purpose: an Opus turn at xhigh effort can run long, and a cut-off
 # turn scores the harness, not the agent.

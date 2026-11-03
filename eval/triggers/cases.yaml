@@ -33,7 +33,7 @@ cases:
     source: {task: bug-from-symptom}
     code_change: true
     required_any: [proof]
-    expect_silent: [contract-first, specify, scaffolding, documentation, api, database, release, commit, git-workflow]
+    expect_silent: [contract-first, scaffolding, documentation, api, database, release, commit, git-workflow]
 
   - name: proof-first-bugfix
     kind: positive
@@ -67,14 +67,14 @@ cases:
     kind: positive
     source: {task: money-field-change}
     code_change: true
-    required_any: [contract-first, specify, domain-modeling, api]
+    required_any: [contract-first, domain-modeling, api]
     expect_silent: [scaffolding, documentation, database, refactoring, release, commit, git-workflow]
 
   - name: service-from-brief
     kind: positive
     source: {task: service-from-brief}
     code_change: true
-    required_any: [specify, scaffolding, api, contract-first]
+    required_any: [scaffolding, api, contract-first]
     expect_silent: [release, refactoring, commit, git-workflow, documentation]
 
   - name: database-release-safety
@@ -109,7 +109,7 @@ cases:
     kind: positive
     source: {task: design-decision-record}
     code_change: true
-    required_any: [specify, architecture]
+    required_any: [architecture]
     expect_silent: [release, commit, git-workflow]
 
   - name: proof-pipeline-shape

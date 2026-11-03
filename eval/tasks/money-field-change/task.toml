@@ -8,7 +8,7 @@ description = "Change a shipped money field for multi-currency orders, with scri
 
 [metadata]
 kind = "code"
-features = ["workflow", "specify", "contract-first", "api", "domain-modeling", "proof", "code-review"]
+features = ["workflow", "contract-first", "api", "domain-modeling", "proof", "code-review"]
 
 # Generous on purpose: an Opus turn at xhigh effort can run long, and a cut-off
 # turn scores the harness, not the agent.

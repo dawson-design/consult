@@ -26,7 +26,11 @@ rules apply with these.
 1. **Ask more of the user when changes affect more code or are harder to
    undo.** If both risks are low, do the work and prove it without sign-off.
    For higher risk, give progress updates, explain options, and get approval
-   before acting.
+   before acting. For a design choice, propose concrete options and
+   recommend one; do not ask the user to invent the design. Give your
+   recommendation and its main tradeoff, and let the user approve, revise,
+   or rule it out. Hold the discussion inside the host's plan mode when it
+   has one.
 2. **Get the user's approval before you build any of these:**
    - the design direction
    - a contract that callers depend on
@@ -66,7 +70,6 @@ rules apply with these.
 
    | Skill | Load when |
    | --- | --- |
-   | `specify` | A significant or hard-to-change choice is unsettled. |
    | `contract-first` | A caller-facing interface or shared structure needs approval. |
    | `domain-modeling` | Data shape, states, invariants, transitions, or effects. |
    | `architecture` | Module boundaries, ownership, layering, cross-component structure, live-update transport. |

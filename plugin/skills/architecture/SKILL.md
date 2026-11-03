@@ -57,7 +57,6 @@ description: "Deciding where code or logic should live: module boundaries, layer
 
 ## Handoffs
 
-- `specify`: compare current and proposed contracts before boundary decisions.
 - `contract-first`: approval of contracts, including module boundaries and
   project layout.
 - `domain-modeling`: module data shapes, invariants, effects.

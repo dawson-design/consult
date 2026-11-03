@@ -19,7 +19,7 @@ description: Use to draft, split, or track tickets, issues, epics, and initiativ
 
 ## When NOT to Use
 
-- Deciding what to build. Use `specify` first.
+- Deciding what to build. Settle it in the host's plan mode first.
 - Planning one change's steps. Use the `workflow` Rule 3 plan file.
 
 ## Rules

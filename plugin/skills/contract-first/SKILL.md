@@ -21,8 +21,8 @@ description: Before adding or changing a field, signature, schema, CLI flag, eve
 - Internal helper changes, local file moves, or private organization with no
   boundary future work will depend on.
 - Typos, formatting, comment-only, or docs-only edits.
-- The approach or solution direction is still unsettled; settle it in
-  `specify` first.
+- The approach or solution direction is still unsettled; settle it in the
+  host's plan mode first.
 
 ## Rules
 
@@ -59,7 +59,6 @@ description: Before adding or changing a field, signature, schema, CLI flag, eve
 
 ## Handoffs
 
-- `specify`: unsettled approach or solution direction.
 - `api`, `database`: domain boundary risks.
 - `architecture`: shared package/module/project structure.
 - `proof`: prove the approved interface at the handoff where callers cross

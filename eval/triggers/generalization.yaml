@@ -136,7 +136,7 @@ cases:
       which you'd pick. Put it in docs/ and don't change any code yet.
     # A written proposal, not a code change.
     code_change: false
-    required_any: [specify, architecture]
+    required_any: [architecture]
     expect_silent: [release, commit, git-workflow, documentation]
 
   - name: g-tooling
