@@ -6,6 +6,8 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [20.0.0] (2026-11-03)
+
 ### Added
 
 - A marketing site in `site/`, published to GitHub Pages at
@@ -73,7 +75,7 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - The site's home page describes the bounded process: the loop builds in
   stages with a proof at each, review runs once on the finished change, and
-  you sign off on the plan and on big calls. It lists 18 skills.
+  you sign off on the plan and on big calls. It lists 17 skills.
 
 - Reference files keep only opinions, traps, and dated facts, following
   the October reference audit with later decisions on top. References for
