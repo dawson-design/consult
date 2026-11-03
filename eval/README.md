@@ -218,8 +218,8 @@ Suites live in `suites/*.yaml` and list task names. Tasks live in
 ```text
 tasks/<name>/
   task.toml                 name, kind, features, timeouts, judge env, [[steps]]
-  instruction.md            the prompt the agent receives (single-step tasks)
-  steps/<name>/             instruction.md per turn, and solution/ (multi-step tasks)
+  instruction.md            the prompt the agent receives (routing tasks, one turn)
+  steps/<name>/             instruction.md per turn, and solution/ (every code task)
   environment/Dockerfile    synced; Node 22, git, python3, rewardkit
   environment/workspace/    the starting repository, committed at build time
   solution/solve.sh         oracle reference (routing: no-op)
@@ -254,7 +254,7 @@ The `rules` suite measures whether each skill's rules change what the agent
 does. Its prompts are product briefs or user reports, not specs, so a pass
 means the agent noticed a requirement the prompt never stated.
 
-- `bug-from-symptom`: a customer report that names no file. One step.
+- `bug-from-symptom`: a customer report that names no file.
 - `money-field-change`: multi-currency orders in a service whose `total` field
   an iOS app reads. Three steps.
 - `service-from-brief`: a link shortener built from an empty repository. Three
@@ -268,6 +268,21 @@ data stage exists, so the agent stops again at the contracts gate. The
 `continue` step answers it: "Approved. Continue." An agent that built
 everything in the `approve` step gets the same reply. The agent fragments set
 `resume_trajectory: true`, so each step continues the same session.
+
+Every other code task has three turns too, because Consult stops for sign-off
+before a contract, data shape, or migration, and a task that never answers
+scores the half-built workspace instead of the agent. The `request` step sends
+the task. The `approve` step sends: "Approved, including any interface, data
+shape, or migration you proposed. Build it, using your recommended option for
+anything still open. If the work is already finished, say so." The `continue`
+step sends: "Approved. Continue. If the work is already finished, say so."
+Both arms get the same turns, so an agent that finished in the first turn
+loses nothing. The `request` step records whether the agent stopped
+(`signoff_mode`) without scoring it, since these tasks have no sign-off rule.
+`sync_tests.py --check` fails on a code task with no follow-up turns unless
+its `consult.json` gives a `single_turn` reason. Calibration runs before this
+change were single-turn; rejudging them shows the judges the two later turns
+the agent never received.
 
 A rule task adds these keys to `tests/consult.json`:
 
@@ -400,10 +415,13 @@ To add a task:
 3. Edit `tests/consult.json`.
 4. For a code task, write `verifier/hidden/<task>.mjs`, `tests/proof/submitted.py`,
    `solution/solve.sh`, and a rubric in `verifier/rubrics/<task>.json`.
-5. For a rule task, add the rule-task keys to `consult.json`. A multi-step
-   task also needs `steps/brief/`, `steps/approve/`, `steps/continue/`, and a
-   no-op `solution/solve.sh` in `brief` and `continue`, so the oracle proposes
-   first and builds once, in `approve`.
+5. For a rule task, add the rule-task keys to `consult.json`. Every code task
+   has three turns (see above): `steps/request/`, `steps/approve/`, and
+   `steps/continue/`, each with its `instruction.md`, and a no-op
+   `solution/solve.sh` in `approve` and `continue`, so the oracle builds once,
+   in the first turn, from the task's `solution/solve.sh`. A brief task that
+   must propose before building names its steps `brief`, `approve`, and
+   `continue` instead, with the no-op in `brief` and `continue`.
 6. Add the name to a suite and run the sync.
 
 ### Judge rubrics

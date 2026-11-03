@@ -53,6 +53,12 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   tasks keep the generic judge.
 - Code tasks in the eval give each agent turn 45 minutes and the verifier 60
   minutes, so a long Opus turn or a slow judge is not cut off.
+- Every eval code task now has three turns (request, approve, continue), so
+  an agent that stops for sign-off hears back instead of being scored on a
+  half-built workspace. Both arms get the same fixed replies.
+  `sync_tests.py --check` fails on a code task without follow-up turns, and
+  the report judge reads the latest reply that describes the finished work
+  when the last turn only says the work is done.
 - `rescore.py` checks for a changed task environment against the last commit
   that touched it, not file times, so a fresh checkout can rescore old runs.
 - The README groups the skills by the kind of work: process and proof, design,

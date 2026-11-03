@@ -102,7 +102,7 @@ class OracleTrajectoryTests(unittest.TestCase):
         self.assertIn("totalMoney", replies[0][1])
 
     def test_a_single_step_task_has_no_conversation(self):
-        self.assertEqual(oj.oracle_trajectory("api-error-contract"), {"steps": []})
+        self.assertEqual(oj.oracle_trajectory("routing-settings-copy"), {"steps": []})
 
 
 class GateTests(unittest.TestCase):

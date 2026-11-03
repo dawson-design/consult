@@ -70,7 +70,7 @@ class FirstTurnTaskTests(unittest.TestCase):
         )
 
     def test_a_single_step_task_is_copied_unchanged(self):
-        src = EVAL_DIR / "tasks" / "bug-from-symptom"
+        src = EVAL_DIR / "tasks" / "routing-settings-copy"
         preflight.first_turn_task(src, self.out / "t")
         self.assertEqual((self.out / "t" / "task.toml").read_text(), (src / "task.toml").read_text())
         self.assertEqual((self.out / "t" / "instruction.md").read_text(), (src / "instruction.md").read_text())
