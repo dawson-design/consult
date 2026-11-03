@@ -1,34 +1,6 @@
 {
   "items": [
     {
-      "id": "structure.awaits_every_send",
-      "dimension": "structure",
-      "rules": [
-        "async-systems.3"
-      ],
-      "key_phrase": "Every spawned task belongs to a scope that cancels, awaits, or supervises it",
-      "question": "Does `processNotifications` await every send it starts, including retries, before it returns, so no send is still running after the result is returned?",
-      "polarity": "positive",
-      "tier": "must",
-      "look_at": "How `src/worker.js` starts sends and retries and what it awaits before returning",
-      "yes_when": "Every send and retry runs inside promises that `processNotifications` awaits before returning its counts.",
-      "no_when": "A send or retry is started without being awaited (fire and forget, an un-awaited timer, or a promise left out of the awaited set)."
-    },
-    {
-      "id": "structure.structured_logs",
-      "dimension": "structure",
-      "rules": [
-        "observability.3"
-      ],
-      "key_phrase": "Logs are structured events with stable names, typed fields, severity, outcome",
-      "question": "Are the lifecycle logs structured events, each a stable event name plus a fields object, with a send that ran out of attempts distinguishable from routine progress by its level or an outcome field?",
-      "polarity": "positive",
-      "tier": "quality",
-      "look_at": "Every `logger` call in `src/worker.js`",
-      "yes_when": "Each call passes a fixed event name and an object of fields (such as notification id, attempt, counts, error message), and a final send failure stands out by level (warn or error) or by an outcome or severity field.",
-      "no_when": "Logs are free-text or interpolated strings, event names vary per call, or a final send failure looks the same as routine progress."
-    },
-    {
       "id": "structure.one_job",
       "extends": "structure.one_job"
     },
@@ -58,9 +30,9 @@
       "id": "boundaries.exhausted_reported",
       "dimension": "boundaries",
       "rules": [
-        "async-systems.9"
+        "error-handling.2"
       ],
-      "key_phrase": "Silent async failure is a bug.",
+      "key_phrase": "Every catch does one of those or re-raises with context",
       "question": "When a notification's send keeps failing until its attempts run out, does the batch carry on with the others and make that failure visible, counted in `failed` and identifiable by notification id, rather than rejecting the whole batch or dropping it?",
       "polarity": "positive",
       "tier": "must",
@@ -100,9 +72,9 @@
       "id": "boundaries.only_failed_resent",
       "dimension": "boundaries",
       "rules": [
-        "async-systems.6"
+        "error-handling.4"
       ],
-      "key_phrase": "Retried jobs and stream consumers are idempotent, deduplicated, or marked non-retryable with a reason.",
+      "key_phrase": "Retries apply only to idempotent transient failures",
       "question": "Does a retry resend only the notification whose send failed, never one whose send already succeeded?",
       "polarity": "positive",
       "tier": "must",
@@ -114,9 +86,9 @@
       "id": "boundaries.logs_allowlisted",
       "dimension": "boundaries",
       "rules": [
-        "observability.5"
+        "error-handling.5"
       ],
-      "key_phrase": "Sensitive data is redacted at the source with a field allowlist",
+      "key_phrase": "Redaction is a field allowlist, not a secret deny-list.",
       "question": "Does NOT log whole notification objects or send payloads, so logs carry only chosen fields such as the notification id, attempt, counts, and error message?",
       "polarity": "negative",
       "tier": "must",
@@ -149,9 +121,9 @@
       "id": "proof.logs_asserted",
       "dimension": "proof",
       "rules": [
-        "async-systems.9"
+        "error-handling.6"
       ],
-      "key_phrase": "Exhausted jobs, lag, dropped events, and dead work have visible signals and tests.",
+      "key_phrase": "Every public operation that can fail has at least one failure-path test.",
       "question": "Does a test assert the lifecycle log events, such as the warning for a retried send and the error for a notification that ran out of attempts, with their notification id?",
       "polarity": "positive",
       "tier": "quality",

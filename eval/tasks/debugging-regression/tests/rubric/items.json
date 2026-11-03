@@ -129,8 +129,7 @@
       "polarity": "positive",
       "question": "Is the prototype-key guard applied at every nesting level, so that a parsed patch such as `{\"preferences\": {\"__proto__\": {\"polluted\": true}}}` cannot change `Object.prototype` or the prototype of any object in the result?",
       "rules": [
-        "core.7",
-        "security.1"
+        "core.7"
       ],
       "tier": "must",
       "yes_when": "Every level skips or rejects `__proto__` (and `constructor` or `prototype` where they could reach a prototype), or writes keys in a way that cannot set a prototype, such as `Object.defineProperty`, including inside nested objects and objects copied from arrays."
@@ -174,7 +173,7 @@
       "polarity": "positive",
       "question": "Is there a test that merges a patch built with `JSON.parse` containing a `__proto__` key and asserts that neither `Object.prototype` nor the result's prototype gained the attacker's property?",
       "rules": [
-        "security.3"
+        "proof.3"
       ],
       "tier": "must",
       "yes_when": "The patch comes from `JSON.parse` (so `__proto__` is a real key), and the test asserts `Object.prototype` and the merged result's prototype are unchanged."
@@ -188,7 +187,7 @@
       "polarity": "positive",
       "question": "Does a test send a prototype key below the top level, such as `__proto__` inside `preferences`, and assert that no prototype changed?",
       "rules": [
-        "security.3"
+        "proof.3"
       ],
       "tier": "quality",
       "yes_when": "A parsed patch carries `__proto__` or `constructor.prototype` inside a nested object, and the test checks the prototypes afterward."
@@ -256,13 +255,13 @@
     {
       "dimension": "report",
       "id": "report.cause_named",
-      "key_phrase": "The root cause is named in one sentence",
+      "key_phrase": "Name the root cause in one sentence",
       "look_at": "The agent's final message, compared with the original `src/profile.js`",
       "no_when": "The message names no cause, names a different one, or only describes the new code.",
       "polarity": "positive",
       "question": "Does the final message name the cause: the shallow spread `{ ...existing, ...patch }` replaced a whole nested object, such as `preferences`, with the patch's partial version?",
       "rules": [
-        "debugging.4"
+        "proof.2"
       ],
       "tier": "quality",
       "yes_when": "The message says, in its own words, that the top-level spread replaced nested objects instead of merging them."

@@ -1,11 +1,7 @@
 {
   "task": "observable-async-worker",
   "kind": "code",
-  "intended_skills": [
-    "observability",
-    "async-systems",
-    "performance"
-  ],
+  "intended_skills": ["error-handling"],
   "visible_test_cmd": "npm test",
   "test_file": "test/worker.test.js"
 }

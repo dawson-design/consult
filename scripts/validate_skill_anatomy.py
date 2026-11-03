@@ -97,15 +97,17 @@ MAX_BODY_WORDS = 700
 # Folding the Tripwires tables into Rules then cut every skill: api (597)
 # and code-review (695) fell back under the default, and workflow (877) and
 # proof (804) keep budgets just above their new sizes.
-BODY_WORD_EXCEPTIONS = {"workflow": 880, "proof": 810}
+# Deleting security, debugging, and official-source-check moved their
+# surviving policy in: proof (834) took the version-check, atomic-fix, and
+# custom-guard negative-test rules, and code-review (708) the dependency
+# audit and secrets scan.
+BODY_WORD_EXCEPTIONS = {"workflow": 880, "proof": 840, "code-review": 715}
 MAX_DESCRIPTION_LENGTH = 120
-# ~600 tokens of routing surface that every host loads before picking a skill.
-# Chosen deliberately once the measurement was honest: the previous 2,000 was
-# never enforced (descriptions were truncated at their first inner colon), and
-# the pack turned out to be at 2,069 the whole time. 2,400 left room for about
-# four more skills. issue-tracking brought the pack to 2,399, so the next skill
-# needs keyword cuts elsewhere or a stated reason to raise this.
-MAX_TOTAL_DESCRIPTION_LENGTH = 2400
+# ~500 tokens of routing surface that every host loads before picking a skill.
+# Deleting six skills brought the pack from 2,399 to 1,766 characters; the
+# ceiling dropped from 2,400 to 2,000 to keep that gain. Raise it only with a
+# stated reason.
+MAX_TOTAL_DESCRIPTION_LENGTH = 2000
 
 NAME_RE = re.compile(r"^name:\s+[a-z][a-z0-9-]*\s*$", re.MULTILINE)
 # A skill that names a model switches the host's model when it loads, which

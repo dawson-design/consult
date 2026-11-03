@@ -1,7 +1,7 @@
 # Ruby review reference
 
 Use when reviewing Ruby or Rails code in the diff. Targets Ruby 3.x on Rails
-7.x and 8.x. Check version-specific claims with `official-source-check`.
+7.x and 8.x. Check version-specific claims against the official docs.
 
 ## Domain-modeling bias
 

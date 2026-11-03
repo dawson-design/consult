@@ -6,7 +6,7 @@ description = "Tighten an HTTP contract and failure response."
 
 [metadata]
 kind = "code"
-features = ["api", "error-handling", "security", "documentation"]
+features = ["api", "error-handling", "documentation"]
 
 # Generous on purpose: an Opus turn at xhigh effort can run long, and a cut-off
 # turn scores the harness, not the agent.

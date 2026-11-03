@@ -113,7 +113,7 @@
       "polarity": "positive",
       "question": "When the target cannot be parsed, is not a string, or parsing throws, does `resolveRedirect` return `/` rather than the target?",
       "rules": [
-        "security.1"
+        "error-handling.2"
       ],
       "tier": "must",
       "yes_when": "Every parse failure, exception, and non-string input leads to the `/` fallback."
@@ -127,7 +127,7 @@
       "polarity": "positive",
       "question": "Does `resolveRedirect` return a target only when it is a same-site path or an `https:` URL whose parsed host exactly equals the trusted host, falling back to `/` for everything else, rather than blocking a list of known-bad patterns?",
       "rules": [
-        "security.1"
+        "error-handling.2"
       ],
       "tier": "must",
       "yes_when": "Acceptance needs a positive match against the same-site rule or the exact trusted HTTPS origin, and any other target falls back. An explicit same-site path rule (for example: starts with one `/` but not `//` or `/\\`) counts as a positive match."
@@ -141,7 +141,7 @@
       "polarity": "positive",
       "question": "Are absolute targets parsed with the platform `URL` parser and judged by its parsed `protocol` and host (or `origin`), rather than by regular expressions or string slicing on the raw target?",
       "rules": [
-        "security.2"
+        "domain-modeling.4"
       ],
       "tier": "must",
       "yes_when": "The code builds a `URL` and compares its parsed fields."
@@ -184,7 +184,7 @@
       "polarity": "positive",
       "question": "Do tests assert that at least two different bypass forms, such as a protocol-relative target (`//host/...`), a non-HTTPS URL for the trusted host, or a script URL (`javascript:...`), each fall back to `/`?",
       "rules": [
-        "security.3"
+        "proof.3"
       ],
       "tier": "must",
       "yes_when": "At least two different bypass forms each have an assertion that they resolve to `/`."
@@ -198,7 +198,7 @@
       "polarity": "positive",
       "question": "Do tests cover look-alike hosts and parser tricks: the trusted host as a prefix or suffix of another host, the trusted host as userinfo (`https://trusted@evil/`), and a backslash form (`/\\host`)?",
       "rules": [
-        "security.3"
+        "proof.3"
       ],
       "tier": "quality",
       "yes_when": "Tests assert `/` for a prefix or suffix look-alike, a userinfo look-alike, and a backslash form."

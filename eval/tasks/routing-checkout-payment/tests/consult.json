@@ -1,5 +1,5 @@
 {
   "task": "routing-checkout-payment",
   "kind": "routing",
-  "intended_skills": ["workflow", "domain-modeling", "security", "database", "api", "release", "proof", "code-review"]
+  "intended_skills": ["workflow", "domain-modeling", "error-handling", "database", "api", "release", "proof", "code-review"]
 }

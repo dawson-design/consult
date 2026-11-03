@@ -2,34 +2,6 @@
   "items": [
     {
       "dimension": "structure",
-      "id": "structure.awaits_every_send",
-      "key_phrase": "Every spawned task belongs to a scope that cancels, awaits, or supervises it",
-      "look_at": "How `src/worker.js` starts sends and retries and what it awaits before returning",
-      "no_when": "A send or retry is started without being awaited (fire and forget, an un-awaited timer, or a promise left out of the awaited set).",
-      "polarity": "positive",
-      "question": "Does `processNotifications` await every send it starts, including retries, before it returns, so no send is still running after the result is returned?",
-      "rules": [
-        "async-systems.3"
-      ],
-      "tier": "must",
-      "yes_when": "Every send and retry runs inside promises that `processNotifications` awaits before returning its counts."
-    },
-    {
-      "dimension": "structure",
-      "id": "structure.structured_logs",
-      "key_phrase": "Logs are structured events with stable names, typed fields, severity, outcome",
-      "look_at": "Every `logger` call in `src/worker.js`",
-      "no_when": "Logs are free-text or interpolated strings, event names vary per call, or a final send failure looks the same as routine progress.",
-      "polarity": "positive",
-      "question": "Are the lifecycle logs structured events, each a stable event name plus a fields object, with a send that ran out of attempts distinguishable from routine progress by its level or an outcome field?",
-      "rules": [
-        "observability.3"
-      ],
-      "tier": "quality",
-      "yes_when": "Each call passes a fixed event name and an object of fields (such as notification id, attempt, counts, error message), and a final send failure stands out by level (warn or error) or by an outcome or severity field."
-    },
-    {
-      "dimension": "structure",
       "extends": "structure.one_job",
       "id": "structure.one_job",
       "key_phrase": "Functions do one thing",
@@ -106,13 +78,13 @@
     {
       "dimension": "boundaries",
       "id": "boundaries.exhausted_reported",
-      "key_phrase": "Silent async failure is a bug.",
+      "key_phrase": "Every catch does one of those or re-raises with context",
       "look_at": "The retry and result code in `src/worker.js`",
       "no_when": "One exhausted notification rejects the whole call or stops the others, or nothing the caller or an operator can see says which notification was lost.",
       "polarity": "positive",
       "question": "When a notification's send keeps failing until its attempts run out, does the batch carry on with the others and make that failure visible, counted in `failed` and identifiable by notification id, rather than rejecting the whole batch or dropping it?",
       "rules": [
-        "async-systems.9"
+        "error-handling.2"
       ],
       "tier": "must",
       "yes_when": "An exhausted notification is counted in `failed`, its id appears in the returned result or in an error-level log entry, and the other notifications are still sent."
@@ -148,13 +120,13 @@
     {
       "dimension": "boundaries",
       "id": "boundaries.only_failed_resent",
-      "key_phrase": "Retried jobs and stream consumers are idempotent, deduplicated, or marked non-retryable with a reason.",
+      "key_phrase": "Retries apply only to idempotent transient failures",
       "look_at": "What the retry path in `src/worker.js` resends",
       "no_when": "A failure retries a whole chunk or batch, or a notification can be sent again after a successful send.",
       "polarity": "positive",
       "question": "Does a retry resend only the notification whose send failed, never one whose send already succeeded?",
       "rules": [
-        "async-systems.6"
+        "error-handling.4"
       ],
       "tier": "must",
       "yes_when": "The retry is scoped to the one failed notification, and a notification stops being sent after its first success."
@@ -162,13 +134,13 @@
     {
       "dimension": "boundaries",
       "id": "boundaries.logs_allowlisted",
-      "key_phrase": "Sensitive data is redacted at the source with a field allowlist",
+      "key_phrase": "Redaction is a field allowlist, not a secret deny-list.",
       "look_at": "The fields passed to every `logger` call in `src/worker.js`",
       "no_when": "A log call passes the notification, a spread of it, or the send arguments, so recipient or message content can reach the logs.",
       "polarity": "negative",
       "question": "Does NOT log whole notification objects or send payloads, so logs carry only chosen fields such as the notification id, attempt, counts, and error message?",
       "rules": [
-        "observability.5"
+        "error-handling.5"
       ],
       "tier": "must",
       "yes_when": "Each log call builds its fields from named values, such as `notification.id`, not from the notification object itself."
@@ -221,13 +193,13 @@
     {
       "dimension": "proof",
       "id": "proof.logs_asserted",
-      "key_phrase": "Exhausted jobs, lag, dropped events, and dead work have visible signals and tests.",
+      "key_phrase": "Every public operation that can fail has at least one failure-path test.",
       "look_at": "Test files the diff adds or changes, and the logger they pass in",
       "no_when": "No test checks what is logged, or it checks only that something was logged.",
       "polarity": "positive",
       "question": "Does a test assert the lifecycle log events, such as the warning for a retried send and the error for a notification that ran out of attempts, with their notification id?",
       "rules": [
-        "async-systems.9"
+        "error-handling.6"
       ],
       "tier": "quality",
       "yes_when": "A test records log calls and checks the event name or level and the notification id for a retry or a final failure."

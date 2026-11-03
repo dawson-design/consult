@@ -142,7 +142,7 @@
       "polarity": "negative",
       "question": "Does NOT put the submitted password, or any part of it, into an error message?",
       "rules": [
-        "security.5"
+        "error-handling.5"
       ],
       "tier": "must",
       "yes_when": "The password message describes the rules without including the value."

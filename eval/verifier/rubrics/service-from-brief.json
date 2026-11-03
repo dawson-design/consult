@@ -107,7 +107,7 @@
       "id": "proof.unsafe_targets_tested",
       "dimension": "proof",
       "rules": [
-        "security.3"
+        "proof.3"
       ],
       "key_phrase": "ships with a negative test that fails on the unguarded code and passes with the guard",
       "question": "Is there a test that submits a `javascript:` URL or another non-http(s) target and asserts that it is refused?",

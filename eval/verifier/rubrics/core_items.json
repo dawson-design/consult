@@ -217,7 +217,7 @@
       "id": "boundaries.fail_closed",
       "dimension": "boundaries",
       "rules": [
-        "security.1"
+        "error-handling.2"
       ],
       "key_phrase": "fail closed on auth, authz, validation, and crypto errors",
       "question": "When {check} fails or throws, is the operation refused rather than allowed?",

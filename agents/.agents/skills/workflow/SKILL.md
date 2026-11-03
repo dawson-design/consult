@@ -68,21 +68,15 @@ rules apply with these.
    | --- | --- |
    | `specify` | A significant or hard-to-change choice is unsettled. |
    | `contract-first` | A caller-facing interface or shared structure needs approval. |
-   | `debugging` | A bug, failure, flake, or regression needs root-cause evidence. |
    | `domain-modeling` | Data shape, states, invariants, transitions, or effects. |
    | `architecture` | Module boundaries, ownership, layering, cross-component structure. |
    | `refactoring` | Structure must change while preserving behavior. |
    | `api` | HTTP/API shape, status codes, pagination, idempotency, webhooks. |
    | `database` | Persisted data, migrations, transactions, deletion, queries. |
-   | `security` | Auth, secrets, trust boundaries, user-controlled input. |
    | `error-handling` | Error types, propagation, recovery, retries, user-facing failures. |
-   | `async-systems` | Queues, workers, streams, ordering, concurrency. |
    | `ui-design` | Any user-facing UI surface, including basic styling, keyboard, focus, ARIA, contrast. |
-   | `observability` | Logs, metrics, traces, health, SLOs, alerts. |
-   | `performance` | Latency, throughput, memory, CPU, caching, resource use. |
    | `documentation` | Existing-code docs are the deliverable or a validator-required obligation. |
    | `scaffolding` | New project setup or baseline tooling. |
-   | `official-source-check` | External framework, library, runtime, or platform behavior must be verified. |
    | `proof` | Any non-trivial change. |
    | `code-review` | A review is requested, or the change is non-trivial. |
    | `commit` | The user asks to commit: staging, splitting commits, writing messages. |

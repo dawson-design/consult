@@ -73,7 +73,5 @@ description: Only when asked to prepare a release, or when a project check requi
 
 - `api`: HTTP compatibility and deprecation headers.
 - `database`: migration mechanics and production data safety.
-- `observability`: rollout metrics, dashboards, alerts, runbooks.
-- `security`: CI credentials, artifact signing, dependency trust.
 - `git-workflow`: clean version and release commits.
 - `documentation`: migration guides and reference docs.

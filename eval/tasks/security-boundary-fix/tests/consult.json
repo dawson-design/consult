@@ -1,11 +1,7 @@
 {
   "task": "security-boundary-fix",
   "kind": "code",
-  "intended_skills": [
-    "workflow",
-    "proof",
-    "security"
-  ],
+  "intended_skills": ["workflow", "proof", "error-handling"],
   "visible_test_cmd": "npm test",
   "test_file": "test/redirect.test.js"
 }

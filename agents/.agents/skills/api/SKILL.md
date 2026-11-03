@@ -18,7 +18,6 @@ description: Adding or changing an HTTP endpoint, handler, status code, response
 ## When NOT to Use
 
 - Internal function signatures with no caller contract; use `domain-modeling`.
-- Auth, secrets, or trust-boundary review beyond the API contract; use `security`.
 - Database schema; use `database`.
 - gRPC, GraphQL, or message-queue APIs: use `architecture` for the style
   decision and that ecosystem's conventions for the contract.
@@ -78,8 +77,6 @@ description: Adding or changing an HTTP endpoint, handler, status code, response
 - `proof`: test request-to-response behavior, including status codes, error
   envelopes, and pagination.
 - `error-handling`: internal failure mapping, timeouts, retries behind the API.
-- `security`: authn/authz, input trust, SSRF, data exposure.
-- `async-systems`: SSE, subscriptions, event streams.
 - `release`: version bumps and release notes for a deprecation.
 
 ## References
@@ -88,6 +85,3 @@ Load only the one the feature needs:
 
 - `references/rest-error-status-codes.md`: which codes each endpoint
   documents, and how to report several failures in one response.
-- `../security/references/web-app.md`: CSRF middleware, security headers, CORS.
-- `../security/references/api-and-auth.md`: handler-level authorization for
-  privileged endpoints.

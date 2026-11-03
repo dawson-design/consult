@@ -81,7 +81,6 @@ the baseline without local knowledge.
 - `domain-modeling`: first feature or domain data model.
 - `proof`: first real feature test.
 - `release`: CI becomes release or deploy automation.
-- `security`: dependency audits, secret scanning, supply-chain gates.
 
 ## References
 

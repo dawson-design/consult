@@ -4,7 +4,7 @@
       "id": "structure.fix_in_snapshot",
       "dimension": "structure",
       "rules": [
-        "debugging.5"
+        "proof.2"
       ],
       "key_phrase": "The fix is one atomic change aimed at that cause",
       "question": "Is the fix made in `snapshot` in `src/snapshot.js`, so the copies it makes no longer share widget `config` objects with the dashboard they were copied from?",
@@ -18,7 +18,7 @@
       "id": "structure.full_depth_copy",
       "dimension": "structure",
       "rules": [
-        "debugging.5"
+        "proof.2"
       ],
       "key_phrase": "aimed at that cause",
       "question": "Does the corrected copy reach every nesting level of a dashboard (for example with `structuredClone`), rather than copying `config` one level deep, which would still share any object or array nested inside `config`?",
@@ -134,9 +134,9 @@
       "id": "report.root_cause",
       "dimension": "report",
       "rules": [
-        "debugging.4"
+        "proof.2"
       ],
-      "key_phrase": "The root cause is named in one sentence, explains every observed symptom",
+      "key_phrase": "Name the root cause in one sentence that explains every symptom",
       "question": "Does the final message name the root cause: `snapshot` copied each widget only one level deep, so saved, duplicated, and loaded dashboards shared the same widget `config` objects?",
       "polarity": "positive",
       "tier": "must",

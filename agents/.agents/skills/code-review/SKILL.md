@@ -20,7 +20,7 @@ description: Reviewing a diff, branch, or PR for bugs, regressions, missing test
 ## When NOT to Use
 
 - Commit grouping or history repair only; use `git-workflow`.
-- A narrow domain-only review where `security`, `database`, `api`, or
+- A narrow domain-only review where `database`, `api`, or
   `ui-design` is sufficient.
 
 ## Rules
@@ -44,7 +44,9 @@ description: Reviewing a diff, branch, or PR for bugs, regressions, missing test
    review unproven; review the code anyway. Missing intent on a non-trivial PR
    is a finding. Repository constraints beat generic advice: check the
    declared runtime, framework, dependency, CI, and support policy before
-   applying a language reference.
+   applying a language reference. A change that touches auth, secrets, or
+   dependencies also gets the ecosystem's dependency audit and a secrets
+   scan.
 4. Maintainability findings need a concrete risk: hidden state, coupled
    effects, stale flags, duplicated rules with divergent meaning, dead
    compatibility, unreachable paths. Style is not blocking unless it hides
@@ -95,7 +97,6 @@ not pre-empt them with justification.
 ## Handoffs
 
 - `specify`: plan-to-code divergence from an agreed design doc.
-- `security`: auth, trust boundaries, secrets, crypto, dependencies, injection.
 - `database`: migrations, locking, transactions, schema, indexes.
 - `release`: version, changelog, package, publish, or rollout readiness.
 - `proof`: missing behavior coverage, test quality, mocks, flakes.

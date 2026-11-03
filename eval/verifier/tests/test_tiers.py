@@ -66,23 +66,23 @@ class TierPlanTests(unittest.TestCase):
         self.assertEqual(parse(["--tier", "fast"]).arms, "consult")
 
     def test_an_ablation_names_its_dropped_references_in_the_job_label(self):
-        args = parse(["--tier", "fast", "--drop-references", "security,code-review"])
-        self.assertIn("-norefs-code-review+security", run.job_label(args))
+        args = parse(["--tier", "fast", "--drop-references", "ui-design,code-review"])
+        self.assertIn("-norefs-code-review+ui-design", run.job_label(args))
 
     def test_an_ablation_cannot_save_a_baseline(self):
         """The release tier saves one by default; an ablation saved there would replace the full pack's."""
         with redirect_stderr(io.StringIO()) as err, self.assertRaises(SystemExit):
-            parse(["--tier", "release", "--agent", "claude-code", "--drop-references", "security"])
+            parse(["--tier", "release", "--agent", "claude-code", "--drop-references", "code-review"])
         self.assertIn("an ablation never saves a baseline", err.getvalue())
 
     def test_dropping_references_from_a_skill_without_any_is_rejected(self):
         with redirect_stderr(io.StringIO()) as err, self.assertRaises(SystemExit):
-            parse(["--tier", "fast", "--drop-references", "debugging"])
-        self.assertIn("names no skill with a references/ dir: debugging", err.getvalue())
+            parse(["--tier", "fast", "--drop-references", "commit"])
+        self.assertIn("names no skill with a references/ dir: commit", err.getvalue())
 
     def test_a_skill_name_must_match_exactly(self):
-        """A case-insensitive file system would find Security/references, but the snapshot filter would drop nothing."""
-        for name in ("Security", "security/"):
+        """A case-insensitive file system would find Code-Review/references, but the snapshot filter would drop nothing."""
+        for name in ("Code-Review", "code-review/"):
             with redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
                 parse(["--tier", "fast", "--drop-references", name])
 
@@ -109,26 +109,26 @@ class ArmConfigTests(unittest.TestCase):
         return {"consult": str(trial.parent)}
 
     def test_an_ablation_needs_a_reusable_baseline(self):
-        args = argparse.Namespace(drop_references=("security",))
+        args = argparse.Namespace(drop_references=("code-review",))
         with redirect_stderr(io.StringIO()):
             self.assertEqual(run.ablation_gate(args, None), 2)
 
     def test_an_ablation_runs_only_against_a_baseline_that_ran_todays_full_pack(self):
-        args = argparse.Namespace(drop_references=("security",))
+        args = argparse.Namespace(drop_references=("code-review",))
         self.assertIsNone(run.ablation_gate(args, self.baseline_consult_job(self.skills["consult"][0])))
 
     def test_an_ablation_against_an_older_pack_stops(self):
         """Skill edits since the baseline would be measured as part of the ablation."""
-        args = argparse.Namespace(drop_references=("security",))
+        args = argparse.Namespace(drop_references=("code-review",))
         with redirect_stderr(io.StringIO()) as err:
             self.assertEqual(run.ablation_gate(args, self.baseline_consult_job(str(self.runs / "older-pack"))), 2)
         self.assertIn("not today's full pack", err.getvalue())
 
     def test_dropped_references_leave_only_the_consult_arm(self):
-        ablated = run.frozen_skills(("security",))
+        ablated = run.frozen_skills(("code-review",))
         consult = stub.skill_files(Path(ablated["consult"][0]))
-        self.assertFalse([path for path in consult if path.startswith("security/references/")])
-        self.assertIn("security/SKILL.md", consult)
+        self.assertFalse([path for path in consult if path.startswith("code-review/references/")])
+        self.assertIn("code-review/SKILL.md", consult)
         self.assertIn("api/references/pagination.md", consult)
         self.assertEqual(ablated["stub"], self.skills["stub"])
         self.assertNotEqual(ablated["consult"], self.skills["consult"])

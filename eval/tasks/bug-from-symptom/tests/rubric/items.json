@@ -9,7 +9,7 @@
       "polarity": "positive",
       "question": "Is the fix made in `snapshot` in `src/snapshot.js`, so the copies it makes no longer share widget `config` objects with the dashboard they were copied from?",
       "rules": [
-        "debugging.5"
+        "proof.2"
       ],
       "tier": "must",
       "yes_when": "`snapshot` now copies nested widget data (for example with `structuredClone`, or by also copying `config`), and that change is what stops the leak."
@@ -23,7 +23,7 @@
       "polarity": "positive",
       "question": "Does the corrected copy reach every nesting level of a dashboard (for example with `structuredClone`), rather than copying `config` one level deep, which would still share any object or array nested inside `config`?",
       "rules": [
-        "debugging.5"
+        "proof.2"
       ],
       "tier": "quality",
       "yes_when": "The copy shares no object or array at any depth with its source."
@@ -222,13 +222,13 @@
     {
       "dimension": "report",
       "id": "report.root_cause",
-      "key_phrase": "The root cause is named in one sentence, explains every observed symptom",
+      "key_phrase": "Name the root cause in one sentence that explains every symptom",
       "look_at": "The agent's final message, compared with the original `src/snapshot.js`",
       "no_when": "The message names no cause, blames `updateWidget` or `duplicate` alone, or only describes the fix.",
       "polarity": "positive",
       "question": "Does the final message name the root cause: `snapshot` copied each widget only one level deep, so saved, duplicated, and loaded dashboards shared the same widget `config` objects?",
       "rules": [
-        "debugging.4"
+        "proof.2"
       ],
       "tier": "must",
       "yes_when": "The message says, in its own words, that the copies shared nested `config` objects because `snapshot` copied shallowly."

@@ -1,7 +1,7 @@
 # Linear, Azure DevOps, and GitLab
 
 Facts were checked against each vendor's docs and changelog on 2026-10-02.
-When a command or tool fails, recheck with `official-source-check`. Read MCP
+When a command or tool fails, recheck the official docs. Read MCP
 tool names and setup from the server or its Sources link.
 
 Rule 1 leaves out items below an Issue: Linear sub-issues, Azure DevOps

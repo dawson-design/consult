@@ -63,8 +63,8 @@ Inside Claude Code:
 Prefer the plugin over `./setup.sh` on Claude Code. The plugin namespaces
 skills as `/consult:<skill>`, which keeps them distinct from Claude Code's
 built-in skills; `setup.sh` symlinks `~/.claude/skills` and registers bare
-names, so `code-review` and `security` become ambiguous with the built-ins of
-the same name. Running both also loads every skill twice. Pick one.
+names, so `code-review` becomes ambiguous with the built-in of the same
+name. Running both also loads every skill twice. Pick one.
 
 The plugin ships a SessionStart hook that prints the Consult core,
 [`agents/.agents/core.md`](agents/.agents/core.md), into every session: the
@@ -219,7 +219,7 @@ Before a non-trivial feature, fix, refactor, debugging task, test, or config cha
 
 ## Skills
 
-Consult includes 24 skills. Open a skill for when it applies and the rules it
+Consult includes 18 skills. Open a skill for when it applies and the rules it
 sets. The rules that apply to every code change, whether or not a skill
 loads, are in the Consult core, [`agents/.agents/core.md`](agents/.agents/core.md).
 
@@ -227,7 +227,6 @@ loads, are in the Consult core, [`agents/.agents/core.md`](agents/.agents/core.m
   - [`workflow`](agents/.agents/skills/workflow/SKILL.md): Loads first for non-trivial code changes to choose skills, sign-off gates, and checks.
   - [`proof`](agents/.agents/skills/proof/SKILL.md): Tests and checks that prove acceptance criteria, edge cases, and invariants.
   - [`code-review`](agents/.agents/skills/code-review/SKILL.md): Review diffs and PRs for bugs, regressions, edge cases, and merge readiness.
-  - [`debugging`](agents/.agents/skills/debugging/SKILL.md): Reproduce symptoms, isolate causes, inspect evidence, and fix bugs.
   - [`refactoring`](agents/.agents/skills/refactoring/SKILL.md): Behavior-preserving change, tests, and safe rewrites.
 - Design:
   - [`specify`](agents/.agents/skills/specify/SKILL.md): Read the code, propose a design, and agree on it before building: tradeoffs, decisions, and design docs.
@@ -238,21 +237,16 @@ loads, are in the Consult core, [`agents/.agents/core.md`](agents/.agents/core.m
   - [`api`](agents/.agents/skills/api/SKILL.md): REST API contracts: endpoints, fields, evolution, status codes, errors, pagination, idempotency.
   - [`ui-design`](agents/.agents/skills/ui-design/SKILL.md): Frontend UI, layouts, components, responsive behavior, accessibility, WCAG, keyboard, and focus.
   - [`documentation`](agents/.agents/skills/documentation/SKILL.md): READMEs, runbooks, API docs, module docs, and comments for existing code.
-- Backend and security:
+- Backend:
   - [`database`](agents/.agents/skills/database/SKILL.md): Schemas, migrations, indexes, transactions, query plans, and locking.
-  - [`async-systems`](agents/.agents/skills/async-systems/SKILL.md): Message contracts and schemas, queues, streams, concurrency, ordering, and backpressure.
   - [`error-handling`](agents/.agents/skills/error-handling/SKILL.md): Error types, propagation, retries, user messages, and recovery.
-  - [`security`](agents/.agents/skills/security/SKILL.md): Auth, secrets, crypto, input validation, dependency risk, and trust boundaries.
-- Production:
-  - [`observability`](agents/.agents/skills/observability/SKILL.md): Production logs, metrics, traces, health checks, alerts, SLOs, and performance measurement.
-  - [`performance`](agents/.agents/skills/performance/SKILL.md): Profiling, latency, throughput, allocation, caching, and hot paths.
+- Release:
   - [`release`](agents/.agents/skills/release/SKILL.md): Release prep and release-artifact sync, on request or approval.
 - Repo and tools:
   - [`commit`](agents/.agents/skills/commit/SKILL.md): Staging reviewed work, commit splits, and messages.
   - [`git-workflow`](agents/.agents/skills/git-workflow/SKILL.md): Branches, history edits, conflicts, rebases, recovery, and force-push.
   - [`issue-tracking`](agents/.agents/skills/issue-tracking/SKILL.md): Initiatives, epics, and issues in GitHub, Jira, or another tracker: drafting, sizing, linking, and status.
   - [`scaffolding`](agents/.agents/skills/scaffolding/SKILL.md): New projects, package setup, quality tooling, CI, and repo structure.
-  - [`official-source-check`](agents/.agents/skills/official-source-check/SKILL.md): Version-sensitive framework, library, SDK, or platform behavior, checked against official sources.
 
 Greenfield stack presets are in
 [`scaffolding/references/stacks.md`](agents/.agents/skills/scaffolding/references/stacks.md).

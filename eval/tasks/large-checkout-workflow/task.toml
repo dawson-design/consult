@@ -6,7 +6,7 @@ description = "Harden a multi-module checkout workflow without changing the publ
 
 [metadata]
 kind = "code"
-features = ["workflow", "domain-modeling", "architecture", "api", "security", "database", "error-handling", "observability", "release", "proof", "code-review", "documentation"]
+features = ["workflow", "domain-modeling", "architecture", "api", "error-handling", "database", "release", "proof", "code-review", "documentation"]
 
 # Generous on purpose: an Opus turn at xhigh effort can run long, and a cut-off
 # turn scores the harness, not the agent.

@@ -6,7 +6,7 @@ description = "Plan the engineering lenses for a checkout payment change."
 
 [metadata]
 kind = "routing"
-features = ["workflow", "domain-modeling", "security", "database", "api", "release", "proof", "code-review"]
+features = ["workflow", "domain-modeling", "error-handling", "database", "api", "release", "proof", "code-review"]
 
 [agent]
 timeout_sec = 600.0

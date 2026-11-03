@@ -39,7 +39,9 @@ against it.
    de-facto schema library (Pydantic in Python, Zod in TypeScript), honoring
    any existing project choice; hand-roll with the same discipline only where
    no clear leader exists. A pure passthrough proxy with no domain logic may
-   forward the payload unparsed.
+   forward the payload unparsed. Do not roll your own auth, crypto, token
+   validation, sanitization, CSRF, parsers, or signature schemes. Use the
+   framework primitive or a maintained library that owns the problem.
 5. Model allowed states as explicit variants, not flag or nullable
    combinations. Split a nullable that means both "missing" and "not loaded"
    into named states. A single independent toggle with no illegal
@@ -68,7 +70,6 @@ against it.
 - `proof`: checks at the parse step, where raw input becomes the typed
   domain shape.
 - `error-handling`: parse failures, Result/Either shape, error context.
-- `async-systems`: mutable places or ownership crossing task boundaries.
 
 ## References
 

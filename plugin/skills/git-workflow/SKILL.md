@@ -22,7 +22,7 @@ gates: recoverability and approval of published text.
 - Staging, splitting, or committing reviewed work; use `commit`.
 - Issue hierarchy, sizing, and tracker fields; use `issue-tracking`.
 - Reviewing correctness; use `code-review`. Refactor planning; use
-  `refactoring`. CI failure triage; use `debugging`.
+  `refactoring`.
 
 ## Rules
 
@@ -67,5 +67,4 @@ gates: recoverability and approval of published text.
 - `commit`: staging, splitting, and committing approved work.
 - `refactoring`: separating structural and behavioral changes in code.
 - `release`: version bumps, CHANGELOG entries, tags in the working tree.
-- `debugging`: reproduce before bisecting.
 - `issue-tracking`: issue hierarchy, sizing, and tracker fields.
