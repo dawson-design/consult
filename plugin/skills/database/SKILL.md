@@ -33,10 +33,11 @@ description: Migrations, schema changes, indexes, queries, transactions, or lock
 3. Review the migration SQL and its lock behavior directly, not just the
    ORM code. Index and constraint creation uses the target engine's online
    mechanism. SQLite passing is not proof of Postgres behavior; verify
-   engine-specific DDL against the target engine. Measure lock duration on
-   representative load, or assume the worst case. Skip the online mechanism
-   only when table size and write rate are verified negligible, and record
-   why.
+   engine-specific DDL against the target engine. Take each statement's lock
+   level from the engine's documentation (`references/online-ddl.md`) and
+   plan for the worst-case duration; build a load test only when the user
+   asks for one. Skip the online mechanism only when table size and write
+   rate are known to be negligible, and record why.
 4. Every uniqueness invariant is enforced by a DB-level `UNIQUE`, `EXCLUDE`,
    composite, or partial constraint, because application-layer checks race
    under concurrency.
