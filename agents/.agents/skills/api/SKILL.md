@@ -25,24 +25,21 @@ description: Adding or changing an HTTP endpoint, handler, status code, response
 
 ## Rules
 
-1. Sketch new or changed behavior consumers can see in the OpenAPI spec (or
-   the repo's API spec) before writing handler code, then build from it. Spell
-   out every response the endpoint can return, including success, errors,
-   empty results, pagination, and auth failures. For a fix that restores existing behavior, the current
-   contract is the source of truth. Changes to endpoints consumers depend on
-   get approval through `contract-first`. Additions old consumers cannot
-   notice (a new optional field, param, or endpoint) go ahead; describe them
-   in the close-out.
-2. Don't break a shipped contract that has independent consumers: ones you
-   cannot update in the same release, such as open browser tabs and installed
-   apps still running old code. Optional fields, params, headers, methods, and
-   endpoints may change in place when old consumers can ignore them. Renames,
-   removals, required additions, status-code changes, and changes in meaning
-   to a shipped contract need a successor (such as a new field, endpoint, or
-   version) or a deprecation path with an overlap window. A contract marked
-   unstable, or one whose change no running consumer can see, may change in
-   place. Use one versioning scheme per service, and never bump it for
-   compatible additions.
+1. Sketch consumer-visible behavior in the OpenAPI spec (or the repo's API
+   spec) before writing handler code, then build from it. List every response:
+   success, errors, empty results, pagination, and auth failures. A fix that
+   restores existing behavior follows the current contract. Changes consumers
+   depend on need approval through `contract-first`; additions old consumers
+   cannot notice go ahead and are named in the close-out.
+2. Keep shipped contracts working for independent consumers, ones you cannot
+   update in the same release, such as installed apps and open browser tabs.
+   Renames, removals, required additions, status-code changes, and changes in
+   meaning to a shipped contract need a successor (a new field, endpoint, or
+   version) or a deprecation path with an overlap window. Optional fields,
+   params, headers, methods, and endpoints old consumers can ignore may
+   change in place, as may a contract marked unstable or one no running
+   consumer can see. Use one versioning scheme per service, and never bump it
+   for compatible additions.
 3. Pick the status by where the failure starts. Map dependency failures into
    this API's own error shape; never pass an upstream status or body through.
 
