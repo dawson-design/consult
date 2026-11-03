@@ -178,10 +178,14 @@ class LibTests(unittest.TestCase):
             _, output = cl.run_command(Path("."), ["bash", "-c", script], timeout=10)
         self.assertEqual(output.strip(), "hidden hidden test C home path")
 
-    def test_questions_count_only_after_the_last_user_step(self):
+    def test_on_a_proposal_task_questions_count_only_after_the_approval(self):
         traj = trajectory(user("brief"), agent("Which store should I use?"), user("Approved."), agent("Done."))
-        self.assertEqual(cl.question_message_count(traj), 0)
+        self.assertEqual(cl.question_message_count(traj, proposal_turn=True), 0)
         traj = trajectory(user("brief"), agent("Done. Anything else?"))
+        self.assertEqual(cl.question_message_count(traj, proposal_turn=True), 1)
+
+    def test_on_any_other_task_a_question_in_an_earlier_turn_still_counts(self):
+        traj = trajectory(user("request"), agent("Shall I proceed?"), user("Approved."), agent("Done."))
         self.assertEqual(cl.question_message_count(traj), 1)
 
 

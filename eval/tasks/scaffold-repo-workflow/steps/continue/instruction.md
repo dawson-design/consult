@@ -1,1 +1,2 @@
-Approved. Continue. If the work is already finished, say so.
+Approved within the request as written. Continue with anything still
+unfinished. If you have finished, say so.

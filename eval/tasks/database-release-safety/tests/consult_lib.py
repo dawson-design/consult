@@ -305,13 +305,16 @@ def _injected_skill_names(step: dict) -> list[str]:
     return SKILL_BASE_DIR_RE.findall(message if isinstance(message, str) else json.dumps(message))
 
 
-def question_message_count(trajectory: Trajectory) -> int:
-    """Agent messages that end on a question, after the last user step.
+def question_message_count(trajectory: Trajectory, proposal_turn: bool = False) -> int:
+    """Agent messages that end on a question, in every turn.
 
-    In a multi-step task the questions before the approval turn are the ones the
-    task wants, so only messages after it count.
+    On a task whose first turn asks for a proposal (consult.json
+    proposal_turn), the questions before the approval are the ones the task
+    wants, so only messages after the last user step count. On any other
+    task a question in an earlier turn is still an interruption.
     """
-    boundary = trajectory.last_user_step
+    users = [i for i, s in enumerate(trajectory.steps) if s.get("source") == "user"]
+    boundary = trajectory.last_user_step if proposal_turn else (users[0] if users else -1)
     messages = [
         str(s.get("message") or "")
         for i, s in enumerate(trajectory.steps)

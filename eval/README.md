@@ -254,7 +254,9 @@ The `rules` suite measures whether each skill's rules change what the agent
 does. Its prompts are product briefs or user reports, not specs, so a pass
 means the agent noticed a requirement the prompt never stated.
 
-- `bug-from-symptom`: a customer report that names no file.
+- `bug-from-symptom`: a customer report that names no file. One step, by
+  design: it scores `workflow.1`, which fails an agent that stops for sign-off
+  on a narrow fix.
 - `money-field-change`: multi-currency orders in a service whose `total` field
   an iOS app reads. Three steps.
 - `service-from-brief`: a link shortener built from an empty repository. Three
@@ -272,17 +274,25 @@ everything in the `approve` step gets the same reply. The agent fragments set
 Every other code task has three turns too, because Consult stops for sign-off
 before a contract, data shape, or migration, and a task that never answers
 scores the half-built workspace instead of the agent. The `request` step sends
-the task. The `approve` step sends: "Approved, including any interface, data
-shape, or migration you proposed. Build it, using your recommended option for
-anything still open. If the work is already finished, say so." The `continue`
-step sends: "Approved. Continue. If the work is already finished, say so."
-Both arms get the same turns, so an agent that finished in the first turn
-loses nothing. The `request` step records whether the agent stopped
-(`signoff_mode`) without scoring it, since these tasks have no sign-off rule.
-`sync_tests.py --check` fails on a code task with no follow-up turns unless
-its `consult.json` gives a `single_turn` reason. Calibration runs before this
-change were single-turn; rejudging them shows the judges the two later turns
-the agent never received.
+the task. The `approve` step sends: "Approved within the request as written:
+anything it rules out stays out. Use your recommended option for any choice it
+leaves open. If you have finished, say so." The `continue` step sends:
+"Approved within the request as written. Continue with anything still
+unfinished. If you have finished, say so." Both arms get the same turns. The
+reply approves only within the request, so an agent that asks to add a
+dependency the request rules out gets no permission to add it, and the judges
+treat an approval as settling open choices, never as adding scope. An agent
+that finished early still answers two more turns, and a question it asks in
+any turn counts in the `questions` readout. The `request` step records whether
+the agent stopped (`signoff_mode`) without scoring it. `sync_tests.py --check`
+fails on a code task with no follow-up turns unless its `consult.json` gives a
+`single_turn` reason. Calibration runs before this change were single-turn;
+rejudging them shows the judges the two later turns the agent never received.
+
+A brief task (`money-field-change`, `service-from-brief`) sets
+`proposal_turn: true` in `consult.json`: its first turn asks for a proposal
+that the next turn approves, so its code judges read that proposal, and only
+questions after the approval count as interruptions.
 
 A rule task adds these keys to `tests/consult.json`:
 
@@ -472,8 +482,10 @@ at a time. Each call gets:
 - the task instruction and only its own items, without their tier or the
   rule's key phrase (the Consult arm often repeats rule wording, and a judge
   shown it would reward the echo);
-- on a multi-step task, the agent's reply that each later turn answered, such
-  as the proposal the user approved;
+- on a multi-step task, the report judge reads the agent's reply at the end of
+  every earlier turn, since the report can span turns. A code judge reads
+  none, except on a `proposal_turn` task, where it reads the first-turn
+  proposal the user approved;
 - the changed paths with their git status, then the agent's changes (the diff
   plus new files), fenced as data;
 - a blinded copy of the final workspace as its working directory, to read
@@ -581,7 +593,9 @@ spread across tasks. The sheet shows each item, but not the judge's answer,
 reason, or evidence (whose form gives the answer away), nor the arm. Each case's request,
 earlier replies, diff, and final message are in `<sheet>-cases/<case>.md`,
 scrubbed as the judges' view is. The hidden fields go to `<sheet>.key.json`.
-Write `yes` or `no` in the `human` column. `agree` reports per dimension
+Write `yes` or `no` in the `human` column. For a report item, as for the
+report judge, the agent's report is everything it told the user across its
+replies; the later reply stands where two conflict. `agree` reports per dimension
 Cohen's kappa against the judge, each arm's bias (the judge's yes-rate minus
 the human's), and the judge's unknown rate. `repeat` reports how often two
 rejudge passes give the same answer. A dimension passes the gate with kappa

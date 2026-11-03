@@ -82,6 +82,7 @@ class StepVerifierTests(unittest.TestCase):
     def test_the_final_step_keeps_the_shared_verifier(self):
         self.assertNotIn("continue", self.step_test_sources("money-field-change"))
 
+
 class FollowUpTurnTests(unittest.TestCase):
     """An agent that stops to ask for sign-off must hear back, or the trial scores the harness."""
 
@@ -94,10 +95,11 @@ class FollowUpTurnTests(unittest.TestCase):
     def write_meta(self, **fields) -> None:
         (self.task / "tests" / "consult.json").write_text(json.dumps({"kind": "code", **fields}))
 
-    def test_every_code_task_in_the_suite_has_follow_up_turns(self):
+    def test_every_code_task_in_the_suite_has_follow_up_turns_or_a_reason(self):
         for task in sync_tests.task_dirs():
-            if sync_tests.task_kind(task) == "code":
-                self.assertGreater(len(sync_tests.step_names(task)), 1, task.name)
+            if sync_tests.task_kind(task) == "code" and len(sync_tests.step_names(task)) < 2:
+                meta = json.loads((task / "tests" / "consult.json").read_text())
+                self.assertTrue(meta.get("single_turn"), task.name)
 
     def test_a_single_turn_code_task_is_refused(self):
         self.write_meta()

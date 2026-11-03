@@ -143,8 +143,14 @@ def trial_cost(result: dict, trajectory: cl.Trajectory, bundle_path: Path) -> di
         "agent_seconds": total(phase_seconds(p) for p in phases),
         "turns": len(trajectory.agent_messages) if trajectory.steps else None,
         "lines_changed": lines_changed(bundle_path),
-        "questions": cl.question_message_count(trajectory) if trajectory.steps else None,
+        "questions": cl.question_message_count(trajectory, proposal_turn(result)) if trajectory.steps else None,
     }
+
+
+def proposal_turn(result: dict) -> bool:
+    """The task's consult.json proposal_turn flag: its first turn asks for a proposal."""
+    path = TASKS_DIR / str(result.get("task_name") or "").split("/")[-1] / "tests" / "consult.json"
+    return bool(json.loads(path.read_text()).get("proposal_turn")) if path.is_file() else False
 
 
 def token_records(result: dict, steps: list[dict]) -> tuple[float | None, float | None]:

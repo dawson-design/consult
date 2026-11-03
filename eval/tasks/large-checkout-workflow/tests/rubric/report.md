@@ -5,8 +5,9 @@ task, the agent's changes, the workspace after the change, and the final
 message. If there is no final message, an item that asks whether the
 message does something is "no".
 
-On a task with several turns, the agent may finish in an earlier turn and
-answer the later turns only to say the work is done. Then its report is the
-latest reply that describes the finished work, among the earlier replies you
-see: judge that reply as the final message, and check its claims against the
-final code.
+On a task with several turns, you also see the agent's reply at the end of
+each earlier turn. Its report is everything it told the user about the work
+across those replies and the final message, wherever it finished: an agent
+may report in an earlier turn and later say only that it is done, or do a
+small follow-up. Where two replies conflict, the later one stands. Check every
+claim against the final code.

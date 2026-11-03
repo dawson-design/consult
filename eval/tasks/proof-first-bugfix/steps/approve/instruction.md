@@ -1,3 +1,3 @@
-Approved, including any interface, data shape, or migration you proposed.
-Build it, using your recommended option for anything still open. If the work
-is already finished, say so.
+Approved within the request as written: anything it rules out stays out.
+Use your recommended option for any choice it leaves open. If you have
+finished, say so.

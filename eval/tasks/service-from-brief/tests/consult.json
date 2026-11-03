@@ -1,6 +1,7 @@
 {
   "task": "service-from-brief",
   "kind": "code",
+  "proposal_turn": true,
   "intended_skills": [
     "workflow", "scaffolding", "specify", "contract-first", "domain-modeling",
     "api", "security", "ui-design", "proof", "code-review"

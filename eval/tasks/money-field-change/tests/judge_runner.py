@@ -201,6 +201,8 @@ class Inputs:
     final_message: str
     # (heading, the agent's reply a later turn answered), for multi-step tasks.
     earlier_replies: tuple[tuple[str, str], ...] = ()
+    # The first turn asks for a proposal that the next turn approves (consult.json proposal_turn).
+    proposal_turn: bool = False
 
 
 def item_text(item: dict) -> str:
@@ -230,10 +232,23 @@ def changes_section(changes: str) -> str:
     return changes[:CHANGES_LIMIT] + note
 
 
+def replies_shown(dimension: str, inputs: Inputs) -> tuple[tuple[str, str], ...]:
+    """The agent's earlier replies a judge reads.
+
+    The report judge reads them all, since the report can span turns. A code
+    judge reads none, so the agent's description of its work cannot sway it,
+    except the proposal on a task whose first turn asks for one: its items
+    check the build against what was approved.
+    """
+    if dimension in SEES_MESSAGE:
+        return inputs.earlier_replies
+    return inputs.earlier_replies[:1] if inputs.proposal_turn else ()
+
+
 def dimension_prompt(dimension: str, items: list[dict], inputs: Inputs, guidance: str) -> str:
     """The user prompt for one judge: its guidance, the task, its items, then the fenced agent output."""
     output = []
-    for heading, reply in inputs.earlier_replies:
+    for heading, reply in replies_shown(dimension, inputs):
         output += [f"## {heading}", "", reply or "No message.", ""]
     output += ["## The agent's changes", "", changes_section(inputs.changes)]
     if dimension in SEES_MESSAGE:
@@ -499,12 +514,18 @@ def load_prompts(rubric_dir: Path, dimensions: list[str]) -> dict[str, str]:
 
 
 def judge_trial(
-    workspace: Path, rubric_dir: Path, transcripts: Path, environ: Mapping[str, str], steps: list[dict]
+    workspace: Path,
+    rubric_dir: Path,
+    transcripts: Path,
+    environ: Mapping[str, str],
+    steps: list[dict],
+    proposal_turn: bool = False,
 ) -> dict:
     """Judge one finished workspace against its rubric; returns what judge-items.json holds.
 
     steps are the trajectory's steps, for the final message and the replies
-    earlier turns answered.
+    earlier turns answered. proposal_turn is the task's consult.json flag:
+    its code judges also read the first-turn proposal.
     """
     items = json.loads((rubric_dir / "items.json").read_text())["items"]
     dimensions = [d for d in DIMENSIONS if any(item["dimension"] == d for item in items)]
@@ -515,6 +536,7 @@ def judge_trial(
         changes=scrub(changed_paths_text(workspace) + cl.changes_text(workspace)),
         final_message=scrub(cl.final_agent_message(cl.Trajectory(steps=steps, calls=[]))),
         earlier_replies=tuple((heading, scrub(reply)) for heading, reply in earlier_replies(instruction, steps)),
+        proposal_turn=proposal_turn,
     )
     config = Config.from_env(environ)
     with tempfile.TemporaryDirectory(prefix="judge-") as tmp:
@@ -610,7 +632,9 @@ def main(argv: list[str]) -> int:
         sys.stderr.write("usage: judge_runner.py (reads /app, /tests/rubric, /logs/agent; writes /logs/verifier)\n")
         return 2
     steps = cl.load_trajectory().steps
-    result = judge_trial(WORKSPACE, RUBRIC_DIR, TRANSCRIPT_DIR, os.environ, steps)
+    meta_path = TESTS_DIR / "consult.json"
+    proposal_turn = meta_path.is_file() and bool(json.loads(meta_path.read_text()).get("proposal_turn"))
+    result = judge_trial(WORKSPACE, RUBRIC_DIR, TRANSCRIPT_DIR, os.environ, steps, proposal_turn)
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     OUTPUT_PATH.write_text(json.dumps(result, indent=2) + "\n")
     for call in result["calls"]:

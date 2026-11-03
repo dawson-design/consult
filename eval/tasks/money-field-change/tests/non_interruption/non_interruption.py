@@ -10,5 +10,5 @@ from rewardkit import criterion
 @criterion
 def non_interruption_score(workspace: Path) -> float:
     """1 minus 0.25 per agent message that ends by asking a question. Zero-weight readout."""
-    questions = cl.question_message_count(cl.load_trajectory())
+    questions = cl.question_message_count(cl.load_trajectory(), bool(cl.load_task_meta().get("proposal_turn")))
     return max(0.0, 1.0 - 0.25 * questions)
