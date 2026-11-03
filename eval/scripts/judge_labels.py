@@ -2,6 +2,7 @@
 """Hand-label rubric judge answers so each rubric dimension can be calibrated.
 
   uv run scripts/judge_labels.py export <sheet.csv> runs/<job>-rejudged [...] [--per-dimension 50] [--seed 1]
+  uv run scripts/judge_labels.py serve <sheet.csv> [--port 8765] [--no-browser]
   uv run scripts/judge_labels.py agree <sheet.csv>
   uv run scripts/judge_labels.py repeat runs/<job>-rejudged runs/<job>-rejudged-repeat [<first> <second> ...]
 
@@ -23,7 +24,9 @@ still recognise an arm from its style. The answers, reasons, evidence, and arms
 go to <sheet>.key.json, which agree reads. export refuses to overwrite any of these,
 so a rerun cannot erase labels.
 
-The labeller writes yes or no in the human column: whether the item holds for
+serve opens a local page (scripts/label_page.py) that shows each item beside
+its case and saves each answer into the sheet; the sheet can also be edited
+in a spreadsheet. The labeller writes yes or no in the human column: whether the item holds for
 the code, with yes meaning the requirement is met, as the judge answers.
 
 agree prints, per dimension:
@@ -372,12 +375,20 @@ def main(argv: list[str]) -> int:
     exporter.add_argument("jobs", nargs="+", type=Path)
     exporter.add_argument("--per-dimension", type=int, default=50)
     exporter.add_argument("--seed", type=int, default=1)
+    server = commands.add_parser("serve", help="label the sheet in a local browser page")
+    server.add_argument("sheet", type=Path)
+    server.add_argument("--port", type=int, default=8765)
+    server.add_argument("--no-browser", action="store_true", help="print the URL without opening it")
     commands.add_parser("agree", help="judge-human agreement per dimension").add_argument("sheet", type=Path)
     repeater = commands.add_parser("repeat", help="agreement between two rejudge passes")
     repeater.add_argument("dirs", nargs="+", type=Path, help="pairs: first pass, second pass")
     args = parser.parse_args(argv[1:])
     if args.command == "export":
         return export(args.sheet, args.jobs, args.per_dimension, args.seed)
+    if args.command == "serve":
+        import label_page
+
+        return label_page.serve(args.sheet, cases_dir(args.sheet), args.port, not args.no_browser)
     if args.command == "agree":
         print(render_agreement(agreement(args.sheet)), end="")
         return 0
