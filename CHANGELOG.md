@@ -54,6 +54,11 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `rescore.py` instead of running the bare arm again. Baselines saved before
   this change are not reused; the next release-tier run saves a new one.
 
+- The `service-from-brief` hidden check posts like the app's own page in a
+  browser, with `Origin` and `Sec-Fetch-Site: same-origin`. Without them, a
+  correct CSRF guard refused every create request, so the Consult arm, which
+  adds one, failed verification while bare Claude, which does not, passed.
+
 - The site's home page describes the bounded process: the loop builds in
   stages with a proof at each, review runs once on the finished change, and
   you sign off on the plan and on big calls. It lists 18 skills.
