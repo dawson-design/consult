@@ -35,17 +35,14 @@ The host owns git invocation; this skill sets the packaging standard.
    `git add .` in a messy tree. Confirm the staged diff matches the slice.
    Unrelated dirty or untracked files stay unstaged and are named as
    deferred.
-4. Confirm the relevant proof is current before committing. If a broad suite
-   is noisy for unrelated reasons, name the targeted proof and report the
-   drift separately.
-5. The subject completes "When applied, this commit will ..." in under 72
+4. The subject completes "When applied, this commit will ..." in under 72
    characters. Add a body only when the change needs context, at most 2-3
    short paragraphs.
-6. Attribution trailers are host configuration, not message content. When a
+5. Attribution trailers are host configuration, not message content. When a
    host adds `Co-Authored-By` or similar by default, point the user at the
    setting that disables it (`includeCoAuthoredBy: false` in Claude Code)
    rather than overriding the host from inside the message.
-7. Never skip hooks. Run the hook, or fix and report its blocker.
+6. Never skip hooks. Run the hook, or fix and report its blocker.
 
 ## Tripwires
 

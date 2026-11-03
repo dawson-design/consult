@@ -39,9 +39,10 @@ not count until you can say which criterion each test proves.
 1. Anything else you report as true, such as a root cause, an invariant, or
    unchanged behavior, also needs a check. Report anything without one as
    `unproven` and name the missing evidence.
-2. A bug fix needs a regression test that fails before the fix, passes
-   after, and stays in the suite. A refactor needs the same checks passing
-   before and after.
+2. A bug fix starts with a test that reproduces the bug and fails. Name
+   the root cause in one sentence that explains every symptom, fix it until
+   that test passes, and keep the test in the suite. A refactor needs the
+   same checks passing before and after.
 3. Each test asserts a business rule from the acceptance criteria or spec,
    with expected values taken from there, not from the code. A test that
    would still pass if the rule were wrong proves nothing, such as one that
@@ -62,22 +63,16 @@ not count until you can say which criterion each test proves.
    A test you have never seen fail may not test anything.
 7. Check config, generated files, and docs by loading or running them the
    way the system does, never by asserting their text.
-8. For a removal, test what remains and search to confirm the old code is
-   gone. Test the removal itself only if callers now get an explicit error,
-   such as a 404 or 410.
-9. Before editing, run the existing tests for the code you will change.
+8. Before editing, run the existing tests for the code you will change.
    Never edit, skip, weaken, or delete a test, golden file, or snapshot to
    make the change pass. If one fails, fix the change, get the user's
    approval for the behavior change, or replace a test of internals with a
    test of the same rule and say so.
-10. Work outward from one test: get it green, then run the other tests for
-    the same code, then the tests for code the change could affect. Run the
-    whole suite last, before saying done or committing. Report a failure
-    unrelated to the change separately; it does not block.
-11. Before saying done, re-read the latest request and corrections, look at
-    each changed file as it is now, and rerun the checks. List each
-    acceptance criterion with its check and result: proven, partly proven,
-    blocked, or unproven.
+9. Before saying done, re-read the latest request and corrections, look at
+   each changed file as it is now, and rerun the checks, with the whole
+   suite once. Report a failure unrelated to the change separately; it does
+   not block. List each acceptance criterion with its check and result:
+   proven, partly proven, blocked, or unproven.
 
 ## Tripwires
 

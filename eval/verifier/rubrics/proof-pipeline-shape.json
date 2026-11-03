@@ -80,10 +80,9 @@
       "id": "boundaries.phone_failure_value",
       "dimension": "boundaries",
       "rules": [
-        "error-handling.6",
         "error-handling.1"
       ],
-      "key_phrase": "not routine control flow",
+      "key_phrase": "return Result-style values",
       "question": "Does phone normalization return its failure as a value that carries the reason (for example `{ ok: false, reason }`), rather than throwing for each bad phone and catching it, or returning `null` that the caller must turn into a reason?",
       "polarity": "positive",
       "tier": "quality",

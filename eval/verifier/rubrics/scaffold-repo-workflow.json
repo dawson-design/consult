@@ -54,7 +54,7 @@
     {
       "id": "scope.readme_commands",
       "dimension": "scope",
-      "rules": ["documentation.5"],
+      "rules": ["documentation.4"],
       "key_phrase": "README is purpose, install and run, minimal usage, and links onward.",
       "question": "Does `README.md` give the local setup steps and all three verification commands as `package.json` defines them (`npm test`, `npm run typecheck`, `npm run lint`)?",
       "polarity": "positive",
@@ -66,7 +66,7 @@
     {
       "id": "scope.readme_tsc_prerequisite",
       "dimension": "scope",
-      "rules": ["documentation.5"],
+      "rules": ["documentation.4"],
       "key_phrase": "install and run",
       "question": "Does `README.md` say that `npm run typecheck` needs TypeScript's `tsc`, which the package does not install, and how a maintainer gets it?",
       "polarity": "positive",

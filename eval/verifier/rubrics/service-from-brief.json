@@ -84,7 +84,7 @@
       "rules": [
         "api.3"
       ],
-      "key_phrase": "Use `4xx` for consumer-side conditions such as invalid input",
+      "key_phrase": "Pick the status by where the failure starts",
       "question": "Does a malformed or incomplete create request, such as invalid JSON or a body with no URL, get a 4xx response rather than a 500 or a crashed process?",
       "polarity": "positive",
       "tier": "must",

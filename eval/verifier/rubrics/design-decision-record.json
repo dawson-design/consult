@@ -4,7 +4,7 @@
       "id": "structure.no_validation_middleware",
       "dimension": "structure",
       "rules": [
-        "api.8",
+        "api.5",
         "architecture.2"
       ],
       "key_phrase": "Middleware is for transport-wide concerns",
@@ -33,9 +33,9 @@
       "id": "structure.rejections_explained",
       "dimension": "structure",
       "rules": [
-        "architecture.7"
+        "specify.3"
       ],
-      "key_phrase": "what was rejected",
+      "key_phrase": "Give your recommendation and its main tradeoff",
       "question": "Does each alternative the note lists say why it was not chosen, with a reason that applies to checkout?",
       "polarity": "positive",
       "tier": "must",
@@ -105,7 +105,7 @@
       "id": "scope.not_marked_approved",
       "dimension": "scope",
       "rules": [
-        "specify.7"
+        "specify.6"
       ],
       "key_phrase": "Record what the user approved, not what you proposed.",
       "question": "Does NOT claim that the team agreed on the decision, when the request says the team is split?",
@@ -137,9 +137,9 @@
       "id": "proof.proof_named",
       "dimension": "proof",
       "rules": [
-        "api.9"
+        "proof.3"
       ],
-      "key_phrase": "Tests exercise the public boundary.",
+      "key_phrase": "choose the level that shows it most directly",
       "question": "Does the note say which tests the next implementation needs to prove the chosen boundary, such as tests that send invalid checkout input through the route and check the rejection?",
       "polarity": "positive",
       "tier": "quality",
@@ -151,7 +151,7 @@
       "id": "report.note_claims_grounded",
       "dimension": "report",
       "rules": [
-        "specify.3"
+        "specify.2"
       ],
       "key_phrase": "Read the code before proposing a design.",
       "question": "Does the note avoid stating facts about the current checkout code that the repository does not show, such as file paths, function names, line numbers, or the exact fields each place checks today?",

@@ -29,27 +29,22 @@ description: Migrations, schema changes, indexes, queries, transactions, or lock
    non-reversible backfills always need explicit approval, because a rollback
    cannot undo them. An additive, easily reversed change on a
    development-stage schema proceeds, and the close-out describes the change.
-2. Use the project's existing database unless the task is choosing a store;
-   `architecture` owns store selection.
-3. Destructive or tightening changes ship as separate deployable
+2. Destructive or tightening changes ship as separate deployable
    expand-contract phases: expand, migrate, verify, switch, contract.
-4. Review the migration SQL and its lock behavior directly, not just the ORM
-   code. Index and constraint creation uses the target engine's online
+3. Review the migration SQL and its lock behavior directly, not just the
+   ORM code. Index and constraint creation uses the target engine's online
    mechanism. SQLite passing is not proof of Postgres behavior; verify
    engine-specific DDL against the target engine.
-5. Every uniqueness invariant is enforced by a DB-level `UNIQUE`, `EXCLUDE`,
+4. Every uniqueness invariant is enforced by a DB-level `UNIQUE`, `EXCLUDE`,
    composite, or partial constraint, because application-layer checks race
    under concurrency.
-6. New foreign keys and known `WHERE`, `JOIN`, or `ORDER BY` predicates get
-   supporting indexes in the same migration, or a stated reason they do not.
-   Important query changes include EXPLAIN/ANALYZE on production-shaped data.
-7. Backfills are batched, resumable, observable, and reversible, and each
-   batch holds locks briefly.
-8. Isolation level and retry behavior are explicit for transactional changes.
-   State changes and durable publication (events, jobs) share a transactional
-   outbox, CDC, or equivalent when the two must not silently diverge.
-9. Rollback and backup/PITR coverage for the blast radius are documented with
+5. Rollback and backup/PITR coverage for the blast radius are documented with
    the change.
+6. A new foreign key or known `WHERE`, `JOIN`, or `ORDER BY` predicate gets a
+   supporting index in the same migration, or a stated reason it does not.
+   Backfills are batched and resumable (`references/online-ddl.md`). A state
+   change and the event or job it publishes share a transactional outbox
+   when the two must not diverge, never a dual write.
 
 ## Tripwires
 
@@ -57,10 +52,7 @@ description: Migrations, schema changes, indexes, queries, transactions, or lock
 |---|---|---|
 | "The table is small, ALTER it in place" | Use the engine's online mechanism, or record why size and write rate cannot matter. | Size and write rate are verified negligible and the reasoning is recorded. |
 | "The migration will be quick" | Measure lock behavior on representative load or assume the worst case. | None. |
-| "We can backfill later" | Ship the backfill plan now or leave the schema expand-only. | None. |
 | "The app already checks uniqueness" | Enforce it with a DB constraint. | The invariant is advisory and duplicates are explicitly acceptable. |
-| "Add the index when it gets slow" | Add supporting indexes in the same migration. | The access path is speculative and the omission is justified in the migration. |
-| "This index looks unused, drop it" | Observe a full traffic cycle first. | The table itself is being removed. |
 | "It's just another column" | Load `security` before adding password, token, API key, MFA, recovery-code, or sensitive-PII storage. | The column holds no credentials or sensitive data. |
 
 ## Handoffs

@@ -2,7 +2,7 @@
 
 Use this when storing, comparing, formatting, serialising, or computing
 on dates or times: at the language, wire, database, or display layer.
-Loaded by `domain-modeling` Rule 11.
+Loaded by `domain-modeling` Rule 8.
 
 ## Iron rules
 

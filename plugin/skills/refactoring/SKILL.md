@@ -28,24 +28,15 @@ description: Restructuring or untangling code without changing behavior, or befo
 2. Name the coupling being separated (data shape, side effect, module
    boundary, ownership, time, transport, persistence, compatibility) before
    code moves. "Extract a helper to shorten this" is not a named coupling.
-3. Prove unchanged behavior with checks that pass before and after (`proof`
-   Rule 2). Add characterization tests where coverage is missing. An
-   unproven refactor is reported as unproven.
-4. For public interfaces, use parallel change: expand, migrate callers,
+3. For public interfaces, use parallel change: expand, migrate callers,
    contract. Settle which callers, data, and releases must keep working
    (core rule 6) before adding shims, dual paths, or migration machinery.
-5. Delete old paths only when verification proves callers and traffic have
-   moved. Leftover migration or deletion work has an owner and a deadline.
-6. For broad renames, write a rename map first, separating private symbols,
-   file paths, runtime and public keys, persisted names, docs, and
-   compatibility cleanup.
-7. Shorter is simpler only when it hides no state, effect, compatibility,
+4. Shorter is simpler only when it hides no state, effect, compatibility,
    ownership, or independent behavior. Simplification removes complexity with
    a named cost: hidden mutable state, unnecessary layer, broad helper,
    scattered behavior, compatibility shim, dead flag, duplicated rule with
    divergent meaning.
-8. Deleted tests are replaced by equal or stronger behavior coverage.
-9. No big-bang rewrites. Take the next safe slice or a branch-by-abstraction
+5. No big-bang rewrites. Take the next safe slice or a branch-by-abstraction
    path; the system is shippable at every commit.
 
 ## Tripwires

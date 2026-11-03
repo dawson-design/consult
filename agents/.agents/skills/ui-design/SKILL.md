@@ -47,13 +47,10 @@ description: "Frontend UI: forms, components, layout, styling, accessibility, ke
    adjacent surfaces, with a transparent fallback for Forced Colors. Tab
    order follows DOM order; positive `tabindex` has no safe use. Focus is
    restored after a modal or overlay closes.
-7. Color is never the only signal. Text and non-text contrast, target size,
-   and reflow meet WCAG 2.2 AA. Reduced motion, forced colors, high
-   contrast, and dark mode follow user preferences.
-8. Forms have explicit labels, grouped controls, errors tied to fields, and
+7. Forms have explicit labels, grouped controls, errors tied to fields, and
    no placeholder-only instructions. Dragging has a single-pointer
    alternative. Authentication never depends on a cognitive test.
-9. Automated checks catch only part of the problem. Meaningful UI changes get
+8. Automated checks catch only part of the problem. Meaningful UI changes get
    manual keyboard testing, and custom controls, dialogs, menus, tabs, forms,
    and live updates get screen-reader testing. Remaining gaps are recorded as
    explicit blockers or deferred work, never left implicit.

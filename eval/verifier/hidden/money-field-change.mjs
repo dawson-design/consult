@@ -1,6 +1,6 @@
 // Hidden check: the shipped USD contract still holds and orders carry their total in
 // their own currency. Any unit or form passes here; the money-representation rule
-// is scored separately as domain-modeling.11 by the rules probe.
+// is scored separately as domain-modeling.8 by the rules probe.
 import assert from "node:assert/strict";
 import { createServer } from "./src/server.js";
 

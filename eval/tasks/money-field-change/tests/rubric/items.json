@@ -136,13 +136,13 @@
     {
       "dimension": "boundaries",
       "id": "boundaries.spec_matches_code",
-      "key_phrase": "Source-of-truth docs are updated",
+      "key_phrase": "in the OpenAPI spec",
       "look_at": "`openapi.yaml`, compared with `toResponse` and `createOrder` in `src/orders.js`",
       "no_when": "`openapi.yaml` is unchanged, or a new field is missing from it or described with a different name, type, or unit than the code.",
       "polarity": "positive",
       "question": "Does `openapi.yaml` describe the new money field and any new request field with the same names, types, and units the code uses?",
       "rules": [
-        "api.9"
+        "api.1"
       ],
       "tier": "must",
       "yes_when": "Each new response and request field is in the spec, with matching name, type, and unit (for example integer minor units plus an ISO currency code)."
@@ -172,7 +172,7 @@
       "polarity": "positive",
       "question": "Does each new or changed public operation that can fail have a test of one of its failure paths?",
       "rules": [
-        "error-handling.7"
+        "error-handling.6"
       ],
       "tier": "quality",
       "yes_when": "Each such operation has a test that drives a failure and checks the result."
@@ -187,7 +187,7 @@
       "polarity": "negative",
       "question": "Does NOT edit, skip, weaken, or delete an existing test, unless the request changed the behavior it tests?",
       "rules": [
-        "proof.9"
+        "proof.8"
       ],
       "tier": "must",
       "yes_when": "Existing tests are unchanged, each change follows a behavior change the request made, or a test of internals is replaced by a test of the same rule."
@@ -231,7 +231,7 @@
       "polarity": "positive",
       "question": "For each of the request's requirements, does the final message say whether it was checked and how, or say that it was not checked?",
       "rules": [
-        "proof.11"
+        "proof.9"
       ],
       "tier": "must",
       "yes_when": "Every requirement is covered, in any wording or format, with how it was checked or a plain statement that it was not."
