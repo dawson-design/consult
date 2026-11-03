@@ -59,6 +59,13 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   correct CSRF guard refused every create request, so the Consult arm, which
   adds one, failed verification while bare Claude, which does not, passed.
 
+- `database` Rule 3 no longer invites load tests. It said "measure lock
+  duration on representative load, or assume the worst case", and in the
+  eval check agents chose to measure: one migration ran a 28-minute load
+  test, another generated six million rows. Agents now take each
+  statement's lock level from the engine's documentation and plan for the
+  worst case, and build a load test only when the user asks.
+
 - The site's home page describes the bounded process: the loop builds in
   stages with a proof at each, review runs once on the finished change, and
   you sign off on the plan and on big calls. It lists 18 skills.
