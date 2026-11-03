@@ -42,27 +42,19 @@ against it.
 5. Model allowed states as explicit variants, not flag or nullable
    combinations. Split a nullable that means both "missing" and "not loaded"
    into named states.
-6. Effects (async, exceptions, I/O, clocks, randomness, logging, persistence,
-   mutation, shared state) are contagious. Keep them at the imperative shell
-   (core rule 1) so the functional core stays pure. Core tests run without mocks,
-   monkey-patches, databases, network, or global time.
-7. Discover abstractions from repeated domain meaning. No generic wrappers,
-   base classes, or helper layers before the data proves they pay.
-8. Names carry the model. A method states its role in the domain process:
+6. Names carry the model. A method states its role in the domain process:
    `settleInvoice` or `expireHold`, not `process`, `handle`, or `execute`. A
    suffix like `Service` or `Manager` is fine only with a domain word saying
    what kind.
-9. Each non-trivial invariant or transition gets a check and evidence via
-   `proof`.
-10. Get approval before implementing a core model, shared invariant, state
-    machine, or glossary term future work will bind to; `contract-first` owns
-    the approval scope. Disposable or local shapes are not gated.
-11. Load `references/dates.md` whenever the diff stores, compares, formats,
-    serializes, or computes on dates or times, and `references/money.md`
-    whenever it does so on monetary amounts.
-12. Name domain concepts with the project glossary's terms, else the issue's
-    or spec's words. Use one term per concept in each bounded context. Record
-    approved terms in the glossary, asking to start one if none exists.
+7. Get approval before implementing a core model, shared invariant, state
+   machine, or glossary term future work will bind to; `contract-first` owns
+   the approval scope. Disposable or local shapes are not gated.
+8. Load `references/dates.md` whenever the diff stores, compares, formats,
+   serializes, or computes on dates or times, and `references/money.md`
+   whenever it does so on monetary amounts.
+9. Name domain concepts with the project glossary's terms, else the issue's
+   or spec's words. Use one term per concept in each bounded context. Record
+   approved terms in the glossary, asking to start one if none exists.
 
 ## Tripwires
 
@@ -71,8 +63,6 @@ against it.
 | "Validate it again wherever it's used" | Parse once at each external boundary; internal code takes the parsed type. | A second boundary genuinely receives external data. |
 | "Add another boolean flag" | Model allowed states as explicit variants. | The flag is one independent toggle with no illegal combinations. |
 | "Pass the request JSON through to the domain" | Convert to an internal domain shape before domain work. | A pure passthrough proxy with no domain logic. |
-| "Call the database from the domain function" | Move the effect to the shell. | The function is the shell. |
-| "A generic wrapper will save time later" | Wait for repeated domain meaning to prove the abstraction. | The repetition already shares one meaning and rule set. |
 | "Name it `process`, `handle`, or `execute`" | Name the method's role in the domain process. | A framework or interop boundary requires the generic name. |
 | "Hand-roll the boundary validator" | Use the ecosystem's schema library, honoring any existing project choice. | No clear ecosystem leader exists. |
 

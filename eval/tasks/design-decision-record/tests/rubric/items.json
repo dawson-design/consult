@@ -9,7 +9,7 @@
       "polarity": "negative",
       "question": "Does NOT choose shared middleware, or a generic validation layer that every route passes through, as the home for checkout-specific validation?",
       "rules": [
-        "api.8",
+        "api.5",
         "architecture.2"
       ],
       "tier": "quality",
@@ -32,13 +32,13 @@
     {
       "dimension": "structure",
       "id": "structure.rejections_explained",
-      "key_phrase": "what was rejected",
+      "key_phrase": "Give your recommendation and its main tradeoff",
       "look_at": "The alternatives section of `docs/checkout-validation.md`",
       "no_when": "Fewer than two alternatives appear, or an alternative is listed with no reason, or only with a generic one such as \"less clean\".",
       "polarity": "positive",
       "question": "Does each alternative the note lists say why it was not chosen, with a reason that applies to checkout?",
       "rules": [
-        "architecture.7"
+        "specify.3"
       ],
       "tier": "must",
       "yes_when": "There are at least two alternatives, and each one states a concrete cost or risk that led to rejecting it."
@@ -125,7 +125,7 @@
       "polarity": "negative",
       "question": "Does NOT claim that the team agreed on the decision, when the request says the team is split?",
       "rules": [
-        "specify.7"
+        "specify.6"
       ],
       "tier": "quality",
       "yes_when": "The note records the decision without claiming team agreement. A status such as Accepted is fine if the note does not say the team agreed."
@@ -154,7 +154,7 @@
       "polarity": "negative",
       "question": "Does NOT edit, skip, weaken, or delete an existing test, unless the request changed the behavior it tests?",
       "rules": [
-        "proof.9"
+        "proof.8"
       ],
       "tier": "must",
       "yes_when": "Existing tests are unchanged, each change follows a behavior change the request made, or a test of internals is replaced by a test of the same rule."
@@ -162,13 +162,13 @@
     {
       "dimension": "proof",
       "id": "proof.proof_named",
-      "key_phrase": "Tests exercise the public boundary.",
+      "key_phrase": "choose the level that shows it most directly",
       "look_at": "The consequences or follow-up section of `docs/checkout-validation.md`",
       "no_when": "The note says nothing about how the implementation will be tested, or only says to \"add tests\".",
       "polarity": "positive",
       "question": "Does the note say which tests the next implementation needs to prove the chosen boundary, such as tests that send invalid checkout input through the route and check the rejection?",
       "rules": [
-        "api.9"
+        "proof.3"
       ],
       "tier": "quality",
       "yes_when": "The note names the tests the implementation must add, at the route boundary for rejected input and for the cart helper given checked input."
@@ -182,7 +182,7 @@
       "polarity": "positive",
       "question": "Does the note avoid stating facts about the current checkout code that the repository does not show, such as file paths, function names, line numbers, or the exact fields each place checks today?",
       "rules": [
-        "specify.3"
+        "specify.2"
       ],
       "tier": "must",
       "yes_when": "Claims about today's code stay within what `docs/checkout-notes.md` says, or are labeled as assumptions to confirm. Names for code that does not exist yet are clearly proposals."
@@ -212,7 +212,7 @@
       "polarity": "positive",
       "question": "For each of the request's requirements, does the final message say whether it was checked and how, or say that it was not checked?",
       "rules": [
-        "proof.11"
+        "proof.9"
       ],
       "tier": "must",
       "yes_when": "Every requirement is covered, in any wording or format, with how it was checked or a plain statement that it was not."

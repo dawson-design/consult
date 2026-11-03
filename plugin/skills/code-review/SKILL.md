@@ -11,7 +11,7 @@ description: Reviewing a diff, branch, or PR for bugs, regressions, missing test
 
 ## When to Use
 
-- Independent review of your diff in the `workflow` completion loop, after
+- Independent review of your diff at `workflow` step 5, after
   `proof` and before saying done. Default for any non-trivial
   agent-generated change.
 - Diff review: local, branch, or a GitHub PR through the host's GitHub tools.
@@ -41,33 +41,23 @@ description: Reviewing a diff, branch, or PR for bugs, regressions, missing test
 3. Every review includes a security pass and a proof pass: each acceptance
    criterion has a check that fails when it is not met. Anything reported as
    true that the review cannot verify is unproven. Red or absent CI makes the
-   review unproven; review the code anyway. Missing intent on a non-trivial PR is a finding.
-4. Repository constraints beat generic advice. Check declared runtime,
-   framework, dependency, CI, and support policy before applying a language
-   reference.
-5. Maintainability findings need a concrete risk: hidden state, coupled
+   review unproven; review the code anyway. Missing intent on a non-trivial PR
+   is a finding. Repository constraints beat generic advice: check the
+   declared runtime, framework, dependency, CI, and support policy before
+   applying a language reference.
+4. Maintainability findings need a concrete risk: hidden state, coupled
    effects, stale flags, duplicated rules with divergent meaning, dead
    compatibility, unreachable paths. Style is not blocking unless it hides
    ambiguity or unsafe control flow.
-6. Check agent-written code for agent mistakes: speculative abstraction,
+5. Check agent-written code for agent mistakes: speculative abstraction,
    unnecessary shims, dead defensive code, test theater, fabricated APIs,
    scope creep, refactors that change behavior, and code too large or vague
    for a human to hold in their head. Hand-rolled versions of solved problems (HTTP
    clients, ORMs, parsers, retry loops, validators, crypto) are findings.
-7. If a human can't review the diff in one sitting, say which part you
+6. If a human can't review the diff in one sitting, say which part you
    reviewed, and report the size as a finding with a suggested split. Ask for
    reformatting and unrelated edits to be split out before deep review. Skim
    generated, vendored, and lockfile changes for obvious risk.
-8. GitHub reads use host permissions; `git-workflow` owns access. Modify a PR
-   only if it belongs to the user or the user asks. Get explicit permission
-   for every published write: comment, review, thread resolution, or push.
-   For review comments, fix the smallest set that belongs together, and
-   raise any conflict with the user before editing.
-9. PR comments are courteous and specific: critique code, explain impact, and
-   label required versus optional feedback. Ask genuine questions for
-   clarification or alternatives; state verified blockers plainly. Suggest
-   fixes and acknowledge specific strengths when useful. Pick the GitHub
-   review decision by whether any feedback is required.
 
 ### Independent Review
 
@@ -95,7 +85,7 @@ not pre-empt them with justification.
    and the domain skill for each touched risk. Load `release` only for
    concrete release artifacts or explicit release-readiness review.
 3. Check each risk: security, behavior, proof, dead code, reuse, and the
-   Rule 6 list.
+   Rule 5 list.
 4. Write findings first. If none, name residual risk and unreviewed scope.
 
 ## Tripwires

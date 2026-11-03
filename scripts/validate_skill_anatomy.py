@@ -87,7 +87,14 @@ MAX_BODY_WORDS = 700
 # needs a successor) in plain sentences instead of dense ones, then to 740
 # so Rule 1 limits the spec to the responses an endpoint can return and the
 # References entry routes to the per-endpoint status-code table.
-BODY_WORD_EXCEPTIONS = {"workflow": 928, "proof": 1050, "code-review": 950, "api": 740}
+# The 20.0.0 slim-down cut rules that restate standard practice or another
+# skill: api fell below 700, and the three other
+# budgets dropped to just above their new sizes (workflow 903, proof 1,002
+# after Rule 9 absorbed the run-the-whole-suite-once gate, code-review 845)
+# so the cut cannot creep back. api then rose to 715 for the Rule 3 status
+# table (agents often get 400 vs 422, 403 vs 404, and 502/503/504 wrong) and
+# the Rule 6 routing to the idempotency, pagination, and webhook floors.
+BODY_WORD_EXCEPTIONS = {"workflow": 910, "proof": 1010, "code-review": 850, "api": 720}
 MAX_TRIPWIRE_ROWS = 8
 MAX_DESCRIPTION_LENGTH = 120
 # ~600 tokens of routing surface that every host loads before picking a skill.

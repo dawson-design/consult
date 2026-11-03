@@ -5,7 +5,7 @@
       "dimension": "structure",
       "rules": [
         "domain-modeling.1",
-        "domain-modeling.11"
+        "domain-modeling.8"
       ],
       "key_phrase": "Decide data shapes and invariants before writing transformations.",
       "question": "Does `totalCents` always return a whole number of cents, rounding explicitly when SAVE10 applies to a subtotal that is not a multiple of 10 (for example 999 cents)?",

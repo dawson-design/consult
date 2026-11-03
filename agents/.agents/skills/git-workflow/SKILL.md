@@ -39,7 +39,10 @@ gates: recoverability and approval of published text.
    out of reach.
 3. Humans approve PR and issue text before it is published. Draft the title
    and body locally, show them, and get approval of that exact text. Never
-   let a tool open an editor or send unreviewed text.
+   let a tool open an editor or send unreviewed text. Get the user's
+   approval before each other published PR write: a review comment, review
+   decision, thread resolution, or push. Change a PR only when it belongs to
+   the user or the user asks.
 4. Inspect tree, branch, and upstream state before any history operation, and
    stop on unexpected state. Name a recovery point (tag, branch, or reflog
    entry) and whether the branch is local, solo, or shared before rewriting,
@@ -51,18 +54,12 @@ gates: recoverability and approval of published text.
 6. Test hook policy, not hook wrappers. A hook that only execs a repo script
    needs no test; the script that selects commands, blocks branches, or
    routes files does.
-7. This skill never bypasses the host's sandbox or approval gates.
-8. Work on a branch in the main checkout by default. Create a worktree only
+7. Work on a branch in the main checkout by default. Create a worktree only
    when work must run in parallel with uncommitted changes there, and say
-   so, because each worktree duplicates the checkout and its build
-   directories. Leave host-managed worktrees to the host. Put
-   yours outside the repository (the scratchpad directory when the host has
-   one), and reuse the main checkout's build output instead of rebuilding.
-   Once its work is committed, merge or rebase it into the main checkout's
-   branch if that checkout is clean, or hand the branch to the user if not,
-   then run `git worktree remove` and `git worktree prune`. If its work is
-   unfinished when the session ends, report the worktree instead of removing
-   it. Ask before removing a worktree you did not create.
+   so. Put it outside the repository, and remove it once its work is merged
+   or handed to the user; report it instead if the work is unfinished. Leave
+   host-managed worktrees to the host, and ask before removing a worktree
+   you did not create.
 
 ## Tripwires
 

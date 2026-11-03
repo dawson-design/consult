@@ -43,38 +43,44 @@ description: Adding or changing an HTTP endpoint, handler, status code, response
    unstable, or one whose change no running consumer can see, may change in
    place. Use one versioning scheme per service, and never bump it for
    compatible additions.
-3. Use `4xx` for consumer-side conditions such as invalid input, missing
-   resources, authorization, or rate limits; use `5xx` when this service or a
-   dependency cannot fulfill a valid request.
-   Never mix origins in one response or leak raw upstream or internal errors.
+3. Pick the status by where the failure starts. Map dependency failures into
+   this API's own error shape; never pass an upstream status or body through.
+
+   | Failure | Status |
+   |---|---|
+   | Malformed syntax, envelope, or media type | `400` |
+   | Well-formed input that breaks a domain rule | `422` |
+   | Not authenticated | `401` |
+   | Authenticated but not allowed | `403`, or `404` to hide that it exists |
+   | No resource with that id (an empty collection is `200`) | `404` |
+   | Conflicts with current state, such as a unique key | `409` |
+   | Rate or quota exceeded | `429` |
+   | A dependency is down or overloaded | `503` |
+   | A dependency timed out | `504` |
+   | A dependency answered with something unusable | `502` |
+   | Unexpected fault in this service | `500` |
+
 4. Preserve an existing service's representation and error contract. For a new
    REST resource API with no established format, default to JSON:API unless a
    domain standard or client interoperability need favors another documented
    choice. New APIs use the chosen model's native error format; document
    deviations.
-5. Non-idempotent mutations define idempotency key scope, replay window,
-   duplicate response, and conflict semantics, or are documented as unsafe to
-   retry.
-6. Lists have bounded pagination, stable ordering, and explicit invalid-token
-   behavior. A bad token never silently restarts, rewinds, or skips position.
-7. External webhooks are signed, timestamped, replay-protected, versioned, and
-   deduplicable.
-8. Middleware is for transport-wide concerns (logging, tracing, rate limits).
+5. Middleware is for transport-wide concerns (logging, tracing, rate limits).
    Endpoint-specific validation, ownership checks, privileged authorization,
    and domain invariants stay at the route or domain boundary.
-9. Tests exercise the public boundary. Source-of-truth docs are updated, not
-   generated output by hand.
+6. An endpoint that takes retried mutations, returns a paginated list, or
+   sends webhooks meets the floor in `references/idempotency.md`,
+   `references/pagination.md`, or `references/webhooks.md`. Load the one that
+   applies before writing the handler.
 
 ## Tripwires
 
 | Trigger | Do this instead | False alarm |
 |---|---|---|
 | "Renaming this field is harmless" | Keep shipped consumers working with a successor or a deprecation path. | The field never shipped, or no running consumer can see the change. |
-| "Any error can be a 400 (or a 500)" | Classify consumer-side conditions and service failures separately. | None. |
+| "Any error can be a 400 (or a 500)" | Pick the status from the Rule 3 table by where the failure starts. | None. |
+| "Pass the upstream error through" | Map it to `502`, `503`, or `504` in this API's error shape (Rule 3). | None. |
 | "Return whatever the handler has" | Define response and error bodies in the spec first. | None. |
-| "The list is small, skip pagination" | Define bounded pagination and invalid-token behavior before the endpoint can grow. | The collection is provably bounded, such as an enum-sized set. |
-| "Consumers can just retry the mutation" | Define the idempotency contract first, or document the mutation as unsafe to retry. | The mutation is naturally idempotent and documented as such. |
-| "It's just an outgoing webhook" | Sign, timestamp, replay-protect, version, and deduplicate. | Delivery stays inside one trust boundary. |
 | "Put the check in middleware so it's global" | Keep route-specific validation, ownership, and domain rules in handler or domain code. | The concern is genuinely transport-wide. |
 
 ## Handoffs
@@ -93,11 +99,8 @@ Load only the one the feature needs:
 
 - `references/api-evolution.md`: evolution rules and versioning strategies.
 - `references/rest-error-status-codes.md`: which codes each endpoint
-  documents; status-by-origin decision tree.
+  documents, and detail behind the Rule 3 table.
 - `references/data-models.md`: JSON:API default; FHIR, HAL, JSON-LD.
-- `references/idempotency.md`: idempotency-key contract.
-- `references/pagination.md`: cursor and bounded-pagination semantics.
-- `references/webhooks.md`: signing, versioning, replay protection.
 - `references/middleware-vs-handler.md`: request-pipeline placement.
 - `../security/references/web-app.md`: CSRF middleware, security headers, CORS.
 - `../security/references/api-and-auth.md`: handler-level authorization for

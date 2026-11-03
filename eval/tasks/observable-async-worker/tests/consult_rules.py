@@ -216,11 +216,11 @@ def api_3(workspace: Path, trajectory: cl.Trajectory, meta: dict) -> float:
 # domain-modeling
 
 
-def domain_modeling_11(workspace: Path, trajectory: cl.Trajectory, meta: dict) -> float:
+def domain_modeling_8(workspace: Path, trajectory: cl.Trajectory, meta: dict) -> float:
     """Money follows references/money.md: integer minor units or a decimal string beside the currency (probe)."""
     if not verification_passed(workspace):
         return 0.0
-    return float(probe_results(workspace).get("domain-modeling.11", 0))
+    return float(probe_results(workspace).get("domain-modeling.8", 0))
 
 
 # scaffolding
@@ -303,15 +303,15 @@ CHECKS = {
     "debugging.1": debugging_1,
     "debugging.5": debugging_5,
     "documentation.1": documentation_1,
-    "domain-modeling.10": signoff_score,
-    "domain-modeling.11": domain_modeling_11,
+    "domain-modeling.7": signoff_score,
+    "domain-modeling.8": domain_modeling_8,
     "scaffolding.1": scaffolding_1,
     "scaffolding.5": scaffolding_5,
     "scaffolding.6": scaffolding_6,
     "scaffolding.7": scaffolding_7,
     "workflow.1": workflow_1,
 }
-SIGNOFF_RULES = {"scaffolding.1", "domain-modeling.10"}
+SIGNOFF_RULES = {"scaffolding.1", "domain-modeling.7"}
 
 
 def scored_rule_ids(rule_ids: list[str]) -> list[str]:

@@ -47,12 +47,6 @@ description: "Deciding where code or logic should live: module boundaries, layer
 5. DDD patterns (aggregates, repositories, factories, domain services) and
    bounded contexts are used only when they protect a real invariant,
    workflow, or a word that means different things in different places.
-6. Project layout, package or module boundaries, public library APIs, and
-   cross-component ownership that future work will depend on are contracts.
-   `contract-first` decides when they need approval.
-7. Decisions future readers cannot recover from the code (why this boundary,
-   why this structure, what was rejected) are recorded in an ADR, comment, or
-   commit message.
 
 ## Tripwires
 
@@ -62,7 +56,7 @@ description: "Deciding where code or logic should live: module boundaries, layer
 | "These two features look the same, share the code" | Share code only when the reused value has the same meaning and rules in both contexts. | One domain rule with one authoritative home. |
 | "Add a repository/factory/aggregate for structure" | Add DDD patterns only when they protect a named invariant, workflow, or boundary. | The pattern guards a named invariant. |
 | "Move the files now, decide the boundary later" | Decide the boundary before using `refactoring` to move files. | The move is private organization that creates no shared boundary. |
-| "Create the shared package; asking can wait" | Ask before locking in a contract future work will depend on (Rule 6). | Private file moves that establish no boundary. |
+| "Create the shared package; asking can wait" | Ask before locking in a contract future work will depend on (`contract-first`). | Private file moves that establish no boundary. |
 | "Another layer will make this cleaner" | Add a layer only for a boundary Rule 2 lists. | The layer maps to a real boundary Rule 2 lists. |
 
 ## Handoffs

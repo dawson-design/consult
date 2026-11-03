@@ -139,7 +139,7 @@
       "dimension": "proof",
       "extends": "proof.regression_test",
       "id": "proof.nested_regression",
-      "key_phrase": "A bug fix needs a regression test that fails before the fix, passes after, and stays in the suite.",
+      "key_phrase": "A bug fix starts with a test that reproduces the bug and fails.",
       "look_at": "Test files the diff adds or changes, compared with the original code",
       "no_when": "No test patches a nested value, or the test checks only the changed value, which the original code also got right.",
       "polarity": "positive",
@@ -203,7 +203,7 @@
       "polarity": "negative",
       "question": "Does NOT edit, skip, weaken, or delete an existing test, unless the request changed the behavior it tests?",
       "rules": [
-        "proof.9"
+        "proof.8"
       ],
       "tier": "must",
       "yes_when": "Existing tests are unchanged, each change follows a behavior change the request made, or a test of internals is replaced by a test of the same rule."
@@ -233,7 +233,7 @@
       "polarity": "positive",
       "question": "For each of the request's requirements, does the final message say whether it was checked and how, or say that it was not checked?",
       "rules": [
-        "proof.11"
+        "proof.9"
       ],
       "tier": "must",
       "yes_when": "Every requirement is covered, in any wording or format, with how it was checked or a plain statement that it was not."

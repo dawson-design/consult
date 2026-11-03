@@ -47,6 +47,38 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Kept skills now hold only policy: rules a competent engineer could
+  reasonably choose against, gates, floors, and philosophy. Rules that restate
+  standard practice, another skill, or the core are cut, with the tripwire
+  rows that enforced them. `proof` Rule 2 now says a bug fix starts with a
+  test that reproduces the bug and fails, names the root cause, and fixes
+  until the test passes. `error-handling` Rule 1 makes Result-style returns
+  the default for expected failures, after the project's own convention.
+  `code-review` PR-comment permissions move to `git-workflow` Rule 3. Cut
+  rules leave `eval/verifier/rules.json`, and rubric items move to
+  surviving rules. `api` Rule 3 becomes a status table chosen by where the
+  failure starts (400 vs 422, 403 or a hiding 404, 409, and 502, 503, or 504
+  for dependencies), because people and agents often get these wrong. New
+  `api` Rule 6 routes retried mutations, pagination, and webhooks to their
+  reference floors, and new `database` Rule 6 keeps indexes with new foreign
+  keys, batched backfills, and outbox over dual write. `error-handling`
+  keeps its retry and timeout rule and `ui-design` its forms rule. The
+  `workflow`, `proof`, `code-review`, and `api` word budgets are set just
+  above their new sizes.
+
+- Consult's review, proof, and stage process is bounded, because eval traces
+  showed it drove most of the consult arm's 4.9x wall time with no quality
+  gain. `workflow` runs one fresh-context review per change, after the last
+  stage, and a second review only for Critical or High findings, on the fix
+  diff alone. An approved plan now covers every stage it shows; the build
+  stops again only when a stage changes a Rule 2 item from what the plan
+  showed. `proof` Rule 6 asks for one hand-made failure per acceptance
+  criterion and rules out scripted bulk mutation runs unless the user asks.
+  `specify` Rule 5 and workflow's `plans`, `stages`, and `long-runs`
+  references match. Three workflow tripwires that restated core rules 2 and
+  3 (helper layers, future flexibility, hand-rolled solved problems) are
+  removed.
+
 - Code tasks in the eval no longer use the four generic judge criteria. A code
   task without a rubric scores on its deterministic dimensions alone, and
   rescoring keeps an old run's judge score at the same 0.45 share. Routing

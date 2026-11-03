@@ -37,17 +37,11 @@ description: "Only when asked to write or update docs for existing code: READMEs
    source of truth; do not restate generated facts.
 3. Encode the rule in names, types, schemas, or tests first. Add a comment
    only for the why that remains non-obvious.
-4. One doc, one reader situation (tutorial, how-to, reference, explanation,
-   runbook), titled as the reader's question. Introduce terms and
-   prerequisites before the step that depends on them.
-5. README is purpose, install and run, minimal usage, and links onward.
-6. Voice: plain, direct, concrete sentences, no em dashes, only words that
+4. README is purpose, install and run, minimal usage, and links onward.
+5. Voice: plain, direct, concrete sentences, no em dashes, only words that
    earn their place. Split any sentence that needs rereading.
-7. Delete stale docs you cannot fix now, or mark them with a tracked rewrite
+6. Delete stale docs you cannot fix now, or mark them with a tracked rewrite
    owner. Orphaned prose is misinformation.
-8. Put docs next to the code or service whose reviewers can catch drift, in
-   the repo's existing docs system. If none exists, choose one during
-   scaffolding or with user approval.
 
 ## Tripwires
 

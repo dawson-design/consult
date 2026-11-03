@@ -32,7 +32,7 @@
       "id": "structure.one_copy_rule",
       "dimension": "structure",
       "rules": [
-        "refactoring.7"
+        "refactoring.4"
       ],
       "key_phrase": "duplicated rule with divergent meaning",
       "question": "Is copying a dashboard still done by the one `snapshot` function that `save`, `load`, and `duplicate` use, without a second dashboard copy routine in `src/store.js`?",
@@ -78,7 +78,7 @@
       "id": "scope.no_handrolled_clone",
       "dimension": "scope",
       "rules": [
-        "code-review.6"
+        "code-review.5"
       ],
       "key_phrase": "Hand-rolled versions of solved problems",
       "question": "Does NOT add a hand-written general-purpose deep-clone function when the runtime's `structuredClone` (Node 17 and later; the task image runs Node 22) does the job?",
@@ -101,7 +101,7 @@
       "rules": [
         "proof.2"
       ],
-      "key_phrase": "A bug fix needs a regression test that fails before the fix, passes after, and stays in the suite.",
+      "key_phrase": "A bug fix starts with a test that reproduces the bug and fails.",
       "question": "Do tests also cover the other ways the shared `config` leaked: editing the live dashboard after saving it, or editing a loaded dashboard without saving it?",
       "polarity": "positive",
       "tier": "quality",

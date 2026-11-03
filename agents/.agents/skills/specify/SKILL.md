@@ -35,24 +35,23 @@ description: A new service or feature from a brief, or a design choice with open
 1. Design the decisions, not the build steps: contracts, data shapes,
    states, tradeoffs, and risks. Leave file-by-file edits, pseudocode, and
    task lists for the plan, after the design is agreed.
-2. Contracts are what `contract-first` Rule 1 defines, not only HTTP APIs.
-3. Read the code before proposing a design. Cite the current code with
+2. Read the code before proposing a design. Cite the current code with
    `file:line`, or, when no code exists yet, name the nearby convention it
    follows.
-4. Propose concrete options, recommend one, and let the user decide. Don't
+3. Propose concrete options, recommend one, and let the user decide. Don't
    decide alone, and don't ask the user to invent the design. Ask one
    question at a time, and only questions whose answer would change the
    design. Give your recommendation and its main tradeoff, and ask the user
    to approve, revise, or rule it out. Put smaller doubts in notes. Ask
    questions that block the design now, not in code review.
-5. In a design doc, mark each contract and data shape approved, proposed, or
-   pending. Mark it pending when the `workflow` Rule 4 stages before it are
-   not built yet, even if the user agreed to it. It stays pending until that
-   stage's sign-off.
-6. Ask before writing a spike (throwaway code that answers a design
+4. In a design doc, mark each contract and data shape approved, proposed, or
+   pending. A shape the user approved in the design or plan stays approved
+   through every stage. Mark it pending when an earlier stage changes it,
+   and get sign-off again before building it (`workflow` Rule 4).
+5. Ask before writing a spike (throwaway code that answers a design
    question). Keep it local and small, and delete or rewrite it once the
    design is agreed.
-7. Write down only what someone will use, and keep it short. Put it in
+6. Write down only what someone will use, and keep it short. Put it in
    checked-in `docs/` when the team should keep it. Record what the user
    approved, not what you proposed.
 
@@ -60,7 +59,7 @@ description: A new service or feature from a brief, or a design choice with open
 
 1. State the outcome and the decision the user needs to make. Say that coding
    waits until the design is agreed.
-2. Read before proposing (Rule 3).
+2. Read before proposing (Rule 2).
 3. Propose your recommended design and ask the next question.
 4. Load `domain-modeling` for data, states, effects, and invariants,
    `contract-first` for contract approval, and the matching skill for
@@ -74,7 +73,7 @@ description: A new service or feature from a brief, or a design choice with open
 |---|---|---|
 | "I already know what the design should be" | Read and cite the current code first. | No code exists yet, and the nearby convention is named. |
 | "I'll build it to find the design" | Ask first; keep spikes local, small, and disposable. | The user approved a disposable spike. |
-| "The design file exists, so the contract is approved" | Get the explicit decision on each contract and data shape. | The user explicitly approved them in the doc once their earlier `workflow` Rule 4 stages existed. |
+| "The design file exists, so the contract is approved" | Get the explicit decision on each contract and data shape. | The user approved them in the design or plan, and no earlier stage changed them. |
 | "Ask about everything at once" | One recommended decision with notes. | None. |
 | "The human should come up with the design" | Propose concrete options; the user approves, revises, or rules out. | None. |
 | "Run the design discussion alongside the host's plan mode" | Hold it inside the host's plan mode. | The host has no plan or approval mode. |

@@ -146,7 +146,7 @@
       "id": "scope.no_dead_defensive_code",
       "dimension": "scope",
       "rules": [
-        "code-review.6"
+        "code-review.5"
       ],
       "key_phrase": "dead defensive code",
       "question": "Does NOT add checks, fallbacks, or error handling for conditions that cannot occur given the types and callers in the change?",
@@ -275,7 +275,7 @@
       "rules": [
         "proof.2"
       ],
-      "key_phrase": "A bug fix needs a regression test that fails before the fix, passes after, and stays in the suite.",
+      "key_phrase": "A bug fix starts with a test that reproduces the bug and fails.",
       "question": "Is there a test that reproduces {bug} and would fail on the original code?",
       "polarity": "positive",
       "tier": "must",
@@ -287,7 +287,7 @@
       "id": "proof.tests_intact",
       "dimension": "proof",
       "rules": [
-        "proof.9"
+        "proof.8"
       ],
       "key_phrase": "Never edit, skip, weaken, or delete a test, golden file, or snapshot to make the change pass.",
       "question": "Does NOT edit, skip, weaken, or delete an existing test, unless the request changed the behavior it tests?",
@@ -301,7 +301,7 @@
       "id": "proof.failure_path",
       "dimension": "proof",
       "rules": [
-        "error-handling.7"
+        "error-handling.6"
       ],
       "key_phrase": "Every public operation that can fail has at least one failure-path test.",
       "question": "Does each new or changed public operation that can fail have a test of one of its failure paths?",
@@ -329,7 +329,7 @@
       "id": "report.criteria_listed",
       "dimension": "report",
       "rules": [
-        "proof.11"
+        "proof.9"
       ],
       "key_phrase": "List each acceptance criterion with its check and result",
       "question": "For each of the request's requirements, does the final message say whether it was checked and how, or say that it was not checked?",
