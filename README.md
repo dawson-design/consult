@@ -254,8 +254,8 @@ loads, are in the Consult core, [`agents/.agents/core.md`](agents/.agents/core.m
   - [`scaffolding`](agents/.agents/skills/scaffolding/SKILL.md): New projects, package setup, quality tooling, CI, and repo structure.
   - [`official-source-check`](agents/.agents/skills/official-source-check/SKILL.md): Version-sensitive framework, library, SDK, or platform behavior, checked against official sources.
 
-Greenfield stack templates live under
-[`scaffolding/references/stacks/`](agents/.agents/skills/scaffolding/references/stacks/).
+Greenfield stack presets are in
+[`scaffolding/references/stacks.md`](agents/.agents/skills/scaffolding/references/stacks.md).
 Shared language defaults are in
 [`language-defaults.md`](agents/.agents/skills/scaffolding/references/language-defaults.md).
 

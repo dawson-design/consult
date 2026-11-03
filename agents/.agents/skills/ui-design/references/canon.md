@@ -1,168 +1,65 @@
-# Design Canon - Frontend
+# Product Defaults and Failure Modes
 
-Operational reference. Load when a UI task needs visual judgment, style
-arbitration, or a principled explanation for layout, typography, color, motion,
-or interaction. This is not a design-history survey; use it to make concrete
-interface decisions.
+Use when choosing a framework, font, type scale, or spacing default, or
+before building a tool, dashboard, admin, or CRUD screen. Brand and editorial
+pages use `editorial.md` instead.
 
-## How to Use This Canon
+## House Defaults
 
-Use the canon as a sequence of filters:
-
-1. Does the screen serve the user's primary task?
-2. Is hierarchy visible before reading the text?
-3. Does the layout use a grid and deliberate whitespace?
-4. Are typography, color, and motion restrained enough to support the work?
-5. Can any element be removed without losing comprehension, trust, or action?
-
-When a rule conflicts with an existing product, brand, platform, or government
-design system, prefer the established system unless it weakens accessibility or
-task completion.
-
-## Swiss and Modernist Layout
-
-The useful parts of Swiss design for agents:
-
-- Start with a grid: margins, columns, gutters, and a spacing unit before
-  choosing decoration.
-- Align edges. A visible element should snap to the grid or to a clear optical
-  alignment.
-- Use flush-left, ragged-right text for most UI and documentation surfaces.
-  Centered text is for short, deliberate moments, not dense tools.
-- Create hierarchy with scale, weight, position, density, and whitespace before
-  adding color.
-- Use asymmetry with purpose. Avoid defaulting every screen to centered stacks
-  or equal cards.
-- Treat whitespace as structure, not leftover space.
-- Prefer concrete product, data, or state over vague illustration.
-- Use an 8px spacing rhythm for most web app surfaces; use 4px only for dense
-  internal relationships and 16/24/32px for larger grouping.
-
-Design-system ancestor to remember: Karl Gerstner's programmatic design maps
-cleanly to modern tokens, grids, components, and variants.
-
-## Rams Filter
-
-Use Dieter Rams as the deletion pass:
-
-- Useful: the design helps the user complete the job.
-- Understandable: state, action, and consequence are visible.
-- Honest: visuals do not imply capability, precision, or permanence the product
-  does not have.
-- Unobtrusive: the UI does not compete with the user's work.
-- Long-lasting: patterns are durable, not trend-chasing.
-- Thorough: empty, loading, error, disabled, success, and long-content states
-  are handled.
-- Minimal: remove the element if its absence does not damage meaning or action.
-
-The practical rule is "less, but better": delete until deletion hurts.
-
-## Default Product UI Baseline
-
-When no stronger product, brand, platform, or jurisdictional system applies, use
-IBM Carbon as the generic product/tool reference:
-
-- Grid-first layout.
-- Neutral palette with restrained accents.
-- Compact, scannable density.
-- Clear components over decorative cards.
-- IBM Plex Sans for interface text, Plex Mono for code and technical values, and
-  Plex Serif only for editorial or long-form explanation.
-
-If the work is for government or public-service delivery, start from the
-relevant official design system instead; see `platforms.md`.
+- Spacing: an 8px rhythm for most web app surfaces. Use 4px only for dense
+  internal relationships, and 16, 24, or 32px for larger groups.
+- Density: compact and scannable for tools. Prefer lists, tables, toolbars,
+  and split panes to decorative cards.
+- Fonts: one interface family and one mono family. Add a serif only for
+  editorial or long-form content. Prefer IBM Plex Sans for interface text,
+  Plex Mono for code and technical values, and Plex Serif for long-form
+  explanation. Inter, Geist, SF Pro, and well-tuned system stacks are fine
+  when they better match the product or platform.
+- Frontend framework: SvelteKit for larger apps. Use htmx for small or
+  server-heavy CRUD frontends with thin JavaScript, and Astro for content
+  sites such as marketing pages, blogs, and docs. Use React with Next.js only
+  when the user asks, the repo or team already uses React, or a React-only
+  library is required, and turn on the React Compiler there.
+- Prefer native HTML and CSS to JavaScript where the browser targets allow,
+  such as the `popover` attribute and CSS anchor positioning over Floating
+  UI.
 
 ## Typography
 
-Pair this section with `typography.md`. Swiss modernism supplies the grid,
-alignment, restraint, and product clarity; Bringhurst supplies the reading craft
-inside that structure.
-
-- Use one primary interface family and one mono family. Add a serif only when
-  the content is editorial or long-form.
-- Prefer IBM Plex for generic Consult product/tool UI. Inter, Geist, SF Pro, and
-  well-tuned system stacks are acceptable when they better match the product or
-  platform.
-- Body text should usually sit around 45-75 characters per line. Dense tool
-  surfaces may be shorter; long prose can be wider only with comfortable
-  line-height.
-- Use tabular numbers for metrics, tables, timestamps, money, and aligned
-  technical values.
-- Type scale follows hierarchy, not viewport width. Do not use hero-scale type
-  inside compact panels, dashboards, or form tools.
-- Avoid negative letter spacing. UI text should remain legible at small sizes.
-
-Useful fallback stack:
-
-```css
-font-family:
-  -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu,
-  Cantarell, "Helvetica Neue", Arial, sans-serif;
-```
-
-## Color
-
-- Ship a neutral ramp, one primary accent, and semantic colors for success,
-  warning, error, and info.
-- Use accent color for action and state, not every heading, link, and highlight.
-- Check color in context. The same token changes perceptually depending on its
-  neighbors.
-- Avoid one-note palettes where the entire interface is just variants of one
-  hue.
-- Dark mode should not use pure black or pure white. Use near-black surfaces,
-  softened text, and less chroma for accents.
-- Use WCAG contrast thresholds as the floor; check APCA when dark mode or subtle
-  text is important.
-
-## UX Heuristics That Change Implementation
-
-- Visibility of system status: show loading, saving, queued, failed, and synced
-  states where they matter.
-- Match the user's language: labels and empty states should use domain terms,
-  not implementation terms.
-- User control: provide undo where possible. Use confirmations only for
-  destructive, irreversible, infrequent actions.
-- Consistency: use established platform and product conventions before custom
-  interaction patterns.
-- Error prevention: constrain invalid states instead of only validating after
-  submission.
-- Recognition over recall: keep important options visible near the work.
-- Efficiency: support repeated-use flows with keyboard, stable placement, and
-  low navigation cost.
-- Minimalism: every visible element should help comprehension, trust, or action.
-
-## Motion
-
-Use motion to explain cause and effect, not to decorate:
-
-- Keep most UI transitions under 300ms.
-- Prefer opacity and transform; avoid layout-thrashing animation.
-- Use easing. Linear motion usually feels mechanical.
-- Use small anticipation, stagger, or follow-through only when it clarifies
-  continuity.
-- Respect `prefers-reduced-motion`.
-- Avoid motion that blocks task completion or hides state changes.
+- Type scale follows hierarchy, not viewport width. Do not use hero-scale
+  type inside compact panels, dashboards, or form tools.
+- Do not use negative letter spacing on UI text.
+- Load every weight, style, and script subset the UI uses. Never rely on
+  browser-synthesized bold, italic, or small caps; if the font lacks a
+  style, use another treatment.
+- Set code, identifiers, hashes, shortcuts, and raw technical values in a
+  mono face that tells `I/l/1` and `O/0` apart. Never set a whole interface
+  in mono for style.
+- Use typographic quotes, apostrophes, and en dashes in prose. Keep literal
+  ASCII in code, CLI, config, log, and test examples.
+- Check localized strings and long unbroken tokens such as hashes and URLs.
+  Text must not clip, overlap, or overflow cells, tabs, or sidebars.
 
 ## Common Failure Modes
 
 - Marketing hero used for a tool, dashboard, CRUD app, or admin surface.
-- Oversized cards where a list, table, toolbar, or split pane would be clearer.
+- Oversized cards where a list, table, toolbar, or split pane would be
+  clearer.
 - Empty state still visible when real data exists.
 - Decorative gradients, blobs, or icons added before hierarchy is solved.
-- Every prominent element uses the same accent color.
+- Visuals that imply capability, precision, or permanence the product does
+  not have.
+- A palette that is only variants of one hue, or one accent color on every
+  prominent element. Keep the accent for action and state.
+- Dark mode that keeps light-mode accent chroma. Lower the chroma.
+- Labels and empty states in implementation terms instead of the user's
+  domain terms.
+- A confirmation dialog where undo would work. Confirm only destructive,
+  irreversible, infrequent actions.
+- Validation only after submission where the control could constrain the
+  input instead.
 - Inline backend-rendered HTML plus ad hoc JavaScript for an app that needs a
   real frontend layer.
-- Text, controls, or cards resize unpredictably across responsive states.
-- Buttons, table actions, and filters move between states.
-
-## Sources Worth Remembering
-
-- Josef Muller-Brockmann, `Grid Systems in Graphic Design`.
-- Emil Ruder, `Typographie`.
-- Karl Gerstner, `Designing Programmes`.
-- Dieter Rams, `Ten Principles for Good Design`.
-- Donald Norman, `The Design of Everyday Things`.
-- Nielsen Norman Group, `10 Usability Heuristics`.
-- Dan Saffer, `Microinteractions`.
-- Val Head, `Designing Interface Animation`.
-- IBM Carbon Design System and IBM Plex.
+- Text, controls, or cards that resize unpredictably across responsive
+  states.
+- Buttons, table actions, and filters that move between states.

@@ -47,6 +47,22 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Reference files keep only opinions, traps, and dated facts, following
+  the October reference audit with later decisions on top. References for
+  the kept skills fall from about 34,000 to about 13,000 words. Cut:
+  `api` evolution, data models, and middleware; `database` EXPLAIN and
+  isolation; `code-review` Rust; `proof` data-shape boundaries, recipes, and
+  removals; `release` deprecation and migration; `ui-design` CSS,
+  frameworks, and typography; `workflow` simple-not-easy. Trimmed: the other
+  language guides, `ui-design`, `issue-tracking`, `proof` black-box and
+  test-theater, and `workflow` long-runs. The 25 scaffolding stack presets
+  become one table in `scaffolding/references/stacks.md`. Kept as floors
+  that rules route to: `api` status codes, idempotency, pagination, and
+  webhooks; `database` online DDL; `domain-modeling` money and dates. Two
+  wrong claims went with the trims: webhooks no longer stop retrying on
+  `400`, and the SQLite table-rebuild note no longer loses writes made
+  during the copy.
+
 - Skills no longer carry `## Tripwires` tables. Each row that added
   something, usually a concrete case or an exception, is now a positive
   clause in its rule; rows that restated a rule are gone. The tables were

@@ -1,92 +1,50 @@
 # Online DDL
 
-Deep reference for the `database` skill. When you reach for these is when the
-migration has to ship while the DB keeps serving traffic. The supported defaults
-are SQLite and Postgres.
+Use this file before DDL or a backfill on a table that keeps serving traffic,
+or when configuring SQLite for concurrent writes. The supported defaults are
+Postgres and SQLite.
 
 ## Postgres
 
-- `CREATE INDEX CONCURRENTLY`: builds the index without an exclusive lock.
-  Takes longer but safe on production. Never `CREATE INDEX` without
-  `CONCURRENTLY` on a live table.
-- Always set `lock_timeout` before schema changes:
-  ```sql
-  SET lock_timeout = '2s';
-  ```
-  Stops a runaway DDL from blocking the whole workload.
-- **Retry, don't just timeout.** A bare `lock_timeout` fails loudly but still
-  blocks the deploy. Wrap DDL in a retry loop with a small lock window (GitLab's
-  `with_lock_retries` is the canonical pattern) so the DB keeps serving traffic
-  between attempts.
-- `ALTER TABLE ... ADD COLUMN` with a non-volatile default is metadata-only
-  in PG 11+ (the modern baseline).
-- Volatile defaults (`gen_random_uuid()`, `now()`, `clock_timestamp()`)
-  still rewrite the table. Add the column nullable, backfill in batches, then
-  set the default on future inserts only.
-- On PG < 11, `NOT NULL DEFAULT` rewrites. Two-step:
-  ```sql
-  -- 1. Add nullable.
-  ALTER TABLE t ADD COLUMN c text;
-  -- 2. Backfill in batches.
-  UPDATE t SET c = 'x' WHERE c IS NULL AND id BETWEEN ? AND ?;
-  -- 3. Add NOT NULL via NOT VALID + VALIDATE (cheap lock).
-  ALTER TABLE t ADD CONSTRAINT t_c_notnull CHECK (c IS NOT NULL) NOT VALID;
-  ALTER TABLE t VALIDATE CONSTRAINT t_c_notnull;
-  ```
-- `ALTER TABLE ... ADD FOREIGN KEY` takes a `ShareRowExclusiveLock` on both
-  tables. Use `NOT VALID` then `VALIDATE CONSTRAINT` so the validation scan
-  holds only a share lock.
-- `DROP COLUMN` is cheap and fast (metadata-only; data is reclaimed later via
-  VACUUM).
-- `TRUNCATE` acquires `AccessExclusiveLock`. Cheap on empty tables, lethal on
-  large ones if anything is reading.
+- Set a short `lock_timeout` (such as `2s`) before DDL, and retry the DDL in
+  a loop with a small lock window, as GitLab's `with_lock_retries` does. DDL
+  waiting for its lock blocks every later query on the table, and a bare
+  timeout only fails the deploy.
+- `CREATE INDEX CONCURRENTLY` and `DROP INDEX CONCURRENTLY` cannot run inside
+  a transaction, so turn off the migration tool's wrapping transaction for
+  that step. A failed concurrent build leaves an `INVALID` index; drop it
+  before retrying.
+- Add foreign keys and `CHECK` constraints as `NOT VALID`, then
+  `VALIDATE CONSTRAINT` in a separate step, so the scan holds only a share
+  lock. To make a large column `NOT NULL`, validate a
+  `CHECK (c IS NOT NULL)` first; `SET NOT NULL` then skips the full scan.
+- `ADD COLUMN` with a volatile default such as `gen_random_uuid()` or
+  `clock_timestamp()` rewrites the whole table under an `ACCESS EXCLUSIVE`
+  lock. Add the column without a default (or with a constant one), then
+  backfill. `now()` is stable, not volatile, and does not rewrite.
+- Backfill in key-range batches, each in its own transaction, so a rerun
+  resumes from the last finished batch instead of one long `UPDATE`.
+- Before dropping an index that shows zero scans, observe a full traffic
+  cycle, and keep unique indexes: they enforce uniqueness without counting
+  as scans.
 
 ## SQLite
 
-- SQLite is the right default for embedded, local-first, small, or operationally
-  simple apps. Do not treat it like a horizontally scaled server database.
-- Keep migrations short. DDL takes database-level locks; large rewrites should
-  happen during a maintenance window or be moved to Postgres.
-- Simple `ALTER TABLE ... ADD COLUMN` changes are usually fine. Complex shape
-  changes often require the shadow-table pattern: create the new table, copy in
-  bounded batches, recreate indexes/triggers, verify, then swap.
-- Enable WAL for applications with concurrent readers:
-  ```sql
-  PRAGMA journal_mode = WAL;
-  ```
-- Set a busy timeout through the driver or:
-  ```sql
-  PRAGMA busy_timeout = 5000;
-  ```
-
-## Tooling that enforces these rules
-
-- strong_migrations (Rails / Active Record): blocks migrations that violate
-  zero-downtime rules, with fix-up recipes in the error message.
-- safe-pg-migrations (Doctolib, Rails): wraps every migration in
-  `lock_timeout` + `with_lock_retries`.
-- Django's `atomic=False` migration operations for custom concurrent index
-  creation.
-- sqitch / Flyway for explicit forward + rollback migration scripts when
-  the ORM's opinions are wrong for your workload.
-
-## Rollback rules
-
-- Every migration has a rollback. If it doesn't, the PR isn't reviewable.
-- Destructive steps (DROP, DELETE, TRUNCATE) must have a recovery path: the data
-  must be dual-written elsewhere, or the rollback is "restore from backup". Say
-  which.
-- Test the rollback on staging. "It should rollback cleanly" is not a rollback
-  plan.
-
-## Pre-production rehearsal
-
-Every migration must be rehearsed against a production-sized copy:
-
-- Restore a recent PITR snapshot into a scratch DB.
-- Run the full migration; record wall-clock time.
-- If the migration took >5 min on a table you care about, it is
-  production-hostile: redesign it.
-- Capture `pg_stat_activity` during Postgres migrations, and rehearse SQLite
-  migrations against a copy of the real database file to confirm lock behaviour
-  matches expectation.
+- DDL locks the whole database. Keep migrations short, and run large
+  rewrites in a maintenance window.
+- A table rebuild (create the new table, copy, swap, then recreate indexes
+  and triggers) loses writes made during the copy unless writes stop first.
+  Run it in one transaction or in a maintenance window, never as a batched
+  copy under live traffic.
+- With `foreign_keys=ON`, `DROP TABLE` on the old table runs an implicit
+  delete that fires `ON DELETE CASCADE` on child rows. Turn foreign keys off
+  before the transaction (the pragma does nothing inside one), and run
+  `PRAGMA foreign_key_check` before turning them back on.
+- SQLite allows one writer at a time. Enable WAL
+  (`PRAGMA journal_mode = WAL;`) for concurrent readers, and set
+  `busy_timeout` so brief contention waits instead of failing.
+- Open write transactions with `BEGIN IMMEDIATE`. A deferred transaction
+  that reads and then writes can fail with `SQLITE_BUSY` despite the
+  timeout.
+- Multiple independent writers, such as several app servers or background
+  jobs, call for Postgres. That store change is an `architecture` decision.

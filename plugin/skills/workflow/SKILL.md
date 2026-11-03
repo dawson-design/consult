@@ -103,8 +103,6 @@ rules apply with these.
 
 ## References
 
-- `references/simple-not-easy.md`: load when ceremony, helper layers, or
-  hidden coupling might pass for rigor.
 - `references/plans.md`: load when saving an approved plan or building from
   one.
 - `references/long-runs.md`: load when work spans many steps or independent

@@ -73,6 +73,7 @@ against it.
 ## References
 
 - `references/dates.md`: load when time appears in the diff. Timezone-aware
-  always, UTC storage, ISO 8601 wire format, instant vs wall-clock.
+  instants stored in UTC, wall-clock values as local types, recurring events
+  with their IANA zone, RFC 3339 wire format.
 - `references/money.md`: load when money appears in the diff. Never float,
   amount and currency travel together, ISO 4217, per-currency decimals.

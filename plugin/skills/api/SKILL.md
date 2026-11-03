@@ -39,7 +39,8 @@ description: Adding or changing an HTTP endpoint, handler, status code, response
    params, headers, methods, and endpoints old consumers can ignore may
    change in place, as may a contract marked unstable or one no running
    consumer can see. Use one versioning scheme per service, and never bump it
-   for compatible additions.
+   for compatible additions. Announce a deprecation with the `Deprecation`
+   (RFC 9745) and `Sunset` (RFC 8594) response headers.
 3. Pick the status by where the failure starts. Map dependency failures into
    this API's own error shape; never pass an upstream status or body through.
 
@@ -61,7 +62,8 @@ description: Adding or changing an HTTP endpoint, handler, status code, response
    REST resource API with no established format, default to JSON:API unless a
    domain standard or client interoperability need favors another documented
    choice. New APIs use the chosen model's native error format; document
-   deviations.
+   deviations. A model with no native error format uses RFC 9457 Problem
+   Details. Never claim conformance to a standard the API does not meet.
 5. Middleware is for transport-wide concerns (logging, tracing, rate limits).
    Endpoint-specific validation, ownership checks, privileged authorization,
    and domain invariants stay at the route or domain boundary.
@@ -78,17 +80,14 @@ description: Adding or changing an HTTP endpoint, handler, status code, response
 - `error-handling`: internal failure mapping, timeouts, retries behind the API.
 - `security`: authn/authz, input trust, SSRF, data exposure.
 - `async-systems`: SSE, subscriptions, event streams.
-- `release`: version bumps, `Sunset` and `Deprecation` headers.
+- `release`: version bumps and release notes for a deprecation.
 
 ## References
 
 Load only the one the feature needs:
 
-- `references/api-evolution.md`: evolution rules and versioning strategies.
 - `references/rest-error-status-codes.md`: which codes each endpoint
-  documents, and detail behind the Rule 3 table.
-- `references/data-models.md`: JSON:API default; FHIR, HAL, JSON-LD.
-- `references/middleware-vs-handler.md`: request-pipeline placement.
+  documents, and how to report several failures in one response.
 - `../security/references/web-app.md`: CSRF middleware, security headers, CORS.
 - `../security/references/api-and-auth.md`: handler-level authorization for
   privileged endpoints.

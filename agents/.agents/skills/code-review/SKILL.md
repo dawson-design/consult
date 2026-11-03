@@ -104,7 +104,6 @@ not pre-empt them with justification.
 ## References
 
 - Language reviewer guides, load one per language in the diff:
-  `references/rust.md`, `references/fsharp.md`, `references/csharp.md`,
-  `references/python.md`, `references/typescript.md`, `references/ruby.md`,
-  `references/java.md`, `references/kotlin.md`, `references/bash.md`,
-  `references/sql.md`.
+  `references/fsharp.md`, `references/csharp.md`, `references/python.md`,
+  `references/typescript.md`, `references/ruby.md`, `references/java.md`,
+  `references/kotlin.md`, `references/bash.md`, `references/sql.md`.

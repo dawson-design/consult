@@ -69,9 +69,10 @@ the baseline without local knowledge.
 ## Workflow
 
 1. Detect language, framework, existing conventions, and git state.
-2. Present the Scaffold Decision Gate (Rule 1). Use
-   `references/stacks/index.yaml` when a preset fits; otherwise
-   `references/language-defaults.md` or official sources, naming the fallback.
+2. Present the Scaffold Decision Gate (Rule 1). Pick a preset from
+   `references/stacks.md` when one fits, and apply
+   `references/language-defaults.md`; when neither covers a choice, use
+   official sources and name the fallback.
 3. After approval: git, package manager, standard commands, smoke test, CI,
    README, in that order.
 
@@ -84,5 +85,7 @@ the baseline without local knowledge.
 
 ## References
 
-- `references/stacks/index.yaml`: load when a stack preset may fit.
-- `references/language-defaults.md`: load when no preset fits.
+- `references/stacks.md`: load before recommending a stack for a new
+  project.
+- `references/language-defaults.md`: load when choosing language, runtime,
+  or tooling for the Gate.

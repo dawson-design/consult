@@ -37,7 +37,9 @@ description: Only when asked to prepare a release, or when a project check requi
 3. Classify per release unit. In a monorepo, each library, CLI, plugin
    manifest, or container may have its own stream; lockstep bumps need repo
    policy or user approval. Use the higher plausible bump when compatibility
-   is unclear.
+   is unclear. Treat a surface as public until proven private. A user-facing
+   deprecation or removal names the replacement (or why there is none), the
+   removal version or condition, and migration steps.
 4. Release artifacts move together: manifests, committed lockfile, CHANGELOG
    entry, tag plan, dependency ranges, package metadata, publish order.
    Validate dependency resolution, dry-run packaging, and registry state
@@ -49,10 +51,13 @@ description: Only when asked to prepare a release, or when a project check requi
    trusting it to bump artifacts.
 7. Rollback must be faster than fix-forward and covers data, caches, config,
    and external side effects, not only code. Keep canary or progressive gates
-   or name the equivalent.
+   or name the equivalent. Where a step cannot be rolled back, name it and
+   get explicit human acceptance.
 8. Feature flags default off and carry an owner, expiry, cleanup work, and a
    human-owned production change path. Kill-switches for existing behavior
-   are the exception.
+   are the exception. Compatibility paths (aliases, shims, deprecated
+   surfaces) also carry an owner and a removal condition, unless both paths
+   are intentionally supported.
 
 ## Workflow
 
@@ -62,19 +67,13 @@ description: Only when asked to prepare a release, or when a project check requi
    scripts, changelog, tags, and registry state.
 3. Classify impact and choose the target version per unit.
 4. Edit the approved artifacts together, validate, then plan rollout and
-   rollback with named artifact, environment, operator, and gates. For
-   deprecation or removal, load `references/deprecation-and-migration.md`.
+   rollback with named artifact, environment, operator, and gates.
 
 ## Handoffs
 
-- `api`: HTTP compatibility, `Sunset` and `Deprecation` headers.
+- `api`: HTTP compatibility and deprecation headers.
 - `database`: migration mechanics and production data safety.
 - `observability`: rollout metrics, dashboards, alerts, runbooks.
 - `security`: CI credentials, artifact signing, dependency trust.
 - `git-workflow`: clean version and release commits.
 - `documentation`: migration guides and reference docs.
-
-## References
-
-- `references/deprecation-and-migration.md`: load for deprecation, removal,
-  or sunset work.

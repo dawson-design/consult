@@ -51,4 +51,3 @@ description: Restructuring or untangling code without changing behavior, or befo
 - `commit`: grouping structural and behavioral commits.
 - `domain-modeling`: effects or domain shape.
 - `architecture`: module boundaries, locality, layering.
-- `workflow` `references/simple-not-easy.md`: real coupling vs local ease.
