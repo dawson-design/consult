@@ -6,7 +6,7 @@ description = "Build a small link-shortener app from an empty scaffold; SQLite +
 
 [metadata]
 kind = "code"
-features = ["scaffolding", "architecture", "domain-modeling", "api", "security", "proof", "ui-design"]
+features = ["scaffolding", "architecture", "domain-modeling", "api", "error-handling", "proof", "ui-design"]
 
 # Generous on purpose: an Opus turn at xhigh effort can run long, and a cut-off
 # turn scores the harness, not the agent.

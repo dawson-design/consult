@@ -32,28 +32,28 @@ cases:
     kind: positive
     source: {task: bug-from-symptom}
     code_change: true
-    required_any: [debugging]
-    expect_silent: [contract-first, specify, scaffolding, documentation, api, database, observability, release, async-systems, performance, commit, git-workflow]
+    required_any: [proof]
+    expect_silent: [contract-first, specify, scaffolding, documentation, api, database, release, commit, git-workflow]
 
   - name: proof-first-bugfix
     kind: positive
     source: {task: proof-first-bugfix}
     code_change: true
-    required_any: [proof, debugging]
+    required_any: [proof]
     expect_silent: [release, commit, git-workflow, documentation]
 
   - name: security-boundary-fix
     kind: positive
     source: {task: security-boundary-fix}
     code_change: true
-    required_any: [security]
+    required_any: [proof, domain-modeling]
     expect_silent: [release, commit, git-workflow, documentation]
 
   - name: debugging-regression
     kind: positive
     source: {task: debugging-regression}
     code_change: true
-    required_any: [debugging, security]
+    required_any: [proof, error-handling]
     expect_silent: [release, commit, git-workflow, documentation]
 
   - name: api-error-contract
@@ -68,14 +68,14 @@ cases:
     source: {task: money-field-change}
     code_change: true
     required_any: [contract-first, specify, domain-modeling, api]
-    expect_silent: [scaffolding, documentation, observability, database, async-systems, performance, debugging, refactoring, release, commit, git-workflow]
+    expect_silent: [scaffolding, documentation, database, refactoring, release, commit, git-workflow]
 
   - name: service-from-brief
     kind: positive
     source: {task: service-from-brief}
     code_change: true
     required_any: [specify, scaffolding, api, contract-first]
-    expect_silent: [async-systems, performance, release, refactoring, commit, git-workflow, documentation]
+    expect_silent: [release, refactoring, commit, git-workflow, documentation]
 
   - name: database-release-safety
     kind: positive
@@ -88,7 +88,7 @@ cases:
     kind: positive
     source: {task: observable-async-worker}
     code_change: true
-    required_any: [async-systems, observability]
+    required_any: [error-handling]
     expect_silent: [release, commit, git-workflow, documentation]
 
   - name: accessible-ui-state
@@ -134,17 +134,6 @@ cases:
     expect_silent: [release, commit]
 
   # Positives from small fixtures. Prompts never name Consult or a skill.
-  - name: slow-report
-    kind: positive
-    source: {fixture: slow-report}
-    prompt: >-
-      Exporting the monthly report takes minutes for our larger accounts (about
-      5,000 customers and 50,000 orders). Make `buildReport` in src/report.js fast
-      enough for that size without changing its output.
-    code_change: true
-    required_any: [performance]
-    expect_silent: [release, commit, git-workflow, documentation]
-
   - name: commit-dirty-tree
     kind: positive
     source: {fixture: dirty-tree}
@@ -207,7 +196,7 @@ cases:
       Is `url.parse`, which src/links.js uses, still supported in current Node.js
       releases? Then update the code accordingly.
     code_change: true
-    required_any: [official-source-check]
+    required_any: [proof]
     expect_silent: [release, commit, git-workflow, documentation]
 
   # Negatives: trivial edits and questions. Any Consult load is a false trigger.

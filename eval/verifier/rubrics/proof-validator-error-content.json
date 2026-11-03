@@ -95,7 +95,7 @@
       "id": "boundaries.no_password_echo",
       "dimension": "boundaries",
       "rules": [
-        "security.5"
+        "error-handling.5"
       ],
       "key_phrase": "Secrets never enter source, logs, traces, metrics, errors, or client responses.",
       "question": "Does NOT put the submitted password, or any part of it, into an error message?",

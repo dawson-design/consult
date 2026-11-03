@@ -2,7 +2,7 @@
 
 Facts were checked against GitHub's docs, changelog, and `gh` release notes
 on 2026-10-02. When a command fails, or the host's `gh` is older than
-v2.94.0, recheck with `official-source-check`.
+v2.94.0, recheck the official docs.
 
 ## Map the levels
 

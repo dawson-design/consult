@@ -65,7 +65,7 @@
       "id": "boundaries.allowlist",
       "dimension": "boundaries",
       "rules": [
-        "security.1"
+        "error-handling.2"
       ],
       "key_phrase": "Deny by default",
       "question": "Does `resolveRedirect` return a target only when it is a same-site path or an `https:` URL whose parsed host exactly equals the trusted host, falling back to `/` for everything else, rather than blocking a list of known-bad patterns?",
@@ -79,7 +79,7 @@
       "id": "boundaries.platform_url_parser",
       "dimension": "boundaries",
       "rules": [
-        "security.2"
+        "domain-modeling.4"
       ],
       "key_phrase": "Do not roll your own auth, crypto, token validation, sanitization, CSRF, parsers, or signature schemes.",
       "question": "Are absolute targets parsed with the platform `URL` parser and judged by its parsed `protocol` and host (or `origin`), rather than by regular expressions or string slicing on the raw target?",
@@ -114,7 +114,7 @@
       "id": "proof.bypass_negative_tests",
       "dimension": "proof",
       "rules": [
-        "security.3"
+        "proof.3"
       ],
       "key_phrase": "Every custom guard (sanitizer, validator, prototype guard, redirect check, redaction helper, crypto wrapper) ships with a negative test that fails on the unguarded code and passes with the guard.",
       "question": "Do tests assert that at least two different bypass forms, such as a protocol-relative target (`//host/...`), a non-HTTPS URL for the trusted host, or a script URL (`javascript:...`), each fall back to `/`?",
@@ -128,7 +128,7 @@
       "id": "proof.lookalike_tests",
       "dimension": "proof",
       "rules": [
-        "security.3"
+        "proof.3"
       ],
       "key_phrase": "Every custom guard (sanitizer, validator, prototype guard, redirect check, redaction helper, crypto wrapper) ships with a negative test that fails on the unguarded code and passes with the guard.",
       "question": "Do tests cover look-alike hosts and parser tricks: the trusted host as a prefix or suffix of another host, the trusted host as userinfo (`https://trusted@evil/`), and a backslash form (`/\\host`)?",

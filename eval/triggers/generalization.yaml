@@ -29,18 +29,7 @@ cases:
       you should know." Two more customers reported the same thing today. Can you
       sort it out?
     code_change: true
-    required_any: [debugging]
-    expect_silent: [release, commit, git-workflow, documentation]
-
-  - name: g-slow
-    kind: positive
-    source: {fixture: slow-report}
-    prompt: >-
-      monthly export is timing out for the big accounts (~8k customers, 120k
-      orders). needs to come back in a second or two, same totals and ordering
-      as today
-    code_change: true
-    required_any: [performance]
+    required_any: [proof]
     expect_silent: [release, commit, git-workflow, documentation]
 
   - name: g-new-endpoint
@@ -82,7 +71,7 @@ cases:
       next= parameter pointing at someone else's domain. After logging in, people
       should only ever end up back on our own pages.
     code_change: true
-    required_any: [security]
+    required_any: [proof, domain-modeling]
     expect_silent: [release, commit, git-workflow, documentation]
 
   - name: g-column-change
@@ -134,7 +123,7 @@ cases:
       blip on the provider's side doesn't lose anything, without anyone getting the
       same notification twice?
     code_change: true
-    required_any: [async-systems, error-handling]
+    required_any: [error-handling]
     expect_silent: [release, commit, git-workflow, documentation]
 
   - name: g-design-note
@@ -170,7 +159,7 @@ cases:
 
       Can you get rid of it properly?
     code_change: true
-    required_any: [official-source-check]
+    required_any: [proof]
     expect_silent: [release, commit, git-workflow, documentation]
 
   # Negatives: typo and wording fixes and questions that ask for no change.

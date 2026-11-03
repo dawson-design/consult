@@ -117,7 +117,7 @@
       "polarity": "positive",
       "question": "When the cart or an item fails a check, does `totalCents` refuse to return a total, rather than skipping, zeroing, or clamping the bad item?",
       "rules": [
-        "security.1"
+        "error-handling.2"
       ],
       "tier": "must",
       "yes_when": "Every invalid cart or item leads to an error and no total is returned."

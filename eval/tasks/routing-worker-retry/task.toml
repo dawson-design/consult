@@ -6,7 +6,7 @@ description = "Plan the engineering lenses for a background retry change."
 
 [metadata]
 kind = "routing"
-features = ["workflow", "async-systems", "error-handling", "observability", "proof", "code-review"]
+features = ["workflow", "error-handling", "proof", "code-review"]
 
 [agent]
 timeout_sec = 600.0

@@ -4,7 +4,7 @@ Use before recommending a stack for a new project at the Scaffold Decision
 Gate. Each row is a house starting point; the Gate still asks the user.
 
 - Scaffold with the framework's own generator. Check current versions and
-  generator flags with `official-source-check`.
+  generator flags against the official docs.
 - `api-*` presets are the lightweight start for a language. `web-*` and
   `service-*` presets are heavier frameworks.
 - Ktor, Axum, and Ring + Reitit have no separate service preset. Start at

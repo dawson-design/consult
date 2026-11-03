@@ -60,7 +60,7 @@ description: Before adding or changing a field, signature, schema, CLI flag, eve
 ## Handoffs
 
 - `specify`: unsettled approach or solution direction.
-- `api`, `database`, `async-systems`, `security`: domain boundary risks.
+- `api`, `database`: domain boundary risks.
 - `architecture`: shared package/module/project structure.
 - `proof`: prove the approved interface at the handoff where callers cross
   it; an approved contract without seam proof is unproven.

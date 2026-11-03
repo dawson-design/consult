@@ -198,21 +198,20 @@ Every `SKILL.md` must have:
 
 - Frontmatter with kebab-case `name:` and a trigger-focused `description:`
   no longer than 120 characters, and the pack-wide canonical description total
-  must stay under 2,400 characters, because agents may load every description
-  before selecting a skill body. That ceiling is ~600 tokens of always-loaded
-  routing surface. With `issue-tracking` the pack sits at 2,399, so the next
-  skill needs description cuts elsewhere. The ceiling was raised from 2,000
-  once the validator stopped truncating descriptions at their first inner
-  colon and revealed the pack had been over the old limit all along. Raise it
-  again only with a stated reason.
+  must stay under 2,000 characters, because agents may load every description
+  before selecting a skill body. That ceiling is ~500 tokens of always-loaded
+  routing surface. Deleting six skills brought the pack from 2,399 to 1,766,
+  and the ceiling dropped from 2,400 to 2,000 to keep that gain. Raise it
+  only with a stated reason.
 - No `model:` key in frontmatter. A skill that names a model makes the host
   switch models when it loads, which throws away the prompt cache.
 - Required sections: `## When to Use`, `## When NOT to Use`, `## Rules`.
-- Body budget: 700 words after frontmatter. Raised for two skills, each with
-  a reason recorded next to the constant: 880 for `workflow`, which carries
-  the routing table, sign-off list, and plan-handoff, delegated-model, and
-  build-stage policy; and 810 for `proof`, which carries the
-  fresh-context-review, test-level, and test-oracle policy. Table pipes and
+- Body budget: 700 words after frontmatter. Raised for three skills, each
+  with a reason recorded next to the constant: 880 for `workflow`, which
+  carries the routing table, sign-off list, and plan-handoff,
+  delegated-model, and build-stage policy; 840 for `proof`, which carries the
+  test-level, test-oracle, root-cause, and version-check policy; and 715 for
+  `code-review`, which carries the security pass. Table pipes and
   separator rows do not count. The budget is the regression guard for the
   knowledge-vs-policy rule below. Raise a single skill's budget only with a
   stated reason.

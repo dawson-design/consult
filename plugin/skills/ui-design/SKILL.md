@@ -24,7 +24,6 @@ description: "Frontend UI: forms, components, layout, styling, accessibility, ke
 - Backend API contracts; use `api`.
 - Frontend runtime debugging or tests only; pair with `proof` and browser
   tooling.
-- Performance profiling beyond UI design choices; use `performance`.
 
 ## Rules
 
@@ -66,7 +65,6 @@ description: "Frontend UI: forms, components, layout, styling, accessibility, ke
 
 - `proof`: UI behavior tests and browser-verified flows, including
   accessibility-critical paths.
-- `performance`: measured Core Web Vitals or rendering regressions.
 - `documentation`: design-system usage docs and accessibility statements.
 
 ## References

@@ -125,6 +125,9 @@ class WorkspaceCase(unittest.TestCase):
     def check(self, rule_id: str, traj: cl.Trajectory | None = None, meta: dict | None = None) -> float:
         return cr.CHECKS[rule_id](self.ws, traj or trajectory(), meta or self.meta)
 
+    def part(self, fn, traj: cl.Trajectory | None = None) -> float:
+        return fn(self.ws, traj or trajectory(), self.meta)
+
 
 def run_git(ws: Path, *args: str) -> None:
     subprocess.run(["git", "-C", str(ws), *args], check=True, capture_output=True)
@@ -195,60 +198,71 @@ class DebuggingTests(WorkspaceCase):
         'import { double } from "../src/a.js";\ntest("double", () => assert.equal(double(2), 4));\n'
     )
 
-    def test_debugging_1_passes_when_a_command_fails_before_the_fix(self):
+    def test_reproduction_passes_when_a_command_fails_before_the_fix(self):
         traj = trajectory(codex_command("t", "node repro.js", 1), codex_patch("p", "Update File: /app/src/a.js"))
-        self.assertEqual(self.check("debugging.1", traj), 1.0)
+        self.assertEqual(self.part(cr.reproduced_before_fix, traj), 1.0)
 
-    def test_debugging_1_passes_on_a_new_failing_test_before_the_fix(self):
+    def test_reproduction_passes_on_a_new_failing_test_before_the_fix(self):
         traj = trajectory(
             claude_write("t", "test/a.test.js"), claude_bash("r", "npm test", True), claude_write("f", "src/a.js")
         )
-        self.assertEqual(self.check("debugging.1", traj), 1.0)
+        self.assertEqual(self.part(cr.reproduced_before_fix, traj), 1.0)
 
-    def test_debugging_1_passes_on_a_failing_one_liner_with_an_arrow(self):
+    def test_reproduction_passes_on_a_failing_one_liner_with_an_arrow(self):
         repro = codex_command(
             "t", "node -e \"import('./src/a.js').then(m => process.exit(m.double(2) === 4 ? 0 : 1))\"", 1
         )
-        self.assertEqual(self.check("debugging.1", trajectory(repro, codex_patch("p", "Update File: src/a.js"))), 1.0)
+        self.assertEqual(
+            self.part(cr.reproduced_before_fix, trajectory(repro, codex_patch("p", "Update File: src/a.js"))), 1.0
+        )
 
-    def test_debugging_1_ignores_failed_exploration_commands_and_passing_tests(self):
+    def test_reproduction_ignores_failed_exploration_commands_and_passing_tests(self):
         traj = trajectory(
             codex_command("g", "grep -rn structuredClone src", 1),
             claude_write("t", "test/a.test.js"),
             claude_bash("r", "npm test", False),
             claude_write("f", "src/a.js"),
         )
-        self.assertEqual(self.check("debugging.1", traj), 0.0)
+        self.assertEqual(self.part(cr.reproduced_before_fix, traj), 0.0)
 
-    def test_debugging_1_fails_when_the_fix_comes_first(self):
+    def test_reproduction_fails_when_the_fix_comes_first(self):
         traj = trajectory(codex_patch("p", "Update File: src/a.js"), codex_command("t", "npm test", 1))
-        self.assertEqual(self.check("debugging.1", traj), 0.0)
+        self.assertEqual(self.part(cr.reproduced_before_fix, traj), 0.0)
 
-    def test_debugging_1_ignores_scratch_repro_writes(self):
+    def test_proof_2_fails_when_the_fix_comes_first(self):
+        traj = trajectory(codex_patch("p", "Update File: src/a.js"), codex_command("t", "npm test", 1))
+        self.assertEqual(self.check("proof.2", traj), 0.0)
+
+    def test_reproduction_ignores_scratch_repro_writes(self):
         traj = trajectory(claude_write("s", "repro.js"), claude_write("f", "src/a.js"))
-        self.assertEqual(self.check("debugging.1", traj), 0.0)
+        self.assertEqual(self.part(cr.reproduced_before_fix, traj), 0.0)
 
-    def test_debugging_5_passes_when_the_test_fails_before_and_passes_after(self):
+    def test_proof_2_passes_when_a_failing_repro_precedes_a_fix_its_test_proves(self):
         self.write_files({"src/a.js": "export const double = (n) => n * 2;\n", "test/a.test.js": self.test_file})
-        self.assertEqual(self.check("debugging.5"), 1.0)
+        traj = trajectory(codex_command("t", "node repro.js", 1), codex_patch("p", "Update File: /app/src/a.js"))
+        self.assertEqual(self.check("proof.2", traj), 1.0)
 
-    def test_debugging_5_fails_when_the_test_passes_on_the_scaffold(self):
+    def test_regression_test_passes_when_the_test_fails_before_and_passes_after(self):
+        self.write_files({"src/a.js": "export const double = (n) => n * 2;\n", "test/a.test.js": self.test_file})
+        self.assertEqual(self.part(cr.regression_test_flips), 1.0)
+
+    def test_regression_test_fails_when_the_test_passes_on_the_scaffold(self):
         self.write_files(
             {
                 "src/a.js": "export const double = (n) => n * 2;\n",
                 "test/a.test.js": self.test_file.replace("double(2), 4", "typeof double, 'function'"),
             }
         )
-        self.assertEqual(self.check("debugging.5"), 0.0)
+        self.assertEqual(self.part(cr.regression_test_flips), 0.0)
 
-    def test_debugging_5_is_inconclusive_when_the_scaffold_cannot_load_the_test(self):
+    def test_regression_test_is_inconclusive_when_the_scaffold_cannot_load_the_test(self):
         self.write_files(
             {
                 "src/a.js": "export const double = (n) => n * 2;\nexport const triple = (n) => n * 3;\n",
                 "test/a.test.js": self.test_file.replace("{ double }", "{ double, triple }"),
             }
         )
-        self.assertEqual(self.check("debugging.5"), 0.0)
+        self.assertEqual(self.part(cr.regression_test_flips), 0.0)
 
 
 class DocumentationAndWorkflowTests(WorkspaceCase):

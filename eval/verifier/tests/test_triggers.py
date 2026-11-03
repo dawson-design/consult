@@ -33,7 +33,7 @@ PLUGIN_SKILLS = ["deep-research", "code-review", *(f"consult:{n}" for n in sorte
 CALL_IDS = itertools.count()
 
 
-def case(kind="positive", required=("debugging",), silent=("release",), code_change=True, name="c"):
+def case(kind="positive", required=("proof",), silent=("release",), code_change=True, name="c"):
     return triggers.Case(
         name=name,
         kind=kind,
@@ -111,23 +111,21 @@ def record(events, kase=None, arm="plugin", **kwargs):
 
 class TranscriptScoringTests(unittest.TestCase):
     def test_a_skill_call_before_the_first_write_is_on_time(self):
-        trial = record([init(), skill("consult:workflow"), skill("consult:debugging"), write(), result()])
-        self.assertEqual(
-            [(l["skill"], l["on_time"]) for l in trial["loads"]], [("workflow", True), ("debugging", True)]
-        )
+        trial = record([init(), skill("consult:workflow"), skill("consult:proof"), write(), result()])
+        self.assertEqual([(l["skill"], l["on_time"]) for l in trial["loads"]], [("workflow", True), ("proof", True)])
         self.assertTrue(trial["workflow_on_time"])
         self.assertTrue(trial["required_hit"])
         self.assertEqual(trial["first_write"], 2)
 
     def test_a_skill_call_after_the_first_write_does_not_count(self):
-        trial = record([init(), write(), skill("consult:workflow"), skill("consult:debugging"), result()])
+        trial = record([init(), write(), skill("consult:workflow"), skill("consult:proof"), result()])
         self.assertEqual([l["on_time"] for l in trial["loads"]], [False, False])
         self.assertFalse(trial["workflow_on_time"])
         self.assertFalse(trial["required_hit"])
 
     def test_the_consult_prefix_is_optional(self):
-        trial = record([init(skills=sorted(NAMES)), skill("workflow"), skill("/consult:debugging"), result()])
-        self.assertEqual([l["skill"] for l in trial["loads"]], ["workflow", "debugging"])
+        trial = record([init(skills=sorted(NAMES)), skill("workflow"), skill("/consult:proof"), result()])
+        self.assertEqual([l["skill"] for l in trial["loads"]], ["workflow", "proof"])
 
     def test_a_skill_outside_the_catalog_is_ignored(self):
         trial = record([init(), skill("simplify"), skill("debug"), skill("consult:nonsense"), result()])
@@ -173,12 +171,12 @@ class TranscriptScoringTests(unittest.TestCase):
             [
                 init(),
                 call("Read", file_path="/opt/consult-plugin/skills/workflow/SKILL.md"),
-                call("Bash", command="cat /logs/agent/sessions/skills/debugging/SKILL.md"),
+                call("Bash", command="cat /logs/agent/sessions/skills/proof/SKILL.md"),
                 call("Read", file_path="/app/skills/unknown/SKILL.md"),
                 result(),
             ]
         )
-        self.assertEqual([l["skill"] for l in trial["loads"]], ["workflow", "debugging"])
+        self.assertEqual([l["skill"] for l in trial["loads"]], ["workflow", "proof"])
 
     def test_a_bash_write_ends_the_on_time_window(self):
         trial = record(
@@ -186,7 +184,7 @@ class TranscriptScoringTests(unittest.TestCase):
                 init(),
                 call("Bash", command="npm test"),
                 call("Bash", command="sed -i 's/a/b/' src/x.js"),
-                skill("consult:debugging"),
+                skill("consult:proof"),
                 result(),
             ]
         )
@@ -199,7 +197,7 @@ class TranscriptScoringTests(unittest.TestCase):
         self.assertTrue(trial["any_load"])
 
     def test_off_target_lists_expect_silent_loads(self):
-        trial = record([init(), skill("consult:release"), skill("consult:debugging"), result()])
+        trial = record([init(), skill("consult:release"), skill("consult:proof"), result()])
         self.assertEqual(trial["off_target"], ["release"])
 
     def test_the_record_keeps_run_facts_and_the_hook(self):
@@ -374,14 +372,14 @@ class MetricsTests(unittest.TestCase):
         self.assertIsNone(triggers.wilson(0, 0, 0.90))
 
     def test_an_arm_that_meets_every_threshold_passes(self):
-        trials = [positive_trial(["consult:workflow", "consult:debugging"]) for _ in range(6)]
+        trials = [positive_trial(["consult:workflow", "consult:proof"]) for _ in range(6)]
         trials += [negative_trial([], name=f"n{i}") for i in range(12)]
         metrics = triggers.arm_metrics(trials, THRESHOLDS, 0.90)
         self.assertEqual([metrics[m]["verdict"] for m in triggers.METRICS], ["pass", "pass", "pass"])
         self.assertEqual(metrics["overall"], "pass")
 
     def test_recall_below_its_threshold_fails(self):
-        trials = [positive_trial(["consult:workflow", "consult:debugging"]) for _ in range(4)]
+        trials = [positive_trial(["consult:workflow", "consult:proof"]) for _ in range(4)]
         trials += [positive_trial([]), negative_trial([])]
         metrics = triggers.arm_metrics(trials, THRESHOLDS, 0.90)
         self.assertEqual((metrics["workflow_recall"]["hits"], metrics["workflow_recall"]["n"]), (4, 5))
@@ -390,7 +388,7 @@ class MetricsTests(unittest.TestCase):
 
     def test_workflow_recall_counts_only_code_changing_positives(self):
         trials = [
-            positive_trial(["consult:workflow", "consult:debugging"]),
+            positive_trial(["consult:workflow", "consult:proof"]),
             positive_trial(["consult:commit"], required=("commit",), code_change=False),
         ]
         metrics = triggers.arm_metrics(trials, THRESHOLDS, 0.90)
@@ -400,14 +398,14 @@ class MetricsTests(unittest.TestCase):
     def test_a_negative_that_triggers_in_two_attempts_fails_the_arm(self):
         trials = [negative_trial([], name=f"quiet{i}") for i in range(30)]
         trials += [negative_trial(["consult:workflow"], name="loud"), negative_trial(["consult:workflow"], name="loud")]
-        trials += [positive_trial(["consult:workflow", "consult:debugging"])]
+        trials += [positive_trial(["consult:workflow", "consult:proof"])]
         metrics = triggers.arm_metrics(trials, THRESHOLDS, 0.90)
         self.assertEqual(metrics["false_trigger_rate"]["verdict"], "pass")
         self.assertEqual(metrics["failing_negative_cases"], ["loud"])
         self.assertEqual(metrics["overall"], "fail")
 
     def test_error_trials_are_excluded_and_counted(self):
-        trials = [positive_trial(["consult:workflow", "consult:debugging"]), record([]), negative_trial([])]
+        trials = [positive_trial(["consult:workflow", "consult:proof"]), record([]), negative_trial([])]
         metrics = triggers.arm_metrics(trials, THRESHOLDS, 0.90)
         self.assertEqual(metrics["errors"], 1)
         self.assertEqual(metrics["narrow_recall"]["n"], 1)
@@ -415,7 +413,7 @@ class MetricsTests(unittest.TestCase):
     def test_a_negative_that_loads_before_an_api_error_still_counts(self):
         errored = [negative_trial(["consult:workflow"], name="run-tests", reason="api_error") for _ in range(2)]
         trials = errored + [negative_trial([], name=f"quiet{i}") for i in range(10)]
-        trials += [positive_trial(["consult:workflow", "consult:debugging"]) for _ in range(6)]
+        trials += [positive_trial(["consult:workflow", "consult:proof"]) for _ in range(6)]
         metrics = triggers.arm_metrics(trials, THRESHOLDS, 0.90)
         self.assertEqual([t["outcome"] for t in errored], ["error", "error"])
         self.assertEqual((metrics["false_trigger_rate"]["hits"], metrics["false_trigger_rate"]["n"]), (2, 12))
@@ -431,20 +429,20 @@ class MetricsTests(unittest.TestCase):
         self.assertIn("| false_trigger_rate | 1/24 | 4% | 1% to 17% | <= 8% | pass | no |", report_for(trials))
 
     def test_an_arm_with_no_negatives_is_incomplete(self):
-        metrics = triggers.arm_metrics([positive_trial(["consult:workflow", "consult:debugging"])], THRESHOLDS, 0.90)
+        metrics = triggers.arm_metrics([positive_trial(["consult:workflow", "consult:proof"])], THRESHOLDS, 0.90)
         self.assertEqual(metrics["false_trigger_rate"]["verdict"], "no data")
         self.assertEqual(metrics["overall"], "incomplete")
 
     def test_the_report_has_a_row_per_case_with_loads_in_order(self):
         trials = [
-            positive_trial(["consult:workflow", "consult:debugging"], name="bug"),
-            record([init(), write(), skill("consult:debugging"), result()], kase=case(name="bug")),
+            positive_trial(["consult:workflow", "consult:proof"], name="bug"),
+            record([init(), write(), skill("consult:proof"), result()], kase=case(name="bug")),
             negative_trial(["consult:workflow"], name="typo"),
         ]
         for attempt, trial in enumerate(trials[:2], start=1):
             trial["attempt"] = attempt
         report = report_for(trials)
-        self.assertIn("| bug | positive | 2 | 1/2 | 1/2 | - | workflow > debugging / debugging* |", report)
+        self.assertIn("| bug | positive | 2 | 1/2 | 1/2 | - | workflow > proof / proof* |", report)
         self.assertIn("| typo | negative | 1 | - | - | 1/1 | workflow |", report)
         self.assertIn("| false_trigger_rate | 1/1 | 100% |", report)
 
@@ -494,7 +492,7 @@ class CasesFileTests(unittest.TestCase):
                 "kind": "positive",
                 "source": {"task": "no-such-task"},
                 "code_change": True,
-                "required_any": ["debugging"],
+                "required_any": ["proof"],
             },
             {
                 "name": "b",
@@ -601,7 +599,7 @@ class RunSuiteTests(unittest.TestCase):
     """main with Docker stubbed: bug-from-symptom (positive) and readme-typo (negative), one attempt per arm."""
 
     # Events per arm outcome, keyed by whether the case is a positive.
-    GOOD = {True: [init(), skill("consult:workflow"), skill("consult:debugging"), write()], False: [init(), result()]}
+    GOOD = {True: [init(), skill("consult:workflow"), skill("consult:proof"), write()], False: [init(), result()]}
     MISSED = {True: [init(), write()], False: [init(), result()]}
     ERRORED = {True: [init(), result(reason="api_error")], False: [init(), result(reason="api_error")]}
 

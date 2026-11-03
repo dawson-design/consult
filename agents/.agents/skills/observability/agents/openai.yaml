@@ -1,4 +1,0 @@
-interface:
-  display_name: "Consult: Observability"
-  short_description: "Instrument services and alerts"
-  default_prompt: "Use $observability to add structured semantic logs, metrics, traces, and alert guidance with bounded cardinality and safe payload rules."

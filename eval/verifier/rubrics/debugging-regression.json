@@ -75,8 +75,7 @@
       "id": "boundaries.guard_every_level",
       "dimension": "boundaries",
       "rules": [
-        "core.7",
-        "security.1"
+        "core.7"
       ],
       "key_phrase": "Treat input that crosses a trust boundary as untrusted, even when the request does not mention security.",
       "question": "Is the prototype-key guard applied at every nesting level, so that a parsed patch such as `{\"preferences\": {\"__proto__\": {\"polluted\": true}}}` cannot change `Object.prototype` or the prototype of any object in the result?",
@@ -104,7 +103,7 @@
       "id": "proof.guard_negative_test",
       "dimension": "proof",
       "rules": [
-        "security.3"
+        "proof.3"
       ],
       "key_phrase": "ships with a negative test that fails on the unguarded code and passes with the guard",
       "question": "Is there a test that merges a patch built with `JSON.parse` containing a `__proto__` key and asserts that neither `Object.prototype` nor the result's prototype gained the attacker's property?",
@@ -118,7 +117,7 @@
       "id": "proof.nested_guard_test",
       "dimension": "proof",
       "rules": [
-        "security.3"
+        "proof.3"
       ],
       "key_phrase": "Every custom guard (sanitizer, validator, prototype guard, redirect check, redaction helper, crypto wrapper) ships with a negative test",
       "question": "Does a test send a prototype key below the top level, such as `__proto__` inside `preferences`, and assert that no prototype changed?",
@@ -149,9 +148,9 @@
       "id": "report.cause_named",
       "dimension": "report",
       "rules": [
-        "debugging.4"
+        "proof.2"
       ],
-      "key_phrase": "The root cause is named in one sentence",
+      "key_phrase": "Name the root cause in one sentence",
       "question": "Does the final message name the cause: the shallow spread `{ ...existing, ...patch }` replaced a whole nested object, such as `preferences`, with the patch's partial version?",
       "polarity": "positive",
       "tier": "quality",

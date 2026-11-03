@@ -140,6 +140,24 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Removed
 
+- Six skills are gone: `security`, `debugging`, `performance`,
+  `observability`, `async-systems`, and `official-source-check`. Evals
+  showed no lift from them, and the maintainer had not seen them change
+  Claude's work. Their surviving policy moved: custom-guard negative tests,
+  version checks against official docs, and the atomic root-cause fix go to
+  `proof`; no hand-rolled auth, crypto, or parsers to `domain-modeling`
+  Rule 4; deny by default, fail closed, and allowlist redaction to
+  `error-handling`; the dependency audit and secrets scan to `code-review`;
+  and polling or SSE before a streaming platform to new `architecture`
+  Rule 6. The two `debugging` checks become one `proof.2` check: a failing
+  reproduction before the fix, and a regression test that fails before and
+  passes after. Eval tasks, trigger cases, and rubric items that named the
+  deleted skills now name the skill that holds the rule. The description
+  ceiling drops from 2,400 to 2,000 characters, and the pack is at 1,766.
+  `error-handling` now loads for auth, permissions, and secrets work, and
+  `architecture` for live-update transport choices, so the moved rules are
+  reached.
+
 - Core rule 1, "Consult sets the engineering bar, and the host owns the
   mechanics", is gone, and rules 2-9 are now 1-8. It was the only core rule
   about Consult rather than the code, and it asked the agent to weigh

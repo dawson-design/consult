@@ -2,7 +2,7 @@
 
 Facts were checked against Atlassian's docs, developer changelogs, and
 pricing page on 2026-10-02. When a command fails, recheck with
-`official-source-check`.
+the official docs.
 
 ## Use the site's words
 

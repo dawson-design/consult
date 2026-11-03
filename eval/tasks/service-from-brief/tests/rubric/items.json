@@ -203,7 +203,7 @@
       "polarity": "positive",
       "question": "Is there a test that submits a `javascript:` URL or another non-http(s) target and asserts that it is refused?",
       "rules": [
-        "security.3"
+        "proof.3"
       ],
       "tier": "must",
       "yes_when": "A test sends at least one script-scheme or otherwise non-http(s) target and checks the rejection."

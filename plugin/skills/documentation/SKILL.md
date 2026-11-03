@@ -47,5 +47,4 @@ description: "Only when asked to write or update docs for existing code: READMEs
 ## Handoffs
 
 - `api`: OpenAPI and wire-contract design.
-- `observability`: alert and runbook signal definitions.
 - `release`: CHANGELOG, release notes, migration notes, version manifests.

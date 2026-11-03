@@ -117,10 +117,10 @@ def package_scripts(workspace: Path) -> dict:
     return json.loads(package.read_text()).get("scripts") or {} if package.exists() else {}
 
 
-# debugging
+# proof (bug fixes)
 
 
-def debugging_1(workspace: Path, trajectory: cl.Trajectory, meta: dict) -> float:
+def reproduced_before_fix(workspace: Path, trajectory: cl.Trajectory, meta: dict) -> float:
     """Reproduce before fixing: a failing run of the code (a test or an interpreter) before the first code edit."""
     first_fix = cl.first_seq(trajectory, lambda c: writes_matching(c, is_code))
     if first_fix is None:
@@ -128,7 +128,7 @@ def debugging_1(workspace: Path, trajectory: cl.Trajectory, meta: dict) -> float
     return 1.0 if any(is_failed_repro(c) for c in trajectory.calls if c.seq < first_fix) else 0.0
 
 
-def debugging_5(workspace: Path, trajectory: cl.Trajectory, meta: dict) -> float:
+def regression_test_flips(workspace: Path, trajectory: cl.Trajectory, meta: dict) -> float:
     """The regression test fails on the scaffold's source and passes on the fix."""
     changed = [p for p in cl.changed_paths(workspace) if (workspace / p).is_file()]
     tests = [p for p in changed if cl.classify(p) == "test"]
@@ -144,6 +144,13 @@ def debugging_5(workspace: Path, trajectory: cl.Trajectory, meta: dict) -> float
     if INCONCLUSIVE_RE.search(output):
         return 0.0
     return 0.0 if passes_before else 1.0
+
+
+def proof_2(workspace: Path, trajectory: cl.Trajectory, meta: dict) -> float:
+    """A bug fix starts from a failing reproduction, and its regression test fails before the fix and passes after."""
+    if not reproduced_before_fix(workspace, trajectory, meta):
+        return 0.0
+    return regression_test_flips(workspace, trajectory, meta)
 
 
 def run_on_scaffold_source(workspace: Path, sha: str, fixed: list[str], command: str) -> tuple[bool, str]:
@@ -300,9 +307,8 @@ CHECKS = {
     "api.1": api_1,
     "api.2": api_2,
     "api.3": api_3,
-    "debugging.1": debugging_1,
-    "debugging.5": debugging_5,
     "documentation.1": documentation_1,
+    "proof.2": proof_2,
     "domain-modeling.7": signoff_score,
     "domain-modeling.8": domain_modeling_8,
     "scaffolding.1": scaffolding_1,

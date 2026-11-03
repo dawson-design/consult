@@ -18,6 +18,7 @@ description: "Deciding where code or logic should live: module boundaries, layer
 - Choosing API style or data store family before a specialist skill designs
   the details.
 - Deciding whether DDD tactical patterns are worth their cost.
+- Choosing a transport for live updates or event streams.
 - Reviewing code where one behavior is scattered across many files for no
   technical reason.
 
@@ -48,6 +49,11 @@ description: "Deciding where code or logic should live: module boundaries, layer
 5. DDD patterns (aggregates, repositories, factories, domain services) and
    bounded contexts are used only when they protect a real invariant,
    workflow, or a word that means different things in different places.
+6. For user-facing live updates, start with polling, SSE, or WebSockets.
+   Adopt Kafka, Kinesis, or Redis Streams only after naming the requirement
+   the simpler transport cannot meet, such as independent replay, long
+   retention, offline catch-up, or multi-service fanout, and record it with
+   the choice.
 
 ## Handoffs
 

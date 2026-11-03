@@ -58,20 +58,20 @@ class SkillDetectionTests(unittest.TestCase):
         self.assertEqual(set(cl.CONSULT_SKILLS), on_disk)
 
     def test_a_skill_path_seen_only_in_a_tool_result_is_not_counted(self):
-        listing = "/root/.claude/skills/workflow/SKILL.md\n/root/.claude/skills/debugging/SKILL.md"
+        listing = "/root/.claude/skills/workflow/SKILL.md\n/root/.claude/skills/proof/SKILL.md"
         step = call_step("Bash", {"command": "find / -name SKILL.md"}, listing)
         self.assertEqual(skills_read(step), [])
 
     def test_an_installed_skill_that_claude_code_loaded_is_counted(self):
         steps = [
             *skill_file_load("workflow", f"{INSTALLED_SKILLS}/workflow"),
-            *skill_file_load("debugging", f"{INSTALLED_SKILLS}/debugging"),
+            *skill_file_load("proof", f"{INSTALLED_SKILLS}/proof"),
         ]
-        self.assertEqual(skills_read(*steps), ["debugging", "workflow"])
+        self.assertEqual(skills_read(*steps), ["proof", "workflow"])
 
     def test_a_consult_plugin_skill_load_is_counted(self):
-        plugin_dir = "/root/.claude/plugins/cache/consult/consult/15.2.0/skills/debugging"
-        self.assertEqual(skills_read(*skill_file_load("consult:debugging", plugin_dir)), ["debugging"])
+        plugin_dir = "/root/.claude/plugins/cache/consult/consult/15.2.0/skills/proof"
+        self.assertEqual(skills_read(*skill_file_load("consult:proof", plugin_dir)), ["proof"])
 
     def test_a_skill_outside_the_catalog_is_not_counted(self):
         plugin_dir = "/root/.claude/plugins/cache/frontend-design/frontend-design/1.0.0/skills/frontend-design"

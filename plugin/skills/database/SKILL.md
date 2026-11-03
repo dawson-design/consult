@@ -19,7 +19,6 @@ description: Migrations, schema changes, indexes, queries, transactions, or lock
 
 - API contract design; use `api`.
 - Rollout sequencing outside the database; pair with `release`.
-- Cache freshness and invalidation; use `performance`.
 
 ## Rules
 
@@ -53,11 +52,6 @@ description: Migrations, schema changes, indexes, queries, transactions, or lock
 
 - `contract-first`: schema and migration approval.
 - `release`: deploy ordering, rollback rehearsal, feature flags.
-- `performance`: measured query latency or throughput change.
-- `observability`: migration and query dashboards and alerts.
-- `async-systems`: stream or worker consumers after durable handoff.
-- `security`: load before adding columns that store credentials, secrets,
-  tokens, MFA factors, recovery codes, or sensitive PII.
 
 ## References
 

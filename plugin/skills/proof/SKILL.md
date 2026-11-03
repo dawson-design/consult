@@ -30,19 +30,22 @@ not count until you can say which criterion each test proves.
 
 - Edits that change no behavior: formatting, typos, comments, and renames or
   moves that tooling confirms.
-- A bug whose cause is not pinned down: `debugging` first.
-- Design, naming, structure: `code-review`. Benchmarks: `performance`. Test
+- Design, naming, structure: `code-review`. Test
   runner setup: `scaffolding`.
 
 ## Rules
 
 1. Anything else you report as true, such as a root cause, an invariant, or
    unchanged behavior, also needs a check. Report anything without one as
-   `unproven` and name the missing evidence.
+   `unproven` and name the missing evidence. A claim about version-specific
+   library, framework, or API behavior is checked against the installed
+   version and its official docs, because model memory is not evidence; name
+   the source.
 2. A bug fix starts with a test that reproduces the bug and fails. Name
    the root cause in one sentence that explains every symptom, fix it until
-   that test passes, and keep the test in the suite. A refactor needs the
-   same checks passing before and after.
+   that test passes, and keep the test in the suite. The fix is one atomic
+   change aimed at that cause. A refactor needs the same checks passing
+   before and after.
 3. Each test asserts a business rule from the acceptance criteria or spec,
    with expected values taken from there, not from the code. A test that
    would still pass if the rule were wrong proves nothing, such as one that
@@ -50,7 +53,10 @@ not count until you can say which criterion each test proves.
    choose the level that shows it most directly (unit for pure domain logic,
    integration for real dependencies, black-box for behavior across the
    system) and say why. Where the type checker enforces a criterion exactly,
-   it is the check; test the rules the types do not enforce.
+   it is the check; test the rules the types do not enforce. Every custom
+   guard (sanitizer, validator, prototype guard, redirect check, redaction
+   helper, crypto wrapper) ships with a negative test that fails on the
+   unguarded code and passes with the guard.
 4. Use the real code a test calls; mock only the network and filesystem, or
    write down why. Fix the clock, random values, and generated IDs so the
    same input gives the same output. Do not test the framework or the
@@ -80,12 +86,10 @@ not count until you can say which criterion each test proves.
 
 - `specify`: acceptance criteria from an agreed design.
 - `domain-modeling`: invariants that make invalid states unrepresentable.
-- `debugging`: proof that hinges on root-cause evidence.
 - `api`: tests of a public API contract.
 - `refactoring`: before/after evidence, and tests that are hard to place
   because the code is tangled.
 - `error-handling`: an unsettled error shape the proof must assert.
-- `security`: abuse cases or trust-boundary checks.
 
 ## References
 
