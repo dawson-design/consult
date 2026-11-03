@@ -128,7 +128,9 @@ CANONICAL_APPROVAL_SENTENCE = "An approving design or RFC approves the direction
 # Retired in the slim-down: trigger tables mostly restated their rule and quoted the
 # bad reasoning. A rule carries its own exception as a positive clause.
 RETIRED_TRIGGER_SECTIONS = ["Tripwires", "Common Rationalizations", "Red Flags"]
-TRIGGER_TABLE_RE = re.compile(r"^\|\s*(?:Trigger\s*\|\s*Do this instead|Excuse\s*\|\s*Reality)\s*\|", re.MULTILINE)
+# Any table with a "Do this instead" column, or the older Excuse/Reality header,
+# in a SKILL.md body or a reference file.
+TRIGGER_TABLE_RE = re.compile(r"^\|[^\n]*\|\s*Do this instead\s*\||^\|\s*Excuse\s*\|\s*Reality\s*\|", re.MULTILINE)
 RETIRED_TRIGGER_FIX = "fold any exception into its rule under ## Rules as a positive clause"
 NO_MANIFEST_HOOKS = "must not declare hooks; the Consult SessionStart hook lives in plugin/hooks/hooks.json"
 GENERATOR_COMMAND = "python3 scripts/generate_plugin_symlinks.py"
@@ -422,10 +424,19 @@ def validate_symlinks(skills_dir: str) -> list[Finding]:
     return [Finding(link, [problem]) for link, problem in problems if problem]
 
 
+def reference_problems(text: str) -> list[str]:
+    """Return the em-dash and retired-trigger-table problems in one reference file."""
+    problems = [EM_DASH_PROBLEM] if EM_DASH in text else []
+    if TRIGGER_TABLE_RE.search(text):
+        problems.append(f"obsolete table header: {RETIRED_TRIGGER_FIX}")
+    return problems
+
+
 def validate_skill_references(skill_dir: str) -> list[Finding]:
-    """Report each Markdown file under the skill's references/ that holds an em dash."""
-    paths = walk_files(os.path.join(skill_dir, "references"))
-    return [Finding(path, [EM_DASH_PROBLEM]) for path in paths if path.endswith(".md") and EM_DASH in read_text(path)]
+    """Report each Markdown file under the skill's references/ with an em dash or a trigger table."""
+    paths = [path for path in walk_files(os.path.join(skill_dir, "references")) if path.endswith(".md")]
+    findings = ((path, reference_problems(read_text(path))) for path in paths)
+    return [Finding(path, problems) for path, problems in findings if problems]
 
 
 def skill_names(skills_dir: str) -> list[str]:

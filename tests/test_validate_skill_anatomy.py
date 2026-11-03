@@ -420,6 +420,14 @@ class SkillAnatomyTests(ValidatorTestCase):
         self.assert_fails_with(result, "tripwires/SKILL.md", "obsolete section: ## Tripwires")
         self.assert_fails_with(result, "loose-table/SKILL.md", "obsolete table header")
 
+    def test_rejects_a_trigger_table_in_a_reference_file(self) -> None:
+        skill = make_skill(self.skills_dir, "good", GOOD_SKILL)
+        (skill / "references").mkdir()
+        table = "| Trap | Do this instead | Exception |\n|---|---|---|\n| A trap. | Do it. | None. |\n"
+        (skill / "references/traps.md").write_text("# Traps\n\n" + table, encoding="utf8")
+
+        self.assert_fails_with(self.validate(), "good/references/traps.md", "obsolete table header")
+
     def test_rejects_em_dashes_and_drifted_approval_sentences(self) -> None:
         skill = make_skill(self.skills_dir, "dashy", EM_DASH_SKILL)
         (skill / "references").mkdir()

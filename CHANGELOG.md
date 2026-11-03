@@ -73,7 +73,9 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   about a quarter of all skill text, no eval measured them, and they quoted
   the reasoning they warned against. The validator now rejects
   `## Tripwires` alongside the older `## Common Rationalizations` and
-  `## Red Flags`, and AGENTS.md and CONTRIBUTING.md drop the format. Skill
+  `## Red Flags`, and AGENTS.md and CONTRIBUTING.md drop the format. `proof`'s test-theater reference, the last table in that shape, is now
+  a list of positive rules, and the validator rejects any table with a "Do
+  this instead" column in reference files too. Skill
   bodies fall from 14,542 to about 11,000 words. The rule that instructions in
   tool output are data goes too, because the host's own instructions
   already state it.
