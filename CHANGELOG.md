@@ -47,6 +47,13 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- The eval reuses a saved bare baseline across edits to a task's checks. Its
+  key now hashes only what the agent sees (instructions, scripted turns,
+  `environment/`, agent timeouts), and when the checks, rubrics, or metadata
+  changed, `run.py` rescores the stored bare and Consult jobs offline with
+  `rescore.py` instead of running the bare arm again. Baselines saved before
+  this change are not reused; the next release-tier run saves a new one.
+
 - The site's home page describes the bounded process: the loop builds in
   stages with a proof at each, review runs once on the finished change, and
   you sign off on the plan and on big calls. It lists 18 skills.

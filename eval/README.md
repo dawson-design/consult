@@ -84,9 +84,19 @@ uv run scripts/run.py --tier fast                          # after editing a ski
   the consult arm only, 3 attempts, without the judge. It reuses the bare arm
   of `release-claude-code` and compares its Consult arm with the baseline's.
 
-A baseline is reused only when the agent, model, effort, CLI version, and a
-hash of every selected task directory match. Otherwise `run.py` prints the
-reason and runs the bare arm. `--baseline` and `--save-baseline` name a
+A baseline is reused when the agent, model, effort, CLI version, and what the
+agent sees in each selected task match: instructions, scripted turns,
+`environment/`, and agent timeouts. Editing a task's checks (`tests/`,
+rubrics, `[metadata]`, verifier settings) keeps the baseline: `run.py`
+rescores the stored bare and Consult jobs offline with `rescore.py`, which
+calls no model, and compares against the rescored copies. Judge scores keep
+the baseline's rubric until `rescore.py --rejudge` updates them, which bills
+the subscription, so a judged run against such a baseline compares old-rubric
+bare scores with new-rubric Consult scores. A trial that cannot be rescored
+shows as failed in the lift report. If the rescore cannot run at all (Docker
+down, a build failing), `run.py` runs the bare arm instead. The stored key is
+not updated, so later runs rescore again until a new baseline is saved. When
+what the agent sees changes, `run.py` prints the reason and runs the bare arm. `--baseline` and `--save-baseline` name a
 baseline explicitly.
 
 The fast tier catches skill-loading failures and large regressions. With 3
