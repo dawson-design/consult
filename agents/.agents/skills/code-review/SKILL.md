@@ -11,7 +11,7 @@ description: Reviewing a diff, branch, or PR for bugs, regressions, missing test
 
 ## When to Use
 
-- Independent review of your diff in the `workflow` completion loop, after
+- Independent review of your diff at `workflow` step 5, after
   `proof` and before saying done. Default for any non-trivial
   agent-generated change.
 - Diff review: local, branch, or a GitHub PR through the host's GitHub tools.

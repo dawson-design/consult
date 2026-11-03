@@ -8,7 +8,7 @@ behavior slices, a removal or rename, or a phased schema rollout.
 - Stages order the build of one change. They are not folders, modules, or
   code layers; `architecture` owns code structure.
 - When the plan splits the work into behavior slices, each slice runs its own
-  stages and gates.
+  stages, and any Rule 2 gates the plan left open.
 - A removal takes out each consumer before the thing it consumes. A rename
   adds the new name, moves readers to it, then removes the old name, as
   `refactoring` and `database` phase it.
@@ -21,14 +21,15 @@ behavior slices, a removal or rename, or a phased schema rollout.
 | Contracts | The contract source validates. Black-box tests written from it fail first, then pass, for each response the shell produces without transformation logic, such as input rejection, auth failures, not-found, and plain reads and writes. | Tests that pass against a stub. A new endpoint whose valid response needs transformation logic gets its valid path and its tests in the transformations stage; until then that path returns an explicit not-implemented error that no test asserts. An existing endpoint keeps its current valid response until the transformations stage changes it. |
 | Transformations | Black-box tests through the contract, with expected outputs from the spec, for each endpoint whose valid response the logic computes. Earlier stages' tests stay green unchanged. | Editing an earlier stage's test to fit the logic. |
 
-## Review at each stage
+## Review after the last stage
 
-Each stage's fresh-context review gets that stage's diff and scope. The last
-stage's review gets the whole diff and every acceptance criterion.
-Documentation and release wait for the last stage.
+Each stage gets its proof before the next one starts. The fresh-context
+review runs once, after the last stage, on the whole diff and every
+acceptance criterion (`workflow` step 5). Documentation and release wait for
+the last stage.
 
 ## Handoffs
 
 - `proof`: the checks each stage owes.
-- `contract-first` and `domain-modeling`: the shapes each gate approves.
+- `contract-first` and `domain-modeling`: the shapes a Rule 2 gate approves.
 - `database`: phased rollout and migration safety.

@@ -46,9 +46,9 @@ description: A new service or feature from a brief, or a design choice with open
    to approve, revise, or rule it out. Put smaller doubts in notes. Ask
    questions that block the design now, not in code review.
 5. In a design doc, mark each contract and data shape approved, proposed, or
-   pending. Mark it pending when the `workflow` Rule 4 stages before it are
-   not built yet, even if the user agreed to it. It stays pending until that
-   stage's sign-off.
+   pending. A shape the user approved in the design or plan stays approved
+   through every stage. Mark it pending when an earlier stage changes it,
+   and get sign-off again before building it (`workflow` Rule 4).
 6. Ask before writing a spike (throwaway code that answers a design
    question). Keep it local and small, and delete or rewrite it once the
    design is agreed.
