@@ -47,6 +47,10 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- The site's home page describes the bounded process: the loop builds in
+  stages with a proof at each, review runs once on the finished change, and
+  you sign off on the plan and on big calls. It lists 18 skills.
+
 - Reference files keep only opinions, traps, and dated facts, following
   the October reference audit with later decisions on top. References for
   the kept skills fall from about 34,000 to about 13,000 words. Cut:
