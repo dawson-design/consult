@@ -384,19 +384,19 @@ class SignoffTests(WorkspaceCase):
         self.write_files({"docs/plans/brief.md": "# Plan\n"})
         traj = trajectory(user("brief"), agent("Here is the plan. Approve?"))
         self.assertEqual(cr.signoff_mode(self.ws, traj, self.meta), "stopped")
-        self.assertEqual(self.check("domain-modeling.10", traj), 1.0)
+        self.assertEqual(self.check("domain-modeling.7", traj), 1.0)
 
     def test_provisional_build_that_is_flagged_passes(self):
         self.write_files({"src/money.js": "//\n"})
         traj = trajectory(user("brief"), agent("I built a provisional version pending your approval."))
         self.assertEqual(cr.signoff_mode(self.ws, traj, self.meta), "provisional")
-        self.assertEqual(self.check("domain-modeling.10", traj), 1.0)
+        self.assertEqual(self.check("domain-modeling.7", traj), 1.0)
 
     def test_silent_build_fails(self):
         self.write_files({"src/money.js": "//\n"})
         traj = trajectory(user("brief"), agent("Done."))
         self.assertEqual(cr.signoff_mode(self.ws, traj, self.meta), "built")
-        self.assertEqual(self.check("domain-modeling.10", traj), 0.0)
+        self.assertEqual(self.check("domain-modeling.7", traj), 0.0)
 
     def test_specs_and_notes_are_not_gated(self):
         self.write_files({"docs/specs/links.md": "#\n", "NOTES.md": "#\n"})

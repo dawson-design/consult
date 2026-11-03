@@ -4,7 +4,7 @@
       "id": "structure.separate_phases",
       "dimension": "structure",
       "rules": [
-        "database.3"
+        "database.2"
       ],
       "key_phrase": "Destructive or tightening changes ship as separate deployable expand-contract phases",
       "question": "Is the rollout split into separately runnable phases, with adding the `email` column and building the unique index (and any step that attaches a constraint) in different migration files, and do the notes give the order to run them?",
@@ -18,7 +18,7 @@
       "id": "structure.concurrent_runs_alone",
       "dimension": "structure",
       "rules": [
-        "database.4"
+        "database.3"
       ],
       "key_phrase": "Index and constraint creation uses the target engine's online mechanism.",
       "question": "Does each `CREATE INDEX CONCURRENTLY` or `DROP INDEX CONCURRENTLY` sit in a file with no other schema statement that a migration runner would wrap in the same transaction, or is the file clearly marked to run outside a transaction?",
@@ -32,7 +32,7 @@
       "id": "structure.rollback_per_phase",
       "dimension": "structure",
       "rules": [
-        "database.9"
+        "database.5"
       ],
       "key_phrase": "Rollback and backup/PITR coverage for the blast radius are documented with the change.",
       "question": "Does each forward phase have its own rollback that reverses only that phase, with the notes giving the rollback order?",
@@ -63,7 +63,7 @@
       "id": "boundaries.lock_timeout",
       "dimension": "boundaries",
       "rules": [
-        "database.4"
+        "database.3"
       ],
       "key_phrase": "Review the migration SQL and its lock behavior directly",
       "question": "Do the `ALTER TABLE` statements on `customers` run with a short `lock_timeout` (or the notes say to set one), so a lock that waits behind a long transaction fails fast instead of queueing writes behind it?",
@@ -77,7 +77,7 @@
       "id": "boundaries.invalid_index_recovery",
       "dimension": "boundaries",
       "rules": [
-        "database.9"
+        "database.5"
       ],
       "key_phrase": "Rollback and backup/PITR coverage for the blast radius are documented with the change.",
       "question": "Do the operator notes say that a failed `CREATE UNIQUE INDEX CONCURRENTLY` (for example from duplicate emails) leaves an invalid index behind, how to detect it, and that it must be dropped before a retry?",
@@ -91,7 +91,7 @@
       "id": "boundaries.phase_verification",
       "dimension": "boundaries",
       "rules": [
-        "database.3"
+        "database.2"
       ],
       "key_phrase": "expand, migrate, verify, switch, contract",
       "question": "Do the operator notes give a concrete check to run after each phase before starting the next, such as confirming the column exists, that the new index is valid, and that the constraint is attached?",
@@ -105,7 +105,7 @@
       "id": "boundaries.duplicates_checked",
       "dimension": "boundaries",
       "rules": [
-        "database.3"
+        "database.2"
       ],
       "key_phrase": "expand, migrate, verify, switch, contract",
       "question": "Do the notes or migrations give a check for duplicate non-null emails before the unique index build, and say what the operator should do when it finds some?",
@@ -155,7 +155,7 @@
       "id": "report.engine_unproven",
       "extends": "report.unproven_named",
       "rules": [
-        "database.4"
+        "database.3"
       ],
       "key_phrase": "verify engine-specific DDL against the target engine",
       "tier": "must",

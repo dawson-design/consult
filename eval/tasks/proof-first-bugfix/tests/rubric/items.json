@@ -10,7 +10,7 @@
       "question": "Does `totalCents` always return a whole number of cents, rounding explicitly when SAVE10 applies to a subtotal that is not a multiple of 10 (for example 999 cents)?",
       "rules": [
         "domain-modeling.1",
-        "domain-modeling.11"
+        "domain-modeling.8"
       ],
       "tier": "must",
       "yes_when": "The discounted total is computed in integer cents, or rounded to an integer with `Math.round`, `Math.floor`, or similar, so no fraction of a cent can be returned."
@@ -154,7 +154,7 @@
       "dimension": "proof",
       "extends": "proof.regression_test",
       "id": "proof.discount_regression",
-      "key_phrase": "A bug fix needs a regression test that fails before the fix, passes after, and stays in the suite.",
+      "key_phrase": "A bug fix starts with a test that reproduces the bug and fails.",
       "look_at": "Test files the diff adds or changes, compared with the original code",
       "no_when": "No test applies SAVE10, or the SAVE10 test's expected value matches what the original code returned.",
       "polarity": "positive",
@@ -218,7 +218,7 @@
       "polarity": "negative",
       "question": "Does NOT edit, skip, weaken, or delete an existing test, unless the request changed the behavior it tests?",
       "rules": [
-        "proof.9"
+        "proof.8"
       ],
       "tier": "must",
       "yes_when": "Existing tests are unchanged, each change follows a behavior change the request made, or a test of internals is replaced by a test of the same rule."
@@ -248,7 +248,7 @@
       "polarity": "positive",
       "question": "For each of the request's requirements, does the final message say whether it was checked and how, or say that it was not checked?",
       "rules": [
-        "proof.11"
+        "proof.9"
       ],
       "tier": "must",
       "yes_when": "Every requirement is covered, in any wording or format, with how it was checked or a plain statement that it was not."

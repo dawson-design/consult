@@ -37,7 +37,7 @@
       "polarity": "positive",
       "question": "Is copying a dashboard still done by the one `snapshot` function that `save`, `load`, and `duplicate` use, without a second dashboard copy routine in `src/store.js`?",
       "rules": [
-        "refactoring.7"
+        "refactoring.4"
       ],
       "tier": "quality",
       "yes_when": "All dashboard copies go through `snapshot`."
@@ -110,7 +110,7 @@
       "polarity": "negative",
       "question": "Does NOT add a hand-written general-purpose deep-clone function when the runtime's `structuredClone` (Node 17 and later; the task image runs Node 22) does the job?",
       "rules": [
-        "code-review.6"
+        "code-review.5"
       ],
       "tier": "quality",
       "yes_when": "The copy uses `structuredClone`, or copies the dashboard's known levels directly without a generic recursive cloner."
@@ -119,7 +119,7 @@
       "dimension": "proof",
       "extends": "proof.regression_test",
       "id": "proof.reported_path",
-      "key_phrase": "A bug fix needs a regression test that fails before the fix, passes after, and stays in the suite.",
+      "key_phrase": "A bug fix starts with a test that reproduces the bug and fails.",
       "look_at": "Test files the diff adds or changes, compared with the original code",
       "no_when": "No test follows that path (for example there is only a unit test of `snapshot`), or the test would pass on the original code.",
       "polarity": "positive",
@@ -133,7 +133,7 @@
     {
       "dimension": "proof",
       "id": "proof.other_leaks",
-      "key_phrase": "A bug fix needs a regression test that fails before the fix, passes after, and stays in the suite.",
+      "key_phrase": "A bug fix starts with a test that reproduces the bug and fails.",
       "look_at": "Test files the diff adds or changes",
       "no_when": "Only the duplicate path is tested.",
       "polarity": "positive",
@@ -169,7 +169,7 @@
       "polarity": "negative",
       "question": "Does NOT edit, skip, weaken, or delete an existing test, unless the request changed the behavior it tests?",
       "rules": [
-        "proof.9"
+        "proof.8"
       ],
       "tier": "must",
       "yes_when": "Existing tests are unchanged, each change follows a behavior change the request made, or a test of internals is replaced by a test of the same rule."
@@ -199,7 +199,7 @@
       "polarity": "positive",
       "question": "For each of the request's requirements, does the final message say whether it was checked and how, or say that it was not checked?",
       "rules": [
-        "proof.11"
+        "proof.9"
       ],
       "tier": "must",
       "yes_when": "Every requirement is covered, in any wording or format, with how it was checked or a plain statement that it was not."

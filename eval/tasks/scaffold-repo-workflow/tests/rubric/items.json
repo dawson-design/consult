@@ -81,7 +81,7 @@
       "polarity": "positive",
       "question": "Does `README.md` give the local setup steps and all three verification commands as `package.json` defines them (`npm test`, `npm run typecheck`, `npm run lint`)?",
       "rules": [
-        "documentation.5"
+        "documentation.4"
       ],
       "tier": "must",
       "yes_when": "The README says how to set up locally and lists each of the three commands, and each one matches a script in `package.json`."
@@ -95,7 +95,7 @@
       "polarity": "positive",
       "question": "Does `README.md` say that `npm run typecheck` needs TypeScript's `tsc`, which the package does not install, and how a maintainer gets it?",
       "rules": [
-        "documentation.5"
+        "documentation.4"
       ],
       "tier": "quality",
       "yes_when": "The README names TypeScript as a prerequisite for `typecheck` and says how to install it, or `package.json` itself lists `typescript` so the README's install step provides it."
@@ -153,7 +153,7 @@
       "polarity": "negative",
       "question": "Does NOT edit, skip, weaken, or delete an existing test, unless the request changed the behavior it tests?",
       "rules": [
-        "proof.9"
+        "proof.8"
       ],
       "tier": "must",
       "yes_when": "Existing tests are unchanged, each change follows a behavior change the request made, or a test of internals is replaced by a test of the same rule."
@@ -198,7 +198,7 @@
       "polarity": "positive",
       "question": "For each of the request's requirements, does the final message say whether it was checked and how, or say that it was not checked?",
       "rules": [
-        "proof.11"
+        "proof.9"
       ],
       "tier": "must",
       "yes_when": "Every requirement is covered, in any wording or format, with how it was checked or a plain statement that it was not."

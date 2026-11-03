@@ -94,9 +94,9 @@
       "id": "boundaries.spec_matches_code",
       "dimension": "boundaries",
       "rules": [
-        "api.9"
+        "api.1"
       ],
-      "key_phrase": "Source-of-truth docs are updated",
+      "key_phrase": "in the OpenAPI spec",
       "question": "Does `openapi.yaml` describe the new money field and any new request field with the same names, types, and units the code uses?",
       "polarity": "positive",
       "tier": "must",

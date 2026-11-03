@@ -63,7 +63,7 @@
       "id": "boundaries.email_checked_before_success",
       "dimension": "boundaries",
       "rules": [
-        "ui-design.8"
+        "ui-design.7"
       ],
       "key_phrase": "Forms have explicit labels, grouped controls, errors tied to fields, and no placeholder-only instructions.",
       "question": "Is the email checked before the success message is shown, so an empty or malformed address gets an error tied to the email field instead of \"Subscribed\"?",
@@ -109,7 +109,7 @@
       "id": "report.manual_checks_named",
       "dimension": "report",
       "rules": [
-        "ui-design.9"
+        "ui-design.8"
       ],
       "key_phrase": "Remaining gaps are recorded as explicit blockers or deferred work, never left implicit.",
       "question": "Does the final message say whether the form was tried with a keyboard and a screen reader, and, if not, list those checks as still to be done?",

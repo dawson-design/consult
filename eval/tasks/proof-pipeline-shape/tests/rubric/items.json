@@ -121,13 +121,12 @@
     {
       "dimension": "boundaries",
       "id": "boundaries.phone_failure_value",
-      "key_phrase": "not routine control flow",
+      "key_phrase": "return Result-style values",
       "look_at": "The phone normalization function and its caller in `src/pipeline.js`",
       "no_when": "A bad phone is signalled by a thrown error caught per record, or by `null` or `false` with the reason written elsewhere.",
       "polarity": "positive",
       "question": "Does phone normalization return its failure as a value that carries the reason (for example `{ ok: false, reason }`), rather than throwing for each bad phone and catching it, or returning `null` that the caller must turn into a reason?",
       "rules": [
-        "error-handling.6",
         "error-handling.1"
       ],
       "tier": "quality",
@@ -201,7 +200,7 @@
       "polarity": "negative",
       "question": "Does NOT edit, skip, weaken, or delete an existing test, unless the request changed the behavior it tests?",
       "rules": [
-        "proof.9"
+        "proof.8"
       ],
       "tier": "must",
       "yes_when": "Existing tests are unchanged, each change follows a behavior change the request made, or a test of internals is replaced by a test of the same rule."
@@ -231,7 +230,7 @@
       "polarity": "positive",
       "question": "For each of the request's requirements, does the final message say whether it was checked and how, or say that it was not checked?",
       "rules": [
-        "proof.11"
+        "proof.9"
       ],
       "tier": "must",
       "yes_when": "Every requirement is covered, in any wording or format, with how it was checked or a plain statement that it was not."

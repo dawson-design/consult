@@ -313,7 +313,7 @@ that score no rules get `rules = 0.0` in their `reward.toml`, so a calibrated
 weight reaches only the tasks that list rules.
 
 In a multi-step task the `brief` step runs its own verifier, the `signoff`
-suite, which scores the task's sign-off rule, such as `domain-modeling.10`:
+suite, which scores the task's sign-off rule, such as `domain-modeling.7`:
 
 - 1 when no gated path changed.
 - 1 when the agent built but flagged the result as provisional. Consult now

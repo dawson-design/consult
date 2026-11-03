@@ -12,7 +12,7 @@ description: "How code fails: error types, error messages and responses, validat
 ## When to Use
 
 - Designing or reviewing typed errors, Result/Either flows, domain error
-  boundaries, wrapping, retries, remote-call failures, panics, user-facing
+  boundaries, wrapping, retries, remote-call failures, user-facing
   errors, or swallowed failures.
 
 ## When NOT to Use
@@ -23,9 +23,11 @@ description: "How code fails: error types, error messages and responses, validat
 
 ## Rules
 
-1. Failure is part of the function contract. Expected failures are typed
-   (named exception classes, discriminated unions, structured `Result`
-   variants), never bare strings or anonymous generic errors.
+1. Failure is part of the function contract. Expected failures are typed.
+   Follow the project's convention (named exception classes, discriminated
+   unions); where it has none, return Result-style values, because the
+   caller's type then shows every way the call can fail. Never bare strings
+   or anonymous generic errors.
 2. Catch only where you can decide: recover, translate, retry, or terminate.
    Every catch does one of those or re-raises with context, preserving the
    original cause.
@@ -39,9 +41,7 @@ description: "How code fails: error types, error messages and responses, validat
 5. User-facing errors are actionable and expose no stack traces, SQL, file
    paths, hostnames, secrets, or auth-enumeration clues. Diagnostic detail
    stays reachable by correlation ID.
-6. Panics and assertions are for impossible states and process boundaries,
-   not routine control flow.
-7. Every public operation that can fail has at least one failure-path test.
+6. Every public operation that can fail has at least one failure-path test.
 
 ## Tripwires
 
