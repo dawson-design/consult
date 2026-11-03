@@ -51,8 +51,8 @@ description: Only when asked to prepare a release, or when a project check requi
    trusting it to bump artifacts.
 7. Rollback must be faster than fix-forward and covers data, caches, config,
    and external side effects, not only code. Keep canary or progressive gates
-   or name the equivalent. Name any step that cannot be rolled back and get
-   explicit human acceptance.
+   or name the equivalent. Where a step cannot be rolled back, name it and
+   get explicit human acceptance.
 8. Feature flags default off and carry an owner, expiry, cleanup work, and a
    human-owned production change path. Kill-switches for existing behavior
    are the exception. Compatibility paths (aliases, shims, deprecated
@@ -71,7 +71,7 @@ description: Only when asked to prepare a release, or when a project check requi
 
 ## Handoffs
 
-- `api`: HTTP compatibility, `Sunset` and `Deprecation` headers.
+- `api`: HTTP compatibility and deprecation headers.
 - `database`: migration mechanics and production data safety.
 - `observability`: rollout metrics, dashboards, alerts, runbooks.
 - `security`: CI credentials, artifact signing, dependency trust.

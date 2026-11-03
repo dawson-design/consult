@@ -16,7 +16,7 @@ listed on an endpoint that cannot produce it hides the codes that matter.
 | Requires authentication | `401` with a `WWW-Authenticate` header. |
 | Applies permissions or ownership | `403`, or `404` when the resource's existence must stay hidden from this consumer. |
 | Addresses a resource by id | `404`. A collection endpoint returns an empty list, not `404`. |
-| Can conflict with current state (unique keys, versions, idempotency replays) | `409`. |
+| Can conflict with current state (unique keys, versions, an idempotency key reused with a different body) | `409`. |
 | Enforces a rate or quota limit | `429`. |
 | Can refuse work itself (maintenance, load shedding, an open circuit breaker) or calls an upstream service | `503`. |
 | Calls an upstream service | `502`, `504`. |

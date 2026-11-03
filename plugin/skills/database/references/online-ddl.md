@@ -18,6 +18,10 @@ Postgres and SQLite.
   `VALIDATE CONSTRAINT` in a separate step, so the scan holds only a share
   lock. To make a large column `NOT NULL`, validate a
   `CHECK (c IS NOT NULL)` first; `SET NOT NULL` then skips the full scan.
+- `ADD COLUMN` with a volatile default such as `gen_random_uuid()` or
+  `clock_timestamp()` rewrites the whole table under an `ACCESS EXCLUSIVE`
+  lock. Add the column without a default (or with a constant one), then
+  backfill. `now()` is stable, not volatile, and does not rewrite.
 - Backfill in key-range batches, each in its own transaction, so a rerun
   resumes from the last finished batch instead of one long `UPDATE`.
 - Before dropping an index that shows zero scans, observe a full traffic
@@ -28,9 +32,14 @@ Postgres and SQLite.
 
 - DDL locks the whole database. Keep migrations short, and run large
   rewrites in a maintenance window.
-- A table rebuild (create the new table, copy, swap) loses writes made
-  during the copy unless writes stop first. Run it in one transaction or in
-  a maintenance window, never as a batched copy under live traffic.
+- A table rebuild (create the new table, copy, swap, then recreate indexes
+  and triggers) loses writes made during the copy unless writes stop first.
+  Run it in one transaction or in a maintenance window, never as a batched
+  copy under live traffic.
+- With `foreign_keys=ON`, `DROP TABLE` on the old table runs an implicit
+  delete that fires `ON DELETE CASCADE` on child rows. Turn foreign keys off
+  before the transaction (the pragma does nothing inside one), and run
+  `PRAGMA foreign_key_check` before turning them back on.
 - SQLite allows one writer at a time. Enable WAL
   (`PRAGMA journal_mode = WAL;`) for concurrent readers, and set
   `busy_timeout` so brief contention waits instead of failing.

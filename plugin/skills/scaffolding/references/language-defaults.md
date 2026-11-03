@@ -15,6 +15,22 @@ chosen. They apply with or without a stack preset from `stacks.md`.
 - When a TypeScript runner is needed (decorators, legacy TS features), use
   `tsx`. Do not reach for `ts-node`.
 
+## Python
+
+- Use uv for environments, dependencies, and the lockfile, not Poetry or
+  pip-tools. Ruff for lint and format; mypy or pyright for `typecheck`.
+
+## .NET and JVM
+
+- .NET: Central Package Management (`Directory.Packages.props`) for
+  versions.
+- JVM: Gradle with the Kotlin DSL over Maven for new projects.
+
+## Docs sites
+
+- MkDocs with Material for a project docs site, unless the repo already has
+  one.
+
 ## Native builds (.NET and JVM)
 
 - Leave Native AOT and GraalVM native image off unless startup time or

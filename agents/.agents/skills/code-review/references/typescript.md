@@ -26,8 +26,8 @@ Route deeper modeling questions to `domain-modeling`.
 
 - `strict` and `noUncheckedIndexedAccess` are blockers when missing from a
   new `tsconfig.json`.
-- `exactOptionalPropertyTypes` is on by default. Defer it only at seams with
-  loosely typed third-party code.
+- Turn on `exactOptionalPropertyTypes` in new projects; `strict` does not
+  enable it. Defer it only at seams with loosely typed third-party code.
 - New projects require `verbatimModuleSyntax`. Without it, esbuild, swc, and
   Babel cannot reliably elide type-only imports.
 - Projects that target type-stripping runtimes need `erasableSyntaxOnly`.

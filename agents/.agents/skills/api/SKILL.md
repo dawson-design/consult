@@ -39,7 +39,8 @@ description: Adding or changing an HTTP endpoint, handler, status code, response
    params, headers, methods, and endpoints old consumers can ignore may
    change in place, as may a contract marked unstable or one no running
    consumer can see. Use one versioning scheme per service, and never bump it
-   for compatible additions.
+   for compatible additions. Announce a deprecation with the `Deprecation`
+   (RFC 9745) and `Sunset` (RFC 8594) response headers.
 3. Pick the status by where the failure starts. Map dependency failures into
    this API's own error shape; never pass an upstream status or body through.
 
@@ -79,7 +80,7 @@ description: Adding or changing an HTTP endpoint, handler, status code, response
 - `error-handling`: internal failure mapping, timeouts, retries behind the API.
 - `security`: authn/authz, input trust, SSRF, data exposure.
 - `async-systems`: SSE, subscriptions, event streams.
-- `release`: version bumps, `Sunset` and `Deprecation` headers.
+- `release`: version bumps and release notes for a deprecation.
 
 ## References
 
