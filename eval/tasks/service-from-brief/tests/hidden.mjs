@@ -41,9 +41,18 @@ async function startApp(port) {
   throw new Error("app did not start on PORT");
 }
 
+// Post as the app's own page would in a browser. A browser sends Origin and
+// Sec-Fetch-Site on a same-origin form post, and a CSRF guard that checks them
+// is correct, so a bare script post must not be the only shape tried.
 async function post(base, route, shape, url) {
   const { type, body } = shape(url);
-  return fetch(base + route, { method: "POST", headers: { "content-type": type, accept: "application/json, text/html" }, body, redirect: "manual" });
+  const headers = {
+    "content-type": type,
+    accept: "application/json, text/html",
+    origin: base,
+    "sec-fetch-site": "same-origin",
+  };
+  return fetch(base + route, { method: "POST", headers, body, redirect: "manual" });
 }
 
 // "our proxy sets `PORT`" fixes the port, not the host: a link on localhost or BASE_URL/PUBLIC_URL is this app.
