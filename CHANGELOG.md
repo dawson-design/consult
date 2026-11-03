@@ -60,9 +60,10 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   an approval as settling open choices, never as adding scope.
   `sync_tests.py --check` fails on a code task without follow-up turns unless
   it states a `single_turn` reason. Only the report judge reads the agent's
-  earlier replies, as one report across turns; a code judge reads none except
-  a brief task's approved proposal. A question in any turn counts as an
-  interruption, except before the approval on a brief task.
+  earlier replies, as one report across turns, and it now checks a brief
+  task's build against the approved proposal; code judges read none of the
+  agent's messages. A question in any turn counts as an interruption, except
+  before the approval on a brief task.
 - `rescore.py` checks for a changed task environment against the last commit
   that touched it, not file times, so a fresh checkout can rescore old runs.
 - The README groups the skills by the kind of work: process and proof, design,

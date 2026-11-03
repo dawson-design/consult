@@ -305,16 +305,49 @@ def _injected_skill_names(step: dict) -> list[str]:
     return SKILL_BASE_DIR_RE.findall(message if isinstance(message, str) else json.dumps(message))
 
 
-def question_message_count(trajectory: Trajectory, proposal_turn: bool = False) -> int:
+# A multi-step task's judge instruction: "## Turn N: <step>" then that turn's user message.
+TURN_RE = re.compile(r"^## Turn (\d+): (\S+)\n\n(.*?)(?=^## Turn \d+: |\Z)", re.MULTILINE | re.DOTALL)
+
+
+def same_start(step: dict, text: str) -> bool:
+    """The user step's message opens with the turn's instruction (whitespace-insensitive)."""
+    wanted = " ".join(text.split())[:200]
+    return bool(wanted) and " ".join(str(step.get("message") or "").split()).startswith(wanted)
+
+
+def turn_starts(steps: list[dict], instruction: str) -> list[int]:
+    """The step index where each turn of a multi-step task begins, matched by the turn's own text.
+
+    Skill loads, task notifications, and subagent prompts are user steps too,
+    so a turn is found by its message, not by being the last user step. A turn
+    not found ends the list.
+    """
+    starts, after = [], -1
+    for _, _, text in TURN_RE.findall(instruction):
+        found = next(
+            (i for i, s in enumerate(steps) if i > after and s.get("source") == "user" and same_start(s, text)), None
+        )
+        if found is None:
+            break
+        starts.append(found)
+        after = found
+    return starts
+
+
+def question_message_count(trajectory: Trajectory, proposal_turn: bool = False, instruction: str = "") -> int:
     """Agent messages that end on a question, in every turn.
 
-    On a task whose first turn asks for a proposal (consult.json
-    proposal_turn), the questions before the approval are the ones the task
-    wants, so only messages after the last user step count. On any other
-    task a question in an earlier turn is still an interruption.
+    On a brief task (consult.json proposal_turn), a question before the
+    approval is the sign-off gate working, so only messages from the second
+    turn on count; instruction (the
+    judge's turn-by-turn instruction.md) locates that turn. On any other task
+    a question in an earlier turn is still an interruption.
     """
     users = [i for i, s in enumerate(trajectory.steps) if s.get("source") == "user"]
-    boundary = trajectory.last_user_step if proposal_turn else (users[0] if users else -1)
+    boundary = users[0] if users else -1
+    if proposal_turn:
+        starts = turn_starts(trajectory.steps, instruction)
+        boundary = starts[1] if len(starts) > 1 else trajectory.last_user_step
     messages = [
         str(s.get("message") or "")
         for i, s in enumerate(trajectory.steps)

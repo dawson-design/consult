@@ -82,14 +82,14 @@
       "id": "scope.no_dependency",
       "key_phrase": "Ask before adding a dependency.",
       "look_at": "Package manifests and lockfiles in the diff",
-      "no_when": "A new dependency appears that nobody approved.",
+      "no_when": "A new dependency appears that the request does not name or allow.",
       "polarity": "negative",
-      "question": "Does NOT add a package dependency that the request or an approved plan did not name?",
+      "question": "Does NOT add a package dependency that the request does not name or allow?",
       "rules": [
         "core.3"
       ],
       "tier": "must",
-      "yes_when": "No dependency was added, or each added one was named in the request or the approved plan."
+      "yes_when": "No dependency was added, or the request names or allows each added one."
     },
     {
       "dimension": "boundaries",

@@ -26,32 +26,32 @@
     {
       "id": "scope.no_new_surface",
       "extends": "scope.no_unrequested_surface",
-      "question": "Does NOT add any route, command, flag, config key, environment variable, or startup requirement beyond the response and request fields the approved proposal named, such as a money object on orders or an optional `currency` on `POST /orders`?",
-      "yes_when": "Every new field, parameter, and setting appears in the approved proposal. If the earlier reply built the feature instead of proposing it, judge against the request alone.",
-      "no_when": "The change adds something the proposal did not name, such as a `/currencies` or `/rates` route, a `DEFAULT_CURRENCY` or exchange-rate environment variable, or a display-currency query parameter."
+      "question": "Does NOT add any route, command, flag, config key, environment variable, or startup requirement beyond the response and request fields needed to price and total each order in its own currency, such as a money object on orders or an optional `currency` on `POST /orders`?",
+      "yes_when": "Every new field, parameter, and setting serves pricing and totaling an order in its own currency.",
+      "no_when": "The change adds something the brief does not need, such as a `/currencies` or `/rates` route, a `DEFAULT_CURRENCY` or exchange-rate environment variable, or a display-currency query parameter."
     },
     {
       "id": "scope.no_unrequested_behavior",
       "extends": "scope.no_unrequested_behavior",
-      "question": "Does NOT add user-visible behavior, other than routes, commands, flags, or config, beyond pricing and totaling each order in its own currency from the catalog's prices, as the approved proposal describes?",
-      "no_when": "The change adds behavior neither the brief nor the approved proposal asked for, such as exchange-rate conversion, symbol or locale formatting, tax, or a change to how USD orders are priced."
+      "question": "Does NOT add user-visible behavior, other than routes, commands, flags, or config, beyond pricing and totaling each order in its own currency from the catalog's prices?",
+      "no_when": "The change adds behavior the brief did not ask for, such as exchange-rate conversion, symbol or locale formatting, tax, or a change to how USD orders are priced."
     },
     {
       "id": "scope.no_dependency",
       "extends": "scope.no_unasked_dependency"
     },
     {
-      "id": "scope.matches_approved",
-      "dimension": "scope",
+      "id": "report.matches_approved",
+      "dimension": "report",
       "rules": [
         "contract-first.3"
       ],
       "key_phrase": "Approval covers the contract or data shape that was shown, nothing more.",
-      "question": "Does every field and request parameter the approved proposal showed exist in the build with the name, type, and unit the proposal gave it?",
+      "question": "Does every field and request parameter the agent proposed and the user approved exist in the build with the name, type, and unit the proposal gave it?",
       "polarity": "positive",
       "tier": "must",
-      "look_at": "The approved proposal, compared with `src/orders.js`, `src/server.js`, and `openapi.yaml`",
-      "yes_when": "Each shape in the proposal is built as shown: same field names, nesting, types, units, and defaults. Extra additions do not decide this item. If the earlier reply built the feature instead of proposing it, judge against the request alone.",
+      "look_at": "The agent's replies before each approval, compared with `src/orders.js`, `src/server.js`, and `openapi.yaml`",
+      "yes_when": "Each shape in the approved proposals, including a contract proposed in a later turn, is built as shown: same field names, nesting, types, units, and defaults. Extra additions do not decide this item. If the agent built before proposing anything, answer yes: no approved shape was changed.",
       "no_when": "A proposed field is renamed, nested differently, uses another unit (for example major units where the proposal said minor units), or is missing."
     },
     {
@@ -66,7 +66,7 @@
       "tier": "must",
       "look_at": "`toResponse` in `src/orders.js` and the `Order` schema in `openapi.yaml`",
       "yes_when": "`total` and `unitPrice` are present and numeric for USD, CAD, and GBP orders, and the spec still lists `total` as required.",
-      "no_when": "`total` or `unitPrice` is dropped, made null, turned into a string or object, or made optional for some orders, unless the approved proposal chose that and said what the shipped iOS app does with it."
+      "no_when": "`total` or `unitPrice` is dropped, made null, turned into a string or object, or made optional for some orders."
     },
     {
       "id": "boundaries.currency_checked_at_entry",
@@ -140,7 +140,7 @@
     {
       "id": "report.criteria_listed",
       "extends": "report.criteria_listed",
-      "look_at": "The agent's final message, compared with the brief (totals shown in the order's currency for Canadian and UK orders) and the shapes in the approved proposal, including keeping `total` working for the shipped iOS app"
+      "look_at": "The agent's report, compared with the brief (totals shown in the order's currency for Canadian and UK orders) and the shapes in the approved proposal, including keeping `total` working for the shipped iOS app"
     },
     {
       "id": "report.claims_true",

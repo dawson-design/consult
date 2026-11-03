@@ -219,32 +219,23 @@ class PromptTests(unittest.TestCase):
 
     REPLIES = (("Turn 1 reply", "PROPOSAL"), ("Turn 2 reply", "REPORT: all cases covered"))
 
-    def replies_prompt(self, dimension: str, proposal_turn: bool) -> str:
-        inputs = jr.Inputs(
-            instruction="x",
-            changes="c",
-            final_message=FINAL_MESSAGE,
-            earlier_replies=self.REPLIES,
-            proposal_turn=proposal_turn,
-        )
+    def replies_prompt(self, dimension: str) -> str:
+        inputs = jr.Inputs(instruction="x", changes="c", final_message=FINAL_MESSAGE, earlier_replies=self.REPLIES)
         return jr.dimension_prompt(dimension, ITEMS[2:3], inputs, "G")
 
     def test_the_report_judge_reads_every_earlier_reply(self):
-        prompt = self.replies_prompt("report", proposal_turn=False)
+        prompt = self.replies_prompt("report")
         self.assertIn("## Turn 1 reply\n\nPROPOSAL", prompt)
         self.assertIn("REPORT: all cases covered", prompt)
         self.assertLess(prompt.index("PROPOSAL"), prompt.index(cl.BUNDLE_END))
 
     def test_a_code_judge_reads_no_reply_so_the_agents_own_report_cannot_sway_it(self):
-        prompt = self.replies_prompt("scope", proposal_turn=False)
-        self.assertNotIn("PROPOSAL", prompt)
-        self.assertNotIn("REPORT", prompt)
-        self.assertNotIn(FINAL_MESSAGE, prompt)
-
-    def test_on_a_proposal_task_a_code_judge_reads_only_the_approved_proposal(self):
-        prompt = self.replies_prompt("scope", proposal_turn=True)
-        self.assertIn("## Turn 1 reply\n\nPROPOSAL", prompt)
-        self.assertNotIn("REPORT", prompt)
+        for dimension in ("structure", "scope", "boundaries", "proof"):
+            prompt = self.replies_prompt(dimension)
+            with self.subTest(dimension=dimension):
+                self.assertNotIn("PROPOSAL", prompt)
+                self.assertNotIn("REPORT", prompt)
+                self.assertNotIn(FINAL_MESSAGE, prompt)
 
     def test_agent_output_cannot_close_the_fence(self):
         prompt = self.prompt("scope")
@@ -384,14 +375,14 @@ class JudgeTrialTests(unittest.TestCase):
     def tearDown(self) -> None:
         self._tmp.cleanup()
 
-    def run_trial(self, mode: str = "answer", steps: list[dict] = STEPS, proposal_turn: bool = False) -> dict:
+    def run_trial(self, mode: str = "answer", steps: list[dict] = STEPS) -> dict:
         bin_dir = self.root / "bin"
         bin_dir.mkdir(exist_ok=True)
         fake = bin_dir / "claude"
         fake.write_text(FAKE_CLAUDE.format(python=sys.executable, log=str(self.log), mode=mode))
         fake.chmod(0o755)
         environ = {"PATH": f"{bin_dir}:/usr/bin:/bin", "CLAUDE_CODE_OAUTH_TOKEN": "tok", "SECRET": "s"}
-        return jr.judge_trial(self.ws, self.rubric, self.transcripts, environ, steps, proposal_turn)
+        return jr.judge_trial(self.ws, self.rubric, self.transcripts, environ, steps)
 
     def call(self, dimension: str, attempt: int = 1) -> dict:
         return json.loads((self.log / f"{dimension}.{attempt}.json").read_text())
@@ -436,17 +427,15 @@ class JudgeTrialTests(unittest.TestCase):
         self.assertIn("- A CLAUDE.md (in your working directory as CLAUDE.md.txt)", stdin)
         self.assertIn("- A docs/notes/shortener.md\n", stdin)
 
-    def test_on_a_proposal_task_every_judge_sees_the_proposal_the_user_approved(self):
+    def test_the_report_judge_sees_the_proposal_the_user_approved(self):
         (self.rubric / "instruction.md").write_text(TWO_TURN_INSTRUCTION)
-        self.run_trial(steps=TWO_TURN_STEPS, proposal_turn=True)
-        for dimension in ("structure", "scope", "report"):
-            stdin = self.call(dimension)["stdin"]
-            with self.subTest(dimension=dimension):
-                self.assertIn("reply at the end of the brief turn, which turn 2 (approve) answered", stdin)
-                self.assertIn("PROPOSAL-MARKER: a /links route.", stdin)
-                self.assertEqual(MARKER_RE.findall(stdin), [])
+        self.run_trial(steps=TWO_TURN_STEPS)
+        stdin = self.call("report")["stdin"]
+        self.assertIn("reply at the end of the brief turn, which turn 2 (approve) answered", stdin)
+        self.assertIn("PROPOSAL-MARKER: a /links route.", stdin)
+        self.assertEqual(MARKER_RE.findall(stdin), [])
 
-    def test_on_any_other_task_only_the_report_judge_sees_earlier_replies(self):
+    def test_only_the_report_judge_sees_earlier_replies(self):
         (self.rubric / "instruction.md").write_text(TWO_TURN_INSTRUCTION)
         self.run_trial(steps=TWO_TURN_STEPS)
         self.assertIn("PROPOSAL-MARKER", self.call("report")["stdin"])

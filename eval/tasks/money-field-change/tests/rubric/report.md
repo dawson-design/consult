@@ -10,4 +10,6 @@ each earlier turn. Its report is everything it told the user about the work
 across those replies and the final message, wherever it finished: an agent
 may report in an earlier turn and later say only that it is done, or do a
 small follow-up. Where two replies conflict, the later one stands. Check every
-claim against the final code.
+claim against the final code. Where an item says "the final message", read it
+as that report. A reply that proposes shapes before an approval is the
+proposal the user approved.

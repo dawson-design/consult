@@ -86,8 +86,8 @@ COST_LABELS = {
 }
 COST_NOTE = (
     "Each metric averages over the tasks where both arms recorded it. Cost is the agent's API-equivalent "
-    "estimate; these runs bill a subscription. Questions count agent messages that end in a question after "
-    "the last user turn, the gate-fatigue number."
+    "estimate; these runs bill a subscription. Questions count agent messages that end in a question, in every turn "
+    "except before the approval on a brief task, the gate-fatigue number."
 )
 JUDGE_EXCLUDED_NOTE = (
     "Rewards exclude the model judges for some tasks: their trials did not all carry the same model scores"
@@ -143,14 +143,17 @@ def trial_cost(result: dict, trajectory: cl.Trajectory, bundle_path: Path) -> di
         "agent_seconds": total(phase_seconds(p) for p in phases),
         "turns": len(trajectory.agent_messages) if trajectory.steps else None,
         "lines_changed": lines_changed(bundle_path),
-        "questions": cl.question_message_count(trajectory, proposal_turn(result)) if trajectory.steps else None,
+        "questions": question_count(result, trajectory) if trajectory.steps else None,
     }
 
 
-def proposal_turn(result: dict) -> bool:
-    """The task's consult.json proposal_turn flag: its first turn asks for a proposal."""
-    path = TASKS_DIR / str(result.get("task_name") or "").split("/")[-1] / "tests" / "consult.json"
-    return bool(json.loads(path.read_text()).get("proposal_turn")) if path.is_file() else False
+def question_count(result: dict, trajectory: cl.Trajectory) -> int:
+    """Questions the agent ended a message on, counted as the task's non_interruption readout counts them."""
+    tests = TASKS_DIR / str(result.get("task_name") or "").split("/")[-1] / "tests"
+    meta = json.loads((tests / "consult.json").read_text()) if (tests / "consult.json").is_file() else {}
+    turns = tests / "rubric" / "instruction.md"
+    instruction = turns.read_text() if turns.is_file() else ""
+    return cl.question_message_count(trajectory, bool(meta.get("proposal_turn")), instruction)
 
 
 def token_records(result: dict, steps: list[dict]) -> tuple[float | None, float | None]:

@@ -184,8 +184,8 @@ the low end next to the mean:
   0 is labelled "not distinguishable from noise".
 - **Cost and effort**: each arm's mean output tokens, cost, agent seconds,
   turns, lines changed, and questions asked, with the change and its interval.
-  Questions count agent messages that end in a question after the last user
-  turn, the gate-fatigue number. Cost is the agent's API-equivalent estimate,
+  Questions count agent messages that end in a question, in every turn except
+  before the approval on a brief task, the gate-fatigue number. Cost is the agent's API-equivalent estimate,
   since runs bill a subscription. A resumed multi-step trial reports its final
   step's tokens, which already include the earlier steps, and no cost, until
   a real trial shows whether Harbor's per-step cost covers one step or all.
@@ -290,9 +290,14 @@ fails on a code task with no follow-up turns unless its `consult.json` gives a
 rejudging them shows the judges the two later turns the agent never received.
 
 A brief task (`money-field-change`, `service-from-brief`) sets
-`proposal_turn: true` in `consult.json`: its first turn asks for a proposal
-that the next turn approves, so its code judges read that proposal, and only
-questions after the approval count as interruptions.
+`proposal_turn: true` in `consult.json`: its first turn is a brief, and
+Consult answers it with a proposal that the next turn approves, so a question
+before that approval is the gate working, not an interruption. Questions
+count from the approve turn, found by matching its text, since skill loads
+and task notifications are user steps too. No code judge reads the proposal:
+on a brief task a bare agent builds in the first turn, so its first reply is
+its own report. The report judge checks the build against what was proposed
+and approved (`report.matches_approved`).
 
 A rule task adds these keys to `tests/consult.json`:
 
@@ -316,7 +321,7 @@ model-judged.
 | `rubric` | code | 0.45 | The task's rubric items: must-have met rate x 0.6 plus quality met rate x 0.4, unknown answers left out. Dropped until the task has a rubric |
 | `judge` | routing | 0.45 | Claude Code judge, four numeric criteria: engineering maturity 0.35, proof quality 0.25, simplicity 0.2, risk handling 0.2 |
 | `skill_triggering` | both | 0 | Share of intended skills the agent read or invoked |
-| `non_interruption` | both | 0 | 1 minus 0.25 per agent message after the last user turn that ends with a question |
+| `non_interruption` | both | 0 | 1 minus 0.25 per agent message that ends with a question, counted as in the cost table |
 | `rules` | both | 0 | One criterion per rule id in `consult.json` `rules` |
 
 The zero-weight readouts stay in `reward.json` for regression tracking without
@@ -483,9 +488,9 @@ at a time. Each call gets:
   rule's key phrase (the Consult arm often repeats rule wording, and a judge
   shown it would reward the echo);
 - on a multi-step task, the report judge reads the agent's reply at the end of
-  every earlier turn, since the report can span turns. A code judge reads
-  none, except on a `proposal_turn` task, where it reads the first-turn
-  proposal the user approved;
+  every earlier turn, since the report can span turns and includes any
+  proposal the user approved. A code judge reads none of the agent's
+  messages;
 - the changed paths with their git status, then the agent's changes (the diff
   plus new files), fenced as data;
 - a blinded copy of the final workspace as its working directory, to read
@@ -546,9 +551,10 @@ each task's `solution/solve.sh` in the task image, checks it passes the
 visible tests and the hidden check, and runs the rubric judges on every
 dimension but report, since the oracle writes no final message. Every
 must-have item must answer yes. One that does not is a bug in the rubric or
-the oracle. A multi-step task's judges also read the reply each later turn
-answered, so its oracle keeps that reply, such as the approved proposal, in
-`steps/<step>/solution/reply.md`, and the check passes it to them.
+the oracle. Only the report judge reads the agent's replies, and the check
+skips it, so a brief task's `steps/<step>/solution/reply.md` (the oracle's
+proposal) is passed along but not judged: the oracle check cannot test
+`report.matches_approved`.
 
 ```sh
 uv run scripts/oracle_judge.py --tasks <task>            # print the judge call count
@@ -614,8 +620,8 @@ repeat agreement at least 0.9.
   when the file also renders responses, as `money-field-change`'s
   `src/orders.js` does. It also skips a request-validation schema, which
   belongs to the contracts stage.
-- The question readout counts only questions after the `continue` turn, so it
-  misses a needless question asked in `approve`. One `continue` turn answers
+- On a brief task the question readout starts at the `approve` turn, so a
+  needless question asked in the brief turn is not counted. One `continue` turn answers
   one more gate; an agent that splits the work into behavior slices can stop
   at a later gate and leave the build unfinished.
 - The previous harness could execute the migration in a real Postgres given
