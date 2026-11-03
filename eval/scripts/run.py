@@ -35,8 +35,10 @@ Tiers are presets:
            release-claude-code and compares against that baseline's Consult
            arm. It catches skill-loading failures and large regressions, not
            small ones: read the intervals in the lift report.
-A baseline is reused only when agent, model, effort, CLI version, and every
-task dir match; otherwise the bare arm runs and the reason is printed.
+A baseline is reused when agent, model, effort, CLI version, and what the agent
+sees in each task match. When only a task's checks changed, the stored jobs are
+rescored offline (no model calls); otherwise the bare arm runs and the reason
+is printed.
 
 --drop-references code-review,ui-design runs the consult arm without those
 skills' references/ dirs. It needs a reusable baseline whose consult arm ran
@@ -59,6 +61,7 @@ from pathlib import Path
 
 import baseline
 import preflight
+import rescore
 import selection
 import stub
 
@@ -183,6 +186,36 @@ def reusable_baseline(name: str | None, key: dict) -> dict | None:
         return None
     print(f"baseline {name}: reusing bare job {stored['bare']}", flush=True)
     return stored
+
+
+def refresh_checks(reuse: dict | None, key: dict) -> dict | None:
+    """Rescore a reused baseline offline when only its checks changed; None sends the run back to the bare arm."""
+    if not reuse:
+        return None
+    stale = baseline.stale_checks(reuse["key"], key)
+    if not stale:
+        return reuse
+    jobs = [reuse["bare"], reuse["consult"]]
+    print(
+        f"baseline: checks changed for {', '.join(stale)}; rescoring the stored jobs offline, no model calls",
+        flush=True,
+    )
+    saved_env = dict(os.environ)  # rescore sets git env vars that must not reach Harbor
+    try:
+        code = rescore.main(["rescore.py", *jobs, "--tasks", ",".join(key["tasks"])])
+    except SystemExit as error:
+        print(f"baseline: rescore could not run ({error}); running the bare arm", flush=True)
+        return None
+    finally:
+        os.environ.clear()
+        os.environ.update(saved_env)
+    if code != 0:
+        print("baseline: some trials could not be rescored; the lift report lists them as failed", flush=True)
+    print("baseline: judge scores keep the baseline's rubric; rescore.py --rejudge updates them (bills)", flush=True)
+    rescored = {
+        arm: str(Path(reuse[arm]).with_name(f"{Path(reuse[arm]).name}-rescored")) for arm in ("bare", "consult")
+    }
+    return {**reuse, **rescored}
 
 
 def plan_arms(requested: list[str], reuse: dict | None, needs_lift: bool) -> list[str]:
@@ -404,13 +437,16 @@ def main() -> int:
     agent, host_env, settings = load_agent(args.agent, args.model)
     key = baseline.baseline_key(agent, args.effort, tasks, args.user_harbor_args)
     reuse = None if args.install_only else reusable_baseline(args.baseline, key)
-    arms = plan_arms(requested, reuse, needs_lift="consult" in requested and not (args.no_lift or args.install_only))
     stamp = dt.datetime.now().strftime("%Y-%m-%dT%H-%M-%S")
     RUNS_DIR.mkdir(parents=True, exist_ok=True)
     skills = frozen_skills(args.drop_references)
     stop = ablation_gate(args, reuse)
     if stop is not None:
         return stop
+    reuse = refresh_checks(reuse, key)
+    if args.drop_references and reuse is None:
+        return ablation_gate(args, reuse)
+    arms = plan_arms(requested, reuse, needs_lift="consult" in requested and not (args.no_lift or args.install_only))
 
     if "consult" in arms and not (args.skip_preflight or args.install_only):
         stop = preflight_gate(args, run_preflight(args, stamp, tasks, agent, settings, host_env, skills))
