@@ -47,6 +47,11 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- The fresh-context review runs on the host's strongest model at the host's
+  default effort, not the session's. In the eval check, at `xhigh` session
+  effort, a single review took six to seven and a half minutes on the larger
+  tasks.
+
 - The eval reuses a saved bare baseline across edits to a task's checks. Its
   key now hashes only what the agent sees (instructions, scripted turns,
   `environment/`, agent timeouts), and when the checks, rubrics, or metadata
