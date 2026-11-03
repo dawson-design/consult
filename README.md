@@ -219,7 +219,7 @@ Before a non-trivial feature, fix, refactor, debugging task, test, or config cha
 
 ## Skills
 
-Consult includes 18 skills. Open a skill for when it applies and the rules it
+Consult includes 17 skills. Open a skill for when it applies and the rules it
 sets. The rules that apply to every code change, whether or not a skill
 loads, are in the Consult core, [`agents/.agents/core.md`](agents/.agents/core.md).
 
@@ -229,7 +229,6 @@ loads, are in the Consult core, [`agents/.agents/core.md`](agents/.agents/core.m
   - [`code-review`](agents/.agents/skills/code-review/SKILL.md): Review diffs and PRs for bugs, regressions, edge cases, and merge readiness.
   - [`refactoring`](agents/.agents/skills/refactoring/SKILL.md): Behavior-preserving change, tests, and safe rewrites.
 - Design:
-  - [`specify`](agents/.agents/skills/specify/SKILL.md): Read the code, propose a design, and agree on it before building: tradeoffs, decisions, and design docs.
   - [`architecture`](agents/.agents/skills/architecture/SKILL.md): Architecture decisions, module boundaries, coupling, layering, and system structure.
   - [`domain-modeling`](agents/.agents/skills/domain-modeling/SKILL.md): Data shapes, invariants, state transitions, parsing, and effects.
   - [`contract-first`](agents/.agents/skills/contract-first/SKILL.md): Approve contracts (APIs, schemas, formats, module boundaries) before implementation.

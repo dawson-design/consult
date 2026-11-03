@@ -96,7 +96,6 @@ not pre-empt them with justification.
 
 ## Handoffs
 
-- `specify`: plan-to-code divergence from an agreed design doc.
 - `database`: migrations, locking, transactions, schema, indexes.
 - `release`: version, changelog, package, publish, or rollout readiness.
 - `proof`: missing behavior coverage, test quality, mocks, flakes.

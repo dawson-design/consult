@@ -88,7 +88,6 @@ CONSULT_SKILLS = frozenset(
         "refactoring",
         "release",
         "scaffolding",
-        "specify",
         "ui-design",
         "workflow",
     }

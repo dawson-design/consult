@@ -65,7 +65,6 @@ against it.
 
 ## Handoffs
 
-- `specify`: contracts whose data shape is being modeled.
 - `contract-first`: approval of domain shapes future work depends on.
 - `architecture`: module boundaries, locality, layering.
 - `database`: schema enforcement for invariants that race under concurrency.

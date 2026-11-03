@@ -144,6 +144,14 @@ the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Removed
 
+- The `specify` skill is gone. Hosts' plan modes now carry design
+  discussion, and nothing measured `specify`'s rules. Its one rule plan mode
+  does not supply moves to `workflow` Rule 1: for a design choice, propose
+  concrete options, give your recommendation and its main tradeoff, and let
+  the user approve, revise, or rule it out. `workflow` Rule 2 still gates the
+  design direction. Three design-doc rubric items with no surviving rule are
+  removed.
+
 - Six skills are gone: `security`, `debugging`, `performance`,
   `observability`, `async-systems`, and `official-source-check`. Evals
   showed no lift from them, and the maintainer had not seen them change

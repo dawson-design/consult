@@ -84,7 +84,6 @@ not count until you can say which criterion each test proves.
 
 ## Handoffs
 
-- `specify`: acceptance criteria from an agreed design.
 - `domain-modeling`: invariants that make invalid states unrepresentable.
 - `api`: tests of a public API contract.
 - `refactoring`: before/after evidence, and tests that are hard to place

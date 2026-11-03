@@ -136,7 +136,7 @@ in shipped behavior stands alone with the project's labels.
 ## Research Issue
 
 Many teams call this a spike. It is a tracker item, not the disposable code
-spike that `specify` governs.
+spike written to answer a design question.
 
 ```markdown
 # Research: <Question to answer>

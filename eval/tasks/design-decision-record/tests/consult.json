@@ -1,12 +1,7 @@
 {
   "task": "design-decision-record",
   "kind": "code",
-  "intended_skills": [
-    "workflow",
-    "specify",
-    "architecture",
-    "documentation"
-  ],
+  "intended_skills": ["workflow", "architecture", "documentation"],
   "visible_test_cmd": "npm test",
   "test_file": "test/smoke.test.js"
 }
