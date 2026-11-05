@@ -110,6 +110,10 @@ v1 rule.
   (0.27, now 0.87).
 - The error analyzer counts a plain `Error`, `TypeError`, or `RangeError`
   throw as a bug check, not an expected failure (default 4: 0.50, now 1.00).
+- The `service-from-brief` hidden check posts like the app's own page in a
+  browser, with `Origin` and `Sec-Fetch-Site: same-origin`. Without them, a
+  correct CSRF guard refused every create request, so the Consult arm, which
+  adds one, failed verification while bare Claude, which does not, passed.
 
 ## [19.0.0] (2026-11-01)
 
