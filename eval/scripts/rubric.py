@@ -1,7 +1,9 @@
 """Load, resolve, and validate the per-task judge rubrics.
 
 A rubric is the checklist the code judges answer for one task: 12 to 20
-atomic yes/no items, each tied to the Consult rules it applies. The task
+atomic yes/no items, each tied to the Consult rules it applies. A readout
+rubric (`"readout": true`) holds 1 to 6 items that score rules lift.py reports
+but the task reward leaves out: sync_tests.py zeroes its rubric weight. The task
 author writes it in eval/verifier/rubrics/<task>.json. An item either spells
 out every field or names a shared template from
 eval/verifier/rubrics/core_items.json with `extends` and overrides the
@@ -33,6 +35,7 @@ TIERS = ("must", "quality")
 FIELDS = ("id", "dimension", "rules", "key_phrase", "question", "polarity", "tier", "look_at", "yes_when", "no_when")
 MIN_ITEMS = 12
 MAX_ITEMS = 20
+READOUT_ITEMS = (1, 6)
 ITEM_ID_RE = re.compile(r"^[a-z][a-z0-9_]*(\.[a-z0-9_]+)+$")
 PLACEHOLDER_RE = re.compile(r"\{[a-z_]+\}")
 NEGATIVE_PREFIX = "Does NOT "
@@ -125,11 +128,13 @@ def rule_problems(item: dict, coverage: dict[str, str], rule_text) -> list[str]:
     return []
 
 
-def rubric_problems(items: list[dict], coverage: dict[str, str], rule_text) -> list[str]:
+def rubric_problems(items: list[dict], coverage: dict[str, str], rule_text, readout: bool = False) -> list[str]:
     """Item-level problems plus the rubric-level ones: size, unique ids, at least one must-have item."""
     problems = [problem for item in items for problem in item_problems(item, coverage, rule_text)]
-    if not MIN_ITEMS <= len(items) <= MAX_ITEMS:
-        problems.append(f"has {len(items)} items; a rubric holds {MIN_ITEMS} to {MAX_ITEMS}")
+    low, high = READOUT_ITEMS if readout else (MIN_ITEMS, MAX_ITEMS)
+    if not low <= len(items) <= high:
+        kind = "a readout rubric" if readout else "a rubric"
+        problems.append(f"has {len(items)} items; {kind} holds {low} to {high}")
     ids = [item.get("id") for item in items]
     duplicates = sorted({item_id for item_id in ids if ids.count(item_id) > 1 and item_id})
     if duplicates:
@@ -160,8 +165,15 @@ def task_items(task: str, rule_text) -> tuple[list[dict] | None, list[str]]:
         templates = load_templates(TEMPLATES_PATH)
     except ValueError as error:
         return None, [str(error)]
-    items, problems = resolve_rubric(json.loads(path.read_text()), templates)
-    return items, problems + rubric_problems(items, coverage, rule_text)
+    source = json.loads(path.read_text())
+    items, problems = resolve_rubric(source, templates)
+    return items, problems + rubric_problems(items, coverage, rule_text, readout=bool(source.get("readout")))
+
+
+def is_readout(task: str) -> bool:
+    """The task's rubric is a zero-weight readout (see the module docstring)."""
+    path = RUBRICS_DIR / f"{task}.json"
+    return path.is_file() and bool(json.loads(path.read_text()).get("readout"))
 
 
 def items_json(items: list[dict]) -> bytes:

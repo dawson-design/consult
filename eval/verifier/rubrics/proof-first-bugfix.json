@@ -4,10 +4,10 @@
       "id": "structure.whole_cents",
       "dimension": "structure",
       "rules": [
-        "domain-modeling.1",
-        "domain-modeling.8"
+        "human.1",
+        "domain-modeling.2"
       ],
-      "key_phrase": "Decide data shapes and invariants before writing transformations.",
+      "key_phrase": "computes on monetary amounts",
       "question": "Does `totalCents` always return a whole number of cents, rounding explicitly when SAVE10 applies to a subtotal that is not a multiple of 10 (for example 999 cents)?",
       "polarity": "positive",
       "tier": "must",
@@ -68,29 +68,15 @@
       "id": "boundaries.rejects_non_numbers",
       "dimension": "boundaries",
       "rules": [
-        "core.7"
+        "core.6"
       ],
-      "key_phrase": "Parse or validate it before use.",
+      "key_phrase": "Treat input that crosses a trust boundary as untrusted",
       "question": "Does `totalCents` reject item values that are not finite integers, such as a string `priceCents` like \"500\", `NaN`, or `Infinity`, not only negative or fractional numbers?",
       "polarity": "positive",
       "tier": "quality",
       "look_at": "The `priceCents` and `quantity` checks in `src/cart.js`",
       "yes_when": "The checks require actual integers (for example `Number.isInteger`), so strings, `NaN`, and `Infinity` are rejected.",
       "no_when": "A numeric string is converted and accepted, or `NaN` or `Infinity` passes the checks."
-    },
-    {
-      "id": "boundaries.useful_messages",
-      "dimension": "boundaries",
-      "rules": [
-        "error-handling.5"
-      ],
-      "key_phrase": "User-facing errors are actionable",
-      "question": "Does each rejection's error message say what is wrong, naming the cart or the field (`priceCents` or `quantity`) that failed?",
-      "polarity": "positive",
-      "tier": "must",
-      "look_at": "The errors `totalCents` throws or returns in `src/cart.js`",
-      "yes_when": "Each message, such as \"item 0 has an invalid priceCents\", tells the caller which value to fix.",
-      "no_when": "A rejection carries a generic message such as \"invalid input\", or a malformed cart still surfaces a native TypeError from `reduce` or property access."
     },
     {
       "id": "proof.discount_regression",
@@ -155,9 +141,9 @@
       "id": "report.code_change_flagged",
       "dimension": "report",
       "rules": [
-        "core.6"
+        "core.5"
       ],
-      "key_phrase": "Ask whether backward compatibility is required when a change alters behavior that callers outside the change, or stored data, depend on.",
+      "key_phrase": "Don't assume backward compatibility is or isn't required.",
       "question": "If the change alters what happens for a missing or unrecognized discount code (before the change, both returned the undiscounted subtotal), does the final message call this out as a behavior change for the user to confirm?",
       "polarity": "positive",
       "tier": "quality",

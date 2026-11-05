@@ -5,10 +5,9 @@
       "id": "structure.pure_calculation",
       "dimension": "structure",
       "rules": [
-        "core.1",
-        "domain-modeling.3"
+        "core.1"
       ],
-      "key_phrase": "push I/O, database access, network calls, and mutation to the edges of the code you write",
+      "key_phrase": "Push I/O and mutation to the edges.",
       "question": "Does {calculation} compute its result without reading the clock, random values, files, the network, or the database, and without changing anything outside itself?",
       "polarity": "positive",
       "tier": "must",
@@ -20,9 +19,9 @@
       "id": "structure.explicit_states",
       "dimension": "structure",
       "rules": [
-        "domain-modeling.5"
+        "default.5"
       ],
-      "key_phrase": "Model allowed states as explicit variants, not flag or nullable combinations.",
+      "key_phrase": "represent states as explicit variants, not combinations of flags or nullables",
       "question": "Is {state} modeled as one explicit variant field or union type, not as a combination of flags or nullable fields?",
       "polarity": "positive",
       "tier": "quality",
@@ -34,9 +33,9 @@
       "id": "structure.no_scattering_layer",
       "dimension": "structure",
       "rules": [
-        "architecture.2"
+        "default.2"
       ],
-      "key_phrase": "Horizontal layers exist only for a real boundary",
+      "key_phrase": "Add a horizontal layer only at a real boundary",
       "question": "Does NOT add a new layer (a service, repository, manager, or helper module) that the change's behavior passes through without a process, deploy, trust, persistence, or transport boundary or proven duplication?",
       "polarity": "negative",
       "tier": "quality",
@@ -48,9 +47,9 @@
       "id": "structure.composed",
       "dimension": "structure",
       "rules": [
-        "core.4"
+        "default.1"
       ],
-      "key_phrase": "Build behavior by composing functions and plain data.",
+      "key_phrase": "with behavior as functions over them",
       "question": "Is the new behavior built from functions and plain data, without a new class hierarchy or stateful object that neither the framework nor the existing code requires?",
       "polarity": "positive",
       "tier": "quality",
@@ -118,9 +117,9 @@
       "id": "scope.no_unasked_dependency",
       "dimension": "scope",
       "rules": [
-        "core.3"
+        "human.2"
       ],
-      "key_phrase": "Ask before adding a dependency.",
+      "key_phrase": "adding a dependency",
       "question": "Does NOT add a package dependency that the request or an approved plan did not name?",
       "polarity": "negative",
       "tier": "must",
@@ -132,9 +131,9 @@
       "id": "scope.no_unasked_shim",
       "dimension": "scope",
       "rules": [
-        "core.6"
+        "core.5"
       ],
-      "key_phrase": "add no compatibility shim until the user answers",
+      "key_phrase": "add no shim until the user answers",
       "question": "Does NOT keep an old path, field, or alias alive beside the new one when the request did not ask for compatibility?",
       "polarity": "negative",
       "tier": "quality",
@@ -160,10 +159,10 @@
       "id": "boundaries.parse_at_boundary",
       "dimension": "boundaries",
       "rules": [
-        "core.7",
-        "domain-modeling.4"
+        "core.6",
+        "default.5"
       ],
-      "key_phrase": "Parse or validate it before use.",
+      "key_phrase": "Parse external input once at the boundary into trusted types",
       "question": "Is {input} parsed or validated once where it enters, before any other code uses it?",
       "polarity": "positive",
       "tier": "must",
@@ -175,9 +174,9 @@
       "id": "boundaries.typed_failures",
       "dimension": "boundaries",
       "rules": [
-        "error-handling.1"
+        "default.4"
       ],
-      "key_phrase": "Expected failures are typed",
+      "key_phrase": "return Result-style values for expected failures",
       "question": "Are the change's expected failures typed (named errors, unions, or Result variants), not bare strings or generic errors?",
       "polarity": "positive",
       "tier": "quality",
@@ -189,9 +188,9 @@
       "id": "boundaries.no_swallowed_errors",
       "dimension": "boundaries",
       "rules": [
-        "error-handling.2"
+        "default.4"
       ],
-      "key_phrase": "Every catch does one of those or re-raises with context, preserving the original cause.",
+      "key_phrase": "Catch only to recover, translate, retry, or terminate, keeping the cause.",
       "question": "Does NOT catch an error without recovering, translating, retrying, terminating, or re-raising it with the original cause?",
       "polarity": "negative",
       "tier": "must",
@@ -200,26 +199,12 @@
       "no_when": "A catch logs and continues, returns a default that hides the failure from the caller, or drops the original cause."
     },
     {
-      "id": "boundaries.no_leaky_errors",
-      "dimension": "boundaries",
-      "rules": [
-        "error-handling.5"
-      ],
-      "key_phrase": "expose no stack traces, SQL, file paths, hostnames, secrets, or auth-enumeration clues",
-      "question": "Does NOT return stack traces, SQL, file paths, hostnames, or secrets to callers in error responses?",
-      "polarity": "negative",
-      "tier": "quality",
-      "look_at": "Error responses and messages the change sends to callers",
-      "yes_when": "Callers get actionable messages without internal detail.",
-      "no_when": "An error response can carry internal detail to the caller."
-    },
-    {
       "id": "boundaries.fail_closed",
       "dimension": "boundaries",
       "rules": [
-        "error-handling.2"
+        "default.4"
       ],
-      "key_phrase": "fail closed on auth, authz, validation, and crypto errors",
+      "key_phrase": "Fail closed on auth, validation, and crypto errors.",
       "question": "When {check} fails or throws, is the operation refused rather than allowed?",
       "polarity": "positive",
       "tier": "must",
@@ -301,9 +286,9 @@
       "id": "proof.failure_path",
       "dimension": "proof",
       "rules": [
-        "error-handling.6"
+        "proof.3"
       ],
-      "key_phrase": "Every public operation that can fail has at least one failure-path test.",
+      "key_phrase": "Every public operation that can fail has at least one failure-path test",
       "question": "Does each new or changed public operation that can fail have a test of one of its failure paths?",
       "polarity": "positive",
       "tier": "quality",
@@ -315,9 +300,9 @@
       "id": "report.attention_first",
       "dimension": "report",
       "rules": [
-        "core.5"
+        "human.7"
       ],
-      "key_phrase": "Report what needs their attention first",
+      "key_phrase": "what needs the user's attention",
       "question": "Does the final message open with what needs the user's attention (decisions, risks, unproven points) before describing the changes?",
       "polarity": "positive",
       "tier": "quality",
@@ -357,7 +342,7 @@
       "id": "report.claims_true",
       "dimension": "report",
       "rules": [
-        "core.5"
+        "human.7"
       ],
       "key_phrase": "what proves it",
       "question": "Does every test and file the final message names exist in the diff or the repository, and do what the message says?",

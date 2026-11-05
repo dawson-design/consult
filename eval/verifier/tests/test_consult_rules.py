@@ -144,6 +144,23 @@ class LibTests(unittest.TestCase):
         self.assertEqual(cl.written_paths(traj.calls[1]), ["test/a.test.js"])
         self.assertEqual(cl.written_paths(traj.calls[2]), ["notes.txt"])
 
+    def test_written_paths_reads_inline_script_writes_and_skips_paths_outside_the_workspace(self):
+        # Shapes from houseStyle trials NfBj5ow and RxH53iR: specs rewritten by a
+        # Python heredoc, and smoke runs that log to /tmp.
+        rewrite = (
+            "python3 - <<'EOF'\nfrom pathlib import Path\np = Path(\"openapi.yaml\")\n"
+            's = p.read_text()\np.write_text(s.replace("paths:", "servers: []\\npaths:"))\nEOF'
+        )
+        scratch = "cat > /tmp/body-exp.mjs <<'EOF'\nconsole.log(1);\nEOF"
+        smoke = "cd /tmp && (PORT=3456 npm start --prefix /app > /tmp/server.log 2>&1 &) && sleep 1"
+        traj = trajectory(
+            claude_bash("a", rewrite, False),
+            claude_bash("b", scratch, False),
+            claude_bash("c", smoke, False),
+            claude_bash("d", "cat > /app/src/fee.ts <<'EOF'\nexport const fee = 2;\nEOF", False),
+        )
+        self.assertEqual([cl.written_paths(c) for c in traj.calls], [["openapi.yaml"], [], [], ["src/fee.ts"]])
+
     def test_arrows_comparisons_and_quoted_angle_brackets_are_not_writes(self):
         traj = trajectory(
             codex_command("a", "node -e \"import('./src/a.js').then(m => console.log(m))\"", 0),
@@ -162,6 +179,16 @@ class LibTests(unittest.TestCase):
             claude_bash("d", "npm test", False),
         )
         self.assertEqual([cl.command_failed(c) for c in traj.calls], [True, False, True, False])
+
+    def test_a_timed_out_command_reports_the_timeout_not_the_script_it_ran(self):
+        # A hidden check runs as `node -e <script>`; trial L5HC52H's log showed
+        # the script's source instead of saying the check timed out.
+        script = "import time\ntime.sleep(5)  # SCRIPT-BODY-MARKER"
+        ok, output = cl.run_command(Path("."), ["python3", "-c", script], timeout=1)
+
+        self.assertFalse(ok)
+        self.assertTrue(output.startswith("timed out after 1s"), output)
+        self.assertNotIn("SCRIPT-BODY-MARKER", output)
 
     def test_run_command_hides_credentials_from_agent_code(self):
         import os
@@ -284,19 +311,17 @@ class DocumentationAndWorkflowTests(WorkspaceCase):
         (self.tests / "hidden.mjs").write_text("process.exit(1);\n")
         self.assertEqual(self.check("documentation.1"), 0.0)
 
-    def test_workflow_1_passes_on_a_one_turn_fix_with_tests(self):
+    def test_human_4_passes_on_a_one_turn_fix_with_tests(self):
         self.write_files({"src/a.js": "export const a = 2;\n", "test/a.test.js": "//\n"})
-        self.assertEqual(self.check("workflow.1", trajectory(user("fix"), agent("Fixed and tested."))), 1.0)
+        self.assertEqual(self.check("human.4", trajectory(user("fix"), agent("Fixed and tested."))), 1.0)
 
-    def test_workflow_1_accepts_a_closing_offer_after_finished_work(self):
+    def test_human_4_accepts_a_closing_offer_after_finished_work(self):
         self.write_files({"src/a.js": "export const a = 2;\n", "test/a.test.js": "//\n"})
-        self.assertEqual(
-            self.check("workflow.1", trajectory(user("fix"), agent("Fixed. Want me to also update b?"))), 1.0
-        )
+        self.assertEqual(self.check("human.4", trajectory(user("fix"), agent("Fixed. Want me to also update b?"))), 1.0)
 
-    def test_workflow_1_fails_when_the_agent_stops_to_ask(self):
+    def test_human_4_fails_when_the_agent_stops_to_ask(self):
         traj = trajectory(user("fix"), agent("Should I change the serializer or the editor?"))
-        self.assertEqual(self.check("workflow.1", traj), 0.0)
+        self.assertEqual(self.check("human.4", traj), 0.0)
 
 
 class ApiTests(WorkspaceCase):
@@ -398,19 +423,19 @@ class SignoffTests(WorkspaceCase):
         self.write_files({"docs/plans/brief.md": "# Plan\n"})
         traj = trajectory(user("brief"), agent("Here is the plan. Approve?"))
         self.assertEqual(cr.signoff_mode(self.ws, traj, self.meta), "stopped")
-        self.assertEqual(self.check("domain-modeling.7", traj), 1.0)
+        self.assertEqual(self.check("human.1", traj), 1.0)
 
     def test_provisional_build_that_is_flagged_passes(self):
         self.write_files({"src/money.js": "//\n"})
         traj = trajectory(user("brief"), agent("I built a provisional version pending your approval."))
         self.assertEqual(cr.signoff_mode(self.ws, traj, self.meta), "provisional")
-        self.assertEqual(self.check("domain-modeling.7", traj), 1.0)
+        self.assertEqual(self.check("human.1", traj), 1.0)
 
     def test_silent_build_fails(self):
         self.write_files({"src/money.js": "//\n"})
         traj = trajectory(user("brief"), agent("Done."))
         self.assertEqual(cr.signoff_mode(self.ws, traj, self.meta), "built")
-        self.assertEqual(self.check("domain-modeling.7", traj), 0.0)
+        self.assertEqual(self.check("human.1", traj), 0.0)
 
     def test_specs_and_notes_are_not_gated(self):
         self.write_files({"docs/specs/links.md": "#\n", "NOTES.md": "#\n"})
@@ -434,6 +459,16 @@ class ScoreTests(WorkspaceCase):
                 self.assertEqual(cr.score("test.crash", self.ws), 0.0)
             finally:
                 sys.stderr = saved
+
+    def test_a_check_with_nothing_to_score_is_recorded_as_not_applicable(self):
+        cr.CHECKS["test.none"] = lambda *_: None
+        self.addCleanup(cr.CHECKS.pop, "test.none")
+        record = Path(self.ws.parent / "rules-na.json")
+        with mock.patch.object(cr, "NOT_APPLICABLE_PATH", record):
+            self.assertEqual(cr.score("test.none", self.ws), 1.0)
+            cr.record_not_applicable("test.other", record)
+
+        self.assertEqual(json.loads(record.read_text()), ["test.none", "test.other"])
 
 
 class BundleTests(WorkspaceCase):

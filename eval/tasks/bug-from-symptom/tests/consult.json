@@ -1,9 +1,9 @@
 {
   "task": "bug-from-symptom",
   "kind": "code",
-  "intended_skills": ["workflow", "proof", "code-review"],
-  "expect_silent": ["contract-first", "scaffolding", "documentation", "api", "database", "release"],
-  "rules": ["proof.2", "documentation.1", "workflow.1"],
+  "intended_skills": ["proof"],
+  "expect_silent": ["scaffolding", "api", "database"],
+  "rules": ["proof.2", "documentation.1", "human.4"],
   "visible_test_cmd": "npm test",
   "test_file_cmd": "node --test {files}"
 }

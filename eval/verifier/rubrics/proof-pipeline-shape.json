@@ -52,9 +52,9 @@
       "id": "boundaries.error_names_record",
       "dimension": "boundaries",
       "rules": [
-        "error-handling.1"
+        "default.4"
       ],
-      "key_phrase": "Failure is part of the function contract.",
+      "key_phrase": "return Result-style values for expected failures",
       "question": "Does each `errors` entry carry the record that failed (the original record, its fields, or its index) together with `reason`?",
       "polarity": "positive",
       "tier": "must",
@@ -63,24 +63,10 @@
       "no_when": "Entries hold only a reason, or a reason and a value that does not identify the input record."
     },
     {
-      "id": "boundaries.reason_says_why",
-      "dimension": "boundaries",
-      "rules": [
-        "error-handling.5"
-      ],
-      "key_phrase": "User-facing errors are actionable",
-      "question": "Does each `reason` say what is wrong with the phone, such as how many digits it had against the 10 expected, rather than only \"invalid phone\"?",
-      "polarity": "positive",
-      "tier": "quality",
-      "look_at": "The reason strings in `src/pipeline.js`",
-      "yes_when": "The reason names the specific problem, such as the digit count or that no digits were found.",
-      "no_when": "Every bad phone gets the same generic reason, such as \"invalid phone\"."
-    },
-    {
       "id": "boundaries.phone_failure_value",
       "dimension": "boundaries",
       "rules": [
-        "error-handling.1"
+        "default.4"
       ],
       "key_phrase": "return Result-style values",
       "question": "Does phone normalization return its failure as a value that carries the reason (for example `{ ok: false, reason }`), rather than throwing for each bad phone and catching it, or returning `null` that the caller must turn into a reason?",
@@ -153,9 +139,9 @@
       "id": "report.open_points_named",
       "dimension": "report",
       "rules": [
-        "core.5"
+        "human.7"
       ],
-      "key_phrase": "Report what needs their attention first",
+      "key_phrase": "what needs the user's attention",
       "question": "Does the final message say how the change settles points the task leaves open, such as whether an 11-digit number starting with 1 is accepted, or whether a later duplicate of a record with a bad phone is dropped or kept?",
       "polarity": "positive",
       "tier": "quality",

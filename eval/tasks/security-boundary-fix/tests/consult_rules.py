@@ -5,7 +5,9 @@ Synced from eval/verifier/shared/consult_rules.py into every task's tests/ by
 eval/scripts/sync_tests.py. Do not edit the copy under tests/.
 
 Each check is a function (workspace, trajectory, meta) -> float in [0, 1] that
-tests one numbered rule of one SKILL.md or of core.md. The `rules` dimension
+tests one numbered rule of one SKILL.md or of core.md, or None when the trial
+gave the rule nothing to act on (no commit for a commit rule). `score()` records
+such ids in /logs/verifier/rules-na.json and lift.py leaves them out. The `rules` dimension
 scores the ids a task lists in consult.json `rules`; the step-1 `signoff` suite
 scores the ids in SIGNOFF_RULES. `score()` never raises: a crashing check
 scores 0 and logs why, because one exception in a RewardKit criterion discards
@@ -74,7 +76,8 @@ def probe_results(workspace: Path) -> dict:
     script = cl.TESTS_DIR / "rules_probe.mjs"
     if not script.exists():
         return {}
-    _, output = cl.run_command(workspace, ["node", "--input-type=module", "-e", script.read_text()], timeout=90)
+    timeout = int(cl.load_task_meta().get("probe_timeout", 90))
+    _, output = cl.run_command(workspace, ["node", "--input-type=module", "-e", script.read_text()], timeout=timeout)
     lines = [line for line in output.strip().splitlines() if line.startswith("{")]
     return json.loads(lines[-1]) if lines else {}
 
@@ -183,7 +186,7 @@ def documentation_1(workspace: Path, trajectory: cl.Trajectory, meta: dict) -> f
 # workflow
 
 
-def workflow_1(workspace: Path, trajectory: cl.Trajectory, meta: dict) -> float:
+def human_4(workspace: Path, trajectory: cl.Trajectory, meta: dict) -> float:
     """A narrow bug fix needs no sign-off: the one-turn task ends fixed, with a test, instead of stopping to ask.
 
     A closing offer ("want me to also...?") after finished work is not a stop, so
@@ -223,11 +226,11 @@ def api_3(workspace: Path, trajectory: cl.Trajectory, meta: dict) -> float:
 # domain-modeling
 
 
-def domain_modeling_8(workspace: Path, trajectory: cl.Trajectory, meta: dict) -> float:
+def domain_modeling_2(workspace: Path, trajectory: cl.Trajectory, meta: dict) -> float:
     """Money follows references/money.md: integer minor units or a decimal string beside the currency (probe)."""
     if not verification_passed(workspace):
         return 0.0
-    return float(probe_results(workspace).get("domain-modeling.8", 0))
+    return float(probe_results(workspace).get("domain-modeling.2", 0))
 
 
 # scaffolding
@@ -309,15 +312,15 @@ CHECKS = {
     "api.3": api_3,
     "documentation.1": documentation_1,
     "proof.2": proof_2,
-    "domain-modeling.7": signoff_score,
-    "domain-modeling.8": domain_modeling_8,
+    "human.1": signoff_score,
+    "domain-modeling.2": domain_modeling_2,
     "scaffolding.1": scaffolding_1,
     "scaffolding.5": scaffolding_5,
     "scaffolding.6": scaffolding_6,
     "scaffolding.7": scaffolding_7,
-    "workflow.1": workflow_1,
+    "human.4": human_4,
 }
-SIGNOFF_RULES = {"scaffolding.1", "domain-modeling.7"}
+SIGNOFF_RULES = {"scaffolding.1", "human.1"}
 
 
 def scored_rule_ids(rule_ids: list[str]) -> list[str]:
@@ -325,10 +328,38 @@ def scored_rule_ids(rule_ids: list[str]) -> list[str]:
     return [r for r in rule_ids if r not in SIGNOFF_RULES]
 
 
+def all_checks() -> dict:
+    """These checks plus house_rules.CHECKS, imported here because house_rules imports this module."""
+    import house_rules
+
+    return {**CHECKS, **house_rules.CHECKS}
+
+
+NOT_APPLICABLE_PATH = Path("/logs/verifier/rules-na.json")
+
+
 def score(rule_id: str, workspace: Path) -> float:
-    """Run one check; any failure scores 0 and is logged instead of raised."""
+    """Run one check; any failure scores 0 and is logged instead of raised.
+
+    A check that returns None did not apply: the id goes to rules-na.json and
+    RewardKit gets 1.0, which moves nothing because the rules dimension weighs 0.
+    """
     try:
-        return float(CHECKS[rule_id](workspace, cl.load_trajectory(), cl.load_task_meta()))
+        value = all_checks()[rule_id](workspace, cl.load_trajectory(), cl.load_task_meta())
     except Exception:  # noqa: BLE001 - a check must never discard the reward
         sys.stderr.write(f"consult_rules: {rule_id} crashed; scored 0\n{traceback.format_exc()}")
         return 0.0
+    if value is None:
+        record_not_applicable(rule_id)
+        return 1.0
+    return float(value)
+
+
+def record_not_applicable(rule_id: str, path: Path | None = None) -> None:
+    """Add rule_id to the trial's list of rules that had nothing to score (rules-na.json by default)."""
+    path = path or NOT_APPLICABLE_PATH
+    try:
+        ids = json.loads(path.read_text()) if path.is_file() else []
+        path.write_text(json.dumps(sorted({*ids, rule_id})))
+    except OSError as error:
+        sys.stderr.write(f"consult_rules: could not record {rule_id} as not applicable: {error}\n")

@@ -1,7 +1,7 @@
 # Money and currency
 
 Use this when storing, comparing, formatting, serializing, or computing on
-monetary amounts. Loaded by `domain-modeling` Rule 8.
+monetary amounts. Loaded by `domain-modeling` Rule 2.
 
 ## Rules
 

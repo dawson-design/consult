@@ -6,7 +6,7 @@ description = "Plan the engineering lenses for a customer email migration."
 
 [metadata]
 kind = "routing"
-features = ["workflow", "database", "release", "domain-modeling", "proof", "code-review"]
+features = ["database", "proof"]
 
 [agent]
 timeout_sec = 600.0

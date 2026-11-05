@@ -12,7 +12,7 @@
 # the Wilson interval at `confidence`.
 confidence: 0.90
 thresholds:
-  workflow_recall: {min: 0.83}      # code-changing positives: workflow before the first write
+  focused_rate: {min: 0.80}         # positives: at most 2 Consult skills before the first write
   narrow_recall: {min: 0.73}        # positives: a required_any skill before the first write
   false_trigger_rate: {max: 0.08}   # negatives: any Consult load
   negative_case_max_triggered: 1    # a negative that triggers in 2+ attempts fails
@@ -30,7 +30,7 @@ cases:
       sort it out?
     code_change: true
     required_any: [proof]
-    expect_silent: [release, commit, git-workflow, documentation]
+    expect_silent: [release, git, documentation]
 
   - name: g-new-endpoint
     kind: positive
@@ -43,8 +43,8 @@ cases:
       console can remove an account by its id. The console team will wire up the
       button once this exists.
     code_change: true
-    required_any: [api, contract-first, error-handling]
-    expect_silent: [release, commit, git-workflow, documentation]
+    required_any: [api]
+    expect_silent: [release, git, documentation]
 
   - name: g-client-field
     kind: positive
@@ -58,8 +58,8 @@ cases:
       an order. Their system parses exactly what we return, and the iOS app reads
       the same endpoint, so nothing that's there today can break.
     code_change: true
-    required_any: [contract-first, domain-modeling, api]
-    expect_silent: [release, commit, git-workflow, documentation]
+    required_any: [domain-modeling, api]
+    expect_silent: [release, git, documentation]
 
   - name: g-open-redirect
     kind: positive
@@ -72,7 +72,7 @@ cases:
       should only ever end up back on our own pages.
     code_change: true
     required_any: [proof, domain-modeling]
-    expect_silent: [release, commit, git-workflow, documentation]
+    expect_silent: [release, git, documentation]
 
   - name: g-column-change
     kind: positive
@@ -86,7 +86,7 @@ cases:
       table or break whichever version is still serving traffic.
     code_change: true
     required_any: [database]
-    expect_silent: [release, commit, git-workflow, documentation]
+    expect_silent: [release, git, documentation]
 
   - name: g-screen-reader
     kind: positive
@@ -97,7 +97,7 @@ cases:
       it, and I never hear whether it worked." Can we fix the signup page for her?
     code_change: true
     required_any: [ui-design]
-    expect_silent: [release, commit, git-workflow, documentation]
+    expect_silent: [release, git, documentation]
 
   - name: g-tangled
     kind: positive
@@ -108,8 +108,8 @@ cases:
       part can change on its own. what it returns and records has to stay exactly
       the same
     code_change: true
-    required_any: [refactoring, architecture]
-    expect_silent: [release, commit, git-workflow, documentation]
+    required_any: [proof]
+    expect_silent: [release, git, documentation]
 
   - name: g-flaky-sends
     kind: positive
@@ -123,11 +123,12 @@ cases:
       blip on the provider's side doesn't lose anything, without anyone getting the
       same notification twice?
     code_change: true
-    required_any: [error-handling]
-    expect_silent: [release, commit, git-workflow, documentation]
+    required_any: [proof]
+    expect_silent: [release, git, documentation]
 
   - name: g-design-note
-    kind: positive
+    # v2: a written proposal is core's plan checkpoint; no skill owns it.
+    kind: negative
     source: {task: design-decision-record}
     prompt: >-
       Before anyone touches checkout validation again, can you write up a short
@@ -136,8 +137,6 @@ cases:
       which you'd pick. Put it in docs/ and don't change any code yet.
     # A written proposal, not a code change.
     code_change: false
-    required_any: [architecture]
-    expect_silent: [release, commit, git-workflow, documentation]
 
   - name: g-tooling
     kind: positive
@@ -147,7 +146,7 @@ cases:
       and tests together, and a github actions workflow that runs it on every PR
     code_change: true
     required_any: [scaffolding]
-    expect_silent: [release, commit, git-workflow, documentation]
+    expect_silent: [release, git, documentation]
 
   - name: g-deprecated-api
     kind: positive
@@ -160,7 +159,7 @@ cases:
       Can you get rid of it properly?
     code_change: true
     required_any: [proof]
-    expect_silent: [release, commit, git-workflow, documentation]
+    expect_silent: [release, git, documentation]
 
   # Negatives: typo and wording fixes and questions that ask for no change.
   # Any Consult load is a false trigger.

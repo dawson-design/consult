@@ -1,4 +1,0 @@
-interface:
-  display_name: "Consult: Workflow"
-  short_description: "Consult entrypoint for any software engineering task"
-  default_prompt: "Use Consult workflow to route this engineering task, name the risk profile, and select the skills needed for a correct, idiomatic solution."

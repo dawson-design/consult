@@ -39,7 +39,7 @@
       "rules": [
         "api.4"
       ],
-      "key_phrase": "Preserve an existing service's representation and error contract.",
+      "key_phrase": "Keep an existing service's representation and error contract.",
       "question": "Does a found user still get status 200 with the user object itself as the body, as before the change?",
       "polarity": "positive",
       "tier": "must",
@@ -61,17 +61,13 @@
       "rules": [
         "api.4"
       ],
-      "key_phrase": "New APIs use the chosen model's native error format",
+      "key_phrase": "Errors use the chosen format's native shape",
       "question": "Do the missing-id and unknown-user responses use one error body shape, with a machine-readable code and a human-readable message in the same fields?",
       "polarity": "positive",
       "tier": "must",
       "look_at": "Both error branches of `handleUserLookup` in `src/users.js`",
       "yes_when": "Both error bodies have the same fields, holding a stable code and a readable message.",
       "no_when": "The two errors use different body shapes, or one lacks a code or a message."
-    },
-    {
-      "id": "boundaries.no_leaky_errors",
-      "extends": "boundaries.no_leaky_errors"
     },
     {
       "id": "proof.statuses_asserted",

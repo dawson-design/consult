@@ -1,0 +1,52 @@
+{
+  "task": "follow-the-project",
+  "kind": "code",
+  "intended_skills": [
+    "api",
+    "proof"
+  ],
+  "rules": [
+    "human.1",
+    "human.7",
+    "default.follow",
+    "core.simple",
+    "core.4",
+    "proof.6",
+    "core.7",
+    "default.11",
+    "default.13",
+    "human.2",
+    "human.3",
+    "human.6"
+  ],
+  "gated_paths": [
+    "src/*",
+    "test/*"
+  ],
+  "visible_test_cmd": "npm test",
+  "test_file_cmd": "node --test {files}",
+  "shape_scope": "changed",
+  "stages": 1,
+  "stage_headings": [
+    "# Gift cards"
+  ],
+  "project": {
+    "layers": [
+      "src/controllers",
+      "src/services",
+      "src/repositories"
+    ],
+    "error_classes": [
+      "AppError",
+      "ValidationError",
+      "NotFoundError",
+      "ConflictError"
+    ],
+    "class_layer": "src/services",
+    "test_dir": "test"
+  },
+  "allowed_env": [
+    "PORT",
+    "NODE_ENV"
+  ]
+}

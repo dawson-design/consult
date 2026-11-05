@@ -1,65 +1,118 @@
-Consult is installed. When a request will change code, tests, config, or git
-history, load the consult:workflow skill before you read any files, then load
-each Consult skill its routing table matches before your first edit or commit.
-Skip the skills for typo and wording fixes, one-line edits that change no
-behavior, and questions that ask for no change. The core below applies either
-way.
+Consult is installed. Its skills load by topic, and the consult:proof skill
+loads for any change that needs proving. This core applies to every code
+change.
 
 # Consult core
 
-These rules apply to every code change, whether or not a Consult skill is
-loaded. Skills cite them as core rules.
-
-## Iron Law
-
-`COMPLEXITY IS THE ENEMY: KEEP SOFTWARE SIMPLE ENOUGH TO UNDERSTAND, CHANGE, AND PROVE.`
+Complexity is the enemy: keep software simple enough to understand, change,
+and prove.
 
 ## Rules
 
-1. **Keep unrelated parts separate.** Calculations, I/O, and state changes are
-   different parts. Keep calculations pure: a function that computes a result
-   reads no clock, random source, file, network, or database, and changes
-   nothing outside itself. Make state and effects explicit, and push I/O,
-   database access, network calls, and mutation to the edges of the code you
-   write. In code you write or change, keep separate features in separate
-   functions or modules. Keep the number of things a maintainer must
-   understand together small.
-2. **Build only what the user asked for.** Build the main behavior first unless
-   safety or data loss requires an edge case now. Add no route, command, flag,
-   config key, environment variable, or startup requirement the request did
-   not name, even one that is additive and easy to undo. When one seems
-   needed, propose it in your report instead of building it. Extract an
+1. Keep calculations, I/O, and state changes apart. A function that computes
+   a result reads no clock, random source, file, network, or database, and
+   changes nothing outside itself. Push I/O and mutation to the edges.
+2. Build only what the user asked for. Add no route, command, flag, config
+   key, environment variable, or startup requirement the request did not
+   name. Propose it instead as an opt-in, never as your recommended option,
+   so a reply such as "use your recommendations" doesn't build it. Extract an
    abstraction only when code in more than one place serves the same purpose.
-3. **Check existing tools before building one.** Look for a maintained library
-   before writing code for a solved problem, and prefer mature, proven
-   libraries and tools, on current supported versions, unless the user asks
-   for newer ones. Ask before adding a dependency.
-4. **Write code a reader can follow in one pass.** This covers code you write
-   or change; do not reshape untouched code to fit. Functions do one thing and
-   stay around 25-30 lines. Conditionals and loops stay under three nesting
-   levels; use guard clauses or extraction before adding another nested
-   branch. Name each extracted function for its one job. A private function
-   extracted this way is not an abstraction under core rule 2. A condition
-   that joins two or more checks with a logical and/or (`&&`, `||`, `and`,
-   `or`) gets a name that says what it means in plain English: a predicate
-   function when reused, or a named local when used once. Null and bounds
-   checks such as `items == null || items.length == 0` need no name. Build
-   behavior by composing functions and plain data. Use inheritance only when
-   a framework, a library, or the codebase's existing pattern requires it.
-5. **Explain the change to the user.** Report what needs their attention
-   first, then what changed, why it is better, what proves it, and what
-   remains unproven.
-6. **Ask whether backward compatibility is required** when a change alters
-   behavior that callers outside the change, or stored data, depend on. Do
-   not assume it is, and add no compatibility shim until the user answers. A
-   fix that restores intended behavior needs no question, and a loaded
-   skill's compatibility policy, such as `api`'s, takes precedence.
-7. **Treat input that crosses a trust boundary as untrusted**, even when the
-   request does not mention security. Parse or validate it before use.
-8. **Static checks count as much as tests.** Before you commit or push, run
-   the project's linter and type checker, and its formatter in check mode or
-   on the files you changed. Fix what they report in the code you changed,
-   and do not rerun them after every edit. If a project past the prototype
-   stage lacks its ecosystem's standard tool for one of these and has not
-   declined it, say so and propose adding it. Adding one is a dependency
-   under core rule 3.
+3. Don't write code for a solved problem. Use a mature, maintained library
+   on a current supported version.
+4. Write code a reader can follow in one pass. This covers code you write or
+   change; don't reshape untouched code. Functions do one thing in about
+   25-30 lines. Keep nesting under three levels with guard clauses or
+   extraction. Name a condition that joins checks with and/or: a predicate
+   when reused, a local otherwise. Null and bounds checks need no name.
+5. Don't assume backward compatibility is or isn't required. When a change
+   alters behavior that outside callers or stored data depend on, ask, and
+   add no shim until the user answers. A fix that restores intended behavior
+   needs no question.
+6. Treat input that crosses a trust boundary as untrusted, even when the
+   request doesn't mention security.
+7. Before you commit or push, run the project's linter, type checker, and
+   formatter check, and fix what they report in code you changed. If a
+   project past the prototype stage lacks one, say so and propose adding it.
+
+## House defaults
+
+Where several approaches are sound, use these. Where the project
+chose differently, follow the project.
+
+1. **Paradigm:** functional core, imperative shell. Model with immutable
+   records, sum types, and maps, with behavior as functions over them. Don't
+   put behavior and mutable state in one class, and don't use inheritance
+   unless a framework requires it.
+2. **Structure:** organize by domain feature or bounded context, keeping each
+   behavior's data, logic, and tests together. Add a horizontal layer only at
+   a real boundary: process, deploy, trust, persistence, or transport. Use
+   aggregates, repositories, and domain services only to protect a real
+   invariant.
+4. **Errors:** return Result-style values for expected failures, and raise
+   exceptions only for bugs. Catch only to recover, translate, retry, or
+   terminate, keeping the cause. Translate errors at each boundary. Fail
+   closed on auth, validation, and crypto errors.
+5. **Data:** represent states as explicit variants, not combinations of flags
+   or nullables. Parse external input once at the boundary into trusted types
+   with Zod (TypeScript) or Pydantic (Python).
+7. **Contracts:** write the contract (OpenAPI spec, types, or schema) before
+   the code that implements it.
+8. **Live updates:** polling, SSE, or WebSockets. Adopt Kafka or another
+   stream only after naming a need they can't meet, such as replay or
+   fan-out.
+9. **Remote calls:** declare timeout, retry, and failure behavior together.
+   Retry only idempotent transient failures, in one layer, with capped,
+   jittered backoff.
+10. **Correlation ids:** give every error response a correlation id that
+    also appears in the log line for that failure.
+11. **Tooling:** uv for Python, pnpm or bun for JS/TS, cargo, go mod. One
+    committed lockfile, a pinned language version, and `test`, `lint`,
+    `format`, and `typecheck` commands that CI runs too.
+12. **Refactors:** keep structural and behavioral changes in separate commits.
+    Change public interfaces in parallel: expand, migrate callers, contract.
+    No big-bang rewrites.
+13. **Git:** work on a `feature/`, `fix/`, or `refactor/` branch. Stage files
+    by name. One revertible behavior per commit, subject under 72 characters.
+    Don't skip hooks.
+15. **Comments:** only for the non-obvious why; encode rules in names, types,
+    and tests.
+
+## Working with the human
+
+The engineer stays in the loop so they keep understanding the system they
+own.
+
+1. A feature has two checkpoints:
+   - **Plan.** Before writing code, agree the design direction, the
+     contracts callers will depend on, and the core data shapes and
+     invariants, in the host's plan mode when it has one. Offer two or three
+     concrete options, recommend one, and name its main tradeoff.
+   - **Data and contracts.** Show the data shapes and contracts as written,
+     with the checks that prove them, and wait for approval before building
+     logic on them.
+
+   A change that adds no contract, data shape, or dependency, such as a fix
+   that restores intended behavior, skips both.
+2. Also stop and ask before a migration or anything that deletes or
+   rewrites data, adding a dependency, a destructive git operation, and
+   anything that publishes: a push, PR, issue, comment, or release.
+3. Approval covers what was shown. A generic "Approved" or "Continue"
+   covers only the plan or contract just shown, never an earlier proposal
+   for work the request did not name; build that only after an explicit
+   yes. If building shows that an approved plan or contract must change,
+   stop and show the change. If no one can answer, stop and report what
+   needs approval.
+4. Otherwise, do the work and prove it without asking.
+5. Keep each pull request small enough for one person to review in one
+   sitting. When a feature needs more, split it into stacked pull requests,
+   each one behavior that builds, passes its checks, and can be reverted on
+   its own.
+6. Don't review your own change with a subagent or a review skill; the user
+   reviews it in a fresh session before committing. When it touches auth,
+   permissions, secrets, deleted data, or a public contract, name those
+   files first in the report so the review starts there.
+7. End with a report in this order: what needs the user's attention; what
+   changed and why it is better; how it works (where data enters, the key
+   decision, which file to read first); what proves it; what is unproven.
+8. When the project keeps ADRs or a decision log, record each checkpoint
+   decision and its reason there.

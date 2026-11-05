@@ -4,14 +4,13 @@
       "dimension": "structure",
       "extends": "structure.pure_calculation",
       "id": "structure.pure_pipeline",
-      "key_phrase": "push I/O, database access, network calls, and mutation to the edges of the code you write",
+      "key_phrase": "Push I/O and mutation to the edges.",
       "look_at": "`processCustomers` and its helpers in `src/pipeline.js`",
       "no_when": "It assigns normalized values onto the input records (for example `record.email = ...`), sorts or splices the input array, logs, or reads outside state.",
       "polarity": "positive",
       "question": "Does `processCustomers` build `valid` and `errors` without changing the input array or the input records, and without logging or reading the clock, files, or the network?",
       "rules": [
-        "core.1",
-        "domain-modeling.3"
+        "core.1"
       ],
       "tier": "must",
       "yes_when": "Normalized values go into new record objects, and the input array and records are left as they were."
@@ -64,13 +63,13 @@
       "dimension": "scope",
       "extends": "scope.no_unasked_dependency",
       "id": "scope.no_dependency",
-      "key_phrase": "Ask before adding a dependency.",
+      "key_phrase": "adding a dependency",
       "look_at": "Package manifests and lockfiles in the diff",
       "no_when": "A new dependency appears that nobody approved.",
       "polarity": "negative",
       "question": "Does NOT add a package dependency that the request or an approved plan did not name?",
       "rules": [
-        "core.3"
+        "human.2"
       ],
       "tier": "must",
       "yes_when": "No dependency was added, or each added one was named in the request or the approved plan."
@@ -93,30 +92,16 @@
     {
       "dimension": "boundaries",
       "id": "boundaries.error_names_record",
-      "key_phrase": "Failure is part of the function contract.",
+      "key_phrase": "return Result-style values for expected failures",
       "look_at": "Where `src/pipeline.js` builds entries for `errors`",
       "no_when": "Entries hold only a reason, or a reason and a value that does not identify the input record.",
       "polarity": "positive",
       "question": "Does each `errors` entry carry the record that failed (the original record, its fields, or its index) together with `reason`?",
       "rules": [
-        "error-handling.1"
+        "default.4"
       ],
       "tier": "must",
       "yes_when": "A caller can tell from each entry which input record failed, for example `{ record, reason }` or `{ ...record, reason }`."
-    },
-    {
-      "dimension": "boundaries",
-      "id": "boundaries.reason_says_why",
-      "key_phrase": "User-facing errors are actionable",
-      "look_at": "The reason strings in `src/pipeline.js`",
-      "no_when": "Every bad phone gets the same generic reason, such as \"invalid phone\".",
-      "polarity": "positive",
-      "question": "Does each `reason` say what is wrong with the phone, such as how many digits it had against the 10 expected, rather than only \"invalid phone\"?",
-      "rules": [
-        "error-handling.5"
-      ],
-      "tier": "quality",
-      "yes_when": "The reason names the specific problem, such as the digit count or that no digits were found."
     },
     {
       "dimension": "boundaries",
@@ -127,7 +112,7 @@
       "polarity": "positive",
       "question": "Does phone normalization return its failure as a value that carries the reason (for example `{ ok: false, reason }`), rather than throwing for each bad phone and catching it, or returning `null` that the caller must turn into a reason?",
       "rules": [
-        "error-handling.1"
+        "default.4"
       ],
       "tier": "quality",
       "yes_when": "A bad phone comes back as a value that holds its reason, and the caller sorts records on that value."
@@ -209,13 +194,13 @@
       "dimension": "report",
       "extends": "report.attention_first",
       "id": "report.attention_first",
-      "key_phrase": "Report what needs their attention first",
+      "key_phrase": "what needs the user's attention",
       "look_at": "The opening of the agent's final message",
       "no_when": "Decisions or risks appear only after the change list, or not at all.",
       "polarity": "positive",
       "question": "Does the final message open with what needs the user's attention (decisions, risks, unproven points) before describing the changes?",
       "rules": [
-        "core.5"
+        "human.7"
       ],
       "tier": "quality",
       "yes_when": "The first part names what the user must decide or watch, or says plainly that nothing needs attention."
@@ -245,7 +230,7 @@
       "polarity": "positive",
       "question": "Does every test and file the final message names exist in the diff or the repository, and do what the message says?",
       "rules": [
-        "core.5"
+        "human.7"
       ],
       "tier": "must",
       "yes_when": "Each named test and file exists and does what the message says."
@@ -253,13 +238,13 @@
     {
       "dimension": "report",
       "id": "report.open_points_named",
-      "key_phrase": "Report what needs their attention first",
+      "key_phrase": "what needs the user's attention",
       "look_at": "The agent's final message, compared with the behavior of `src/pipeline.js`",
       "no_when": "Neither case is mentioned, or the message describes them differently from what the code does.",
       "polarity": "positive",
       "question": "Does the final message say how the change settles points the task leaves open, such as whether an 11-digit number starting with 1 is accepted, or whether a later duplicate of a record with a bad phone is dropped or kept?",
       "rules": [
-        "core.5"
+        "human.7"
       ],
       "tier": "quality",
       "yes_when": "The message names how it handled at least one of those two cases, and what it says matches the code."

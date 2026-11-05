@@ -3,7 +3,7 @@
     {
       "dimension": "structure",
       "id": "structure.submit_event",
-      "key_phrase": "Every interactive element has name, role, value, state, and keyboard behavior.",
+      "key_phrase": "Every interactive element has a name, role, value, state, and keyboard behavior.",
       "look_at": "The `<form>`, its submit control, and the script in `public/index.html`",
       "no_when": "The form submits and reloads the page so the message is lost, the button is not a submit button so Enter does nothing, or nothing writes the message.",
       "polarity": "positive",
@@ -17,7 +17,7 @@
     {
       "dimension": "structure",
       "id": "structure.native_over_aria",
-      "key_phrase": "Native HTML controls and semantics come before ARIA",
+      "key_phrase": "Native HTML before ARIA",
       "look_at": "ARIA attributes, roles, and `tabindex` in `public/index.html`",
       "no_when": "A native element gets a redundant role, a visible label is replaced or contradicted by `aria-label`, or a `tabindex` is added to a control that is already focusable.",
       "polarity": "negative",
@@ -76,13 +76,13 @@
       "dimension": "scope",
       "extends": "scope.no_unasked_dependency",
       "id": "scope.no_dependency",
-      "key_phrase": "Ask before adding a dependency.",
+      "key_phrase": "adding a dependency",
       "look_at": "Package manifests and lockfiles in the diff",
       "no_when": "A new dependency appears that nobody approved.",
       "polarity": "negative",
       "question": "Does NOT add a package dependency that the request or an approved plan did not name?",
       "rules": [
-        "core.3"
+        "human.2"
       ],
       "tier": "must",
       "yes_when": "No dependency was added, or each added one was named in the request or the approved plan."
@@ -90,7 +90,7 @@
     {
       "dimension": "boundaries",
       "id": "boundaries.email_checked_before_success",
-      "key_phrase": "Forms have explicit labels, grouped controls, errors tied to fields, and no placeholder-only instructions.",
+      "key_phrase": "Forms have explicit labels, grouped controls, errors tied to their fields, and no placeholder-only instructions.",
       "look_at": "The email input's attributes and the submit handling in `public/index.html`",
       "no_when": "Submitting with an empty or malformed email still shows the success message, or a custom error appears in the page with no link to the field.",
       "polarity": "positive",
@@ -110,7 +110,7 @@
       "polarity": "negative",
       "question": "Does NOT insert the entered email or other user input into the page as HTML, through `innerHTML`, `outerHTML`, `insertAdjacentHTML`, or `document.write`?",
       "rules": [
-        "core.7"
+        "core.6"
       ],
       "tier": "must",
       "yes_when": "Messages are written with `textContent` or similar text-only APIs, or never include user input."
@@ -118,7 +118,7 @@
     {
       "dimension": "boundaries",
       "id": "boundaries.status_present_at_load",
-      "key_phrase": "Loading, empty, error, disabled, and success states are defined with the layout, not later.",
+      "key_phrase": "Design loading, empty, error, disabled, and success states with the layout.",
       "look_at": "The status element in `public/index.html` and the script that fills it",
       "no_when": "The script creates the region, or adds its role or `aria-live`, at the moment it shows the message.",
       "polarity": "positive",
@@ -147,7 +147,7 @@
     {
       "dimension": "report",
       "id": "report.manual_checks_named",
-      "key_phrase": "Remaining gaps are recorded as explicit blockers or deferred work, never left implicit.",
+      "key_phrase": "Report what remains untested.",
       "look_at": "The agent's final message, compared with any test or check in the diff",
       "no_when": "The message calls the form accessible or keyboard-friendly without any such check and without naming the gap.",
       "polarity": "positive",
@@ -162,13 +162,13 @@
       "dimension": "report",
       "extends": "report.attention_first",
       "id": "report.attention_first",
-      "key_phrase": "Report what needs their attention first",
+      "key_phrase": "what needs the user's attention",
       "look_at": "The opening of the agent's final message",
       "no_when": "Decisions or risks appear only after the change list, or not at all.",
       "polarity": "positive",
       "question": "Does the final message open with what needs the user's attention (decisions, risks, unproven points) before describing the changes?",
       "rules": [
-        "core.5"
+        "human.7"
       ],
       "tier": "quality",
       "yes_when": "The first part names what the user must decide or watch, or says plainly that nothing needs attention."
@@ -198,7 +198,7 @@
       "polarity": "positive",
       "question": "Does every test and file the final message names exist in the diff or the repository, and do what the message says?",
       "rules": [
-        "core.5"
+        "human.7"
       ],
       "tier": "must",
       "yes_when": "Each named test and file exists and does what the message says."

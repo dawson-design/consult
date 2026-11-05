@@ -46,9 +46,9 @@
       "id": "scope.matches_approved",
       "dimension": "scope",
       "rules": [
-        "contract-first.3"
+        "human.3"
       ],
-      "key_phrase": "Approval covers the contract or data shape that was shown, nothing more.",
+      "key_phrase": "Approval covers what was shown.",
       "question": "Do the routes, request and response shapes, storage, and scripts in the build match what the approved proposal showed?",
       "polarity": "positive",
       "tier": "must",
@@ -68,7 +68,7 @@
       "id": "boundaries.html_escaped",
       "dimension": "boundaries",
       "rules": [
-        "core.7"
+        "core.6"
       ],
       "key_phrase": "Treat input that crosses a trust boundary as untrusted",
       "question": "Does every HTML response escape each value that comes from the request (the body, or headers such as Host) or from a stored link before putting it into the markup?",
@@ -133,9 +133,9 @@
       "id": "report.storage_lifetime",
       "dimension": "report",
       "rules": [
-        "core.5"
+        "human.7"
       ],
-      "key_phrase": "Report what needs their attention first",
+      "key_phrase": "what needs the user's attention",
       "question": "Does the final message say where links and click counts are kept and whether they survive a restart?",
       "polarity": "positive",
       "tier": "quality",

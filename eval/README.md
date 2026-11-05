@@ -84,19 +84,9 @@ uv run scripts/run.py --tier fast                          # after editing a ski
   the consult arm only, 3 attempts, without the judge. It reuses the bare arm
   of `release-claude-code` and compares its Consult arm with the baseline's.
 
-A baseline is reused when the agent, model, effort, CLI version, and what the
-agent sees in each selected task match: instructions, scripted turns,
-`environment/`, and agent timeouts. Editing a task's checks (`tests/`,
-rubrics, `[metadata]`, verifier settings) keeps the baseline: `run.py`
-rescores the stored bare and Consult jobs offline with `rescore.py`, which
-calls no model, and compares against the rescored copies. Judge scores keep
-the baseline's rubric until `rescore.py --rejudge` updates them, which bills
-the subscription, so a judged run against such a baseline compares old-rubric
-bare scores with new-rubric Consult scores. A trial that cannot be rescored
-shows as failed in the lift report. If the rescore cannot run at all (Docker
-down, a build failing), `run.py` runs the bare arm instead. The stored key is
-not updated, so later runs rescore again until a new baseline is saved. When
-what the agent sees changes, `run.py` prints the reason and runs the bare arm. `--baseline` and `--save-baseline` name a
+A baseline is reused only when the agent, model, effort, CLI version, and a
+hash of every selected task directory match. Otherwise `run.py` prints the
+reason and runs the bare arm. `--baseline` and `--save-baseline` name a
 baseline explicitly.
 
 The fast tier catches skill-loading failures and large regressions. With 3
@@ -128,8 +118,8 @@ guidance." `scripts/stub.py` builds it under `runs/stub-skills/`.
   hook prints the Consult core (`agents/.agents/core.md`), so this
   includes the always-on core rules.
 - Consult minus stub: what the skill bodies add beyond the core. Codex arms
-  get no hook, so on Codex the core arrives only when the agent loads
-  `workflow` and reads its `references/core.md` copy.
+  get no hook, and v2 ships no skill copy of the core, so on Codex the
+  consult arm runs without the core until a Codex install path exists.
 
 Both arms read one snapshot of `agents/.agents/skills` taken when the run
 starts, so an edit made mid-run reaches neither.
@@ -160,7 +150,7 @@ A positive trial stops at the agent's first write. A load counts when a
 Skill call or a SKILL.md read for a catalog skill succeeds before that write.
 The thresholds sit in `cases.yaml` and are fixed before a run:
 
-- Workflow recall on code-changing positives: at least 0.83.
+- Focused rate: at least 0.80 of positives load at most 2 Consult skills before the first write.
 - Narrow recall, one of the case's `required_any` skills: at least 0.73.
 - False-trigger rate on negatives: at most 0.08, and no negative may trigger
   in 2 of its attempts.
@@ -253,6 +243,8 @@ untouched workspace plus the generic judge.
 - `largeProject` / `linkShortener`: larger cross-file tasks.
 - `regressionCheck`: tasks that once regressed under Consult.
 - `rules`: underspecified tasks scored per skill rule (3 tasks).
+- `houseStyle`: one project built in five stages plus a control, scored per
+  house default and on simplicity at each stage (2 tasks).
 
 Prompts and starting repositories never name Consult or a skill. The intended
 skills for a task live in `tests/consult.json` and feed only the trigger-rate
@@ -273,8 +265,8 @@ means the agent noticed a requirement the prompt never stated.
 A multi-step task lists `[[steps]]` in `task.toml`. The `brief` step sends the
 product brief. The `approve` step sends a fixed reply: "Approved, including the
 interface and data shapes you proposed. Build it. Use your recommended option
-for anything still open." `workflow` Rule 4 discards sign-off given before the
-data stage exists, so the agent stops again at the contracts gate. The
+for anything still open." Consult's `human.1` has a second checkpoint: the agent
+shows the data shapes and contracts it wrote, with their checks, before building logic. The
 `continue` step answers it: "Approved. Continue." An agent that built
 everything in the `approve` step gets the same reply. The agent fragments set
 `resume_trajectory: true`, so each step continues the same session.
@@ -285,6 +277,55 @@ A rule task adds these keys to `tests/consult.json`:
 - `expect_silent`: skills the agent should not read on this task.
 - `gated_paths`: paths that must not change before the approval turn.
 - `test_file_cmd`: runs only the agent's own test files, for `proof.2`.
+
+### House style suite
+
+`houseStyle` asks whether Consult builds the way its house defaults say and
+keeps the code simple as it grows. Bare Claude Code already passes the
+correctness tasks above, so those cannot show this. Here the checks score
+which side the agent picked where several approaches are sound.
+
+```sh
+uv run scripts/run.py --suite houseStyle --agent claude-code --arms bare,consult --attempts 3 --skip-preflight
+```
+
+- `staged-commissions` builds one service in five stages, each a brief, an
+  approval, and a continue turn (15 steps): commissions and their lifecycle,
+  withdrawal with a restocking fee, patron accounts, prices from an FX
+  provider, and a deposit change that cuts across the earlier stages. The
+  hidden check reruns every stage's acceptance tests on the final tree, so a
+  later stage that breaks an earlier one fails.
+- `follow-the-project` is the control: a repository that already uses
+  classes, thrown error classes, layer folders, and a `test/` folder.
+  `default.follow` scores whether the change matches those choices. A drop
+  under Consult means the house defaults override projects they should yield
+  to.
+
+The rule checks live in `verifier/shared/house_rules.py`. The static ones read
+facts that `verifier/shared/code_shape.mjs` extracts with the TypeScript
+compiler API, pinned in `verifier/analyzer/package.json` and installed into
+the image at `/opt/eval/analyzer`. Shape scores are fractions of functions,
+logic decisions, or files, so a larger change scores no worse for its size,
+only for how it is built:
+
+| id | measures |
+|---|---|
+| `core.simple` | mean of the five shape scores below, on the final tree |
+| `core.simple.s1`..`s5` | the same, on the tree each stage left (step-verifier snapshots in `/opt/eval/snapshots`) |
+| `core.4` | share of functions within 30 lines, nesting under three levels, compound conditions named |
+| `core.1` | share of logic decisions (real conditions, loops, switch cases; not null checks or Result plumbing) in pure functions |
+| (part of `core.simple`) | share of files without mutated module state or stateful classes; no import cycles; no single-implementation interface or abstract class |
+| `default.1`, `default.2`, `default.4`, `default.5` | static: no stateful classes or inheritance; feature folders and colocated tests; Result values, with plain `Error`/`TypeError`/`RangeError` throws counted as bug checks; state variants and Zod parsing |
+| `default.9`, `default.10`, `core.6` | rule probe against a fake FX provider that hangs, fails once, fails for good, or sends garbage, plus malformed requests; `default.10` is the share of failure responses carrying a correlation id |
+| `default.7`, `human.1.stages`, `human.7`, `proof.6` | per stage, from the trajectory: contract written first, the brief turn stopped at the plan, the report order, a test seen failing |
+
+A staged task adds `stages`, `steps_per_stage`, `stage_headings` (each brief's
+first line, which splits the trajectory into stages),
+`allowed_env`, and `probe_timeout` to `tests/consult.json`. The control adds
+`shape_scope: changed` and `project`. Each task's oracle builds a reference in
+the intended style; `verifier/tests/test_house_rules.py` checks that the
+reference scores high and a typical layered, class-based, throwing variant
+scores low.
 
 ## Scoring
 
@@ -311,7 +352,10 @@ arm's `skill_triggering` is also the check that injection worked.
 Each rule check in `verifier/shared/consult_rules.py` tests one numbered rule
 of one SKILL.md. It reads the trajectory, the diff against the scaffold commit,
 or a per-task probe. A check that an idle agent would pass, such as
-`documentation.1`, scores 0 unless verification passed. Per-rule scores land in
+`documentation.1`, scores 0 unless verification passed. A check returns
+None when the trial gave its rule nothing to act on, such as a commit rule in
+a trial with no commit: the id goes to `rules-na.json` and `lift.py` leaves
+that trial out of the rule's mean and its `n`. Per-rule scores land in
 `reward-details.json`. `rules` stays at weight 0 until a sample of hand
 ratings calibrates the checks. `scripts/rule_labels.py export <sheet.csv>
 <job>...` writes one row per rule verdict with the rule's text and the trial
@@ -323,7 +367,7 @@ that score no rules get `rules = 0.0` in their `reward.toml`, so a calibrated
 weight reaches only the tasks that list rules.
 
 In a multi-step task the `brief` step runs its own verifier, the `signoff`
-suite, which scores the task's sign-off rule, such as `domain-modeling.7`:
+suite, which scores the task's sign-off rule, such as `human.1`:
 
 - 1 when no gated path changed.
 - 1 when the agent built but flagged the result as provisional. Consult now
@@ -419,7 +463,11 @@ To add a task:
 ### Judge rubrics
 
 A rubric is the checklist the code judges answer for one task: 12 to 20
-atomic items, each a yes/no question tied to the Consult rules it applies.
+atomic items, each a yes/no question tied to the Consult rules it applies. A
+readout rubric (`"readout": true`, 1 to 6 items) scores rules a check cannot
+read, such as core rule 3 and default 15 in the house-style tasks. Its weight
+is 0, so the task reward does not move, and `lift.py` reports its answers per
+rule as `judge` rows.
 "Yes" always means the item is met, so a negative item starts with
 "Does NOT". Each item has:
 

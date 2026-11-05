@@ -30,9 +30,9 @@
       "id": "boundaries.exhausted_reported",
       "dimension": "boundaries",
       "rules": [
-        "error-handling.2"
+        "default.4"
       ],
-      "key_phrase": "Every catch does one of those or re-raises with context",
+      "key_phrase": "Catch only to recover, translate, retry, or terminate, keeping the cause.",
       "question": "When a notification's send keeps failing until its attempts run out, does the batch carry on with the others and make that failure visible, counted in `failed` and identifiable by notification id, rather than rejecting the whole batch or dropping it?",
       "polarity": "positive",
       "tier": "must",
@@ -44,9 +44,9 @@
       "id": "boundaries.retry_capped",
       "dimension": "boundaries",
       "rules": [
-        "error-handling.4"
+        "default.9"
       ],
-      "key_phrase": "Retries apply only to idempotent transient failures, in one layer, with a capped budget and jittered backoff.",
+      "key_phrase": "Retry only idempotent transient failures, in one layer, with capped, jittered backoff.",
       "question": "Is each notification retried a fixed, small maximum number of times, with the retry in one place in the worker?",
       "polarity": "positive",
       "tier": "must",
@@ -58,9 +58,9 @@
       "id": "boundaries.retry_backoff",
       "dimension": "boundaries",
       "rules": [
-        "error-handling.4"
+        "default.9"
       ],
-      "key_phrase": "Retries apply only to idempotent transient failures, in one layer, with a capped budget and jittered backoff.",
+      "key_phrase": "Retry only idempotent transient failures, in one layer, with capped, jittered backoff.",
       "question": "Does the worker wait before retrying a failed send, with a delay that grows per attempt and is jittered?",
       "polarity": "positive",
       "tier": "quality",
@@ -72,29 +72,15 @@
       "id": "boundaries.only_failed_resent",
       "dimension": "boundaries",
       "rules": [
-        "error-handling.4"
+        "default.9"
       ],
-      "key_phrase": "Retries apply only to idempotent transient failures",
+      "key_phrase": "Retry only idempotent transient failures",
       "question": "Does a retry resend only the notification whose send failed, never one whose send already succeeded?",
       "polarity": "positive",
       "tier": "must",
       "look_at": "What the retry path in `src/worker.js` resends",
       "yes_when": "The retry is scoped to the one failed notification, and a notification stops being sent after its first success.",
       "no_when": "A failure retries a whole chunk or batch, or a notification can be sent again after a successful send."
-    },
-    {
-      "id": "boundaries.logs_allowlisted",
-      "dimension": "boundaries",
-      "rules": [
-        "error-handling.5"
-      ],
-      "key_phrase": "Redaction is a field allowlist, not a secret deny-list.",
-      "question": "Does NOT log whole notification objects or send payloads, so logs carry only chosen fields such as the notification id, attempt, counts, and error message?",
-      "polarity": "negative",
-      "tier": "must",
-      "look_at": "The fields passed to every `logger` call in `src/worker.js`",
-      "yes_when": "Each log call builds its fields from named values, such as `notification.id`, not from the notification object itself.",
-      "no_when": "A log call passes the notification, a spread of it, or the send arguments, so recipient or message content can reach the logs."
     },
     {
       "id": "proof.retry_regression",
@@ -121,9 +107,9 @@
       "id": "proof.logs_asserted",
       "dimension": "proof",
       "rules": [
-        "error-handling.6"
+        "proof.3"
       ],
-      "key_phrase": "Every public operation that can fail has at least one failure-path test.",
+      "key_phrase": "Every public operation that can fail has at least one failure-path test",
       "question": "Does a test assert the lifecycle log events, such as the warning for a retried send and the error for a notification that ran out of attempts, with their notification id?",
       "polarity": "positive",
       "tier": "quality",
@@ -143,9 +129,9 @@
       "no_when": "The message does not mention the risk, or claims retries can never duplicate a notification.",
       "dimension": "report",
       "rules": [
-        "core.5"
+        "human.7"
       ],
-      "key_phrase": "Report what needs their attention first",
+      "key_phrase": "what needs the user's attention",
       "polarity": "positive",
       "look_at": "The agent's final message"
     },

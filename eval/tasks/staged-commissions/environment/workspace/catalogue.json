@@ -1,0 +1,6 @@
+[
+  { "design": "oak-bench", "name": "Oak bench", "pricePence": 45000 },
+  { "design": "walnut-desk", "name": "Walnut desk", "pricePence": 129000 },
+  { "design": "ash-stool", "name": "Ash stool", "pricePence": 8500 },
+  { "design": "elm-shelf", "name": "Elm shelf", "pricePence": 22000 }
+]

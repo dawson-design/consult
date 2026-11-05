@@ -20,10 +20,10 @@ timeline is shared once the report is triaged.
 
 ## Scope
 
-Consult ships skill content, install scripts, and plugin
+Consult ships skill content, maintainer scripts, and plugin
 manifests. Security-relevant surfaces include:
 
-- `setup.sh` and any scripts under `scripts/`.
+- Scripts under `scripts/` and the eval under `eval/`.
 - Plugin manifests in `.claude-plugin/`, `plugin/.claude-plugin/`, and
   `plugin/.codex-plugin/`.
 - Pre-commit hook in `.githooks/pre-commit`.
@@ -31,8 +31,7 @@ manifests. Security-relevant surfaces include:
   destructive operations.
 
 Out of scope: behavior of third-party agent runtimes (Claude Code,
-Codex, Cursor (marketplace plugin or `~/.agents/skills/` discovery), Gemini CLI,
-Google Antigravity, OpenCode, Copilot CLI), and
+Codex, and other hosts that load the skills), and
 downstream projects that consume Consult.
 
 ## Supported versions

@@ -89,7 +89,11 @@ ARMS = ("plugin", "skills", "bare")
 CONSULT_ARMS = ("plugin", "skills")
 KINDS = ("positive", "negative")
 EFFORTS = ("low", "medium", "high", "xhigh", "max")
-METRICS = ("workflow_recall", "narrow_recall", "false_trigger_rate")
+METRICS = ("focused_rate", "narrow_recall", "false_trigger_rate")
+# A positive is focused when it loads at most this many Consult skills before
+# its first write. Loading four or more skills cuts their benefit sharply
+# (SkillsBench, arXiv 2602.12670), and each load is a turn the bare agent skips.
+FOCUSED_MAX_LOADS = 2
 IMAGE_PREFIX = "consult-trigger"
 PREFIX = "consult:"
 HOOK_MARKER = "Consult is installed"
@@ -198,7 +202,7 @@ def threshold_problems(doc: dict) -> list:
     thresholds = doc.get("thresholds") or {}
     confidence = doc.get("confidence")
     problems = [] if isinstance(confidence, float) and 0 < confidence < 1 else ["confidence must be a fraction"]
-    wanted = {"workflow_recall": "min", "narrow_recall": "min", "false_trigger_rate": "max"}
+    wanted = {"focused_rate": "min", "narrow_recall": "min", "false_trigger_rate": "max"}
     problems += [
         f"thresholds.{m} needs a {b} fraction"
         for m, b in wanted.items()
@@ -558,7 +562,7 @@ def trial_record(
         "code_change": case.code_change,
         "outcome": trial_outcome(events, stopped, timed_out),
         "hook_fired": hook_fired(events),
-        "workflow_on_time": "workflow" in on_time,
+        "focused": len(on_time) <= FOCUSED_MAX_LOADS,
         "required_hit": bool(on_time & set(case.required_any)),
         "any_load": bool(loaded),
         "off_target": sorted(loaded & set(case.expect_silent)),
@@ -621,9 +625,7 @@ def arm_metrics(trials: list, thresholds: dict, confidence: float) -> dict:
     positives = [t for t in valid if t["kind"] == "positive"]
     negatives = [t for t in valid if t["kind"] == "negative"]
     measures = {
-        "workflow_recall": proportion(
-            [t for t in positives if t["code_change"]], lambda t: t["workflow_on_time"], confidence
-        ),
+        "focused_rate": proportion(positives, lambda t: t["focused"], confidence),
         "narrow_recall": proportion(positives, lambda t: t["required_hit"], confidence),
         "false_trigger_rate": proportion(negatives, lambda t: t["any_load"], confidence),
     }
@@ -696,12 +698,11 @@ def load_order(trial: dict) -> str:
 def case_row(case: str, trials: list) -> str:
     valid = [t for t in trials if counted(t)]
     kind = trials[0]["kind"]
-    counts_workflow = kind == "positive" and trials[0]["code_change"]
-    workflow = f"{sum(t['workflow_on_time'] for t in valid)}/{len(valid)}" if counts_workflow else "-"
+    focused = f"{sum(t['focused'] for t in valid)}/{len(valid)}" if kind == "positive" else "-"
     required = f"{sum(t['required_hit'] for t in valid)}/{len(valid)}" if kind == "positive" else "-"
     false_triggers = f"{sum(t['any_load'] for t in valid)}/{len(valid)}" if kind == "negative" else "-"
     loads = " / ".join(load_order(t) for t in sorted(trials, key=lambda t: t["attempt"]))
-    return f"| {case} | {kind} | {len(trials)} | {workflow} | {required} | {false_triggers} | {loads} |"
+    return f"| {case} | {kind} | {len(trials)} | {focused} | {required} | {false_triggers} | {loads} |"
 
 
 def case_table(trials: list) -> list:
@@ -709,7 +710,7 @@ def case_table(trials: list) -> list:
     for trial in trials:
         by_case.setdefault(trial["case"], []).append(trial)
     lines = [
-        "| case | kind | attempts | workflow on time | required hit | false triggers | loads in order (per attempt) |",
+        "| case | kind | attempts | focused | required hit | false triggers | loads in order (per attempt) |",
         "| --- | --- | ---: | ---: | ---: | ---: | --- |",
     ]
     return lines + [case_row(case, rows) for case, rows in by_case.items()]

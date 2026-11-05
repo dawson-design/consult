@@ -3,7 +3,7 @@
     {
       "dimension": "structure",
       "id": "structure.tsconfig_checks_js",
-      "key_phrase": "`typecheck` runs a real type checker using the config added for it.",
+      "key_phrase": "`typecheck` runs a real type checker with the config added for it.",
       "look_at": "`tsconfig.json` and the `typecheck` script in `package.json`",
       "no_when": "The config lacks `allowJs` or `checkJs` (so `tsc` finds no inputs or only parses the files), does not cover `src`, or lets `tsc` write compiled files.",
       "polarity": "positive",
@@ -17,7 +17,7 @@
     {
       "dimension": "structure",
       "id": "structure.lint_covers_files",
-      "key_phrase": "Commands are the contract",
+      "key_phrase": "The commands are the contract",
       "look_at": "The `lint` script in `package.json`",
       "no_when": "The script checks only some files, or passes several files to one `node --check`, which checks only the first file and treats the rest as arguments.",
       "polarity": "positive",
@@ -47,13 +47,13 @@
       "dimension": "scope",
       "extends": "scope.no_unasked_dependency",
       "id": "scope.no_dependency",
-      "key_phrase": "Ask before adding a dependency.",
+      "key_phrase": "adding a dependency",
       "look_at": "Package manifests, lockfiles, and the scripts in `package.json`",
       "no_when": "`typescript`, a linter, or any other package is added to `package.json` or a lockfile, or a script runs `npx`, `pnpm dlx`, or similar to fetch a package the project does not have.",
       "polarity": "negative",
       "question": "Does NOT add a package dependency, or a script that fetches a package when it runs?",
       "rules": [
-        "core.3"
+        "human.2"
       ],
       "tier": "must",
       "yes_when": "`package.json` has no `dependencies` or `devDependencies` added, no lockfile records a new package, and no script downloads one."
@@ -103,13 +103,13 @@
     {
       "dimension": "scope",
       "id": "scope.commit_plan_grouped",
-      "key_phrase": "Group changes by behavior so one behavior can be reverted without dragging unrelated work.",
+      "key_phrase": "One revertible behavior per commit",
       "look_at": "`COMMIT_PLAN.md`, compared with the changed paths",
       "no_when": "The plan is one undivided list, leaves out changed files, puts a file in two groups, or names files the change does not touch.",
       "polarity": "positive",
       "question": "Does `COMMIT_PLAN.md` group the change into commits by purpose, naming the files in each, with every file the change touches in exactly one group?",
       "rules": [
-        "commit.2"
+        "default.13"
       ],
       "tier": "quality",
       "yes_when": "Each group has a purpose or commit subject and a file list, and together the groups cover every changed file once."
@@ -117,14 +117,14 @@
     {
       "dimension": "boundaries",
       "id": "boundaries.checks_fail_loudly",
-      "key_phrase": "`typecheck` runs a real type checker using the config added for it.",
+      "key_phrase": "`typecheck` runs a real type checker with the config added for it.",
       "look_at": "The `test`, `lint`, and `typecheck` scripts in `package.json`",
       "no_when": "A script ends in `|| true` or `|| echo ...`, skips the check when `tsc` is absent (for example `command -v tsc && ...`), or falls back to `node --check` when `tsc` is missing.",
       "polarity": "negative",
       "question": "Does NOT let the `test`, `lint`, or `typecheck` script succeed when its tool is missing or reports errors?",
       "rules": [
         "scaffolding.6",
-        "error-handling.2"
+        "default.4"
       ],
       "tier": "must",
       "yes_when": "Each script exits non-zero when its check fails or its tool cannot be found."
@@ -162,13 +162,13 @@
       "dimension": "report",
       "extends": "report.attention_first",
       "id": "report.attention_first",
-      "key_phrase": "Report what needs their attention first",
+      "key_phrase": "what needs the user's attention",
       "look_at": "The opening of the agent's final message",
       "no_when": "Decisions or risks appear only after the change list, or not at all.",
       "polarity": "positive",
       "question": "Does the final message open with what needs the user's attention (decisions, risks, unproven points) before describing the changes?",
       "rules": [
-        "core.5"
+        "human.7"
       ],
       "tier": "quality",
       "yes_when": "The first part names what the user must decide or watch, such as how to provide TypeScript for `typecheck`, or says plainly that nothing needs attention."
@@ -176,14 +176,14 @@
     {
       "dimension": "report",
       "id": "report.typecheck_needs_tsc",
-      "key_phrase": "Adding one is a dependency under core rule 3.",
+      "key_phrase": "If a project past the prototype stage lacks one, say so and propose adding it.",
       "look_at": "The agent's final message, compared with `package.json`",
       "no_when": "The message reports typecheck as passing or working with no word that the package lacks TypeScript, or never mentions the gap.",
       "polarity": "positive",
       "question": "Does the final message say that the package does not include TypeScript, so `npm run typecheck` fails on a clean checkout until `tsc` is available, and propose or ask about adding it?",
       "rules": [
         "core.3",
-        "core.8"
+        "core.7"
       ],
       "tier": "must",
       "yes_when": "The message says `tsc` is not provided by the package, says what `npm run typecheck` does without it, and proposes adding `typescript` as a dev dependency or asks the user how to provide it. If the change itself added `typescript` to `package.json`, yes when the message says so plainly."
@@ -213,7 +213,7 @@
       "polarity": "positive",
       "question": "Does every test and file the final message names exist in the diff or the repository, and do what the message says?",
       "rules": [
-        "core.5"
+        "human.7"
       ],
       "tier": "must",
       "yes_when": "Each named test and file exists and does what the message says."

@@ -1,0 +1,4 @@
+name: stagedCheck
+description: The houseStyle staged project alone, for checking a core change that targets its sign-off and scope behavior without rerunning the control repository.
+trials:
+  - staged-commissions

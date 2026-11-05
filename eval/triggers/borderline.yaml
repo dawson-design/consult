@@ -15,7 +15,7 @@
 # the Wilson interval at `confidence`.
 confidence: 0.90
 thresholds:
-  workflow_recall: {min: 0.83}      # code-changing positives: workflow before the first write
+  focused_rate: {min: 0.80}         # positives: at most 2 Consult skills before the first write
   narrow_recall: {min: 0.73}        # positives: a required_any skill before the first write
   false_trigger_rate: {max: 0.08}   # negatives: any Consult load
   negative_case_max_triggered: 1    # a negative that triggers in 2+ attempts fails

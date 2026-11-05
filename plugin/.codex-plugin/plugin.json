@@ -1,7 +1,7 @@
 {
   "name": "consult",
-  "version": "19.0.0",
-  "description": "Consult (collaborative engineering-discipline skill pack): data, proof, security, design, and more.",
+  "version": "20.0.0",
+  "description": "Consult: house engineering defaults and proof discipline for coding agents, with the engineer in the loop.",
   "author": {
     "name": "Dawson Design Ltd.",
     "url": "https://github.com/dawson-design"
@@ -13,15 +13,14 @@
     "agent-skills",
     "codex",
     "software-engineering",
-    "code-review",
     "proof",
-    "security"
+    "code-review"
   ],
   "skills": "./skills/",
   "interface": {
     "displayName": "Consult",
-    "shortDescription": "Collaborative engineering-discipline skills for coding agents.",
-    "longDescription": "Consult helps coding agents produce simpler, safer, more correct, accessible, maintainable, and production-ready software while keeping humans involved in architecture, design, judgment, and acceptance.",
+    "shortDescription": "House engineering defaults and proof discipline for coding agents.",
+    "longDescription": "Consult keeps software simple enough to understand, change, and prove. It sets house defaults where several approaches are sound, proves each change, and keeps the engineer in the loop at the plan and at the data and contracts.",
     "developerName": "Dawson Design Ltd.",
     "category": "Coding",
     "capabilities": [
@@ -30,9 +29,9 @@
     ],
     "websiteURL": "https://github.com/dawson-design/consult",
     "defaultPrompt": [
-      "Use Consult workflow for this engineering task.",
-      "Review this change with Consult code-review.",
-      "Use Consult proof before claiming this is done."
+      "Build this with Consult's house defaults.",
+      "Use Consult proof before claiming this is done.",
+      "Review this change with Consult code-review."
     ],
     "brandColor": "#E8592F"
   }

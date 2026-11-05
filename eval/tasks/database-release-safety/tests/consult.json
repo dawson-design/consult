@@ -1,11 +1,7 @@
 {
   "task": "database-release-safety",
   "kind": "code",
-  "intended_skills": [
-    "database",
-    "release",
-    "domain-modeling"
-  ],
+  "intended_skills": ["database"],
   "visible_test_cmd": "npm test",
   "test_file": "test/smoke.test.js"
 }

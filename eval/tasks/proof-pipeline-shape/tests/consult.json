@@ -1,11 +1,7 @@
 {
   "task": "proof-pipeline-shape",
   "kind": "code",
-  "intended_skills": [
-    "proof",
-    "domain-modeling",
-    "error-handling"
-  ],
+  "intended_skills": ["proof"],
   "visible_test_cmd": "npm test",
   "test_file": "test/pipeline.test.js"
 }

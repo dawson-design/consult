@@ -8,8 +8,9 @@ from __future__ import annotations
 
 import re
 import unittest
+from pathlib import Path
 
-from helpers import ROOT
+ROOT = Path(__file__).resolve().parents[1]
 
 WORKFLOW = ROOT / ".github/workflows/ci.yml"
 # `uses: <ref>` with the version the SHA stands for in a trailing comment.

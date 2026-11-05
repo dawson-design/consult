@@ -1,9 +1,9 @@
 {
   "task": "money-field-change",
   "kind": "code",
-  "intended_skills": ["workflow", "contract-first", "api", "domain-modeling", "proof", "code-review"],
-  "expect_silent": ["scaffolding", "documentation", "database", "refactoring"],
-  "rules": ["domain-modeling.7", "domain-modeling.8", "api.1", "api.2", "api.3", "documentation.1"],
+  "intended_skills": ["api", "domain-modeling", "proof"],
+  "expect_silent": ["scaffolding", "database"],
+  "rules": ["human.1", "domain-modeling.2", "api.1", "api.2", "api.3", "documentation.1"],
   "gated_paths": ["src/*"],
   "visible_test_cmd": "npm test",
   "test_file_cmd": "node --test {files}"

@@ -9,7 +9,7 @@
 :root:root:root { color-scheme: dark;
   --paper: #0B0E15; --ink: #FFFFFF; --ink-2: #A9B0B9; --rule: #1E2430; --wash: #121620;
   --accent: #8AD7FF; --on-accent: #0B0E15;
-  --wm-plan: #1A2030; --wm-ink1: #FFFFFF; }
+  --wm-guide: #55657F; --wm-sketch: #B4C6DE; --wm-ink1: #FFFFFF; }
 a { color: inherit; }
 .top, .foot { border-top-color: var(--accent); }
 .q-open { fill: #FFFFFF; } .q-close { fill: var(--accent); }
@@ -17,16 +17,19 @@ a { color: inherit; }
 .credit { width: 100%; font-size: var(--t-label); color: var(--ink-2); }
 
 /* Hosts band under the hero. */
-.hosts .hosts-inner { padding-block: var(--s-2); }
-.hosts p { font-size: var(--t-small); color: var(--ink-2); max-width: none; }
-.hosts b { color: var(--ink); font-weight: 500; }
 
 /* Hero: content capped at 1024px; the lockup (quote mark plus the hexagon-built word, sized by
    wordmark.js through --mark, --mark-w, --gap, --wm-h, and --wm-pad) spans it. */
 .wrap-wide { max-width: calc(64rem + 2 * var(--gutter)); }
-.hero .wrap { padding-block: var(--s-5) var(--s-5); }
+.hero .wrap { padding-block: var(--s-5) var(--s-4); }
 .hero .wrap > * { min-width: 0; }
 .cat { font-family: var(--f-mono); font-size: 0.75rem; letter-spacing: 0.06em; color: var(--ink-2); }
+/* The struck "hand" in the eyebrow gets a pencil stroke (strike.svg) that overshoots the word a
+   little, like a hand-drawn strike; forced-colours mode drops background images, so it falls back
+   to a plain line-through. */
+.cat s { position: relative; text-decoration: none; }
+.cat s::after { content: ""; position: absolute; left: -0.2em; right: -0.25em; top: 58%; height: 0.7em; transform: translateY(-50%); background: url(strike.svg) center / 100% 100% no-repeat; pointer-events: none; }
+@media (forced-colors: active) { .cat s { text-decoration: line-through; } .cat s::after { content: none; } }
 .wm { display: grid; grid-template-columns: var(--mark-w, var(--mark, 0.6em)) minmax(0, 1fr); column-gap: var(--gap, 0.2em); align-items: end; margin: 0; font-family: var(--f-logo); font-weight: 900; font-size: var(--t-mark); line-height: 0.85; letter-spacing: -0.06em; }
 .wm .logo { margin-bottom: var(--wm-pad, 0); width: var(--mark-w, var(--mark, 0.6em)); height: var(--mark, 0.6em); }
 .wm canvas { display: none; width: 100%; height: var(--wm-h, 1em); }
@@ -84,9 +87,6 @@ a { color: inherit; }
   .loop .head, .loop .head-you, .loop text, .loop tspan, .loop .t-sub, .loop .t-center { fill: CanvasText; }
 }
 
-/* Tighter space around the hosts band: less below the hero and above the next section. */
-#how > .wrap { padding-top: var(--s-5); }
-
 /* One-sentence lead under a section heading. */
 .section-lead, .section .section-lead { margin-top: var(--s-2); font-size: var(--t-body); line-height: 1.5; color: var(--ink-2); max-width: 75%; }
 @media (max-width: 56rem) { .section-lead, .section .section-lead { max-width: none; } }
@@ -99,10 +99,7 @@ a { color: inherit; }
 .catalog .wrap { padding-block: var(--s-5) var(--s-6); }
 .catalog-grid { display: grid; grid-template-columns: minmax(0, 46rem) minmax(0, 1fr); column-gap: var(--s-5); }
 .catalog-text { min-width: 0; }
-/* Margin rail: sticky inside its own column, so it never covers the text or the footer. */
-.rail-col { justify-self: end; width: 2.25rem; margin-right: var(--s-4); }
-.hex-rail { position: sticky; top: 6rem; display: block; width: 2.25rem; height: calc(100vh - 9rem); }
-@media (max-width: 62rem) { .catalog-grid { grid-template-columns: minmax(0, 1fr); } .rail-col { display: none; } }
+@media (max-width: 62rem) { .catalog-grid { grid-template-columns: minmax(0, 1fr); } }
 .catalog h1 { font-size: var(--t-head); font-weight: 400; letter-spacing: -0.03em; line-height: 1.1; }
 .catalog h2 { margin-top: var(--s-6); font-size: clamp(1.375rem, 1.1rem + 0.9vw, 1.875rem); font-weight: 400; letter-spacing: -0.02em; line-height: 1.15; }
 .catalog h3 { margin-top: var(--s-5); font-size: 1.25rem; font-weight: 500; letter-spacing: -0.01em; color: var(--accent); }
@@ -139,8 +136,6 @@ a { color: inherit; }
 .nowrap { white-space: nowrap; }
 /* Room above the footer bar, so the last section does not run into it. */
 .foot { margin-top: var(--s-5); }
-.cat a { color: inherit; text-decoration: none; }
-.cat a:hover, .cat a:focus-visible { text-decoration: underline; text-underline-offset: 0.2em; }
 /* Short lead under a column heading. */
 .duo .col-lead { color: var(--ink-2); line-height: 1.55; max-width: none; }
 .duo .col-lead + .loop-fig, .duo .col-lead + .steps { margin-top: calc((var(--s-3) + var(--s-4)) / 2); }
@@ -156,11 +151,19 @@ a { color: inherit; }
 /* Accessibility pass. */
 /* Keyboard focus never lands under the sticky header. */
 html { scroll-padding-top: 5rem; }
+/* Dividers: a ruled pencil line (rule.svg, and rule-2.svg so neighbours differ) painted over
+   each hairline by border-image, 8px tall and centred on the 1px border so nothing moves. Forced
+   colours get the plain border back. Table rules stay plain: border-image does not apply to
+   collapsed table borders. */
+.section, .all, .glossary dt { border-image: url(rule.svg) 8 0 0 0 / 8px 0 0 0 / 4px 0 0 0 stretch; }
+.section:nth-of-type(even), .glossary dd { border-image: url(rule-2.svg) 8 0 0 0 / 8px 0 0 0 / 4px 0 0 0 stretch; }
+@media (forced-colors: active) { .section, .all, .glossary dt, .glossary dd { border-image: none; } }
+
 /* The real "consult" heading is visually hidden while the canvas draws it; in forced-colors
    (high contrast) mode the canvas cannot follow system colours, so show the text instead. */
 .wm h1 { font: inherit; letter-spacing: inherit; margin: 0; }
 @media (forced-colors: active) {
-  .wm canvas, .wm-play, .rail-col { display: none !important; }
+  .wm canvas, .wm-play { display: none !important; }
   .wm.is-drawn .wm-text { position: static; width: auto; height: auto; overflow: visible; clip: auto; white-space: normal; }
   .q-open, .q-close { fill: CanvasText; }
 }
@@ -196,10 +199,58 @@ html { scroll-padding-top: 5rem; }
 @media (prefers-reduced-motion: reduce) { .video-play { transition: none; } }
 @media (max-width: 30rem) { .video-poster { flex-direction: column; align-items: flex-start; justify-content: flex-end; gap: var(--s-2); } .video-play { width: 3rem; height: 3rem; } }
 @media (forced-colors: active) { .video-poster { border-color: ButtonText; } .video-play { background: ButtonText; } .video-play svg { fill: ButtonFace; } }
-/* The worked plan in the essay: a labelled list in a bordered panel, one column on phones. */
-.plan { margin: var(--s-3) 0 0; max-width: 36em; }
-.plan dl { display: grid; grid-template-columns: max-content 1fr; gap: var(--s-1) var(--s-2); padding: var(--s-3); border: 1px solid var(--rule); background: var(--wash); }
-.plan dt { font-family: var(--f-mono); font-size: var(--t-small); color: var(--ink); padding-top: 0.15em; }
-.plan dd { margin: 0; color: var(--ink-2); line-height: 1.5; }
-.plan figcaption { margin-top: var(--s-1); font-size: var(--t-label); color: var(--ink-2); }
-@media (max-width: 30rem) { .plan dl { grid-template-columns: 1fr; row-gap: 0; } .plan dd + dt { margin-top: var(--s-2); } }
+
+/* evidence/: the simplicity chart (legend, plot, hover readout from evidence/chart.js) and the
+   results tables. Series colours come from the dataviz reference palette's dark categorical
+   slots 1 and 2, validated against --paper; bare also differs by dash and hollow markers. */
+.chart { --series-consult: #3987e5; --series-bare: #d95926; margin: var(--s-3) 0 0; max-width: 40em; }
+.chart-legend { display: flex; flex-wrap: wrap; gap: var(--s-1) var(--s-3); font-size: var(--t-small); color: var(--ink-2); }
+.chart .key { display: inline-block; width: 1.5rem; border-top: 2px solid var(--series-consult); vertical-align: middle; margin-right: var(--s-1); }
+.chart .key.bare { border-top-style: dashed; border-color: var(--series-bare); }
+.chart-plot { position: relative; margin-top: var(--s-2); }
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.chart .grid { stroke: var(--rule); stroke-width: 1; }
+.chart .tick { fill: var(--ink-2); font-family: var(--f-mono); font-size: 11px; }
+.chart .end { fill: var(--ink); font-size: 13px; }
+/* The home page's evidence section: copy on the left, chart on the right. The wide chart shows
+   above 56rem; below that the columns stack and the compact copy keeps labels legible. */
+#evidence > .wrap, #how > .wrap { padding-top: calc((var(--s-4) + var(--s-5)) / 2); }
+.evidence-duo { align-items: start; }
+.evidence-copy .section-lead { max-width: none; }
+.evidence-duo .chart { margin-top: 0; }
+@media (max-width: 56rem) { .evidence-duo { gap: var(--s-4); } }
+.chart.chart-wide { max-width: none; }
+.chart-wide svg.compact { display: none; max-width: 40em; }
+@media (max-width: 56rem) { .chart-wide svg.wide { display: none; } .chart-wide svg.compact { display: block; } }
+.chart .line { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.chart .consult .line { stroke: var(--series-consult); }
+.chart .bare .line { stroke: var(--series-bare); stroke-dasharray: 6 5; }
+.chart .dot { stroke-width: 2; }
+.chart .consult .dot { fill: var(--series-consult); stroke: var(--series-consult); }
+.chart .bare .dot { fill: var(--paper); stroke: var(--series-bare); }
+.chart .hit { fill: transparent; }
+.chart .cross { stroke: var(--ink-2); stroke-width: 1; visibility: hidden; }
+.chart .cross.on { visibility: visible; }
+.chart-tip { position: absolute; top: 0; display: grid; gap: 0.25rem; padding: var(--s-1) 0.75rem; border: 1px solid var(--rule); background: var(--wash); font-size: var(--t-label); color: var(--ink); white-space: nowrap; pointer-events: none; visibility: hidden; }
+.chart-tip.on { visibility: visible; }
+.chart-tip b { font-weight: 500; }
+.chart figcaption { margin-top: var(--s-1); font-size: var(--t-label); color: var(--ink-2); }
+.chart-table { margin-top: var(--s-1); font-size: var(--t-small); color: var(--ink-2); }
+.chart-table summary { cursor: pointer; color: var(--accent); }
+.results { width: 100%; max-width: 40em; margin-top: var(--s-2); border-collapse: collapse; font-size: var(--t-small); }
+.results th, .results td { padding: 0.6rem var(--s-2) 0.6rem 0; border-top: 1px solid var(--rule); text-align: left; vertical-align: top; color: var(--ink-2); font-weight: 400; }
+.results thead th { border-top: 0; font-size: var(--t-label); }
+.results tbody th { color: var(--ink); }
+.results .what { display: block; margin-top: 0.25rem; color: var(--ink-2); line-height: 1.45; }
+.results .num { padding-right: 0; padding-left: var(--s-2); text-align: right; font-family: var(--f-mono); white-space: nowrap; }
+.results tbody .num:last-child { color: var(--ink); }
+@media (max-width: 30rem) { .chart .tick { font-size: 16px; } .chart .end { font-size: 18px; } }
+@media (forced-colors: active) {
+  .chart .consult .line, .chart .bare .line, .chart .key { stroke: CanvasText; border-color: CanvasText; }
+  .chart .consult .dot { fill: CanvasText; stroke: CanvasText; }
+  .chart .bare .dot { stroke: CanvasText; fill: Canvas; }
+}
+.evidence-copy .section-lead + .section-lead { margin-top: var(--s-2); }
+/* evidence/: the full column width the skills page uses, with the home page's wide chart. */
+.evidence .catalog-text > p, .evidence h2, .evidence .results { max-width: none; }
+.evidence-copy a { color: var(--accent); text-decoration: underline; text-underline-offset: 0.15em; }

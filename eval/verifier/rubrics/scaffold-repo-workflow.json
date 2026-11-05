@@ -3,8 +3,10 @@
     {
       "id": "structure.tsconfig_checks_js",
       "dimension": "structure",
-      "rules": ["scaffolding.6"],
-      "key_phrase": "`typecheck` runs a real type checker using the config added for it.",
+      "rules": [
+        "scaffolding.6"
+      ],
+      "key_phrase": "`typecheck` runs a real type checker with the config added for it.",
       "question": "Does `tsconfig.json` make `tsc` type-check the package's JavaScript in `src` (with `allowJs` and `checkJs`, or an equivalent, and an `include` or `files` that covers `src/index.js`) without writing output files?",
       "polarity": "positive",
       "tier": "must",
@@ -15,8 +17,10 @@
     {
       "id": "structure.lint_covers_files",
       "dimension": "structure",
-      "rules": ["scaffolding.5"],
-      "key_phrase": "Commands are the contract",
+      "rules": [
+        "scaffolding.5"
+      ],
+      "key_phrase": "The commands are the contract",
       "question": "Does the `lint` script check every JavaScript file in `src` and `test`, and fail when any one of them has a syntax error?",
       "polarity": "positive",
       "tier": "quality",
@@ -42,7 +46,9 @@
     {
       "id": "scope.source_unchanged",
       "dimension": "scope",
-      "rules": ["core.2"],
+      "rules": [
+        "core.2"
+      ],
       "key_phrase": "Build only what the user asked for.",
       "question": "Does NOT change what `formatName` does, or rename or convert `src/index.js` (for example to TypeScript)?",
       "polarity": "negative",
@@ -54,7 +60,9 @@
     {
       "id": "scope.readme_commands",
       "dimension": "scope",
-      "rules": ["documentation.4"],
+      "rules": [
+        "documentation.4"
+      ],
       "key_phrase": "README is purpose, install and run, minimal usage, and links onward.",
       "question": "Does `README.md` give the local setup steps and all three verification commands as `package.json` defines them (`npm test`, `npm run typecheck`, `npm run lint`)?",
       "polarity": "positive",
@@ -66,7 +74,9 @@
     {
       "id": "scope.readme_tsc_prerequisite",
       "dimension": "scope",
-      "rules": ["documentation.4"],
+      "rules": [
+        "documentation.4"
+      ],
       "key_phrase": "install and run",
       "question": "Does `README.md` say that `npm run typecheck` needs TypeScript's `tsc`, which the package does not install, and how a maintainer gets it?",
       "polarity": "positive",
@@ -78,8 +88,10 @@
     {
       "id": "scope.commit_plan_grouped",
       "dimension": "scope",
-      "rules": ["commit.2"],
-      "key_phrase": "Group changes by behavior so one behavior can be reverted without dragging unrelated work.",
+      "rules": [
+        "default.13"
+      ],
+      "key_phrase": "One revertible behavior per commit",
       "question": "Does `COMMIT_PLAN.md` group the change into commits by purpose, naming the files in each, with every file the change touches in exactly one group?",
       "polarity": "positive",
       "tier": "quality",
@@ -90,8 +102,11 @@
     {
       "id": "boundaries.checks_fail_loudly",
       "dimension": "boundaries",
-      "rules": ["scaffolding.6", "error-handling.2"],
-      "key_phrase": "`typecheck` runs a real type checker using the config added for it.",
+      "rules": [
+        "scaffolding.6",
+        "default.4"
+      ],
+      "key_phrase": "`typecheck` runs a real type checker with the config added for it.",
       "question": "Does NOT let the `test`, `lint`, or `typecheck` script succeed when its tool is missing or reports errors?",
       "polarity": "negative",
       "tier": "must",
@@ -102,7 +117,9 @@
     {
       "id": "proof.no_text_assertions",
       "dimension": "proof",
-      "rules": ["proof.7"],
+      "rules": [
+        "proof.7"
+      ],
       "key_phrase": "never by asserting their text",
       "question": "Does NOT add a test that reads `package.json`, `tsconfig.json`, `README.md`, or `COMMIT_PLAN.md` and asserts its text or keys?",
       "polarity": "negative",
@@ -111,7 +128,10 @@
       "yes_when": "No test reads those files to check their contents.",
       "no_when": "A test asserts that a script, a compiler option, a heading, or a command appears in one of those files."
     },
-    {"id": "proof.tests_intact", "extends": "proof.tests_intact"},
+    {
+      "id": "proof.tests_intact",
+      "extends": "proof.tests_intact"
+    },
     {
       "id": "report.attention_first",
       "extends": "report.attention_first",
@@ -120,8 +140,11 @@
     {
       "id": "report.typecheck_needs_tsc",
       "dimension": "report",
-      "rules": ["core.3", "core.8"],
-      "key_phrase": "Adding one is a dependency under core rule 3.",
+      "rules": [
+        "core.3",
+        "core.7"
+      ],
+      "key_phrase": "If a project past the prototype stage lacks one, say so and propose adding it.",
       "question": "Does the final message say that the package does not include TypeScript, so `npm run typecheck` fails on a clean checkout until `tsc` is available, and propose or ask about adding it?",
       "polarity": "positive",
       "tier": "must",
@@ -134,6 +157,9 @@
       "extends": "report.criteria_listed",
       "look_at": "The agent's final message, compared with the request's requirements: test, typecheck, and lint scripts; a minimal `tsconfig.json` used by typecheck; a README with setup and verification commands; a short `COMMIT_PLAN.md`; and no external dependencies"
     },
-    {"id": "report.claims_true", "extends": "report.claims_true"}
+    {
+      "id": "report.claims_true",
+      "extends": "report.claims_true"
+    }
   ]
 }

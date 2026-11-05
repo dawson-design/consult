@@ -80,25 +80,31 @@ def evidence_dir(trial_dir: Path) -> Path:
     return trial_dir / "steps" / steps[-1] if steps else trial_dir
 
 
-def rule_source(prefix: str) -> Path:
-    """The file whose ## Rules section numbers the rules with this id prefix.
+# Rule-id prefixes whose rules live in a section of core.md rather than in a
+# skill's ## Rules section.
+CORE_SECTIONS = {"core": "## Rules", "default": "## House defaults", "human": "## Working with the human"}
 
-    core.<n> rules live in agents/.agents/core.md, beside the skills
-    directory, which the plugin's SessionStart hook prints; every other
-    prefix names a skill.
+
+def rule_source(prefix: str) -> Path:
+    """The file whose numbered section holds the rules with this id prefix.
+
+    core.<n>, default.<n>, and human.<n> rules live in sections of
+    agents/.agents/core.md, which the plugin's SessionStart hook prints;
+    every other prefix names a skill.
     """
-    if prefix == "core":
+    if prefix in CORE_SECTIONS:
         return SKILLS_DIR.parent / "core.md"
     return SKILLS_DIR / prefix / "SKILL.md"
 
 
 def rule_text(rule_id: str) -> str:
-    """The numbered rule's text from its source's ## Rules section, tables dropped; empty when not found."""
+    """The numbered rule's text from its source's numbered section, tables dropped; empty when not found."""
     skill, number = rule_id.rsplit(".", 1)
     path = rule_source(skill)
     if not path.is_file():
         return ""
-    _, found, rest = path.read_text().partition("\n## Rules\n")
+    heading = CORE_SECTIONS.get(skill, "## Rules")
+    _, found, rest = path.read_text().partition(f"\n{heading}\n")
     if not found:
         return ""
     section = rest.split("\n## ", 1)[0].split("\n### ", 1)[0]

@@ -1,4 +1,13 @@
 .DS_Store
+.venv/
+__pycache__/
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+eval/runs/
+eval/.venv/
+eval/verifier/analyzer/node_modules/
+eval/tasks/*/steps/*/solution/reference/node_modules/
 node_modules/
 .claude/
 .consult/
@@ -6,6 +15,3 @@ node_modules/
 .idea/
 .antigravitycli/
 reference/
-eval/runs
-.venv/
-__pycache__/

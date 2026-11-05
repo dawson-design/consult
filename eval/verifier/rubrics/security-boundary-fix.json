@@ -20,7 +20,7 @@
       "rules": [
         "core.4"
       ],
-      "key_phrase": "A condition that joins two or more checks with a logical and/or (`&&`, `||`, `and`, `or`) gets a name that says what it means in plain English",
+      "key_phrase": "Name a condition that joins checks with and/or",
       "question": "Does each condition in the redirect code that joins two or more checks with `&&` or `||` have a name, as a predicate function or a named local, other than plain null or empty checks?",
       "polarity": "positive",
       "tier": "quality",
@@ -65,9 +65,9 @@
       "id": "boundaries.allowlist",
       "dimension": "boundaries",
       "rules": [
-        "error-handling.2"
+        "default.4"
       ],
-      "key_phrase": "Deny by default",
+      "key_phrase": "Fail closed on auth, validation, and crypto errors.",
       "question": "Does `resolveRedirect` return a target only when it is a same-site path or an `https:` URL whose parsed host exactly equals the trusted host, falling back to `/` for everything else, rather than blocking a list of known-bad patterns?",
       "polarity": "positive",
       "tier": "must",
@@ -76,24 +76,10 @@
       "no_when": "The code rejects specific bad patterns (such as `//`, `javascript:`, or a list of hosts) and returns anything else, or matches the host with `includes`, `endsWith`, `startsWith`, or a prefix check on the raw string."
     },
     {
-      "id": "boundaries.platform_url_parser",
-      "dimension": "boundaries",
-      "rules": [
-        "domain-modeling.4"
-      ],
-      "key_phrase": "Do not roll your own auth, crypto, token validation, sanitization, CSRF, parsers, or signature schemes.",
-      "question": "Are absolute targets parsed with the platform `URL` parser and judged by its parsed `protocol` and host (or `origin`), rather than by regular expressions or string slicing on the raw target?",
-      "polarity": "positive",
-      "tier": "must",
-      "look_at": "How `src/redirect.js` reads the scheme and host of an absolute target",
-      "yes_when": "The code builds a `URL` and compares its parsed fields.",
-      "no_when": "The scheme or host is extracted or matched with a regular expression, `split`, `indexOf`, or a hand-written parser."
-    },
-    {
       "id": "boundaries.relative_tricks_rejected",
       "dimension": "boundaries",
       "rules": [
-        "core.7"
+        "core.6"
       ],
       "key_phrase": "Treat input that crosses a trust boundary as untrusted",
       "question": "Does the same-site check reject targets that a browser would send off-site, including protocol-relative `//host`, backslash `/\\host`, and paths with leading whitespace or control characters such as a tab before `//host`?",
@@ -164,9 +150,9 @@
       "no_when": "The chosen host is not mentioned, or is mentioned without saying it is an assumption that needs confirming.",
       "dimension": "report",
       "rules": [
-        "core.5"
+        "human.7"
       ],
-      "key_phrase": "Report what needs their attention first",
+      "key_phrase": "what needs the user's attention",
       "polarity": "positive",
       "look_at": "The agent's final message"
     },

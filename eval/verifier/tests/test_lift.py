@@ -408,5 +408,43 @@ class LiftTests(unittest.TestCase):
         self.assertEqual(summary["cost"]["output_tokens"]["bare"], 1100.0)
 
 
+class RuleScorecardTests(unittest.TestCase):
+    def test_a_rule_a_trial_could_not_act_on_leaves_its_count_and_mean(self):
+        # core.7 had no commit in one consult trial: that trial is left out, not scored 0 or 1.
+        bare = {"t": [{"rules": {"core.7": 0.0}}, {"rules": {"core.7": 1.0}}]}
+        consult = {"t": [{"rules": {"core.7": 1.0}}, {"rules": {}}]}
+
+        row = lift.rule_scorecard(bare, consult)[0]
+
+        self.assertEqual((row["bare"], row["consult"], row["n_bare"], row["n_consult"]), (0.5, 1.0, 2, 1))
+
+    def test_judge_answers_score_their_rules_in_rows_of_their_own(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "judge-items.json"
+            answers = [{"rules": ["core.3"], "answer": a} for a in ("yes", "no", "unknown")]
+            path.write_text(json.dumps({"items": answers + [{"rules": ["default.15"], "answer": "yes"}]}))
+            rates = lift.judge_rule_rates(path)
+        bare = {"t": [{"rules": {"core.3": 0.0}, "judge_rules": {"core.3": 0.0}}]}
+        consult = {"t": [{"rules": {"core.3": 1.0}, "judge_rules": rates}]}
+
+        rows = {(r["rule"], r["method"]): r for r in lift.rule_scorecard(bare, consult)}
+
+        self.assertEqual(rates, {"core.3": 0.5, "default.15": 1.0})
+        self.assertEqual((rows["core.3", "judge"]["consult"], rows["core.3", "check"]["consult"]), (0.5, 1.0))
+
+    def test_trial_evidence_drops_the_rules_the_verifier_marked_not_applicable(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            verifier = Path(tmp) / "steps" / "continue" / "verifier"
+            verifier.mkdir(parents=True)
+            criteria = [{"name": "core.7", "value": 1.0}, {"name": "default.13", "value": 0.5}]
+            (verifier / "reward-details.json").write_text(json.dumps({"rules": {"criteria": criteria}}))
+            (verifier / "rules-na.json").write_text(json.dumps(["core.7"]))
+            result = {"step_results": [{"step_name": "continue"}]}
+
+            evidence = lift.trial_evidence(Path(tmp), result, {})
+
+        self.assertEqual(evidence["rules"], {"default.13": 0.5})
+
+
 if __name__ == "__main__":
     unittest.main()

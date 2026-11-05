@@ -1,13 +1,13 @@
 ---
 name: proof
-description: "Writing or changing tests, or proving a change meets its acceptance criteria: edge cases, invariants."
+description: "Proves a change meets its acceptance criteria with checks that fail when a criterion is not met. Use when writing or changing tests, fixing a bug, refactoring, or before reporting work as done, fixed, or passing."
 ---
 
 # Proof
 
-## Iron Law
+## Iron law
 
-`EVERY ACCEPTANCE CRITERION NEEDS A CHECK THAT FAILS WHEN THE CRITERION IS NOT MET.`
+Every acceptance criterion needs a check that fails when the criterion is not met.
 
 Acceptance criteria are the results the request asks for, whether they come
 from a ticket, a spec, or a one-line prompt. If none are written down, list
@@ -30,8 +30,7 @@ not count until you can say which criterion each test proves.
 
 - Edits that change no behavior: formatting, typos, comments, and renames or
   moves that tooling confirms.
-- Design, naming, structure: `code-review`. Test
-  runner setup: `scaffolding`.
+- Design, naming, or structure questions, and test runner setup.
 
 ## Rules
 
@@ -56,7 +55,12 @@ not count until you can say which criterion each test proves.
    it is the check; test the rules the types do not enforce. Every custom
    guard (sanitizer, validator, prototype guard, redirect check, redaction
    helper, crypto wrapper) ships with a negative test that fails on the
-   unguarded code and passes with the guard.
+   unguarded code and passes with the guard. Every public operation that can
+   fail has at least one failure-path test asserting what the caller sees.
+   Name each test for what the feature does for its user, in a spec-style
+   library (RSpec for Ruby, Vitest or Jest `describe` and `it` for
+   TypeScript) unless the project already uses another, because the suite
+   then reads as the list of requirements.
 4. Use the real code a test calls; mock only the network and filesystem, or
    write down why. Fix the clock, random values, and generated IDs so the
    same input gives the same output. Do not test the framework or the
@@ -81,14 +85,6 @@ not count until you can say which criterion each test proves.
    not block. List each acceptance criterion with its check and result:
    proven, partly proven, blocked, or unproven. For a check run by hand,
    record the command and its output.
-
-## Handoffs
-
-- `domain-modeling`: invariants that make invalid states unrepresentable.
-- `api`: tests of a public API contract.
-- `refactoring`: before/after evidence, and tests that are hard to place
-  because the code is tangled.
-- `error-handling`: an unsettled error shape the proof must assert.
 
 ## References
 

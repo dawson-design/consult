@@ -11,6 +11,8 @@ Per task it writes:
   tests/test.sh                   from verifier/shared/test.sh
   tests/consult_lib.py            from verifier/shared/consult_lib.py
   tests/consult_rules.py          from verifier/shared/consult_rules.py
+  tests/house_rules.py            from verifier/shared/house_rules.py
+  tests/code_shape.mjs            from verifier/shared/code_shape.mjs
   tests/reward.toml               from verifier/shared/reward.<kind>.toml, with the
                                   rules weight zeroed when the task scores no rules
   tests/<dimension>/...           from verifier/shared/<dimension>/ (kind-dependent set)
@@ -62,6 +64,7 @@ from rule_labels import rule_text
 # task.toml step names; a regex, not tomllib, so CI's and macOS's python3 both run this.
 STEP_NAME_RE = re.compile(r'^\[\[steps\]\]\s*\n\s*name\s*=\s*"([^"]+)"', re.MULTILINE)
 RULES_WEIGHT_RE = re.compile(r"(\brules\s*=\s*)[0-9.]+")
+RUBRIC_WEIGHT_RE = re.compile(r"(\brubric\s*=\s*)[0-9.]+")
 
 COMMON_DIMENSIONS = ("skill_triggering", "non_interruption", "rules")
 # The model-scored dimension: the rubric judges for code, the generic judge for routing.
@@ -127,21 +130,28 @@ def task_rules(task: Path) -> list[str]:
 
 
 def reward_toml(task: Path, kind: str) -> bytes:
-    """The shared reward weights; a task that scores no rules gets rules = 0.0.
+    """The shared reward weights; a task that scores no rules gets rules = 0.0, and a readout rubric rubric = 0.0.
 
     Its rules dimension is a placeholder criterion that returns 1.0, kept because
     RewardKit rejects a weight naming a missing dimension. Any rules weight there
-    would add a free point to the reward.
+    would add a free point to the reward. A readout rubric scores rules for
+    lift.py without moving the reward.
     """
-    shared = (SHARED_DIR / f"reward.{kind}.toml").read_text()
-    if scored_rule_ids(task_rules(task)):
-        return shared.encode()
-    zeroed, count = RULES_WEIGHT_RE.subn(r"\g<1>0.0", shared)
+    weights = (SHARED_DIR / f"reward.{kind}.toml").read_text()
+    if not scored_rule_ids(task_rules(task)):
+        weights = zero_weight(weights, RULES_WEIGHT_RE, "rules", task, kind)
+    if rubric.is_readout(task.name):
+        weights = zero_weight(weights, RUBRIC_WEIGHT_RE, "rubric", task, kind)
+    return weights.encode()
+
+
+def zero_weight(weights: str, pattern: re.Pattern, name: str, task: Path, kind: str) -> str:
+    zeroed, count = pattern.subn(r"\g<1>0.0", weights)
     if count != 1:
         raise SystemExit(
-            f"reward.{kind}.toml must name the rules weight once to zero it for {task.name}; found {count}"
+            f"reward.{kind}.toml must name the {name} weight once to zero it for {task.name}; found {count}"
         )
-    return zeroed.encode()
+    return zeroed
 
 
 def step_names(task: Path) -> list[str]:
@@ -190,6 +200,8 @@ def planned_copies(task: Path) -> list[tuple[Path | bytes, Path]]:
         (SHARED_DIR / "test.sh", tests / "test.sh"),
         (SHARED_DIR / "consult_lib.py", tests / "consult_lib.py"),
         (SHARED_DIR / "consult_rules.py", tests / "consult_rules.py"),
+        (SHARED_DIR / "house_rules.py", tests / "house_rules.py"),
+        (SHARED_DIR / "code_shape.mjs", tests / "code_shape.mjs"),
         (reward_toml(task, kind), tests / "reward.toml"),
         (judge_instruction(task, steps), tests / MODEL_DIMENSION[kind] / "instruction.md"),
         *step_copies(task, steps),

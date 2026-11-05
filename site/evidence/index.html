@@ -1,0 +1,130 @@
+<!doctype html>
+<!-- evidence/index.html: what the houseStyle eval shows about Consult, written by hand. Every figure
+     comes from eval/results/2026-11-04-houseStyle.json, and tests/test_site_content.py checks them
+     against it. Shares the Why page's book layout and styles (site.css); chart.js
+     adds the chart's hover readout, and the table under the chart carries the same numbers without it. -->
+<html lang="en" class="no-js">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Consult evidence</title>
+<meta name="description" content="What Consult changes in the code Claude Code writes, measured against bare Claude Code on the same project, with the cost and what went wrong.">
+<link rel="canonical" href="https://dawson-design.github.io/consult/evidence/">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@800..900&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="../base.css">
+<link rel="stylesheet" href="../site.css">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs><g id="q-open" transform="translate(0 10)"><path d="M18 20 H30 V32 A12 12 0 0 1 18 44 Z" transform="rotate(180 24 32)"/><path d="M34 20 H46 V32 A12 12 0 0 1 34 44 Z" transform="rotate(180 40 32)"/></g><g id="q-close" transform="translate(-2.5 -10)"><path d="M54 56 H66 V68 A12 12 0 0 1 54 80 Z"/><path d="M70 56 H82 V68 A12 12 0 0 1 70 80 Z"/></g></defs></svg>
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><div class="wrap wrap-wide top-inner">
+<a class="brand" href="../" aria-label="Consult home"><svg class="logo" viewBox="18 30 61.5 40" aria-hidden="true" focusable="false"><use href="#q-open" class="q-open"/><use href="#q-close" class="q-close"/></svg>consult</a>
+<nav class="nav" aria-label="Main"><a href="../skills/">Skills</a><a href="../why/">Why Consult</a><a class="star" href="https://github.com/dawson-design/consult"><svg class="gh" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"/></svg>GitHub</a></nav>
+</div></header>
+<main id="main">
+<article class="catalog essay evidence"><div class="wrap wrap-wide catalog-grid">
+<div class="catalog-text">
+<h1>What the eval shows</h1>
+<p>Consult asks the agent to prove what a change claims. We build Consult the same way: the rules we can measure are scored against bare Claude Code, a rule that changes nothing is cut, and a failure becomes a rule fix that is then rerun.</p>
+<p>Claude Code built the same project with and without Consult, five attempts each, on 4 November 2026. Every number here comes from the <a href="https://github.com/dawson-design/consult/blob/main/eval/results/2026-11-04-houseStyle.json">results file</a>, and you can rerun the <a href="https://github.com/dawson-design/consult/tree/main/eval">eval harness</a> yourself.</p>
+
+<h2 id="simplicity">The code stays simple as the project grows</h2>
+<p>The project is a complex service, built up over five stages the way you actually build with agents: each stage adds features to the code the last one left. After each stage, a code analyzer scores simplicity from 0 to 1. The score averages five shares: functions short and flat enough to read in one pass, decisions in pure functions, state kept apart from logic, imports without cycles, and interfaces with more than one implementation.</p>
+<figure class="chart chart-wide">
+<p class="chart-legend"><span><span class="key consult"></span>Claude Code with Consult</span><span><span class="key bare"></span>Claude Code without</span></p>
+<div class="chart-plot">
+<svg class="wide" viewBox="0 0 740 300" role="img" aria-labelledby="chart-cap"><line class="grid" x1="52" x2="590" y1="242.0" y2="242.0"/><text class="tick" x="42" y="247.0" text-anchor="end">0.6</text><line class="grid" x1="52" x2="590" y1="185.0" y2="185.0"/><text class="tick" x="42" y="190.0" text-anchor="end">0.7</text><line class="grid" x1="52" x2="590" y1="128.0" y2="128.0"/><text class="tick" x="42" y="133.0" text-anchor="end">0.8</text><line class="grid" x1="52" x2="590" y1="71.0" y2="71.0"/><text class="tick" x="42" y="76.0" text-anchor="end">0.9</text><line class="grid" x1="52" x2="590" y1="14.0" y2="14.0"/><text class="tick" x="42" y="19.0" text-anchor="end">1.0</text><text class="tick" x="52.0" y="266" text-anchor="middle">1</text><text class="tick" x="186.5" y="266" text-anchor="middle">2</text><text class="tick" x="321.0" y="266" text-anchor="middle">3</text><text class="tick" x="455.5" y="266" text-anchor="middle">4</text><text class="tick" x="590.0" y="266" text-anchor="middle">5</text><text class="tick" x="321.0" y="294" text-anchor="middle">Stage</text><line class="cross" x1="52.0" x2="52.0" y1="14" y2="242"/><g class="bare"><polyline class="line" points="52.0,116.6 186.5,110.9 321.0,133.7 455.5,162.2 590.0,162.2"/><circle class="dot" cx="52.0" cy="116.6" r="4.5"/><circle class="dot" cx="186.5" cy="110.9" r="4.5"/><circle class="dot" cx="321.0" cy="133.7" r="4.5"/><circle class="dot" cx="455.5" cy="162.2" r="4.5"/><circle class="dot" cx="590.0" cy="162.2" r="4.5"/><text class="end" x="604.0" y="167.2">Without 0.74</text></g><g class="consult"><polyline class="line" points="52.0,82.4 186.5,71.0 321.0,76.7 455.5,82.4 590.0,82.4"/><circle class="dot" cx="52.0" cy="82.4" r="4.5"/><circle class="dot" cx="186.5" cy="71.0" r="4.5"/><circle class="dot" cx="321.0" cy="76.7" r="4.5"/><circle class="dot" cx="455.5" cy="82.4" r="4.5"/><circle class="dot" cx="590.0" cy="82.4" r="4.5"/><text class="end" x="604.0" y="87.4">With Consult 0.88</text></g><rect class="hit" x="-15.2" y="14" width="134.5" height="228" data-x="52.0" data-stage="1" data-bare="0.82" data-consult="0.88"/><rect class="hit" x="119.2" y="14" width="134.5" height="228" data-x="186.5" data-stage="2" data-bare="0.83" data-consult="0.90"/><rect class="hit" x="253.8" y="14" width="134.5" height="228" data-x="321.0" data-stage="3" data-bare="0.79" data-consult="0.89"/><rect class="hit" x="388.2" y="14" width="134.5" height="228" data-x="455.5" data-stage="4" data-bare="0.74" data-consult="0.88"/><rect class="hit" x="522.8" y="14" width="134.5" height="228" data-x="590.0" data-stage="5" data-bare="0.74" data-consult="0.88"/></svg><svg class="compact" viewBox="0 0 520 318" role="img" aria-labelledby="chart-cap"><line class="grid" x1="52" x2="335" y1="260.0" y2="260.0"/><text class="tick" x="42" y="265.0" text-anchor="end">0.6</text><line class="grid" x1="52" x2="335" y1="198.5" y2="198.5"/><text class="tick" x="42" y="203.5" text-anchor="end">0.7</text><line class="grid" x1="52" x2="335" y1="137.0" y2="137.0"/><text class="tick" x="42" y="142.0" text-anchor="end">0.8</text><line class="grid" x1="52" x2="335" y1="75.5" y2="75.5"/><text class="tick" x="42" y="80.5" text-anchor="end">0.9</text><line class="grid" x1="52" x2="335" y1="14.0" y2="14.0"/><text class="tick" x="42" y="19.0" text-anchor="end">1.0</text><text class="tick" x="52.0" y="284" text-anchor="middle">1</text><text class="tick" x="122.8" y="284" text-anchor="middle">2</text><text class="tick" x="193.5" y="284" text-anchor="middle">3</text><text class="tick" x="264.2" y="284" text-anchor="middle">4</text><text class="tick" x="335.0" y="284" text-anchor="middle">5</text><text class="tick" x="193.5" y="312" text-anchor="middle">Stage</text><line class="cross" x1="52.0" x2="52.0" y1="14" y2="260"/><g class="bare"><polyline class="line" points="52.0,124.7 122.8,118.6 193.5,143.1 264.2,173.9 335.0,173.9"/><circle class="dot" cx="52.0" cy="124.7" r="4.5"/><circle class="dot" cx="122.8" cy="118.6" r="4.5"/><circle class="dot" cx="193.5" cy="143.1" r="4.5"/><circle class="dot" cx="264.2" cy="173.9" r="4.5"/><circle class="dot" cx="335.0" cy="173.9" r="4.5"/><text class="end" x="349.0" y="178.9">Without 0.74</text></g><g class="consult"><polyline class="line" points="52.0,87.8 122.8,75.5 193.5,81.6 264.2,87.8 335.0,87.8"/><circle class="dot" cx="52.0" cy="87.8" r="4.5"/><circle class="dot" cx="122.8" cy="75.5" r="4.5"/><circle class="dot" cx="193.5" cy="81.6" r="4.5"/><circle class="dot" cx="264.2" cy="87.8" r="4.5"/><circle class="dot" cx="335.0" cy="87.8" r="4.5"/><text class="end" x="349.0" y="92.8">With Consult 0.88</text></g><rect class="hit" x="16.6" y="14" width="70.8" height="246" data-x="52.0" data-stage="1" data-bare="0.82" data-consult="0.88"/><rect class="hit" x="87.4" y="14" width="70.8" height="246" data-x="122.8" data-stage="2" data-bare="0.83" data-consult="0.90"/><rect class="hit" x="158.1" y="14" width="70.8" height="246" data-x="193.5" data-stage="3" data-bare="0.79" data-consult="0.89"/><rect class="hit" x="228.8" y="14" width="70.8" height="246" data-x="264.2" data-stage="4" data-bare="0.74" data-consult="0.88"/><rect class="hit" x="299.6" y="14" width="70.8" height="246" data-x="335.0" data-stage="5" data-bare="0.74" data-consult="0.88"/></svg>
+<div class="chart-tip" aria-hidden="true"></div>
+</div>
+<figcaption id="chart-cap">Mean simplicity after each stage, five attempts per arm. The scale starts at 0.6.</figcaption>
+<details class="chart-table"><summary>Show the numbers</summary>
+<table class="results">
+<thead><tr><th scope="col">Stage</th><th scope="col" class="num">Bare</th><th scope="col" class="num">Consult</th></tr></thead>
+<tbody>
+<tr data-stage="1"><th scope="row">Stage 1</th><td class="num">0.82</td><td class="num">0.88</td></tr>
+<tr data-stage="2"><th scope="row">Stage 2</th><td class="num">0.83</td><td class="num">0.90</td></tr>
+<tr data-stage="3"><th scope="row">Stage 3</th><td class="num">0.79</td><td class="num">0.89</td></tr>
+<tr data-stage="4"><th scope="row">Stage 4</th><td class="num">0.74</td><td class="num">0.88</td></tr>
+<tr data-stage="5"><th scope="row">Stage 5</th><td class="num">0.74</td><td class="num">0.88</td></tr>
+</tbody>
+</table>
+</details>
+</figure>
+<p>Consult writes about twice as many lines, but each part of the score is a share, so more code doesn’t lower it by itself.</p>
+
+<h2 id="defaults">The house defaults stick</h2>
+<p>Where several approaches are sound, Consult’s core picks one. Each default has a check, scored from 0 to 1.</p>
+<table class="results defaults">
+<thead><tr><th scope="col">Default and what its check looks for</th><th scope="col" class="num">Bare</th><th scope="col" class="num">Consult</th></tr></thead>
+<tbody>
+<tr data-rule="default.1"><th scope="row">Functional core<span class="what">No class mixes behavior with mutable state, and nothing inherits except errors.</span></th><td class="num">0.00</td><td class="num">1.00</td></tr>
+<tr data-rule="default.2"><th scope="row">Organize by feature<span class="what">New code is filed by feature, not by technical role, with its tests beside it.</span></th><td class="num">0.68</td><td class="num">1.00</td></tr>
+<tr data-rule="default.4"><th scope="row">Result-style errors<span class="what">Expected failures come back as Result values, and only bug checks throw.</span></th><td class="num">0.00</td><td class="num">1.00</td></tr>
+<tr data-rule="default.5"><th scope="row">Explicit state variants<span class="what">States are explicit variants, and input is parsed with Zod at the boundary.</span></th><td class="num">0.20</td><td class="num">1.00</td></tr>
+<tr data-rule="default.7"><th scope="row">Contract first<span class="what">In each stage, the first file written is the contract: the OpenAPI spec or types.</span></th><td class="num">0.00</td><td class="num">0.88</td></tr>
+<tr data-rule="default.9"><th scope="row">Remote calls: timeout and retry<span class="what">Calls to a failing provider time out, retry only transient failures, and back off with jitter.</span></th><td class="num">0.50</td><td class="num">0.80</td></tr>
+<tr data-rule="default.10"><th scope="row">Correlation id on every error<span class="what">Every error response carries a correlation id.</span></th><td class="num">0.00</td><td class="num">0.80</td></tr>
+<tr data-rule="default.11"><th scope="row">Tooling<span class="what">One lockfile, test, lint, format, and typecheck scripts, and a pinned language version.</span></th><td class="num">0.50</td><td class="num">0.52</td></tr>
+<tr data-rule="default.13"><th scope="row">Git<span class="what">A feature/, fix/, or refactor/ branch, files staged by name, short subjects, and no skipped hooks.</span></th><td class="num">0.60</td><td class="num">1.00</td></tr>
+<tr data-rule="default.15"><th scope="row">Comments explain why<span class="what">A judge reads the comments for the reason behind the code, not a restatement of it.</span></th><td class="num">1.00</td><td class="num">0.90</td></tr>
+</tbody>
+</table>
+<p>Three earlier defaults were cut because bare Claude Code already followed them: naming with the project’s glossary (bare 0.98), maintained security primitives (1.00), and database uniqueness constraints (1.00).</p>
+<p>Defaults give way to a project’s own choices. In a second repository with layered folders, service classes, and its own error classes, Consult followed the project’s style (0.98, against bare’s 1.00).</p>
+
+<h2 id="rules">Core rules and working with you</h2>
+<p>The core’s rules, and its rules for how the agent works with you, are scored from each attempt’s code and transcript. Rows marked “staged project” come from the five-stage project alone; the rest also include the second repository.</p>
+<table class="results defaults">
+<thead><tr><th scope="col">Rule and what its check looks for</th><th scope="col" class="num">Bare</th><th scope="col" class="num">Consult</th></tr></thead>
+<tbody>
+<tr data-rule="core.1"><th scope="row">Pure calculations<span class="what">Share of decisions made in pure functions, away from I/O and mutation. Staged project.</span></th><td class="num">0.39</td><td class="num">0.67</td></tr>
+<tr data-rule="core.3"><th scope="row">Libraries for solved problems<span class="what">A judge reads the code for anything hand-rolled that a maintained library or built-in already solves.</span></th><td class="num">1.00</td><td class="num">0.90</td></tr>
+<tr data-rule="core.4"><th scope="row">Code a reader can follow<span class="what">Share of functions short and flat enough to read in one pass.</span></th><td class="num">0.90</td><td class="num">0.96</td></tr>
+<tr data-rule="core.5"><th scope="row">Ask about compatibility<span class="what">When a stage changes behavior that stored data depends on, the agent asks before building it. Staged project.</span></th><td class="num">0.00</td><td class="num">1.00</td></tr>
+<tr data-rule="core.6"><th scope="row">Untrusted input<span class="what">Bad requests and a provider’s malformed reply are rejected. One Consult build didn’t start and scores 0. Staged project.</span></th><td class="num">1.00</td><td class="num">0.77</td></tr>
+<tr data-rule="core.7"><th scope="row">Static checks before a commit<span class="what">The project’s checks run before each commit, and a missing linter is named.</span></th><td class="num">0.44</td><td class="num">0.90</td></tr>
+<tr data-rule="human.1"><th scope="row">Two checkpoints<span class="what">The agent stops for approval of the plan, then of the data and contracts.</span></th><td class="num">0.00</td><td class="num">0.90</td></tr>
+<tr data-rule="human.2"><th scope="row">Ask before risky actions<span class="what">Installs, schema changes, pushes, and destructive git commands are named before they run. Staged project.</span></th><td class="num">0.00</td><td class="num">1.00</td></tr>
+<tr data-rule="human.3"><th scope="row">Approval covers what was shown<span class="what">After a generic “Approved. Continue.”, no unrequested setting or rate limit gets built.</span></th><td class="num">0.70</td><td class="num">1.00</td></tr>
+<tr data-rule="human.6"><th scope="row">No self-review<span class="what">No review subagent or review skill runs; you review the change.</span></th><td class="num">1.00</td><td class="num">1.00</td></tr>
+<tr data-rule="human.7"><th scope="row">A report that explains<span class="what">Each stage’s report runs in order: what needs you, what changed, how it works, what proves it, what is unproven.</span></th><td class="num">0.29</td><td class="num">0.86</td></tr>
+</tbody>
+</table>
+<p>Of the core’s 27 rules, this page scores 21. Live updates (default 8), refactor commits (default 12), and decision logs (human 8) never came up in this project, and the pull request rule (human 5) is new, so these four have no score yet. Working without asking on small fixes (human 4) is scored in another suite, and the method below explains why core rule 2 is left out.</p>
+
+<h2 id="cost">What it costs</h2>
+<p>Consult used 2.1 times the output tokens and 2.2 times the agent time of bare Claude Code. Its first version used about five times the tokens and scored no better, which is why it was rebuilt.</p>
+
+<h2 id="improvement">Room for improvement</h2>
+<p>We change Consult and measure it all the time. Sometimes a change that helps one part sets another back. Each update is scored against these results, and the next one works on what fell short.</p>
+<p>Across two runs, 2 of 8 staged builds with Consult failed, both the same way: the agent added a required setting nobody asked for, and the server stopped starting.</p>
+<p>In one, a generic “Approved. Continue.” was taken as a yes to extras proposed a stage earlier. In the other, the agent recommended an access token, and the scripted reply, “Use your recommended option for anything still open”, accepted it. Consult’s core now limits a generic approval to the plan just shown, and offers unrequested settings only as opt-ins. In three more staged builds with those rules, all passed and none added an unrequested setting.</p>
+<p>The token failure is why the overall task reward shows no lift (−0.06, within noise): in the five-attempt run, Consult passed the staged project 4 times out of 5, against 5 for bare.</p>
+<p>Six scores show Consult no better than bare, or worse:</p>
+<table class="results defaults">
+<thead><tr><th scope="col">Score and why it falls short</th><th scope="col" class="num">Bare</th><th scope="col" class="num">Consult</th></tr></thead>
+<tbody>
+<tr data-short="core.6"><th scope="row">Untrusted input<span class="what">The Consult build that didn’t start scores 0. The four that started average 0.96.</span></th><td class="num">1.00</td><td class="num">0.77</td></tr>
+<tr data-short="core.3"><th scope="row">Libraries for solved problems<span class="what">One attempt wrote its own decimal type. All five staged builds also wrote their own retry code instead of asking to add a library; the judge passed those as a few lines of glue.</span></th><td class="num">1.00</td><td class="num">0.90</td></tr>
+<tr data-short="default.15"><th scope="row">Comments explain why<span class="what">In one attempt, two caveats went into the report but not into comments in the code.</span></th><td class="num">1.00</td><td class="num">0.90</td></tr>
+<tr data-short="default.follow"><th scope="row">Following the project’s style<span class="what">In the second repository, two Consult attempts put a new staff sign-in check in its own file beside server.ts, outside the project’s layer folders. Everything else matched the project in both arms.</span></th><td class="num">1.00</td><td class="num">0.98</td></tr>
+<tr data-short="default.11"><th scope="row">Tooling<span class="what">Every attempt kept the starter project’s lockfile, test and typecheck scripts, and Node version range, which scores 0.50. One Consult build added lint and format scripts; the rest named the missing linter and proposed it, as core rule 7 asks.</span></th><td class="num">0.50</td><td class="num">0.52</td></tr>
+<tr data-short="human.6"><th scope="row">No self-review<span class="what">Neither arm ran a review subagent. The rule stops a habit of Consult’s first version.</span></th><td class="num">1.00</td><td class="num">1.00</td></tr>
+</tbody>
+</table>
+
+<h2 id="method">How it was measured</h2>
+<p>Both arms ran Claude Code 2.1.282 with Claude Opus 5.5 at extra-high effort in sandboxed Harbor trials, with the same prompts and scripted replies. Code analysis, the transcript, and a probe that runs the finished app produce every score but two: a language model judge reads the code for core rule 3 and default 15, with no weight in the task reward. The rule scores come from rescoring the same saved attempts with the current checks. The check for unrequested environment variables (core rule 2) is left out, because it misses settings read through a schema.</p>
+<p>Limits: five attempts per arm, one five-stage TypeScript project plus a control, and a simplicity score we defined. The eval image had no git identity, so Consult’s commits failed and the commit rules score each attempt to commit. The measured version predates the opt-in rule and a proof rule that prefers spec-style test libraries.</p>
+</div>
+</div></article>
+</main>
+<footer class="foot"><div class="wrap wrap-wide foot-inner">
+<a class="brand" href="../" aria-label="Consult home"><svg class="logo" viewBox="18 30 61.5 40" aria-hidden="true" focusable="false"><use href="#q-open" class="q-open"/><use href="#q-close" class="q-close"/></svg>consult</a>
+<ul><li><a href="https://github.com/dawson-design/consult">Source</a></li><li><a href="https://github.com/dawson-design/consult/blob/main/CHANGELOG.md">Changelog</a></li><li><a href="https://github.com/dawson-design/consult/issues">Issues</a></li><li><a href="https://github.com/dawson-design/consult/blob/main/LICENSE">MIT licence</a></li></ul>
+<p class="credit">© 2026 Dawson Design Ltd.</p></div></footer>
+<script>document.documentElement.classList.remove('no-js');</script>
+<script src="chart.js" defer></script>
+</body>
+</html>

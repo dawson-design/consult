@@ -18,6 +18,11 @@ RUN uv tool install harbor-rewardkit==0.2.1
 RUN npm install -g @anthropic-ai/claude-code@2.1.282 @openai/codex@0.156.1 \
     && npm cache clean --force
 
+# The TypeScript compiler that code_shape.mjs uses, outside /app and off PATH so
+# the agent never sees it. Keep the version in step with eval/verifier/analyzer/package.json.
+RUN npm install --prefix /opt/eval/analyzer --no-audit --no-fund typescript@5.9.3 \
+    && npm cache clean --force
+
 COPY workspace/ /app
 WORKDIR /app
 # Commit the scaffold so the verifier can read the agent's changes with git.
@@ -29,3 +34,6 @@ RUN git init -q \
     && echo "node_modules/" >> .git/info/exclude \
     && mkdir -p /opt/eval \
     && git rev-parse HEAD > /opt/eval/scaffold.sha
+# A workspace that ships a lockfile starts with its dependencies installed. This
+# runs after the scaffold commit, and node_modules is excluded from git above.
+RUN if [ -f package-lock.json ]; then npm ci --no-audit --no-fund && npm cache clean --force; fi

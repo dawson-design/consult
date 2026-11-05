@@ -1,26 +1,15 @@
 ---
 name: issue-tracking
-description: Use to draft, split, or track tickets, issues, epics, and initiatives.
+description: "Drafts, splits, and tracks initiatives, epics, and issues sized to the team sprint and closed on evidence. Invoke with /issue-tracking when drafting or updating tracker items."
+disable-model-invocation: true
 ---
 
 # Issue Tracking
 
-## Iron Law
+## Iron law
 
-`INITIATIVE > EPIC > ISSUE. EVERY ISSUE FITS IN ONE SPRINT AND CLOSES ON EVIDENCE.`
-
-## When to Use
-
-- The user asks to draft, split, update, or close a ticket, issue, epic, or
-  initiative in any tracker.
-- The user wants an agreed design turned into tracked work, or tracker
-  status.
-- The task cites a tracker item, such as "fix #123" or "PROJ-42".
-
-## When NOT to Use
-
-- Deciding what to build. Settle it in the host's plan mode first.
-- Planning one change's steps. Use the `workflow` Rule 3 plan file.
+Initiative, then epic, then issue. Every issue fits in one sprint and closes
+on evidence.
 
 ## Rules
 
@@ -31,8 +20,8 @@ description: Use to draft, split, or track tickets, issues, epics, and initiativ
 2. **Map the levels onto what the tracker already has.** Read its templates,
    types, and hierarchy, use its level names, and search for duplicates and
    the right parent. Prefer native types and parent links to labels or title
-   prefixes. New types, labels, fields, or hierarchy levels need sign-off
-   under `workflow` Rule 2.
+   prefixes. New types, labels, fields, or hierarchy levels need the user's
+   approval.
 3. **Size by the team's sprint, not the agent's speed.** Read the sprint
    length from the tracker, or assume two weeks and say so. An Issue fits when
    one engineer can finish it, review included, within half a sprint, with at
@@ -48,15 +37,15 @@ description: Use to draft, split, or track tickets, issues, epics, and initiativ
    skim longer ones. Link the Epic or Initiative instead of repeating its
    context. Criteria name observable results, not "tests written". Leave out
    steps and pseudocode. A criterion that fixes a contract stays
-   proposed until `contract-first` approves it. When a criterion proves wrong
+   proposed until the user approves it. When a criterion proves wrong
    mid-build, propose an edit instead of rewriting it.
 6. **The team owns estimates, priority, sprint, assignee, and dates.** Leave
-   them empty unless the user or tracker supplies them. Where another skill
-   wants an owner or date, ask or write TBD. Leave items you were not asked to
+   them empty unless the user or tracker supplies them. When an owner or date is
+   needed, ask or write TBD. Leave items you were not asked to
    change untouched.
 7. **Write to the tracker only when the user asks for tracker work.** An Issue
    named in a task authorizes only reading it and citing it in branch, commit,
-   and PR text. `git-workflow` Rule 3 covers each item's text. Get the whole
+   and PR text. `git` Rule 7 covers each item's text. Get the whole
    tree approved: each item's level, title, parent, and body. After a partial
    failure, report what exists and search before retrying. With no human to
    answer, write drafts to `docs/plans/<slug>-issues.md` and publish nothing.
@@ -72,13 +61,8 @@ description: Use to draft, split, or track tickets, issues, epics, and initiativ
     and causes, risks, scope changes, decisions needed, and Initiative
     measures.
 
-## Handoffs
-
-- `git-workflow`: GitHub access and PR text.
-- Terse or another writing skill: wording inside sections.
-
 ## References
 
 - `references/templates.md`: load when drafting an item or splitting work.
-- `references/github.md`, `jira.md`, and `other-trackers.md`: load for that
-  tracker's levels, fields, commands, and commit keywords.
+- `references/github.md`: load for GitHub's issue levels, fields, commands,
+  and commit keywords.

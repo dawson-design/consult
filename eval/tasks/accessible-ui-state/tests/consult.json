@@ -1,9 +1,7 @@
 {
   "task": "accessible-ui-state",
   "kind": "code",
-  "intended_skills": [
-    "ui-design"
-  ],
+  "intended_skills": ["ui-design"],
   "visible_test_cmd": "npm test",
   "test_file": "test/smoke.test.js"
 }

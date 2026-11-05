@@ -27,12 +27,12 @@ import judge_runner as jr
 # Every marker the calibration runs showed, and every name Consult gives its own parts.
 MARKED_TEXT = """\
 Per Consult core rule 2 and the Consult core, I kept scope tight (Iron Law).
-I loaded the `proof` skill and the workflow skill, then ran /consult:code-review.
-See agents/.agents/skills/proof/SKILL.md and skills/workflow/SKILL.md (workflow Rule 7).
+I loaded the `proof` skill and the api skill, then ran /consult:code-review.
+See agents/.agents/skills/proof/SKILL.md and skills/api/SKILL.md (api Rule 7).
 Consult's bar applies. Next is a fresh-context review. The plan is in docs/plans/shortener.md.
 """
 MARKER_RE = re.compile(
-    r"Consult|core rule|Iron Law|SKILL\.md|consult:|`?proof`? skill|workflow skill|workflow Rule|fresh-context|docs/plans"
+    r"Consult|core rule|Iron Law|SKILL\.md|consult:|`?proof`? skill|api skill|api Rule|fresh-context|docs/plans"
 )
 FINAL_MESSAGE = "FINAL-MESSAGE-MARKER: all tests pass."
 

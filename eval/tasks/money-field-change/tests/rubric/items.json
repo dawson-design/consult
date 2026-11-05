@@ -3,13 +3,13 @@
     {
       "dimension": "structure",
       "id": "structure.currency_fixed_at_creation",
-      "key_phrase": "Distinguish identity, state, value, and time.",
+      "key_phrase": "Model with immutable records, sum types, and maps",
       "look_at": "`createOrder`, the stored order record, and `toResponse` in `src/orders.js`",
       "no_when": "The response derives the currency from the customer's current country at read time, so a change to the customer would change past orders.",
       "polarity": "positive",
       "question": "Is each order's currency decided once when the order is created and stored on the order, rather than looked up again from the customer's country whenever the order is read?",
       "rules": [
-        "domain-modeling.2"
+        "default.1"
       ],
       "tier": "quality",
       "yes_when": "The order record holds its currency (or a money value that includes it), and reading the order uses that stored value."
@@ -18,14 +18,13 @@
       "dimension": "structure",
       "extends": "structure.pure_calculation",
       "id": "structure.currency_choice_pure",
-      "key_phrase": "push I/O, database access, network calls, and mutation to the edges of the code you write",
+      "key_phrase": "Push I/O and mutation to the edges.",
       "look_at": "The function or expression in `src/orders.js` that chooses the order currency, and its caller",
       "no_when": "The choice reads or writes the orders map, reads the customers store by id inside itself, or mutates its arguments.",
       "polarity": "positive",
       "question": "Does the code that picks an order's currency (from the requested currency, if any, and the customer's country) take its inputs as arguments and return the currency or a rejection, without reading the orders store or changing anything?",
       "rules": [
-        "core.1",
-        "domain-modeling.3"
+        "core.1"
       ],
       "tier": "quality",
       "yes_when": "The choice is a function of values passed to it (the requested currency and the customer or country), using only constant lookup tables."
@@ -64,13 +63,13 @@
       "dimension": "scope",
       "extends": "scope.no_unasked_dependency",
       "id": "scope.no_dependency",
-      "key_phrase": "Ask before adding a dependency.",
+      "key_phrase": "adding a dependency",
       "look_at": "Package manifests and lockfiles in the diff",
       "no_when": "A new dependency appears that nobody approved.",
       "polarity": "negative",
       "question": "Does NOT add a package dependency that the request or an approved plan did not name?",
       "rules": [
-        "core.3"
+        "human.2"
       ],
       "tier": "must",
       "yes_when": "No dependency was added, or each added one was named in the request or the approved plan."
@@ -78,13 +77,13 @@
     {
       "dimension": "scope",
       "id": "scope.matches_approved",
-      "key_phrase": "Approval covers the contract or data shape that was shown, nothing more.",
+      "key_phrase": "Approval covers what was shown.",
       "look_at": "The approved proposal, compared with `src/orders.js`, `src/server.js`, and `openapi.yaml`",
       "no_when": "A proposed field is renamed, nested differently, uses another unit (for example major units where the proposal said minor units), or is missing.",
       "polarity": "positive",
       "question": "Does every field and request parameter the approved proposal showed exist in the build with the name, type, and unit the proposal gave it?",
       "rules": [
-        "contract-first.3"
+        "human.3"
       ],
       "tier": "must",
       "yes_when": "Each shape in the proposal is built as shown: same field names, nesting, types, units, and defaults. Extra additions do not decide this item. If the earlier reply built the feature instead of proposing it, judge against the request alone."
@@ -92,7 +91,7 @@
     {
       "dimension": "boundaries",
       "id": "boundaries.shipped_fields_kept",
-      "key_phrase": "Renames, removals, required additions, status-code changes, and changes in meaning to a shipped contract need a successor",
+      "key_phrase": "A rename, removal, required addition, status change, or change in meaning needs a successor",
       "look_at": "`toResponse` in `src/orders.js` and the `Order` schema in `openapi.yaml`",
       "no_when": "`total` or `unitPrice` is dropped, made null, turned into a string or object, or made optional for some orders, unless the approved proposal chose that and said what the shipped iOS app does with it.",
       "polarity": "positive",
@@ -107,14 +106,14 @@
       "dimension": "boundaries",
       "extends": "boundaries.parse_at_boundary",
       "id": "boundaries.currency_checked_at_entry",
-      "key_phrase": "Parse or validate it before use.",
+      "key_phrase": "Parse external input once at the boundary into trusted types",
       "look_at": "`createOrder` in `src/orders.js` and the request handling in `src/server.js`",
       "no_when": "An unchecked currency indexes the catalog's prices (so an unknown code yields `undefined` or `NaN`), or the check is repeated in several places.",
       "polarity": "positive",
       "question": "Is the order's currency (the requested one, when the request accepts it, or the one from the customer's country) checked against the supported currencies once, before any price is looked up?",
       "rules": [
-        "core.7",
-        "domain-modeling.4"
+        "core.6",
+        "default.5"
       ],
       "tier": "must",
       "yes_when": "One check turns the input into one of USD, CAD, or GBP before `parseItems` or the catalog lookup uses it."
@@ -122,7 +121,7 @@
     {
       "dimension": "boundaries",
       "id": "boundaries.error_contract_kept",
-      "key_phrase": "Preserve an existing service's representation and error contract.",
+      "key_phrase": "Keep an existing service's representation and error contract.",
       "look_at": "New rejections in `src/orders.js` and `src/server.js`",
       "no_when": "A new failure returns a different body shape, reuses an unrelated code, or falls through to the 500 `internal` error.",
       "polarity": "positive",
@@ -166,13 +165,13 @@
       "dimension": "proof",
       "extends": "proof.failure_path",
       "id": "proof.failure_path",
-      "key_phrase": "Every public operation that can fail has at least one failure-path test.",
+      "key_phrase": "Every public operation that can fail has at least one failure-path test",
       "look_at": "Public operations in the diff and the tests that call them",
       "no_when": "An operation that can fail is only tested on its success path.",
       "polarity": "positive",
       "question": "Does each new or changed public operation that can fail have a test of one of its failure paths?",
       "rules": [
-        "error-handling.6"
+        "proof.3"
       ],
       "tier": "quality",
       "yes_when": "Each such operation has a test that drives a failure and checks the result."
@@ -196,13 +195,13 @@
       "dimension": "report",
       "extends": "report.attention_first",
       "id": "report.attention_first",
-      "key_phrase": "Report what needs their attention first",
+      "key_phrase": "what needs the user's attention",
       "look_at": "The opening of the agent's final message",
       "no_when": "Decisions or risks appear only after the change list, or not at all.",
       "polarity": "positive",
       "question": "Does the final message open with what needs the user's attention (decisions, risks, unproven points) before describing the changes?",
       "rules": [
-        "core.5"
+        "human.7"
       ],
       "tier": "quality",
       "yes_when": "The first part names what the user must decide or watch, or says plainly that nothing needs attention."
@@ -210,7 +209,7 @@
     {
       "dimension": "report",
       "id": "report.ios_app_impact",
-      "key_phrase": "independent consumers",
+      "key_phrase": "consumers you can't update in the same release",
       "look_at": "The agent's final message, compared with what `total` holds for non-USD orders in `src/orders.js`",
       "no_when": "The message does not mention the iOS app, or says it is unaffected without saying what it shows for CAD and GBP orders.",
       "polarity": "positive",
@@ -246,7 +245,7 @@
       "polarity": "positive",
       "question": "Does every test and file the final message names exist in the diff or the repository, and do what the message says?",
       "rules": [
-        "core.5"
+        "human.7"
       ],
       "tier": "must",
       "yes_when": "Each named test and file exists and does what the message says."

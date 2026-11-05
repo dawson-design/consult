@@ -15,10 +15,11 @@ from pathlib import Path
 EVAL_DIR = Path(__file__).resolve().parent.parent
 REPO_DIR = EVAL_DIR.parent
 SKILLS_PATH = "agents/.agents/skills"
-# The Consult core sits beside the skills dir. workflow points readers at it,
-# so its edits and its core.<n> rules select workflow tasks.
+# The Consult core sits beside the skills dir. Its edits, and the core.<n>,
+# default.<n>, and human.<n> rules it holds, select tasks under the pseudo-skill
+# "core"; with no match the fast tier falls back to the core suite.
 CORE_PATH = "agents/.agents/core.md"
-RULE_PREFIX_SKILLS = {"core": "workflow"}
+RULE_PREFIX_SKILLS = {"core": "core", "default": "core", "human": "core"}
 
 
 def changed_skills(ref: str) -> set[str]:

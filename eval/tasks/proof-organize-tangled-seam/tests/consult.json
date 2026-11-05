@@ -1,11 +1,7 @@
 {
   "task": "proof-organize-tangled-seam",
   "kind": "code",
-  "intended_skills": [
-    "proof",
-    "refactoring",
-    "architecture"
-  ],
+  "intended_skills": ["proof"],
   "visible_test_cmd": "npm test",
   "test_file": "test/orders.test.js"
 }

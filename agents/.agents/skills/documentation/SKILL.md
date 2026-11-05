@@ -1,31 +1,15 @@
 ---
 name: documentation
-description: "Only when asked to write or update docs for existing code: READMEs, runbooks, API docs, comments."
+description: "Writes or updates docs for existing code: READMEs, runbooks, API docs, and comments, linking the source of truth instead of restating it. Invoke with /documentation when docs are the deliverable."
+disable-model-invocation: true
 ---
 
 # Documentation
 
-## Iron Law
+## Iron law
 
-`DOCUMENT ONLY WHAT NEEDS PROSE. KEEP DOCS NEAR THE CODE, CONTRACT, OR TEAM THAT MAINTAINS THEM.`
-
-## When to Use
-
-- The user asks for or approves READMEs, runbooks, tutorials, how-to guides,
-  reference docs, module docs, or code comments describing code as it exists.
-- Authoring or revising Consult SKILL.md files; skills are documentation for
-  agents and follow the same rules.
-
-## When NOT to Use
-
-- Forward-looking documents: design docs, ADRs, RFCs, tech specs, PRDs,
-  requirements, strategy. Consult does not cover these; use a dedicated
-  writing skill such as [Terse](https://github.com/dawson-design/terse).
-- Ordinary implementation where docs were not requested, approved, or
-  required by a validator. Name the possible gap in the final response
-  instead of editing docs.
-- CHANGELOG, release notes, migration notes, version manifests; use
-  `release`. API contract design; use `api`.
+Document only what needs prose, and keep docs near the code, contract, or
+team that maintains them.
 
 ## Rules
 
@@ -44,7 +28,3 @@ description: "Only when asked to write or update docs for existing code: READMEs
 6. Delete stale docs you cannot fix now, or mark them with a tracked rewrite
    owner. Orphaned prose is misinformation.
 
-## Handoffs
-
-- `api`: OpenAPI and wire-contract design.
-- `release`: CHANGELOG, release notes, migration notes, version manifests.

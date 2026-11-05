@@ -4,14 +4,13 @@
       "dimension": "structure",
       "extends": "structure.pure_calculation",
       "id": "structure.pure_discount",
-      "key_phrase": "push I/O, database access, network calls, and mutation to the edges of the code you write",
+      "key_phrase": "Push I/O and mutation to the edges.",
       "look_at": "The discount code in `src/orders.js` (or wherever the diff moves it) and `processOrder`, which calls it",
       "no_when": "The discount is still computed inline in the same function body that records the charge and queues the email, or the discount code reads or writes module state such as the `charges` or `emails` arrays.",
       "polarity": "positive",
       "question": "Is the discount (the 10% tier, the `WELCOME` coupon, and the cap) computed by a function that reads no clock, random value, file, network, or database and changes nothing outside itself, separate from the code that records the charge and queues the email?",
       "rules": [
-        "core.1",
-        "domain-modeling.3"
+        "core.1"
       ],
       "tier": "must",
       "yes_when": "A function takes the subtotal and coupon (or the order) as arguments and returns the discount, and the charge and email effects happen in its caller."
@@ -19,7 +18,7 @@
     {
       "dimension": "structure",
       "id": "structure.effects_explicit",
-      "key_phrase": "Make state and effects explicit",
+      "key_phrase": "Keep calculations, I/O, and state changes apart.",
       "look_at": "How `src/orders.js` records charges and queues emails, and how the new tests observe them",
       "no_when": "Charges and emails still go only into module-private arrays that nothing outside the module can read, or tests reach them by editing or re-importing module internals.",
       "polarity": "positive",
@@ -49,13 +48,13 @@
       "dimension": "structure",
       "extends": "structure.no_scattering_layer",
       "id": "structure.no_scattering_layer",
-      "key_phrase": "Horizontal layers exist only for a real boundary",
+      "key_phrase": "Add a horizontal layer only at a real boundary",
       "look_at": "New files and modules in the diff, and how the new behavior flows through them",
       "no_when": "The discount rule is split across new pass-through modules, such as a discount service, a coupon repository, and a pricing manager, that add no boundary.",
       "polarity": "negative",
       "question": "Does NOT add a new layer (a service, repository, manager, or helper module) that the change's behavior passes through without a process, deploy, trust, persistence, or transport boundary or proven duplication?",
       "rules": [
-        "architecture.2"
+        "default.2"
       ],
       "tier": "quality",
       "yes_when": "New modules sit at a real boundary or remove proven duplication, or the behavior stays in the module that owns the feature."
@@ -108,13 +107,13 @@
       "dimension": "scope",
       "extends": "scope.no_unasked_dependency",
       "id": "scope.no_dependency",
-      "key_phrase": "Ask before adding a dependency.",
+      "key_phrase": "adding a dependency",
       "look_at": "Package manifests and lockfiles in the diff",
       "no_when": "A new dependency appears that nobody approved.",
       "polarity": "negative",
       "question": "Does NOT add a package dependency that the request or an approved plan did not name?",
       "rules": [
-        "core.3"
+        "human.2"
       ],
       "tier": "must",
       "yes_when": "No dependency was added, or each added one was named in the request or the approved plan."
@@ -138,14 +137,14 @@
       "dimension": "boundaries",
       "extends": "boundaries.parse_at_boundary",
       "id": "boundaries.validated_before_effects",
-      "key_phrase": "Parse or validate it before use.",
+      "key_phrase": "Parse external input once at the boundary into trusted types",
       "look_at": "`processOrder` in `src/orders.js` and the functions it calls",
       "no_when": "A charge, email, or discount can be produced for an order that later fails validation, or validation is interleaved with the effects.",
       "polarity": "positive",
       "question": "Is the order validated (non-empty `lines`, every SKU known) before any discount is computed or any charge or email is produced?",
       "rules": [
-        "core.7",
-        "domain-modeling.4"
+        "core.6",
+        "default.5"
       ],
       "tier": "must",
       "yes_when": "Validation finishes and returns `{ ok: false, error }` for a bad order before the discount, charge, or email code runs."
@@ -212,13 +211,13 @@
       "dimension": "proof",
       "extends": "proof.failure_path",
       "id": "proof.failure_no_effects",
-      "key_phrase": "Every public operation that can fail has at least one failure-path test.",
+      "key_phrase": "Every public operation that can fail has at least one failure-path test",
       "look_at": "Public operations in the diff and the tests that call them",
       "no_when": "Failure paths are untested, or tested only for the returned error without checking the effects.",
       "polarity": "positive",
       "question": "Does a test show that an order failing validation (empty lines or an unknown SKU) returns `ok: false` and records no charge and queues no email?",
       "rules": [
-        "error-handling.6"
+        "proof.3"
       ],
       "tier": "quality",
       "yes_when": "A test drives a validation failure and asserts both the error result and that no charge or email was produced."
@@ -257,13 +256,13 @@
       "dimension": "report",
       "extends": "report.attention_first",
       "id": "report.attention_first",
-      "key_phrase": "Report what needs their attention first",
+      "key_phrase": "what needs the user's attention",
       "look_at": "The opening of the agent's final message",
       "no_when": "Decisions or risks appear only after the change list, or not at all.",
       "polarity": "positive",
       "question": "Does the final message open with what needs the user's attention (decisions, risks, unproven points) before describing the changes?",
       "rules": [
-        "core.5"
+        "human.7"
       ],
       "tier": "quality",
       "yes_when": "The first part names what the user must decide or watch, or says plainly that nothing needs attention."
@@ -293,7 +292,7 @@
       "polarity": "positive",
       "question": "Does every test and file the final message names exist in the diff or the repository, and do what the message says?",
       "rules": [
-        "core.5"
+        "human.7"
       ],
       "tier": "must",
       "yes_when": "Each named test and file exists and does what the message says."

@@ -1,4 +1,0 @@
-interface:
-  display_name: "Consult: Architecture"
-  short_description: "Module boundaries and organization"
-  default_prompt: "Use $architecture to choose module boundaries, layering, and DDD tactical patterns."
