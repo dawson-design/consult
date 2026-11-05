@@ -6,6 +6,15 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [20.0.1] (2026-11-05)
+
+### Fixed
+
+- The plugin descriptions in the Claude Code and Codex manifests and the
+  marketplace say what Consult does for the user, in the README's words,
+  instead of naming internal parts ("house engineering defaults and proof
+  discipline").
+
 ## [20.0.0] (2026-11-05)
 
 A rewrite. v1's last release evals showed suite lift of −0.04 and −0.09 at

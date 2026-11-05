@@ -2,15 +2,15 @@
   "name": "consult",
   "owner": { "name": "Dawson Design Ltd.", "url": "https://github.com/dawson-design" },
   "metadata": {
-    "description": "Consult: house engineering defaults and proof discipline for Claude Code.",
-    "version": "20.0.0",
+    "description": "Consult: skills for AI coding agents that keep software simple enough to understand, change, and test.",
+    "version": "20.0.1",
     "license": "MIT"
   },
   "plugins": [
     {
       "name": "consult",
-      "description": "House engineering defaults and proof discipline, with the engineer in the loop.",
-      "version": "20.0.0",
+      "description": "Builds with you in small, tested stages, keeps the code simple, and walks you through every change.",
+      "version": "20.0.1",
       "author": { "name": "Dawson Design Ltd." },
       "homepage": "https://github.com/dawson-design/consult",
       "license": "MIT",

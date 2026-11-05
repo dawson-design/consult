@@ -1,7 +1,7 @@
 {
   "name": "consult",
-  "version": "20.0.0",
-  "description": "Consult: house engineering defaults and proof discipline for Claude Code, with the engineer in the loop.",
+  "version": "20.0.1",
+  "description": "Builds with you in small, tested stages, keeps the code simple, and walks you through every change.",
   "author": { "name": "Dawson Design Ltd.", "url": "https://github.com/dawson-design" },
   "homepage": "https://github.com/dawson-design/consult",
   "repository": "https://github.com/dawson-design/consult",
