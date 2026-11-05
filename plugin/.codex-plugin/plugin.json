@@ -1,7 +1,7 @@
 {
   "name": "consult",
-  "version": "20.0.0",
-  "description": "Consult: house engineering defaults and proof discipline for coding agents, with the engineer in the loop.",
+  "version": "20.0.1",
+  "description": "Builds with you in small, tested stages, keeps the code simple, and walks you through every change.",
   "author": {
     "name": "Dawson Design Ltd.",
     "url": "https://github.com/dawson-design"
@@ -19,8 +19,8 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Consult",
-    "shortDescription": "House engineering defaults and proof discipline for coding agents.",
-    "longDescription": "Consult keeps software simple enough to understand, change, and prove. It sets house defaults where several approaches are sound, proves each change, and keeps the engineer in the loop at the plan and at the data and contracts.",
+    "shortDescription": "Keeps code simple enough to understand, change, and test.",
+    "longDescription": "Consult builds with you in small, tested stages, keeps the code simple, and walks you through every change, so you know how it works as it grows.",
     "developerName": "Dawson Design Ltd.",
     "category": "Coding",
     "capabilities": [
