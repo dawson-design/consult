@@ -14,4 +14,4 @@ node_modules/
 .obsidian/
 .idea/
 .antigravitycli/
-reference/
+/reference/
