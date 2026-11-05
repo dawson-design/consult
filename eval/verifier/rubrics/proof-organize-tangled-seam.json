@@ -11,8 +11,10 @@
     {
       "id": "structure.effects_explicit",
       "dimension": "structure",
-      "rules": ["core.1"],
-      "key_phrase": "Make state and effects explicit",
+      "rules": [
+        "core.1"
+      ],
+      "key_phrase": "Keep calculations, I/O, and state changes apart.",
       "question": "Can a caller or test see the charge and the confirmation email that `processOrder` produces through an explicit seam, such as effect functions passed in, a returned value, or an exported read accessor, rather than only through module-private arrays?",
       "polarity": "positive",
       "tier": "quality",
@@ -20,7 +22,10 @@
       "yes_when": "The charge and email effects are passed in, returned, or readable through an exported function or value, and the tests use that seam.",
       "no_when": "Charges and emails still go only into module-private arrays that nothing outside the module can read, or tests reach them by editing or re-importing module internals."
     },
-    {"id": "structure.one_job", "extends": "structure.one_job"},
+    {
+      "id": "structure.one_job",
+      "extends": "structure.one_job"
+    },
     {
       "id": "structure.no_scattering_layer",
       "extends": "structure.no_scattering_layer",
@@ -42,7 +47,9 @@
     {
       "id": "scope.existing_rules_kept",
       "dimension": "scope",
-      "rules": ["core.2"],
+      "rules": [
+        "core.2"
+      ],
       "key_phrase": "Build only what the user asked for.",
       "question": "Does NOT change the behavior the task kept: the 10% tier discount rounded down at subtotals of 5000 cents or more, the `empty order` and `unknown sku: <sku>` validation errors, and a charge and email for the discounted total only on success?",
       "polarity": "negative",
@@ -51,7 +58,10 @@
       "yes_when": "The tier threshold, rate, rounding, error values, and when the charge and email happen all match the original code.",
       "no_when": "The threshold, rate, or rounding changed, an error value was reworded or restructured, or a charge or email is now produced for a failed order or for an amount other than the final total."
     },
-    {"id": "scope.no_dependency", "extends": "scope.no_unasked_dependency"},
+    {
+      "id": "scope.no_dependency",
+      "extends": "scope.no_unasked_dependency"
+    },
     {
       "id": "scope.no_speculative_abstraction",
       "extends": "scope.no_speculative_abstraction",
@@ -75,7 +85,9 @@
     {
       "id": "proof.cap_asserted",
       "dimension": "proof",
-      "rules": ["proof.3"],
+      "rules": [
+        "proof.3"
+      ],
       "key_phrase": "Each test asserts a business rule from the acceptance criteria or spec, with expected values taken from there, not from the code.",
       "question": "Does a test drive a case where the uncapped discount would exceed the subtotal (a subtotal below 500 cents with `WELCOME`) and assert that the discount equals the subtotal and the total is 0?",
       "polarity": "positive",
@@ -87,7 +99,9 @@
     {
       "id": "proof.tier_threshold_edge",
       "dimension": "proof",
-      "rules": ["proof.3"],
+      "rules": [
+        "proof.3"
+      ],
       "key_phrase": "Each test asserts a business rule from the acceptance criteria or spec, with expected values taken from there, not from the code.",
       "question": "Does a test check the tier threshold at exactly 5000 cents, asserting the 10% discount applies there?",
       "polarity": "positive",
@@ -110,7 +124,10 @@
       "yes_when": "A test drives a validation failure and asserts both the error result and that no charge or email was produced.",
       "no_when": "Failure paths are untested, or tested only for the returned error without checking the effects."
     },
-    {"id": "proof.tests_intact", "extends": "proof.tests_intact"},
+    {
+      "id": "proof.tests_intact",
+      "extends": "proof.tests_intact"
+    },
     {
       "id": "proof.real_code",
       "extends": "proof.real_code",
@@ -118,12 +135,18 @@
       "yes_when": "Tests run the repository's discount and `processOrder` code, and any fake stands in only for recording charges or queueing emails.",
       "no_when": "Tests stub or monkey-patch the discount, pricing, or validation code, or replace the module under test."
     },
-    {"id": "report.attention_first", "extends": "report.attention_first"},
+    {
+      "id": "report.attention_first",
+      "extends": "report.attention_first"
+    },
     {
       "id": "report.criteria_listed",
       "extends": "report.criteria_listed",
       "look_at": "The agent's final message, compared with the task's requirements: the `WELCOME` coupon stacking with the tier, the cap, tests for the discount cases, and a test for the charge and confirmation email"
     },
-    {"id": "report.claims_true", "extends": "report.claims_true"}
+    {
+      "id": "report.claims_true",
+      "extends": "report.claims_true"
+    }
   ]
 }

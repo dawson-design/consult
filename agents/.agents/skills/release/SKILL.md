@@ -1,31 +1,15 @@
 ---
 name: release
-description: Only when asked to prepare a release, or when a project check requires release file sync.
+description: "Prepares a release: version bumps per release unit, changelog, artifacts that move together, rollout and rollback plans, and feature flags. Invoke with /release when preparing a release."
+disable-model-invocation: true
 ---
 
 # Release
 
-## Iron Law
+## Iron law
 
-`BREAKING CHANGES BUMP MAJOR. AGENTS PREPARE RELEASES; HUMANS MUTATE SHARED ENVIRONMENTS.`
-
-## When to Use
-
-- The user asks for release prep, versioning, changelog, release notes,
-  tags, publish planning, rollout, rollback, deprecation, or migration notes.
-- The user approves release prep after a concrete diff exposes release
-  artifacts or rollout obligations.
-- A repo validator requires release artifact sync for an approved change.
-
-## When NOT to Use
-
-- Starting release work because a change might later need it. Note the risk
-  in `workflow` and ask at the concrete release-prep decision point.
-- Triggering deploys, rollbacks, promotions, production config, flag flips,
-  DNS, or infrastructure applies. Prepare the command or checklist for a
-  human.
-- Database DDL safety; pair with `database`. Local bootstrap; use
-  `scaffolding`.
+Breaking changes bump major. Agents prepare releases; humans change shared
+environments.
 
 ## Rules
 
@@ -59,19 +43,3 @@ description: Only when asked to prepare a release, or when a project check requi
    surfaces) also carry an owner and a removal condition, unless both paths
    are intentionally supported.
 
-## Workflow
-
-1. Confirm the gate (Rule 1) and the scope: docs-only notes, version and
-   changelog edits, packaging checks, rollout planning, or human-run steps.
-2. Map release units from manifests, lockfiles, workspace config, release
-   scripts, changelog, tags, and registry state.
-3. Classify impact and choose the target version per unit.
-4. Edit the approved artifacts together, validate, then plan rollout and
-   rollback with named artifact, environment, operator, and gates.
-
-## Handoffs
-
-- `api`: HTTP compatibility and deprecation headers.
-- `database`: migration mechanics and production data safety.
-- `git-workflow`: clean version and release commits.
-- `documentation`: migration guides and reference docs.

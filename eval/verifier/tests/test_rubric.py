@@ -111,6 +111,14 @@ class RubricValidationTests(unittest.TestCase):
         many = [filled(template_id, id=f"task.n{i}") for i, template_id in enumerate(list(TEMPLATES)[:21])]
         self.assertTrue(any("a rubric holds" in p for p in problems_for(many)))
 
+    def test_a_readout_rubric_holds_one_to_six_items(self) -> None:
+        resolved, _ = rubric.resolve_rubric({"items": valid_items()[:2]}, TEMPLATES)
+        self.assertEqual(rubric.rubric_problems(resolved, COVERAGE, rule_text, readout=True), [])
+        self.assertTrue(any("a rubric holds" in p for p in rubric.rubric_problems(resolved, COVERAGE, rule_text)))
+        resolved, _ = rubric.resolve_rubric({"items": valid_items()[:7]}, TEMPLATES)
+        found = rubric.rubric_problems(resolved, COVERAGE, rule_text, readout=True)
+        self.assertTrue(any("a readout rubric holds" in p for p in found))
+
     def test_duplicate_ids_fail(self) -> None:
         items = valid_items()
         items[1]["id"] = items[0]["id"]
@@ -156,6 +164,13 @@ class SyncTests(unittest.TestCase):
         self.assertEqual(len(items), 12)
         self.assertTrue(all(set(rubric.FIELDS) <= set(item) for item in items))
 
+    def test_a_readout_rubric_gives_the_rubric_no_weight(self) -> None:
+        (self.rubrics / f"{self.task.name}.json").write_text(json.dumps({"readout": True, "items": valid_items()[:2]}))
+        with mock.patch.object(rubric, "RUBRICS_DIR", self.rubrics):
+            weights = sync_tests.reward_toml(self.task, "code").decode()
+        self.assertRegex(weights, r"\brubric = 0\.0\b")
+        self.assertNotRegex(sync_tests.reward_toml(self.task, "code").decode(), r"\brubric = 0\.0\b")
+
     def test_invalid_rubric_stops_the_sync(self) -> None:
         items = valid_items()
         items[0]["key_phrase"] = "made up"
@@ -181,8 +196,8 @@ class RubricEdgeCaseTests(unittest.TestCase):
 
     def test_key_phrase_may_come_from_the_second_rule(self) -> None:
         items = valid_items()
-        items[0]["rules"] = ["core.2", "domain-modeling.5"]
-        items[0]["key_phrase"] = "Model allowed states as explicit variants"
+        items[0]["rules"] = ["core.2", "default.5"]
+        items[0]["key_phrase"] = "represent states as explicit variants"
         self.assertEqual(problems_for(items), [])
 
     def test_unknown_key_fails(self) -> None:

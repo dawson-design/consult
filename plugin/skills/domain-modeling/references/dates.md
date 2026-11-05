@@ -1,7 +1,7 @@
 # Dates and times
 
 Use this when storing, comparing, formatting, serializing, or computing on
-dates or times. Loaded by `domain-modeling` Rule 8.
+dates or times. Loaded by `domain-modeling` Rule 2.
 
 ## Rules
 

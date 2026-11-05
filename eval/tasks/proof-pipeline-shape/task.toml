@@ -6,7 +6,7 @@ description = "Build a multi-stage transformation that surfaces seam-shape cover
 
 [metadata]
 kind = "code"
-features = ["proof", "domain-modeling", "error-handling"]
+features = ["proof"]
 
 # Generous on purpose: an Opus turn at xhigh effort can run long, and a cut-off
 # turn scores the harness, not the agent.

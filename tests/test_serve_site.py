@@ -6,16 +6,11 @@ that pick between a stylesheet swap and a full reload, and where the client land
 
 from __future__ import annotations
 
-import importlib.util
 import tempfile
 import unittest
 from pathlib import Path
 
-from helpers import ROOT
-
-SPEC = importlib.util.spec_from_file_location("serve_site", ROOT / "scripts/serve_site.py")
-serve_site = importlib.util.module_from_spec(SPEC)
-SPEC.loader.exec_module(serve_site)
+import serve_site
 
 
 class ChangeKindTest(unittest.TestCase):

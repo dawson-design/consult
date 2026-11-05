@@ -3,14 +3,14 @@
     {
       "dimension": "structure",
       "id": "structure.whole_cents",
-      "key_phrase": "Decide data shapes and invariants before writing transformations.",
+      "key_phrase": "computes on monetary amounts",
       "look_at": "The discount calculation in `totalCents` in `src/cart.js`",
       "no_when": "A discounted total can come back with a fraction, such as 899.1 for a 999-cent subtotal, or the money is converted to floating-point dollars.",
       "polarity": "positive",
       "question": "Does `totalCents` always return a whole number of cents, rounding explicitly when SAVE10 applies to a subtotal that is not a multiple of 10 (for example 999 cents)?",
       "rules": [
-        "domain-modeling.1",
-        "domain-modeling.8"
+        "human.1",
+        "domain-modeling.2"
       ],
       "tier": "must",
       "yes_when": "The discounted total is computed in integer cents, or rounded to an integer with `Math.round`, `Math.floor`, or similar, so no fraction of a cent can be returned."
@@ -19,14 +19,13 @@
       "dimension": "structure",
       "extends": "structure.pure_calculation",
       "id": "structure.pure_total",
-      "key_phrase": "push I/O, database access, network calls, and mutation to the edges of the code you write",
+      "key_phrase": "Push I/O and mutation to the edges.",
       "look_at": "`totalCents` in `src/cart.js` and any helpers it calls",
       "no_when": "It logs, mutates the cart array or an item, or reads module state or any outside source.",
       "polarity": "positive",
       "question": "Does `totalCents` compute its result without reading the clock, random values, files, the network, or the database, and without logging or changing anything outside itself, including the items it is given?",
       "rules": [
-        "core.1",
-        "domain-modeling.3"
+        "core.1"
       ],
       "tier": "must",
       "yes_when": "Everything it needs arrives as arguments, and I/O or state changes happen in its caller."
@@ -80,13 +79,13 @@
       "dimension": "scope",
       "extends": "scope.no_unasked_dependency",
       "id": "scope.no_dependency",
-      "key_phrase": "Ask before adding a dependency.",
+      "key_phrase": "adding a dependency",
       "look_at": "Package manifests and lockfiles in the diff",
       "no_when": "A new dependency appears that nobody approved.",
       "polarity": "negative",
       "question": "Does NOT add a package dependency that the request or an approved plan did not name?",
       "rules": [
-        "core.3"
+        "human.2"
       ],
       "tier": "must",
       "yes_when": "No dependency was added, or each added one was named in the request or the approved plan."
@@ -95,14 +94,14 @@
       "dimension": "boundaries",
       "extends": "boundaries.parse_at_boundary",
       "id": "boundaries.cart_checked",
-      "key_phrase": "Parse or validate it before use.",
+      "key_phrase": "Parse external input once at the boundary into trusted types",
       "look_at": "`totalCents` in `src/cart.js` and the code it passes items to",
       "no_when": "Raw values reach the arithmetic unchecked, so bad input can produce `NaN`, a string, or a wrong total instead of an error.",
       "polarity": "positive",
       "question": "Are `items` and each item's `priceCents` and `quantity` checked in `totalCents` before they are used in arithmetic?",
       "rules": [
-        "core.7",
-        "domain-modeling.4"
+        "core.6",
+        "default.5"
       ],
       "tier": "must",
       "yes_when": "A non-array cart, a non-object item, and bad price or quantity values are caught before any sum or discount uses them, whether in a guard block or per item before that item is added."
@@ -111,13 +110,13 @@
       "dimension": "boundaries",
       "extends": "boundaries.fail_closed",
       "id": "boundaries.refuses_bad_items",
-      "key_phrase": "fail closed on auth, authz, validation, and crypto errors",
+      "key_phrase": "Fail closed on auth, validation, and crypto errors.",
       "look_at": "The cart and item checks in `totalCents` and the code paths after them",
       "no_when": "An invalid item is skipped, counted as zero, clamped to a valid range, or replaced with a default, and a total is still returned.",
       "polarity": "positive",
       "question": "When the cart or an item fails a check, does `totalCents` refuse to return a total, rather than skipping, zeroing, or clamping the bad item?",
       "rules": [
-        "error-handling.2"
+        "default.4"
       ],
       "tier": "must",
       "yes_when": "Every invalid cart or item leads to an error and no total is returned."
@@ -125,30 +124,16 @@
     {
       "dimension": "boundaries",
       "id": "boundaries.rejects_non_numbers",
-      "key_phrase": "Parse or validate it before use.",
+      "key_phrase": "Treat input that crosses a trust boundary as untrusted",
       "look_at": "The `priceCents` and `quantity` checks in `src/cart.js`",
       "no_when": "A numeric string is converted and accepted, or `NaN` or `Infinity` passes the checks.",
       "polarity": "positive",
       "question": "Does `totalCents` reject item values that are not finite integers, such as a string `priceCents` like \"500\", `NaN`, or `Infinity`, not only negative or fractional numbers?",
       "rules": [
-        "core.7"
+        "core.6"
       ],
       "tier": "quality",
       "yes_when": "The checks require actual integers (for example `Number.isInteger`), so strings, `NaN`, and `Infinity` are rejected."
-    },
-    {
-      "dimension": "boundaries",
-      "id": "boundaries.useful_messages",
-      "key_phrase": "User-facing errors are actionable",
-      "look_at": "The errors `totalCents` throws or returns in `src/cart.js`",
-      "no_when": "A rejection carries a generic message such as \"invalid input\", or a malformed cart still surfaces a native TypeError from `reduce` or property access.",
-      "polarity": "positive",
-      "question": "Does each rejection's error message say what is wrong, naming the cart or the field (`priceCents` or `quantity`) that failed?",
-      "rules": [
-        "error-handling.5"
-      ],
-      "tier": "must",
-      "yes_when": "Each message, such as \"item 0 has an invalid priceCents\", tells the caller which value to fix."
     },
     {
       "dimension": "proof",
@@ -227,13 +212,13 @@
       "dimension": "report",
       "extends": "report.attention_first",
       "id": "report.attention_first",
-      "key_phrase": "Report what needs their attention first",
+      "key_phrase": "what needs the user's attention",
       "look_at": "The opening of the agent's final message",
       "no_when": "Decisions or risks appear only after the change list, or not at all.",
       "polarity": "positive",
       "question": "Does the final message open with what needs the user's attention (decisions, risks, unproven points) before describing the changes?",
       "rules": [
-        "core.5"
+        "human.7"
       ],
       "tier": "quality",
       "yes_when": "The first part names what the user must decide or watch, or says plainly that nothing needs attention."
@@ -263,7 +248,7 @@
       "polarity": "positive",
       "question": "Does every test and file the final message names exist in the diff or the repository, and do what the message says?",
       "rules": [
-        "core.5"
+        "human.7"
       ],
       "tier": "must",
       "yes_when": "Each named test and file exists and does what the message says."
@@ -271,13 +256,13 @@
     {
       "dimension": "report",
       "id": "report.code_change_flagged",
-      "key_phrase": "Ask whether backward compatibility is required when a change alters behavior that callers outside the change, or stored data, depend on.",
+      "key_phrase": "Don't assume backward compatibility is or isn't required.",
       "look_at": "The discount-code handling in the diff, and the agent's final message",
       "no_when": "The change makes unrecognized or missing codes throw or change the total, and the message does not mention it or lists it only as a routine detail.",
       "polarity": "positive",
       "question": "If the change alters what happens for a missing or unrecognized discount code (before the change, both returned the undiscounted subtotal), does the final message call this out as a behavior change for the user to confirm?",
       "rules": [
-        "core.6"
+        "core.5"
       ],
       "tier": "quality",
       "yes_when": "Missing and unrecognized codes still return the subtotal, or the message names the new handling (for example that unknown codes now throw) as a change the user should confirm."

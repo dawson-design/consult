@@ -1,0 +1,5 @@
+name: houseStyle
+description: Whether Consult builds the way its house defaults say, and keeps the code simple as it grows. One five-stage project scored per rule and per stage, plus a control repository whose own conventions the defaults must yield to.
+trials:
+  - staged-commissions
+  - follow-the-project

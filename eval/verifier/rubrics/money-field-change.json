@@ -4,9 +4,9 @@
       "id": "structure.currency_fixed_at_creation",
       "dimension": "structure",
       "rules": [
-        "domain-modeling.2"
+        "default.1"
       ],
-      "key_phrase": "Distinguish identity, state, value, and time.",
+      "key_phrase": "Model with immutable records, sum types, and maps",
       "question": "Is each order's currency decided once when the order is created and stored on the order, rather than looked up again from the customer's country whenever the order is read?",
       "polarity": "positive",
       "tier": "quality",
@@ -44,9 +44,9 @@
       "id": "scope.matches_approved",
       "dimension": "scope",
       "rules": [
-        "contract-first.3"
+        "human.3"
       ],
-      "key_phrase": "Approval covers the contract or data shape that was shown, nothing more.",
+      "key_phrase": "Approval covers what was shown.",
       "question": "Does every field and request parameter the approved proposal showed exist in the build with the name, type, and unit the proposal gave it?",
       "polarity": "positive",
       "tier": "must",
@@ -60,7 +60,7 @@
       "rules": [
         "api.2"
       ],
-      "key_phrase": "Renames, removals, required additions, status-code changes, and changes in meaning to a shipped contract need a successor",
+      "key_phrase": "A rename, removal, required addition, status change, or change in meaning needs a successor",
       "question": "Does every order response, in any currency, still include `total` and `items[].unitPrice` as numbers, with `total` still required in `openapi.yaml`?",
       "polarity": "positive",
       "tier": "must",
@@ -82,7 +82,7 @@
       "rules": [
         "api.4"
       ],
-      "key_phrase": "Preserve an existing service's representation and error contract.",
+      "key_phrase": "Keep an existing service's representation and error contract.",
       "question": "Does a rejected currency come back in the service's existing error body `{ \"error\": { \"code\", \"message\" } }`, for example by throwing `OrderError`, with a code of its own?",
       "polarity": "positive",
       "tier": "must",
@@ -129,7 +129,7 @@
       "rules": [
         "api.2"
       ],
-      "key_phrase": "independent consumers",
+      "key_phrase": "consumers you can't update in the same release",
       "question": "Does the final message say what the shipped iOS app, which reads `total`, will show for CAD and GBP orders?",
       "polarity": "positive",
       "tier": "quality",

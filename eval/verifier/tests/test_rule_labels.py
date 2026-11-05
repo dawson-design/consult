@@ -51,20 +51,20 @@ class ExportTests(unittest.TestCase):
             return list(csv.DictReader(handle))
 
     def test_export_writes_one_row_per_rule_verdict_with_the_rule_text_and_evidence(self):
-        trial = write_rule_trial(self.root / "bare", "bug-from-symptom", 0, {"workflow.1": 0.0, "debugging.1": 1.0})
+        trial = write_rule_trial(self.root / "bare", "bug-from-symptom", 0, {"human.4": 0.0, "debugging.1": 1.0})
         rows = self.export(self.root / "bare")
         self.assertEqual(
             [(r["job"], r["rule"], r["automated"]) for r in rows],
-            [("bare", "debugging.1", "1.0"), ("bare", "workflow.1", "0.0")],
+            [("bare", "debugging.1", "1.0"), ("bare", "human.4", "0.0")],
         )
-        self.assertTrue(rows[1]["rule_text"].startswith("Ask more of the user when changes affect more code"))
+        self.assertTrue(rows[1]["rule_text"].startswith("Otherwise, do the work and prove it without asking."))
         self.assertEqual(rows[0]["evidence_dir"], str(trial.resolve()))
         self.assertEqual((rows[0]["proposed"], rows[0]["human"]), ("", ""))
 
     def test_a_rule_text_leaves_out_the_tables_inside_the_rule(self):
         """code-review.2 holds the severity table; a reviewer needs the rule, not the table rows."""
         self.assertNotIn("|", rule_labels.rule_text("code-review.2"))
-        self.assertIn("findings first by severity", rule_labels.rule_text("code-review.2"))
+        self.assertIn("Report findings first, by severity.", rule_labels.rule_text("code-review.2"))
 
     def test_a_core_rule_text_comes_from_core_md_beside_the_skills(self):
         skills = self.root / "skills"
@@ -137,13 +137,13 @@ class AgreementTests(unittest.TestCase):
                     ("api.1", "1.0", "fail"),
                     ("api.1", "0.0", "Pass"),
                     ("api.1", "1.0", ""),
-                    ("workflow.1", "0.0", "fail"),
+                    ("human.4", "0.0", "fail"),
                 ]
             )
         )
         result = rule_labels.agreement(rows)
         self.assertEqual(result["api.1"], {"labelled": 4, "agree": 2, "false_pass": 1, "false_fail": 1})
-        self.assertEqual(result["workflow.1"]["agree"], 1)
+        self.assertEqual(result["human.4"]["agree"], 1)
 
     def test_a_score_of_one_half_counts_as_a_pass(self):
         rows = rule_labels.read_sheet(self.sheet([("api.1", "0.5", "pass")]))

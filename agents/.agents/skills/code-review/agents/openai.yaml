@@ -1,4 +1,0 @@
-interface:
-  display_name: "Consult: Code Review"
-  short_description: "Review local diffs and PRs"
-  default_prompt: "Use Consult code-review to review this diff or PR for blocking correctness, safety, and maintainability issues."

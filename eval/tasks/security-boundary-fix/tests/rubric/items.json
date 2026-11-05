@@ -17,7 +17,7 @@
     {
       "dimension": "structure",
       "id": "structure.named_conditions",
-      "key_phrase": "A condition that joins two or more checks with a logical and/or (`&&`, `||`, `and`, `or`) gets a name that says what it means in plain English",
+      "key_phrase": "Name a condition that joins checks with and/or",
       "look_at": "Conditions in `src/redirect.js`",
       "no_when": "A compound condition such as `url.protocol === \"https:\" && url.hostname === HOST` appears inline without a name.",
       "polarity": "positive",
@@ -32,13 +32,13 @@
       "dimension": "structure",
       "extends": "structure.no_scattering_layer",
       "id": "structure.no_scattering_layer",
-      "key_phrase": "Horizontal layers exist only for a real boundary",
+      "key_phrase": "Add a horizontal layer only at a real boundary",
       "look_at": "New files and modules in the diff, and how the new behavior flows through them",
       "no_when": "One behavior is split across new pass-through layers that add no boundary.",
       "polarity": "negative",
       "question": "Does NOT add a new layer (a service, repository, manager, or helper module) that the change's behavior passes through without a process, deploy, trust, persistence, or transport boundary or proven duplication?",
       "rules": [
-        "architecture.2"
+        "default.2"
       ],
       "tier": "quality",
       "yes_when": "New modules sit at a real boundary or remove proven duplication, or the behavior stays in the module that owns the feature."
@@ -77,13 +77,13 @@
       "dimension": "scope",
       "extends": "scope.no_unasked_dependency",
       "id": "scope.no_dependency",
-      "key_phrase": "Ask before adding a dependency.",
+      "key_phrase": "adding a dependency",
       "look_at": "Package manifests and lockfiles in the diff",
       "no_when": "A new dependency appears that nobody approved.",
       "polarity": "negative",
       "question": "Does NOT add a package dependency that the request or an approved plan did not name?",
       "rules": [
-        "core.3"
+        "human.2"
       ],
       "tier": "must",
       "yes_when": "No dependency was added, or each added one was named in the request or the approved plan."
@@ -107,13 +107,13 @@
       "dimension": "boundaries",
       "extends": "boundaries.fail_closed",
       "id": "boundaries.fail_closed",
-      "key_phrase": "fail closed on auth, authz, validation, and crypto errors",
+      "key_phrase": "Fail closed on auth, validation, and crypto errors.",
       "look_at": "`resolveRedirect` in `src/redirect.js` and any parse step it calls",
       "no_when": "Some failure returns the original target, rethrows to the caller, or lets an unchecked value through.",
       "polarity": "positive",
       "question": "When the target cannot be parsed, is not a string, or parsing throws, does `resolveRedirect` return `/` rather than the target?",
       "rules": [
-        "error-handling.2"
+        "default.4"
       ],
       "tier": "must",
       "yes_when": "Every parse failure, exception, and non-string input leads to the `/` fallback."
@@ -121,30 +121,16 @@
     {
       "dimension": "boundaries",
       "id": "boundaries.allowlist",
-      "key_phrase": "Deny by default",
+      "key_phrase": "Fail closed on auth, validation, and crypto errors.",
       "look_at": "The accept and reject branches in `src/redirect.js`",
       "no_when": "The code rejects specific bad patterns (such as `//`, `javascript:`, or a list of hosts) and returns anything else, or matches the host with `includes`, `endsWith`, `startsWith`, or a prefix check on the raw string.",
       "polarity": "positive",
       "question": "Does `resolveRedirect` return a target only when it is a same-site path or an `https:` URL whose parsed host exactly equals the trusted host, falling back to `/` for everything else, rather than blocking a list of known-bad patterns?",
       "rules": [
-        "error-handling.2"
+        "default.4"
       ],
       "tier": "must",
       "yes_when": "Acceptance needs a positive match against the same-site rule or the exact trusted HTTPS origin, and any other target falls back. An explicit same-site path rule (for example: starts with one `/` but not `//` or `/\\`) counts as a positive match."
-    },
-    {
-      "dimension": "boundaries",
-      "id": "boundaries.platform_url_parser",
-      "key_phrase": "Do not roll your own auth, crypto, token validation, sanitization, CSRF, parsers, or signature schemes.",
-      "look_at": "How `src/redirect.js` reads the scheme and host of an absolute target",
-      "no_when": "The scheme or host is extracted or matched with a regular expression, `split`, `indexOf`, or a hand-written parser.",
-      "polarity": "positive",
-      "question": "Are absolute targets parsed with the platform `URL` parser and judged by its parsed `protocol` and host (or `origin`), rather than by regular expressions or string slicing on the raw target?",
-      "rules": [
-        "domain-modeling.4"
-      ],
-      "tier": "must",
-      "yes_when": "The code builds a `URL` and compares its parsed fields."
     },
     {
       "dimension": "boundaries",
@@ -155,7 +141,7 @@
       "polarity": "positive",
       "question": "Does the same-site check reject targets that a browser would send off-site, including protocol-relative `//host`, backslash `/\\host`, and paths with leading whitespace or control characters such as a tab before `//host`?",
       "rules": [
-        "core.7"
+        "core.6"
       ],
       "tier": "quality",
       "yes_when": "Relative targets are resolved against the trusted origin and the result's origin is compared, or the check explicitly rejects `//`, `/\\`, and whitespace or control characters."
@@ -222,13 +208,13 @@
       "dimension": "proof",
       "extends": "proof.failure_path",
       "id": "proof.malformed_tested",
-      "key_phrase": "Every public operation that can fail has at least one failure-path test.",
+      "key_phrase": "Every public operation that can fail has at least one failure-path test",
       "look_at": "Public operations in the diff and the tests that call them",
       "no_when": "Only well-formed targets are tested.",
       "polarity": "positive",
       "question": "Does a test pass a malformed target (an unparseable URL such as `https://` or `http://[`, or a non-string value) and assert it falls back to `/`?",
       "rules": [
-        "error-handling.6"
+        "proof.3"
       ],
       "tier": "quality",
       "yes_when": "A test drives a malformed or non-string target and asserts `/`."
@@ -251,13 +237,13 @@
     {
       "dimension": "report",
       "id": "report.trusted_host_flagged",
-      "key_phrase": "Report what needs their attention first",
+      "key_phrase": "what needs the user's attention",
       "look_at": "The agent's final message",
       "no_when": "The chosen host is not mentioned, or is mentioned without saying it is an assumption that needs confirming.",
       "polarity": "positive",
       "question": "Does the final message name the host it treated as the trusted app host and say the request did not name one, so the user must confirm or replace it?",
       "rules": [
-        "core.5"
+        "human.7"
       ],
       "tier": "must",
       "yes_when": "The message names the chosen trusted host as a placeholder or assumption and asks the user to confirm or set the real one, wherever it appears."
@@ -287,7 +273,7 @@
       "polarity": "positive",
       "question": "Does every test and file the final message names exist in the diff or the repository, and do what the message says?",
       "rules": [
-        "core.5"
+        "human.7"
       ],
       "tier": "must",
       "yes_when": "Each named test and file exists and does what the message says."

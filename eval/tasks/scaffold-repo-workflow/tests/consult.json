@@ -1,12 +1,7 @@
 {
   "task": "scaffold-repo-workflow",
   "kind": "code",
-  "intended_skills": [
-    "scaffolding",
-    "git-workflow",
-    "documentation",
-    "proof"
-  ],
+  "intended_skills": ["scaffolding", "git"],
   "visible_test_cmd": "npm test",
   "test_file": "test/index.test.js"
 }

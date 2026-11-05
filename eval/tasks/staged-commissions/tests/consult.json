@@ -1,0 +1,64 @@
+{
+  "task": "staged-commissions",
+  "kind": "code",
+  "intended_skills": [
+    "domain-modeling",
+    "api",
+    "database",
+    "proof"
+  ],
+  "rules": [
+    "human.1",
+    "human.1.stages",
+    "human.7",
+    "core.simple",
+    "core.simple.s1",
+    "core.simple.s2",
+    "core.simple.s3",
+    "core.simple.s4",
+    "core.simple.s5",
+    "core.1",
+    "core.2",
+    "core.4",
+    "core.6",
+    "default.1",
+    "default.2",
+    "default.4",
+    "default.5",
+    "default.7",
+    "default.9",
+    "default.10",
+    "proof.6",
+    "core.5",
+    "core.7",
+    "default.11",
+    "default.13",
+    "human.2",
+    "human.3",
+    "human.6"
+  ],
+  "gated_paths": [
+    "src/*"
+  ],
+  "visible_test_cmd": "npm test",
+  "test_file_cmd": "node --test {files}",
+  "steps_per_stage": 3,
+  "allowed_env": [
+    "PORT",
+    "DATABASE_PATH",
+    "RATES_URL",
+    "NODE_ENV"
+  ],
+  "stages": 5,
+  "stage_headings": [
+    "# Commissions service",
+    "# Cancelling an order",
+    "# Customer accounts",
+    "# Prices abroad",
+    "# Deposits"
+  ],
+  "probe_timeout": 300,
+  "compat_stage": 5,
+  "compat_terms": "\\b(placed before|older orders?|old orders?|existing orders?|earlier orders?)\\b",
+  "schema_from_stage": 2
+}

@@ -1,7 +1,7 @@
 {
   "task": "large-link-shortener",
   "kind": "code",
-  "intended_skills": ["scaffolding", "architecture", "domain-modeling", "api", "error-handling", "proof", "ui-design"],
+  "intended_skills": ["scaffolding", "domain-modeling", "api", "proof", "ui-design"],
   "visible_test_cmd": "npm test",
   "test_file": "test/smoke.test.js"
 }

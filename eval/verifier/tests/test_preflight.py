@@ -80,26 +80,24 @@ class LoadingTests(unittest.TestCase):
     def test_rows_and_rate_count_trials_that_read_any_skill(self):
         with tempfile.TemporaryDirectory() as tmp:
             job = Path(tmp)
-            write_trial(job, "bug-from-symptom__a", ["workflow", "proof"])
+            write_trial(job, "bug-from-symptom__a", ["api", "proof"])
             write_trial(job, "bug-from-symptom__b", [])
-            write_trial(job, "service-from-brief__c", ["workflow"])
+            write_trial(job, "service-from-brief__c", ["api"])
             rows = preflight.loading_rows(job)
         self.assertEqual(
             [(r["task"], r["loaded"], r["trials"]) for r in rows],
             [("bug-from-symptom", 1, 2), ("service-from-brief", 1, 1)],
         )
         self.assertAlmostEqual(preflight.loading_rate(rows), 2 / 3)
-        self.assertIn("| bug-from-symptom | 1/2 | proof (1), workflow (1) |", preflight.render(rows))
+        self.assertIn("| bug-from-symptom | 1/2 | api (1), proof (1) |", preflight.render(rows))
 
     def test_a_multi_step_trial_counts_skills_read_in_every_step(self):
         with tempfile.TemporaryDirectory() as tmp:
             job = Path(tmp)
-            write_multi_step_trial(
-                job, "money-field-change__a", {"brief": ["workflow"], "approve": ["workflow", "proof"]}
-            )
+            write_multi_step_trial(job, "money-field-change__a", {"brief": ["api"], "approve": ["api", "proof"]})
             rows = preflight.loading_rows(job)
         self.assertEqual([(r["task"], r["loaded"], r["trials"]) for r in rows], [("money-field-change", 1, 1)])
-        self.assertEqual(dict(rows[0]["skills"]), {"proof": 1, "workflow": 1})
+        self.assertEqual(dict(rows[0]["skills"]), {"proof": 1, "api": 1})
 
 
 if __name__ == "__main__":

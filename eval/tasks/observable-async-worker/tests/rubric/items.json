@@ -49,13 +49,13 @@
       "dimension": "scope",
       "extends": "scope.no_unasked_dependency",
       "id": "scope.no_dependency",
-      "key_phrase": "Ask before adding a dependency.",
+      "key_phrase": "adding a dependency",
       "look_at": "Package manifests and lockfiles in the diff",
       "no_when": "A new dependency appears that nobody approved.",
       "polarity": "negative",
       "question": "Does NOT add a package dependency that the request or an approved plan did not name?",
       "rules": [
-        "core.3"
+        "human.2"
       ],
       "tier": "must",
       "yes_when": "No dependency was added, or each added one was named in the request or the approved plan."
@@ -78,13 +78,13 @@
     {
       "dimension": "boundaries",
       "id": "boundaries.exhausted_reported",
-      "key_phrase": "Every catch does one of those or re-raises with context",
+      "key_phrase": "Catch only to recover, translate, retry, or terminate, keeping the cause.",
       "look_at": "The retry and result code in `src/worker.js`",
       "no_when": "One exhausted notification rejects the whole call or stops the others, or nothing the caller or an operator can see says which notification was lost.",
       "polarity": "positive",
       "question": "When a notification's send keeps failing until its attempts run out, does the batch carry on with the others and make that failure visible, counted in `failed` and identifiable by notification id, rather than rejecting the whole batch or dropping it?",
       "rules": [
-        "error-handling.2"
+        "default.4"
       ],
       "tier": "must",
       "yes_when": "An exhausted notification is counted in `failed`, its id appears in the returned result or in an error-level log entry, and the other notifications are still sent."
@@ -92,13 +92,13 @@
     {
       "dimension": "boundaries",
       "id": "boundaries.retry_capped",
-      "key_phrase": "Retries apply only to idempotent transient failures, in one layer, with a capped budget and jittered backoff.",
+      "key_phrase": "Retry only idempotent transient failures, in one layer, with capped, jittered backoff.",
       "look_at": "The retry loop or recursion in `src/worker.js`",
       "no_when": "Retries are unbounded, the limit depends on the batch size, or two layers both retry the same send.",
       "polarity": "positive",
       "question": "Is each notification retried a fixed, small maximum number of times, with the retry in one place in the worker?",
       "rules": [
-        "error-handling.4"
+        "default.9"
       ],
       "tier": "must",
       "yes_when": "A named limit caps attempts per notification, and only one code path retries."
@@ -106,13 +106,13 @@
     {
       "dimension": "boundaries",
       "id": "boundaries.retry_backoff",
-      "key_phrase": "Retries apply only to idempotent transient failures, in one layer, with a capped budget and jittered backoff.",
+      "key_phrase": "Retry only idempotent transient failures, in one layer, with capped, jittered backoff.",
       "look_at": "The code between a failed send and its retry in `src/worker.js`",
       "no_when": "Retries fire immediately, or wait a fixed delay with no jitter.",
       "polarity": "positive",
       "question": "Does the worker wait before retrying a failed send, with a delay that grows per attempt and is jittered?",
       "rules": [
-        "error-handling.4"
+        "default.9"
       ],
       "tier": "quality",
       "yes_when": "A retry waits for a growing, randomized delay."
@@ -120,30 +120,16 @@
     {
       "dimension": "boundaries",
       "id": "boundaries.only_failed_resent",
-      "key_phrase": "Retries apply only to idempotent transient failures",
+      "key_phrase": "Retry only idempotent transient failures",
       "look_at": "What the retry path in `src/worker.js` resends",
       "no_when": "A failure retries a whole chunk or batch, or a notification can be sent again after a successful send.",
       "polarity": "positive",
       "question": "Does a retry resend only the notification whose send failed, never one whose send already succeeded?",
       "rules": [
-        "error-handling.4"
+        "default.9"
       ],
       "tier": "must",
       "yes_when": "The retry is scoped to the one failed notification, and a notification stops being sent after its first success."
-    },
-    {
-      "dimension": "boundaries",
-      "id": "boundaries.logs_allowlisted",
-      "key_phrase": "Redaction is a field allowlist, not a secret deny-list.",
-      "look_at": "The fields passed to every `logger` call in `src/worker.js`",
-      "no_when": "A log call passes the notification, a spread of it, or the send arguments, so recipient or message content can reach the logs.",
-      "polarity": "negative",
-      "question": "Does NOT log whole notification objects or send payloads, so logs carry only chosen fields such as the notification id, attempt, counts, and error message?",
-      "rules": [
-        "error-handling.5"
-      ],
-      "tier": "must",
-      "yes_when": "Each log call builds its fields from named values, such as `notification.id`, not from the notification object itself."
     },
     {
       "dimension": "proof",
@@ -179,13 +165,13 @@
       "dimension": "proof",
       "extends": "proof.failure_path",
       "id": "proof.exhausted_asserted",
-      "key_phrase": "Every public operation that can fail has at least one failure-path test.",
+      "key_phrase": "Every public operation that can fail has at least one failure-path test",
       "look_at": "Public operations in the diff and the tests that call them",
       "no_when": "Only the temporary-failure path is tested, or the test checks only that the call did not throw.",
       "polarity": "positive",
       "question": "Does a test make one notification's send always fail and assert that it is counted as failed and identified in the result while the others are sent?",
       "rules": [
-        "error-handling.6"
+        "proof.3"
       ],
       "tier": "quality",
       "yes_when": "A test with a permanently failing send checks the `failed` count, the failed notification's id in the result, and that the rest were sent."
@@ -193,13 +179,13 @@
     {
       "dimension": "proof",
       "id": "proof.logs_asserted",
-      "key_phrase": "Every public operation that can fail has at least one failure-path test.",
+      "key_phrase": "Every public operation that can fail has at least one failure-path test",
       "look_at": "Test files the diff adds or changes, and the logger they pass in",
       "no_when": "No test checks what is logged, or it checks only that something was logged.",
       "polarity": "positive",
       "question": "Does a test assert the lifecycle log events, such as the warning for a retried send and the error for a notification that ran out of attempts, with their notification id?",
       "rules": [
-        "error-handling.6"
+        "proof.3"
       ],
       "tier": "quality",
       "yes_when": "A test records log calls and checks the event name or level and the notification id for a retry or a final failure."
@@ -222,13 +208,13 @@
     {
       "dimension": "report",
       "id": "report.retry_risk_first",
-      "key_phrase": "Report what needs their attention first",
+      "key_phrase": "what needs the user's attention",
       "look_at": "The agent's final message",
       "no_when": "The message does not mention the risk, or claims retries can never duplicate a notification.",
       "polarity": "positive",
       "question": "Does the final message flag that a retry can send a duplicate if a failed send had in fact delivered, unless `send` deduplicates by notification id, as an assumption the user must confirm?",
       "rules": [
-        "core.5"
+        "human.7"
       ],
       "tier": "must",
       "yes_when": "The message names the duplicate risk on retry (or the idempotency assumption about `send`) and asks the user to confirm it, wherever it appears."
@@ -258,7 +244,7 @@
       "polarity": "positive",
       "question": "Does every test and file the final message names exist in the diff or the repository, and do what the message says?",
       "rules": [
-        "core.5"
+        "human.7"
       ],
       "tier": "must",
       "yes_when": "Each named test and file exists and does what the message says."

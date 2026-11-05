@@ -1,352 +1,100 @@
 # Consult
 
-Drawn from 25 years of software engineering across startups and large
-organizations, Consult is a human in the loop focused portable skill library for
-raising the engineering maturity of coding agents.
+Put the assistant back in coding assistant.
 
-Humans are good at mapping real-world issues to technical solutions, and, given enough context,
-coding agents are good at generating a correct implementation. Consult does not try to
-change either side of that equation: it does not automate humans away, and it
-does not change how coding agents, or their harnesses, work internally. Instead, it
-augments the collaboration between them so agent-assisted work produces simpler,
-trustworthy, and maintainable production-grade software while humans still own
-intent, design, and acceptance.
+An open-source skills and workflow plugin for AI coding agents, built on one
+rule: keep software simple enough to understand, change, and test.
 
-Consult is not a vibe-coding safety net. It works best when you have
-enough software fundamentals to judge plans, tradeoffs, risk, and proof. Consult can
-still suggest a solution, but it's more effective if you can make the hard
-engineering decisions yourself (plus you'll actually know how the code works).
+## Context isn't just for agents
 
-## What Consult guides agents to do
+Agents can now write more code than anyone can read. One-shot a feature and
+you get the code without the context of how it was built. Consult builds it
+up with you in small, tested stages, keeps it simple, and walks you through
+every change, so you know how it works as it grows.
 
-- Keep humans in the loop for significant and hard-to-change work: public
-  interfaces, project structure, dependency picks, data boundaries, long-lived
-  behavior, substantial new modules, non-trivial logic, and deliberate behavior
-  changes.
-- Use AI to improve the developer's mental model, not to replace it.
-- Model data first: make values, states, and rules clear; limit side effects;
-  keep state changes at the edges.
-- Show their work: prove behavior with tests, contracts, logs, or visible
-  checks rather than relying on what seems correct.
-- Treat security, data safety, and accessibility as essential, not extras.
-- Plan beyond launch: invest in observability, reliability, safe deployment,
-  and a rollback plan.
-- Organize work into clear, reviewable changes humans can trust and maintain.
+### Iterate to build shared understanding
 
-## Ceremony scales with stakes
+Coding agents were trained on finished code, not on how engineers got there.
+Many engineers who use agents already steer them through plan, build, prove,
+and review by hand. Consult writes that loop into the agent's skills, so it
+runs at every stage without you asking for it.
 
-Consult is not a fixed approval pipeline. The `workflow` skill classifies each
-task by significance (how much other code it impacts) and durability (how
-costly it is to reverse), then sets the involvement level from those stakes.
-Low-stakes, disposable work runs autonomously with no gates. Approval gates
-fire only when the output is significant or hard to change, and each gate asks
-one decision question, not a barrage. If Consult feels like it is asking too
-often on routine work, that is a bug: the eval suite lowers a trial's score for
-each agent message that ends in a question, and reports of gate fatigue are
-worth filing.
+You and the agent plan together, and you sign off on the plan and on big
+calls. The agent builds the data and interfaces first and shows them to you
+with their tests before it writes the logic on top. Every requirement gets a
+test, and the agent breaks the code by hand to show each test can fail.
+Before you commit, `/consult:code-review` in a fresh session gives you a
+reviewer that tries to break the finished change.
+
+### Hard-won lessons, for free
+
+Consult is built from 25 years of web app, SRE, and developer platform
+experience, with Rich Hickey's Simple Made Easy as its north star. It gives
+your agent the habits and opinions that used to take years of mistakes to
+learn.
+
+- **Designs the data, interfaces, and APIs with you.** It asks before
+  anything hard to undo, and gets on with the small stuff.
+- **Builds in tested stages.** Data and interfaces, then logic. Every
+  requirement gets a test.
+- **Gets a second opinion when you ask.** Run `/consult:code-review` in a
+  new session before you commit. The agent points it at the risky files.
+- **Keeps the code simple.** Seven core rules apply to every change.
+  Functions do one thing in about 25 to 30 lines. Nesting stays under three
+  levels. A condition that joins checks with and/or gets a name that says
+  what it means. Calculations stay apart from I/O, and nothing gets built
+  that you didn't ask for.
+- **Makes your calls.** Where there are several good ways to build
+  something, Consult's house defaults pick one: a functional core, domain
+  folders over layers, and Result-style errors. Where your project has
+  already chosen, your project's choice wins.
+- **Tells you what changed.** So you still know how the code works.
+
+11 skills, 7 core rules, and about 2,200 tokens of always-on text.
+
+## What loads
+
+- **The core** (`agents/.agents/core.md`) prints at the start of every
+  session. It holds the core rules, the house defaults, and how the agent
+  works with you.
+- **Seven skills** load on their own when their topic comes up: `proof`,
+  `api`, `database`, `ui-design`, `scaffolding`, `domain-modeling`, and
+  `git`.
+- **Four skills** run only when you invoke them: `/consult:code-review`,
+  `/release`, `/issue-tracking`, and `/documentation`. Claude Code ships its
+  own `/code-review`, so Consult's keeps the `consult:` prefix.
 
 ## Install
 
-Most users should install the package for their primary agent. Use the manual
-install only when you want one shared skill directory across several tools, or
-when your tool does not support plugins.
+Run each command inside Claude Code:
 
-### Claude Code
-
-Inside Claude Code:
-
-```text
+```
 /plugin marketplace add dawson-design/consult
 /plugin install consult@consult
 ```
 
-Prefer the plugin over `./setup.sh` on Claude Code. The plugin namespaces
-skills as `/consult:<skill>`, which keeps them distinct from Claude Code's
-built-in skills; `setup.sh` symlinks `~/.claude/skills` and registers bare
-names, so `code-review` becomes ambiguous with the built-in of the same
-name. Running both also loads every skill twice. Pick one.
+To try a local checkout, run `claude --plugin-dir plugin`.
 
-The plugin ships a SessionStart hook that prints the Consult core,
-[`agents/.agents/core.md`](agents/.agents/core.md), into every session: the
-Iron Law and the rules every code change needs (simplicity, building only what
-was asked, code shape, backward compatibility, security), plus a line telling
-Claude to load the `workflow` skill before non-trivial code work. The core
-applies even when no skill loads, so it can replace the general coding rules
-in your own `CLAUDE.md`. You do not need a routing line there; if you added
-one, you can remove it.
-
-Claude Code does not auto-update third-party marketplaces by default. To get
-new releases automatically, open `/plugin`, go to **Marketplaces**, select
-`consult`, and choose **Enable auto-update**. To update by hand:
-
-```sh
-claude plugin marketplace update consult
-claude plugin update consult@consult
-```
-
-#### Claude Code desktop app
-
-The Code tab in the Claude desktop app is Claude Code, and it reads the same
-user settings as the terminal, so a plugin installed with the commands above
-is available there too. To install from the app instead, run the same
-`/plugin marketplace add` and `/plugin install` commands in a local session.
-Plugins, including the SessionStart hook, load in local and SSH sessions, not
-in cloud sessions.
-
-#### Claude desktop app (chat and Cowork)
-
-Go to **Customize > Plugins > Add > Add marketplace**, enter
-`dawson-design/consult`, and install **Consult**. The skills load there, but
-chat does not run hooks, so the Consult core is not always on: it applies once
-the `workflow` skill loads. Cowork runs hooks. Skills need code execution
-turned on in the app's settings. A plugin installed in the desktop app also
-appears in Claude Code terminal sessions signed in to the same account, but
-not the other way round. To pick up new releases, turn on **Sync
-automatically** for the marketplace, or use **Check for updates**.
-
-If Claude says a marketplace with the same name already exists, Consult was
-added before. Install it from the existing `consult` marketplace instead. If
-that marketplace shows an old version, or points somewhere other than
-`dawson-design/consult`, use **Check for updates** or restart Claude, or remove
-it and add `dawson-design/consult` again.
-
-### Codex
+In Codex:
 
 ```sh
 codex plugin marketplace add dawson-design/consult
 codex plugin add consult@consult
 ```
 
-You can also install from `/plugins` inside Codex: find **Consult**, press
-Enter to open its details, and select `Install plugin`.
+Codex then asks you to trust Consult's SessionStart hook, which prints the
+core. Install paths for Cursor and other agents will come later.
 
-Codex then asks you to review and trust Consult's SessionStart hook. The hook
-prints the Consult core and a line telling Codex to load the `workflow` skill
-before non-trivial code work. Until you trust it, Codex picks skills from
-their descriptions alone and sees the core only once `workflow` loads.
-
-To update, refresh the marketplace and add the plugin again:
+## Develop
 
 ```sh
-codex plugin marketplace upgrade consult
-codex plugin add consult@consult
+make check      # validator, plugin drift, ruff, mypy, pytest
+make plugin     # regenerate plugin/ after editing agents/.agents/
 ```
 
-### Cursor
-
-Install from the [Cursor Marketplace](https://cursor.com/marketplace) (search for
-**Consult** or submit this repo at
-[cursor.com/marketplace/publish](https://cursor.com/marketplace/publish) if it is
-not listed yet). Open the marketplace panel in Cursor, install **consult**, then
-confirm skills under **Settings → Rules → Agent Decides**. Invoke a skill with
-`/skill-name` in Agent chat (for example `/workflow`, `/proof`).
-
-To test from a local checkout before marketplace listing:
-
-```sh
-mkdir -p ~/.cursor/plugins/local
-cp -R /path/to/consult/plugin ~/.cursor/plugins/local/consult
-```
-
-Reload the window (**Developer: Reload Window**). Prefer `cp -R` over symlinks;
-some Cursor builds do not load symlinked local plugins reliably.
-
-If you also run `./setup.sh`, Cursor can load the same skills twice (plugin plus
-`~/.agents/skills/`). Use either the Cursor plugin or manual install for Cursor,
-not both.
-
-Developing inside this repository with a local plugin copy also duplicates skills
-(project `agents/.agents/skills/` plus the plugin). See
-[`CONTRIBUTING.md`](CONTRIBUTING.md#local-plugin-development).
-
-### Pi
-
-Pi has no Consult package. Use the
-[manual install](#manual-multi-agent-or-unsupported-plugins), which links the
-skills where Pi reads them.
-
-### Google Antigravity
-
-Antigravity's CLI (`agy`) manages plugins with `agy plugin install`. Consult ships a
-ready-to-install plugin at `plugin/` (a `plugin.json` marker plus a `skills/`
-directory). Install it from a local checkout:
-
-```sh
-agy plugin install /path/to/consult/plugin
-```
-
-`agy` copies the plugin into `~/.gemini/antigravity-cli/plugins/consult` and
-registers its skills; verify with `agy plugin list`. Because it copies rather
-than links, re-run the command (or `./setup.sh`) after pulling new skills.
-`./setup.sh` runs this automatically when `agy` is on your PATH.
-
-### Manual (multi-agent or unsupported plugins)
-
-Prerequisites: Git and GNU Stow. Install Stow with one of:
-
-```sh
-brew install stow   # macOS
-apt install stow    # Debian/Ubuntu
-dnf install stow    # Fedora/RHEL
-```
-
-```sh
-git clone https://github.com/dawson-design/consult.git
-cd consult
-./setup.sh
-```
-
-`setup.sh` prints the actions it will take and confirms before changing
-anything. It links `~/.agents/skills/`, installs the Antigravity plugin via
-`agy plugin install`, and links tool-specific skill locations when those tools
-are present. End-user installs do not need Python or uv.
-
-### Do I need to add a routing line?
-
-Only the Claude Code and Codex plugins ship the SessionStart hook that prints
-the Consult core and tells the agent to load the `workflow` skill.
-Antigravity and manual installs have no hook. Cursor finds the hook file, but
-we have not confirmed that it uses the output. On those hosts the agent picks
-skills from their descriptions alone and sees the core only once `workflow`
-loads. To route non-trivial code work through `workflow`, add this line to the
-host's instruction file, for example `AGENTS.md`. To keep the core always on
-as well, paste the rules from [`agents/.agents/core.md`](agents/.agents/core.md)
-there too.
-
-```text
-Before a non-trivial feature, fix, refactor, debugging task, test, or config change, load the Consult workflow skill and follow the narrower Consult skills it selects. Skip it for trivial edits and questions that involve no code change.
-```
-
-## Skills
-
-Consult includes 17 skills. Open a skill for when it applies and the rules it
-sets. The rules that apply to every code change, whether or not a skill
-loads, are in the Consult core, [`agents/.agents/core.md`](agents/.agents/core.md).
-
-- Process and proof:
-  - [`workflow`](agents/.agents/skills/workflow/SKILL.md): Loads first for non-trivial code changes to choose skills, sign-off gates, and checks.
-  - [`proof`](agents/.agents/skills/proof/SKILL.md): Tests and checks that prove acceptance criteria, edge cases, and invariants.
-  - [`code-review`](agents/.agents/skills/code-review/SKILL.md): Review diffs and PRs for bugs, regressions, edge cases, and merge readiness.
-  - [`refactoring`](agents/.agents/skills/refactoring/SKILL.md): Behavior-preserving change, tests, and safe rewrites.
-- Design:
-  - [`architecture`](agents/.agents/skills/architecture/SKILL.md): Architecture decisions, module boundaries, coupling, layering, and system structure.
-  - [`domain-modeling`](agents/.agents/skills/domain-modeling/SKILL.md): Data shapes, invariants, state transitions, parsing, and effects.
-  - [`contract-first`](agents/.agents/skills/contract-first/SKILL.md): Approve contracts (APIs, schemas, formats, module boundaries) before implementation.
-- Interfaces and docs:
-  - [`api`](agents/.agents/skills/api/SKILL.md): REST API contracts: endpoints, fields, evolution, status codes, errors, pagination, idempotency.
-  - [`ui-design`](agents/.agents/skills/ui-design/SKILL.md): Frontend UI, layouts, components, responsive behavior, accessibility, WCAG, keyboard, and focus.
-  - [`documentation`](agents/.agents/skills/documentation/SKILL.md): READMEs, runbooks, API docs, module docs, and comments for existing code.
-- Backend:
-  - [`database`](agents/.agents/skills/database/SKILL.md): Schemas, migrations, indexes, transactions, query plans, and locking.
-  - [`error-handling`](agents/.agents/skills/error-handling/SKILL.md): Error types, propagation, retries, user messages, and recovery.
-- Release:
-  - [`release`](agents/.agents/skills/release/SKILL.md): Release prep and release-artifact sync, on request or approval.
-- Repo and tools:
-  - [`commit`](agents/.agents/skills/commit/SKILL.md): Staging reviewed work, commit splits, and messages.
-  - [`git-workflow`](agents/.agents/skills/git-workflow/SKILL.md): Branches, history edits, conflicts, rebases, recovery, and force-push.
-  - [`issue-tracking`](agents/.agents/skills/issue-tracking/SKILL.md): Initiatives, epics, and issues in GitHub, Jira, or another tracker: drafting, sizing, linking, and status.
-  - [`scaffolding`](agents/.agents/skills/scaffolding/SKILL.md): New projects, package setup, quality tooling, CI, and repo structure.
-
-Greenfield stack presets are in
-[`scaffolding/references/stacks.md`](agents/.agents/skills/scaffolding/references/stacks.md).
-Shared language defaults are in
-[`language-defaults.md`](agents/.agents/skills/scaffolding/references/language-defaults.md).
-
-## Writing documents with Terse
-
-Consult's `documentation` skill covers docs for existing code. For specs, ADRs,
-design docs, PR descriptions, and posts, use
-[Terse](https://github.com/dawson-design/terse), a companion plugin from the same
-author. Terse pairs an offline style checker with skills to brainstorm,
-outline, draft, and edit, and it keeps the writer's voice. It needs Node.js 18
-or newer.
-
-In Claude Code:
-
-```text
-/plugin marketplace add dawson-design/terse
-/plugin install terse@terse
-```
-
-In Codex:
-
-```sh
-codex plugin marketplace add dawson-design/terse
-codex plugin add terse@terse
-```
-
-## How routing works
-
-The `workflow` skill loads first for non-trivial code work. It picks the
-narrower skills that change what the agent does next or how it checks the
-result.
-
-The agent asks for sign-off before it builds any of these:
-
-- the design direction
-- a contract that callers depend on
-- a core data shape, invariant, or glossary term later work depends on
-- a migration, or a change that deletes or rewrites data
-- a release artifact
-- a change to git history, or any destructive git operation
-
-Local helpers, private file moves, and narrow bug fixes that restore intended
-behavior never need sign-off. Some runs have no human to answer, such as
-headless or scheduled runs. There the agent stops at the gate and reports
-what needs approval.
-
-When work needs approval before building, the agent saves the approved plan as
-Markdown. A fresh session, or a cheaper model, can then build from the plan
-without the planning conversation.
-
-See [`workflow`](agents/.agents/skills/workflow/SKILL.md) for the full
-routing table and [`contract-first`](agents/.agents/skills/contract-first/SKILL.md)
-for sign-off on interfaces and shared structure.
-
-## Evaluation
-
-[`eval/README.md`](eval/README.md) benchmarks Claude Code and Codex with and
-without Consult on shared engineering tasks, using Harbor for sandboxed trials
-and RewardKit for scoring. It combines deterministic hidden tests with
-LLM-judged engineering maturity, proof quality, simplicity, and risk handling.
-It reports the lift from installing Consult.
-
-## Contributing
-
-See [`CONTRIBUTING.md`](CONTRIBUTING.md) for project conventions, the skill
-authoring template, branching rules, checks, and maintenance steps. Skill
-authoring rules and pack-versioning policy live in
-[`AGENTS.md`](AGENTS.md#skill-anatomy-enforced-by-the-validator).
+`AGENTS.md` has the authoring rules. `eval/README.md` covers the Harbor evals
+that measure lift and cost against bare Claude Code.
 
 ## License
 
-MIT: see [`LICENSE`](LICENSE).
-
-## Uninstall
-
-Manual install:
-
-```sh
-stow --target="$HOME" -D agents
-```
-
-Manual cleanup may still be needed for tool-specific symlinks.
-
-If you installed the Claude Code plugin, run these from inside Claude Code:
-
-```text
-/plugin uninstall consult@consult
-/plugin marketplace remove consult
-```
-
-For Codex:
-
-```sh
-codex plugin remove consult@consult
-codex plugin marketplace remove consult
-```
-
-For Cursor,
-disable or uninstall **consult** from the marketplace panel (or remove
-`~/.cursor/plugins/local/consult` and any `~/.cursor/plugins/cache/consult` copy). For
-Antigravity, run `agy plugin uninstall consult`.
+MIT

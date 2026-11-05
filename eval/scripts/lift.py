@@ -118,13 +118,33 @@ def trial_evidence(trial_dir: Path, result: dict, rewards: dict) -> dict:
     final_dir = trial_dir / "steps" / steps[-1] if steps else trial_dir
     rules = criteria(final_dir / "verifier" / "reward-details.json", "rules")
     rules.pop("no_rules", None)
+    for rule in not_applicable(final_dir / "verifier" / "rules-na.json"):
+        rules.pop(rule, None)
     signoff = criteria(trial_dir / "steps" / steps[0] / "verifier" / "reward-details.json", "signoff") if steps else {}
     built_ok = float(rewards.get("verification") or 0.0) == 1.0
     mode = next((m for m in MODES if signoff.get(f"mode_{m}") == 1.0), None)
     rules.update({k: (v if built_ok else 0.0) for k, v in signoff.items() if not k.startswith("mode_")})
     trajectory = cl.load_trajectory(final_dir / "agent" / "trajectory.json")
     cost = trial_cost(result, trajectory, final_dir / "verifier" / "judge-bundle.md")
-    return {"rules": rules, "signoff_mode": mode, "skills_read": cl.read_skill_names(trajectory), "cost": cost}
+    return {
+        "rules": rules,
+        "judge_rules": judge_rule_rates(final_dir / "verifier" / "judge-items.json"),
+        "signoff_mode": mode,
+        "skills_read": cl.read_skill_names(trajectory),
+        "cost": cost,
+    }
+
+
+def judge_rule_rates(path: Path) -> dict[str, float]:
+    """rule id -> share of the judge's yes/no answers on items citing it that were yes (met); unknowns left out."""
+    if not path.is_file():
+        return {}
+    answers: dict[str, list[float]] = defaultdict(list)
+    for item in json.loads(path.read_text()).get("items") or []:
+        if item.get("answer") in ("yes", "no"):
+            for rule in item.get("rules") or []:
+                answers[rule].append(1.0 if item["answer"] == "yes" else 0.0)
+    return {rule: statistics.fmean(values) for rule, values in answers.items()}
 
 
 def trial_cost(result: dict, trajectory: cl.Trajectory, bundle_path: Path) -> dict:
@@ -204,6 +224,11 @@ def hunk_line_count(diff: str) -> int:
         elif in_hunk and line[:1] in ("+", "-"):
             count += 1
     return count
+
+
+def not_applicable(path: Path) -> list[str]:
+    """Rule ids a trial gave nothing to score (consult_rules.record_not_applicable); none when the file is absent."""
+    return json.loads(path.read_text()) if path.is_file() else []
 
 
 def criteria(details_path: Path, dimension: str) -> dict[str, float]:
@@ -429,30 +454,55 @@ def failed_trials(entries: Iterable[dict]) -> list[str]:
     return [e["trial"] for e in entries if e.get("error") or e["reward"] is None]
 
 
-def rule_pass_rates(by_task: dict[str, list[dict]]) -> dict[str, tuple[float, set[str]]]:
-    """rule id -> (mean score over every trial that scored it, tasks that scored it)."""
+def rule_pass_rates(by_task: dict[str, list[dict]], key: str = "rules") -> dict[str, tuple[float, set[str], int]]:
+    """rule id -> (mean score over every trial that scored it, tasks that scored it, trials that scored it).
+
+    key "rules" reads the deterministic checks; "judge_rules" reads the judge's answers per rule.
+    """
     scores: dict[str, list[float]] = defaultdict(list)
     tasks: dict[str, set[str]] = defaultdict(set)
     for task, entries in by_task.items():
-        record_task_rules(task, entries, scores, tasks)
-    return {rule: (statistics.fmean(values), tasks[rule]) for rule, values in scores.items()}
+        record_task_rules(task, entries, scores, tasks, key)
+    return {rule: (statistics.fmean(values), tasks[rule], len(values)) for rule, values in scores.items()}
 
 
-def record_task_rules(task: str, entries: list[dict], scores: dict, tasks: dict) -> None:
-    for rule, value in chain.from_iterable(e["rules"].items() for e in entries):
+def record_task_rules(task: str, entries: list[dict], scores: dict, tasks: dict, key: str = "rules") -> None:
+    for rule, value in chain.from_iterable((e.get(key) or {}).items() for e in entries):
         scores[rule].append(value)
         tasks[rule].add(task)
 
 
 def rule_scorecard(bare: dict[str, list[dict]], consult: dict[str, list[dict]]) -> list[dict]:
-    """Per-rule pass rates; an arm with no trial that scored the rule shows None, not 0."""
-    b, c = rule_pass_rates(bare), rule_pass_rates(consult)
+    """Per-rule pass rates and trial counts; an arm with no trial that scored the rule shows None, not 0.
+
+    A trial that gave a rule nothing to score (rules-na.json) is not counted, so n can differ by arm.
+    Judge answers get their own rows (method "judge"), apart from the deterministic checks ("check").
+    """
+    return scorecard_rows(bare, consult, "rules", "check") + scorecard_rows(bare, consult, "judge_rules", "judge")
+
+
+def scorecard_rows(bare: dict[str, list[dict]], consult: dict[str, list[dict]], key: str, method: str) -> list[dict]:
+    b, c = rule_pass_rates(bare, key), rule_pass_rates(consult, key)
+    empty = (None, set(), 0)
     rows = []
     for rule in sorted(set(b) | set(c)):
-        bare_rate, consult_rate = b.get(rule, (None, set()))[0], c.get(rule, (None, set()))[0]
-        tasks = b.get(rule, (None, set()))[1] | c.get(rule, (None, set()))[1]
+        (bare_rate, bare_tasks, bare_n), (consult_rate, consult_tasks, consult_n) = (
+            b.get(rule, empty),
+            c.get(rule, empty),
+        )
         lift = None if bare_rate is None or consult_rate is None else consult_rate - bare_rate
-        rows.append({"rule": rule, "tasks": len(tasks), "bare": bare_rate, "consult": consult_rate, "lift": lift})
+        rows.append(
+            {
+                "rule": rule,
+                "method": method,
+                "tasks": len(bare_tasks | consult_tasks),
+                "bare": bare_rate,
+                "consult": consult_rate,
+                "lift": lift,
+                "n_bare": bare_n,
+                "n_consult": consult_n,
+            }
+        )
     return rows
 
 
@@ -635,11 +685,12 @@ def render_rules(rows: list[dict]) -> list[str]:
         "",
         "## Rules",
         "",
-        "| rule | tasks | bare pass | consult pass | lift |",
-        "| --- | ---: | ---: | ---: | ---: |",
+        "| rule | method | tasks | bare pass | consult pass | lift | n bare | n consult |",
+        "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |",
     ]
     lines += [
-        f"| {r['rule']} | {r['tasks']} | {rate(r['bare'], '.2f')} | {rate(r['consult'], '.2f')} | {rate(r['lift'], '+.2f')} |"
+        f"| {r['rule']} | {r['method']} | {r['tasks']} | {rate(r['bare'], '.2f')} | {rate(r['consult'], '.2f')}"
+        f" | {rate(r['lift'], '+.2f')} | {r['n_bare']} | {r['n_consult']} |"
         for r in rows
     ]
     return lines

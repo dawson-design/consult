@@ -267,15 +267,19 @@ def changes_flags(trial: Trial, workspace: Path) -> list[str]:
 
 
 def dependency_notes(workspace: Path) -> list[str]:
-    """The bundle never carries node_modules, so an agent's npm install is missing from the rebuild."""
+    """The bundle never carries node_modules; the container reinstalls from a lockfile, so only a lockless rebuild lacks them."""
     manifest = workspace / "package.json"
+    if (workspace / "package-lock.json").is_file():
+        return []
     try:
         declared = json.loads(manifest.read_text()) if manifest.is_file() else {}
     except ValueError:
         return []
     if not isinstance(declared, dict) or not (declared.get("dependencies") or declared.get("devDependencies")):
         return []
-    return ["package.json declares dependencies and the rebuild has no node_modules: checks that run them may drop"]
+    return [
+        "package.json declares dependencies without a package-lock.json, so the rebuild has no node_modules: checks that run them may drop"
+    ]
 
 
 # ------------------------------------------------------------------- rewards
@@ -383,6 +387,9 @@ def test_dirs(trial: Trial) -> list[Path]:
     return [d for d in dirs if d.is_dir()]
 
 
+NPM_RESTORE = "if [ -f package-lock.json ]; then npm ci --no-audit --no-fund --loglevel=error; fi"
+
+
 def load_container(name: str, trial: Trial, workspace: Path) -> None:
     docker("exec", name, "sh", "-c", "rm -rf /app && mkdir /app")
     docker("cp", f"{workspace}/.", f"{name}:/app")
@@ -391,6 +398,8 @@ def load_container(name: str, trial: Trial, workspace: Path) -> None:
     for tests in test_dirs(trial):
         docker("cp", f"{tests}/.", f"{name}:/tests")
     docker("exec", name, "chmod", "+x", "/tests/test.sh")
+    # The bundle never carries node_modules, so reinstall the agent's dependencies from its lockfile.
+    docker("exec", "-w", "/app", name, "sh", "-c", NPM_RESTORE)
 
 
 def verifier_env(rejudge: bool) -> list[str]:

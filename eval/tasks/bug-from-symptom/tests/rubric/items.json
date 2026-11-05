@@ -31,13 +31,13 @@
     {
       "dimension": "structure",
       "id": "structure.one_copy_rule",
-      "key_phrase": "duplicated rule with divergent meaning",
+      "key_phrase": "duplicated rules with diverging meaning",
       "look_at": "Copying code in `src/snapshot.js` and `src/store.js` after the change. Changes to `updateWidget` are judged by another item; ignore them here.",
       "no_when": "The change adds a separate dashboard copy in `src/store.js` (such as a `structuredClone` call in `save`, `load`, or `duplicate`) beside `snapshot`, so the copy rule lives in two places.",
       "polarity": "positive",
       "question": "Is copying a dashboard still done by the one `snapshot` function that `save`, `load`, and `duplicate` use, without a second dashboard copy routine in `src/store.js`?",
       "rules": [
-        "refactoring.4"
+        "code-review.4"
       ],
       "tier": "quality",
       "yes_when": "All dashboard copies go through `snapshot`."
@@ -76,13 +76,13 @@
       "dimension": "scope",
       "extends": "scope.no_unasked_dependency",
       "id": "scope.no_dependency",
-      "key_phrase": "Ask before adding a dependency.",
+      "key_phrase": "adding a dependency",
       "look_at": "Package manifests and lockfiles in the diff",
       "no_when": "A new dependency appears that nobody approved.",
       "polarity": "negative",
       "question": "Does NOT add a package dependency that the request or an approved plan did not name?",
       "rules": [
-        "core.3"
+        "human.2"
       ],
       "tier": "must",
       "yes_when": "No dependency was added, or each added one was named in the request or the approved plan."
@@ -90,13 +90,13 @@
     {
       "dimension": "scope",
       "id": "scope.no_drive_by",
-      "key_phrase": "Opportunistic tweaks and behavior fixes go in separate behavior commits or are left out.",
+      "key_phrase": "don't reshape untouched code",
       "look_at": "The diff of `src/store.js` and of any other file outside `src/snapshot.js`",
       "no_when": "The diff tidies or rewrites store code unrelated to the leak, or reformats untouched lines.",
       "polarity": "negative",
       "question": "Does NOT change code in `src/store.js` that the leak does not depend on, such as id generation, `list`, or the `saved.get(id) ?? load(id)` lookup in `duplicate`, or reformat code the fix does not touch?",
       "rules": [
-        "refactoring.1"
+        "core.4"
       ],
       "tier": "quality",
       "yes_when": "Changes outside `snapshot` are limited to what the fix needs, or there are none."
@@ -104,12 +104,13 @@
     {
       "dimension": "scope",
       "id": "scope.no_handrolled_clone",
-      "key_phrase": "Hand-rolled versions of solved problems",
+      "key_phrase": "Don't write code for a solved problem.",
       "look_at": "The copy logic in `src/snapshot.js` and any new helper files",
       "no_when": "The change adds its own recursive clone of arbitrary values.",
       "polarity": "negative",
       "question": "Does NOT add a hand-written general-purpose deep-clone function when the runtime's `structuredClone` (Node 17 and later; the task image runs Node 22) does the job?",
       "rules": [
+        "core.3",
         "code-review.5"
       ],
       "tier": "quality",
@@ -178,13 +179,13 @@
       "dimension": "report",
       "extends": "report.attention_first",
       "id": "report.attention_first",
-      "key_phrase": "Report what needs their attention first",
+      "key_phrase": "what needs the user's attention",
       "look_at": "The opening of the agent's final message",
       "no_when": "Decisions or risks appear only after the change list, or not at all.",
       "polarity": "positive",
       "question": "Does the final message open with what needs the user's attention (decisions, risks, unproven points) before describing the changes?",
       "rules": [
-        "core.5"
+        "human.7"
       ],
       "tier": "quality",
       "yes_when": "The first part names what the user must decide or watch, or says plainly that nothing needs attention."
@@ -214,7 +215,7 @@
       "polarity": "positive",
       "question": "Does every test and file the final message names exist in the diff or the repository, and do what the message says?",
       "rules": [
-        "core.5"
+        "human.7"
       ],
       "tier": "must",
       "yes_when": "Each named test and file exists and does what the message says."

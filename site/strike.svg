@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="40" height="8" viewBox="0 0 40 8" preserveAspectRatio="none">
+<!-- A pencil strike for the struck word in the home page eyebrow (site.css .cat s): one tapered stroke
+     that rises slightly left to right, with a lighter second pass over its right half, roughened by
+     the same paper grain as rule.svg. The fill is a lighter tint of the wordmark sketch colour (the
+     sketch token in site.css), so the strike holds against the accent text. -->
+<filter id="grain" x="0" y="0" width="100%" height="100%"><feTurbulence result="noise" type="fractalNoise" baseFrequency="0.5 0.9" numOctaves="2" seed="4"/><feColorMatrix in="noise" result="tooth" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1.4 0 0 0 0.35"/><feComposite in="SourceGraphic" in2="tooth" operator="in"/></filter>
+<g fill="#D6E2F0" filter="url(#grain)"><path d="M0.50 5.05 L2.45 4.55 L4.40 4.39 L6.35 4.13 L8.30 4.01 L10.25 3.83 L12.20 3.65 L14.15 3.57 L16.10 3.38 L18.05 3.31 L20.00 3.15 L21.95 3.04 L23.90 2.99 L25.85 2.94 L27.80 2.78 L29.75 2.72 L31.70 2.70 L33.65 2.69 L35.60 2.62 L37.55 2.60 L39.50 2.93 L39.50 3.59 L37.55 3.99 L35.60 4.24 L33.65 4.48 L31.70 4.61 L29.75 4.72 L27.80 4.85 L25.85 5.07 L23.90 5.16 L21.95 5.24 L20.00 5.35 L18.05 5.50 L16.10 5.55 L14.15 5.70 L12.20 5.72 L10.25 5.83 L8.30 5.92 L6.35 5.91 L4.40 6.01 L2.45 5.94 L0.50 5.71Z"/><path fill-opacity="0.8" d="M20.00 4.27 L21.58 3.99 L23.17 3.73 L24.75 3.54 L26.33 3.38 L27.92 3.26 L29.50 3.19 L31.08 2.99 L32.67 2.93 L34.25 2.85 L35.83 2.74 L37.42 2.71 L39.00 2.77 L39.00 3.13 L37.42 3.56 L35.83 3.73 L34.25 3.94 L32.67 4.09 L31.08 4.18 L29.50 4.39 L27.92 4.45 L26.33 4.53 L24.75 4.63 L23.17 4.72 L21.58 4.84 L20.00 4.63Z"/></g>
+</svg>

@@ -14,78 +14,42 @@ jobs:
   checks:
     runs-on: ubuntu-latest
     steps:
-      # Every action is pinned to a commit, as the lychee download below is
-      # pinned to a checksum, so a moved tag cannot change what runs here.
+      # Every action is pinned to a commit, so a moved tag cannot change what
+      # runs here.
       # tests/test_ci_workflow.py enforces the pins and the permissions.
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
-      # Tcl expect drives the setup.sh confirmation tests. Without it those tests
-      # skip, so install it here to make sure they actually run somewhere.
-      #
-      # Do NOT install GNU Stow. tests/test_setup_sh.py asserts that setup.sh
-      # refuses to run when stow is missing, using PATH=/usr/bin:/bin — a runner
-      # with stow in /usr/bin breaks that test.
-      - name: Install expect
-        run: sudo apt-get update && sudo apt-get install -y expect
-
-      # Node serves only eval/verifier/tests/test_hidden_checks.py, which runs
-      # the eval's JS hidden checks. The repo's own tooling is Python.
+      # Node serves only the eval's JS hidden checks and the TypeScript code
+      # analyzer their tests run. The repo's own tooling is Python.
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version: 22
 
-      # ruff is pinned in the root pyproject.toml and uv.lock.
+      # ruff, mypy, and pytest are pinned in the root pyproject.toml and uv.lock.
       - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
 
-      # lychee checks local Markdown links and anchors (make links), and the
-      # pre-commit tests expect it on PATH. Pinned release binary, verified
-      # against its published SHA-256.
-      - name: Install lychee
-        run: |
-          curl -sSfL -o "$RUNNER_TEMP/lychee.tar.gz" \
-            https://github.com/lycheeverse/lychee/releases/download/lychee-v0.24.2/lychee-x86_64-unknown-linux-gnu.tar.gz
-          echo "1f4e0ef7f6554a6ed33dd7ac144fb2e1bbed98598e7af973042fc5cd43951c9a  $RUNNER_TEMP/lychee.tar.gz" | sha256sum -c -
-          tar xzf "$RUNNER_TEMP/lychee.tar.gz" -C "$RUNNER_TEMP"
-          echo "$RUNNER_TEMP/lychee-x86_64-unknown-linux-gnu" >> "$GITHUB_PATH"
+      # Each check is its own step so one failure does not mask the others. The
+      # cheap deterministic checks run first: skill prose is the common change,
+      # and the validator is what covers it.
+      - name: Skill anatomy and plugin drift
+        run: make validate
 
       - name: Python lint and format
         if: ${{ !cancelled() }}
         run: make lint
 
-      # The Harbor verifier is vendored into every eval task; this fails when a
-      # copy drifts from eval/verifier/. Standard library only, no Docker.
-      - name: Eval verifier sync
+      - name: Type check
         if: ${{ !cancelled() }}
-        run: python3 eval/scripts/sync_tests.py --check
+        run: make typecheck
 
-      # Positive and negative fixtures for every eval rule check. Standard
-      # library only, like the sync check.
-      - name: Eval rule-check tests
-        if: ${{ !cancelled() }}
-        run: python3 -m unittest discover eval/verifier/tests
-
-      # Each check is its own step so one failure does not mask the others. The
-      # cheap deterministic checks run first: skill prose is the common change,
-      # and the validator is what covers it.
-      - name: Skill anatomy and mirror drift
-        run: python3 scripts/validate_skill_anatomy.py
-
-      - name: Validator self-test
-        if: ${{ !cancelled() }}
-        run: python3 scripts/validate_skill_anatomy.py --self-test
-
-      - name: Markdown links
-        if: ${{ !cancelled() }}
-        run: make links
-
-      # The setup.sh confirmation tests skip without expect. They must not
-      # silently skip on CI, so a skip anywhere fails this step.
+      # The maintainer scripts, the site's facts and generated skills page, and
+      # this workflow's pins.
       - name: Repo tests
         if: ${{ !cancelled() }}
-        run: |
-          set -o pipefail
-          python3 -m unittest discover -s tests 2>&1 | tee "$RUNNER_TEMP/unittest.log"
-          if grep -q 'skipped=' "$RUNNER_TEMP/unittest.log"; then
-            echo "::error::unittest skipped tests on CI -- expect is probably missing"
-            exit 1
-          fi
+        run: make test
+
+      # The verifier copy in every eval task matches eval/verifier/, and every
+      # rule check passes its fixtures. Runs no models.
+      - name: Eval checks
+        if: ${{ !cancelled() }}
+        run: make eval

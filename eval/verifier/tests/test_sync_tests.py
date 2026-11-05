@@ -51,7 +51,7 @@ class RewardWeightTests(unittest.TestCase):
 
     def test_sign_off_rules_alone_do_not_count_as_scored_rules(self):
         """Sign-off rules score in the brief step's suite, not in the root rules dimension."""
-        self.assertEqual(sync_tests.scored_rule_ids(["scaffolding.1", "domain-modeling.7"]), [])
+        self.assertEqual(sync_tests.scored_rule_ids(["scaffolding.1", "human.1"]), [])
         self.assertEqual(sync_tests.scored_rule_ids(["scaffolding.1", "api.1"]), ["api.1"])
 
     def test_a_shared_file_without_a_rules_weight_stops_the_sync(self):

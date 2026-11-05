@@ -6,7 +6,7 @@
       "rules": [
         "ui-design.5"
       ],
-      "key_phrase": "Every interactive element has name, role, value, state, and keyboard behavior.",
+      "key_phrase": "Every interactive element has a name, role, value, state, and keyboard behavior.",
       "question": "Do pressing Enter in the email field and activating the button both show the success message without reloading the page?",
       "polarity": "positive",
       "tier": "must",
@@ -20,7 +20,7 @@
       "rules": [
         "ui-design.5"
       ],
-      "key_phrase": "Native HTML controls and semantics come before ARIA",
+      "key_phrase": "Native HTML before ARIA",
       "question": "Does NOT add ARIA or tabindex that repeats or overrides native semantics, such as `role=\"button\"` on a button, `aria-label` in place of the visible label, or `tabindex` on native controls?",
       "polarity": "negative",
       "tier": "quality",
@@ -65,7 +65,7 @@
       "rules": [
         "ui-design.7"
       ],
-      "key_phrase": "Forms have explicit labels, grouped controls, errors tied to fields, and no placeholder-only instructions.",
+      "key_phrase": "Forms have explicit labels, grouped controls, errors tied to their fields, and no placeholder-only instructions.",
       "question": "Is the email checked before the success message is shown, so an empty or malformed address gets an error tied to the email field instead of \"Subscribed\"?",
       "polarity": "positive",
       "tier": "quality",
@@ -77,7 +77,7 @@
       "id": "boundaries.input_not_rendered_as_html",
       "dimension": "boundaries",
       "rules": [
-        "core.7"
+        "core.6"
       ],
       "key_phrase": "Treat input that crosses a trust boundary as untrusted",
       "question": "Does NOT insert the entered email or other user input into the page as HTML, through `innerHTML`, `outerHTML`, `insertAdjacentHTML`, or `document.write`?",
@@ -93,7 +93,7 @@
       "rules": [
         "ui-design.4"
       ],
-      "key_phrase": "Loading, empty, error, disabled, and success states are defined with the layout, not later.",
+      "key_phrase": "Design loading, empty, error, disabled, and success states with the layout.",
       "question": "Is the success message's live region in the page markup from the start, empty, and only its text changed on success, rather than created or given its live-region role at submit time?",
       "polarity": "positive",
       "tier": "quality",
@@ -111,7 +111,7 @@
       "rules": [
         "ui-design.8"
       ],
-      "key_phrase": "Remaining gaps are recorded as explicit blockers or deferred work, never left implicit.",
+      "key_phrase": "Report what remains untested.",
       "question": "Does the final message say whether the form was tried with a keyboard and a screen reader, and, if not, list those checks as still to be done?",
       "polarity": "positive",
       "tier": "must",

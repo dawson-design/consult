@@ -6,7 +6,7 @@ description = "Build a validator whose error envelope and per-field messages mus
 
 [metadata]
 kind = "code"
-features = ["proof", "error-handling", "domain-modeling"]
+features = ["proof"]
 
 # Generous on purpose: an Opus turn at xhigh effort can run long, and a cut-off
 # turn scores the harness, not the agent.

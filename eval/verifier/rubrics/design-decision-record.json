@@ -5,7 +5,7 @@
       "dimension": "structure",
       "rules": [
         "api.5",
-        "architecture.2"
+        "default.2"
       ],
       "key_phrase": "Middleware is for transport-wide concerns",
       "question": "Does NOT choose shared middleware, or a generic validation layer that every route passes through, as the home for checkout-specific validation?",
@@ -19,9 +19,9 @@
       "id": "structure.boundary_contract",
       "dimension": "structure",
       "rules": [
-        "architecture.3"
+        "default.7"
       ],
-      "key_phrase": "A module boundary says what crosses it, what assumptions hold, and what callers must not depend on.",
+      "key_phrase": "write the contract (OpenAPI spec, types, or schema) before the code that implements it",
       "question": "Does the note say what crosses the chosen boundary: what the cart helper receives after validation, and what code past the boundary may assume about it?",
       "polarity": "positive",
       "tier": "quality",
@@ -33,9 +33,9 @@
       "id": "structure.rejections_explained",
       "dimension": "structure",
       "rules": [
-        "workflow.1"
+        "human.1"
       ],
-      "key_phrase": "Give your recommendation and its main tradeoff",
+      "key_phrase": "Offer two or three concrete options, recommend one, and name its main tradeoff.",
       "question": "Does each alternative the note lists say why it was not chosen, with a reason that applies to checkout?",
       "polarity": "positive",
       "tier": "must",
@@ -47,9 +47,9 @@
       "id": "boundaries.one_owner_per_check",
       "dimension": "boundaries",
       "rules": [
-        "architecture.4"
+        "default.5"
       ],
-      "key_phrase": "where external data enters, where it becomes trusted",
+      "key_phrase": "Parse external input once at the boundary into trusted types",
       "question": "Does the decision give each checkout validation check exactly one owner, so no check stays in both the route handler and the cart helper and no check is left without an owner?",
       "polarity": "positive",
       "tier": "must",
@@ -69,9 +69,9 @@
       "id": "boundaries.failure_reaches_caller",
       "dimension": "boundaries",
       "rules": [
-        "error-handling.3"
+        "default.4"
       ],
-      "key_phrase": "Translate at boundaries.",
+      "key_phrase": "Translate errors at each boundary.",
       "question": "Does the note say how a validation failure reaches the client, such as the status and error body the route returns, or name that as an open follow-up?",
       "polarity": "positive",
       "tier": "quality",

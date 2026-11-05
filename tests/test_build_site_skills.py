@@ -1,109 +1,113 @@
-"""The skills-page generator: parsing core.md, the README skill list, and Iron Laws, and the
-guard that every skill directory appears on the page.
-
-The last test runs the real sources, so a skill added without a README entry, or a page left
-stale after a source change, fails here as well as in `--check`.
-"""
+"""The skills page generator reads core.md and the skills' frontmatter, and the page on disk is current."""
 
 from __future__ import annotations
 
-import importlib.util
+import subprocess
 import sys
 import unittest
+from pathlib import Path
 
-from helpers import ROOT
+import build_site_skills as bss
 
-SPEC = importlib.util.spec_from_file_location("build_site_skills", ROOT / "scripts/build_site_skills.py")
-bss = importlib.util.module_from_spec(SPEC)
-sys.modules["build_site_skills"] = bss  # dataclasses look the module up while it loads
-SPEC.loader.exec_module(bss)
+ROOT = Path(__file__).resolve().parents[1]
 
-CORE = """# Consult core
+CORE = """Consult is installed.
 
-## Iron Law
+# Consult core
 
-`KEEP IT SIMPLE.`
+Complexity is the enemy: keep software
+simple.
 
 ## Rules
 
-1. **First rule.** Sentence one. Sentence two
-   continues here.
-2. **Second rule** continues the title, even here. More.
-"""
+1. Keep calculations apart. A function reads
+   no clock.
+2. Build only what was asked.
 
-README = """# X
+## House defaults
 
-## Skills
+Where several approaches are sound, use these.
 
-Intro.
+1. **Paradigm:** functional core.
+4. **Errors:** return `Result` values.
 
-- Group A:
-  - [`alpha`](agents/.agents/skills/alpha/SKILL.md): Does `alpha` things.
-- Group B:
-  - [`beta`](agents/.agents/skills/beta/SKILL.md): Does beta things.
+## Working with the human
 
-## Next
+The engineer stays in the loop.
+
+1. A feature has two checkpoints:
+   - **Plan.** Agree the design
+     direction.
+   - **Data and contracts.** Show the shapes.
+
+   A fix skips both.
+2. Stop and ask before a migration.
 """
 
 
 class ParseCoreTest(unittest.TestCase):
-    """parse_core returns the Iron Law and each rule's title and first sentence."""
+    """parse_core reads the principle and each section's intro and numbered items."""
 
-    def test_iron_law_and_rules(self) -> None:
-        iron, rules = bss.parse_core(CORE)
-        self.assertEqual(iron, "KEEP IT SIMPLE.")
-        self.assertEqual(
-            [(r.number, r.title, r.first_sentence) for r in rules],
-            [
-                (1, "First rule.", "Sentence one."),
-                (2, "Second rule", "continues the title, even here."),
-            ],
-        )
+    def setUp(self) -> None:
+        self.core = bss.parse_core(CORE)
 
-    def test_missing_iron_law_is_an_error(self) -> None:
-        with self.assertRaises(ValueError):
-            bss.parse_core("## Rules\n\n1. **A.** b.\n")
+    def test_principle_joins_its_wrapped_lines(self) -> None:
+        self.assertEqual(self.core.principle, "Complexity is the enemy: keep software simple.")
 
+    def test_rules_join_wrapped_lines(self) -> None:
+        rules = self.core.sections["Rules"].items
+        self.assertEqual([r.number for r in rules], [1, 2])
+        self.assertEqual(rules[0].blocks, ("Keep calculations apart. A function reads no clock.",))
 
-class ReadmeSkillsTest(unittest.TestCase):
-    """parse_readme_skills keeps the README's groups and order."""
+    def test_defaults_keep_their_numbers_and_intro(self) -> None:
+        defaults = self.core.sections["House defaults"]
+        self.assertEqual(defaults.intro, "Where several approaches are sound, use these.")
+        self.assertEqual([d.number for d in defaults.items], [1, 4])
 
-    def test_groups_and_items(self) -> None:
-        self.assertEqual(
-            bss.parse_readme_skills(README),
-            [
-                ("Group A", [("alpha", "Does `alpha` things.")]),
-                ("Group B", [("beta", "Does beta things.")]),
-            ],
-        )
+    def test_an_item_keeps_its_bullets_and_later_paragraph(self) -> None:
+        first = self.core.sections["Working with the human"].items[0]
+        bullets = ("**Plan.** Agree the design direction.", "**Data and contracts.** Show the shapes.")
+        self.assertEqual(first.blocks, ("A feature has two checkpoints:", bullets, "A fix skips both."))
+
+    def test_a_missing_section_is_an_error(self) -> None:
+        with self.assertRaisesRegex(ValueError, "House defaults"):
+            bss.parse_core(CORE.replace("## House defaults", "## Other"))
 
 
 class RenderTest(unittest.TestCase):
-    """Rendering escapes text, renders code spans, and joins continuing rule titles."""
+    """Rendering escapes HTML and keeps each item's own number."""
 
-    def test_inline_escapes_then_renders_code(self) -> None:
-        self.assertEqual(bss.inline("a < b `c`"), "a &lt; b <code>c</code>")
+    def test_inline_escapes_then_renders_code_and_bold(self) -> None:
+        self.assertEqual(bss.inline("**Tooling:** `a<b` & c"), "<b>Tooling:</b> <code>a&lt;b</code> &amp; c")
 
-    def test_sentence_case_keeps_acronyms(self) -> None:
-        self.assertEqual(
-            bss.sentence_case("WRITE THE OPENAPI SPEC FIRST. NO PII IN LOGS; WCAG 2.2 AA."),
-            "Write the OpenAPI spec first. No PII in logs; WCAG 2.2 AA.",
-        )
+    def test_an_item_keeps_a_skipped_number(self) -> None:
+        item = bss.Item(4, ("Errors.", ("one", "two"), "Then this."))
+        expected = '<li value="4">Errors.<ul><li>one</li><li>two</li></ul><p>Then this.</p></li>'
+        self.assertEqual(bss.render_item(item), expected)
 
-    def test_joiner(self) -> None:
-        self.assertEqual(bss.joiner(", even"), "")
-        self.assertEqual(bss.joiner("Then"), " ")
+    def test_frontmatter_flags_an_invoked_only_skill(self) -> None:
+        text = '---\nname: release\ndescription: "Prepares a release."\ndisable-model-invocation: true\n---\n'
+        fields = bss.parse_frontmatter(text)
+        self.assertEqual(fields["description"], "Prepares a release.")
+        self.assertEqual(fields["disable-model-invocation"], "true")
+
+    def test_iron_law_is_the_paragraph_under_its_heading(self) -> None:
+        text = "---\nname: api\n---\n\n# API\n\n## Iron law\n\nWrite the spec\nfirst.\n\n## Rules\n"
+        self.assertEqual(bss.iron_law(text), "Write the spec first.")
+        self.assertIsNone(bss.iron_law("# API\n\n## Rules\n"))
 
 
 class RealSourcesTest(unittest.TestCase):
-    """The real repo sources build, list every skill, and match the page on disk."""
+    """The committed page matches what the generator builds from the repo's sources."""
 
-    def test_every_skill_listed_and_page_current(self) -> None:
-        page = bss.build()
-        skills = sorted(p.parent.name for p in bss.SKILLS_DIR.glob("*/SKILL.md"))
-        for name in skills:
-            self.assertIn(f"<code>{name}</code></a></dt>", page)
-        self.assertEqual(page, bss.OUT.read_text(encoding="utf-8"), "run scripts/build_site_skills.py")
+    def test_page_is_current(self) -> None:
+        result = subprocess.run(
+            [sys.executable, str(ROOT / "scripts/build_site_skills.py"), "--check"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
 
 
 if __name__ == "__main__":

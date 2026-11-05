@@ -6,7 +6,7 @@
       "rules": [
         "database.2"
       ],
-      "key_phrase": "Destructive or tightening changes ship as separate deployable expand-contract phases",
+      "key_phrase": "Ship destructive or tightening changes as separate deployable expand-contract phases",
       "question": "Is the rollout split into separately runnable phases, with adding the `email` column and building the unique index (and any step that attaches a constraint) in different migration files, and do the notes give the order to run them?",
       "polarity": "positive",
       "tier": "must",
@@ -20,7 +20,7 @@
       "rules": [
         "database.3"
       ],
-      "key_phrase": "Index and constraint creation uses the target engine's online mechanism.",
+      "key_phrase": "Create indexes and constraints with the target engine's online mechanism.",
       "question": "Does each `CREATE INDEX CONCURRENTLY` or `DROP INDEX CONCURRENTLY` sit in a file with no other schema statement that a migration runner would wrap in the same transaction, or is the file clearly marked to run outside a transaction?",
       "polarity": "positive",
       "tier": "quality",
@@ -34,7 +34,7 @@
       "rules": [
         "database.5"
       ],
-      "key_phrase": "Rollback and backup/PITR coverage for the blast radius are documented with the change.",
+      "key_phrase": "Document rollback and backup or point-in-time-recovery coverage for the blast radius",
       "question": "Does each forward phase have its own rollback that reverses only that phase, with the notes giving the rollback order?",
       "polarity": "positive",
       "tier": "quality",
@@ -79,7 +79,7 @@
       "rules": [
         "database.5"
       ],
-      "key_phrase": "Rollback and backup/PITR coverage for the blast radius are documented with the change.",
+      "key_phrase": "Document rollback and backup or point-in-time-recovery coverage for the blast radius",
       "question": "Do the operator notes say that a failed `CREATE UNIQUE INDEX CONCURRENTLY` (for example from duplicate emails) leaves an invalid index behind, how to detect it, and that it must be dropped before a retry?",
       "polarity": "positive",
       "tier": "quality",
@@ -121,7 +121,7 @@
       "rules": [
         "database.1"
       ],
-      "key_phrase": "Data deletion and non-reversible backfills always need explicit approval, because a rollback cannot undo them.",
+      "key_phrase": "Data deletion and non-reversible backfills always need the user's approval",
       "question": "Does NOT include a forward or rollback step that deletes customer data, such as dropping the `email` column or deleting duplicate rows, without a warning next to it that it destroys data and needs an explicit decision from the operator?",
       "polarity": "negative",
       "tier": "must",
@@ -157,7 +157,7 @@
       "rules": [
         "database.3"
       ],
-      "key_phrase": "verify engine-specific DDL against the target engine",
+      "key_phrase": "check engine-specific DDL against the target engine",
       "tier": "must",
       "question": "Does the final message say whether the SQL was run against PostgreSQL and, if it was not, mark its validity and lock behavior on PostgreSQL as unproven?",
       "look_at": "The agent's final message, compared with any test or command in the diff that runs PostgreSQL",

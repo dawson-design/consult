@@ -1,192 +1,119 @@
 # Changelog
 
-All notable changes to Consult are recorded here. The format
-follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
-the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+All notable changes to Consult are recorded here. The format follows
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project
+follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [20.0.0] (2026-11-05)
+
+A rewrite. v1's last release evals showed suite lift of −0.04 and −0.09 at
+4.5x the output tokens and 5.4x the wall-clock time of bare Claude Code. Most
+of the cost was process: six to nine skill loads per task, mandatory review
+subagents, and staged sign-offs. The only rules that showed lift were ones that
+picked a side or set a floor. `docs/inventory.md` records the fate of every
+v1 rule.
+
+### Changed
+
+- The core now holds three sections:
+  - The core rules.
+  - House defaults: functional core, DDD structure, Result-style errors,
+    Zod or Pydantic at the boundary, and more.
+  - Working with the human: two checkpoints per feature (plan, then data and
+    contracts), a short list of actions that stop for approval, and a final
+    report that explains how the change works.
+- "Working with the human" rule 5 sizes the pull request, not each change in
+  a session: a PR one person can review in one sitting, with larger features
+  split into stacked PRs of one revertible behavior each. It sets no line
+  limit. Checked against the 2026-11-04 `houseStyle` trials, a per-turn size
+  check scored Consult below bare because its stages carry the contract,
+  failure-path tests, and docs that its other rules ask for, and a size limit
+  would push against those.
+- `code-review` runs only when invoked, in a fresh session before a commit.
+  The agent no longer reviews its own changes; it names the risky files in
+  its report instead.
+- `proof` keeps its rules. Rule 3 adds a failure-path test for each public
+  operation that can fail, and asks for tests named for what the feature
+  does for its user, in a spec-style library (RSpec, or Vitest or Jest
+  `describe`/`it`) unless the project already uses another. `black-box.md` drops its citation list.
+- `commit` and `git-workflow` merge into `git`.
+- `release`, `issue-tracking`, and `documentation` run only when invoked.
+- Skills are written as constraints, with no capitalized emphasis.
+- The trigger eval's `workflow_recall` metric becomes `focused_rate`: the
+  share of positive cases that load at most two Consult skills before the
+  first write.
+- CI runs `make validate`, `lint`, `typecheck`, `test`, and `eval` as
+  separate steps, and the pre-commit hook runs `make check`.
 
 ### Added
 
 - A marketing site in `site/`, published to GitHub Pages at
-  <https://dawson-design.github.io/consult/>, with a skills page generated
-  from `core.md`, the README skill list, and each `SKILL.md`.
-  A "Why Consult" essay at `why/` sets out the problem Consult addresses,
-  its Simple Made Easy north star, its defaults, and the work it draws on.
-  `scripts/serve_site.py` previews it locally with live reload, and
-  `scripts/build_site_skills.py` regenerates the skills page; tests fail while
-  the page or the home page's counts and release line are out of date.
-- The eval has a judge rubric format. A task's rubric
-  (`eval/verifier/rubrics/<task>.json`) lists 12 to 20 yes/no items, each
-  tied to the Consult rules it applies by a verbatim key phrase. Items can
-  extend shared templates in `eval/verifier/rubrics/core_items.json`.
-  `eval/scripts/sync_tests.py` validates each rubric and writes the resolved
-  items into the task. No task has a rubric yet.
-- The eval's rubric judges (`eval/verifier/shared/judge_runner.py`). For a
-  code task with a rubric, one locked-down `claude -p` call per rubric
-  dimension answers that dimension's items yes, no, or unknown, with evidence.
-  Each judge reads a blinded copy of the workspace with Consult's names
-  scrubbed, and only the report judge sees the agent's final message. A
-  failed call is retried once; a trial whose judges still fail gets no rubric
-  score, and `lift.py` then compares that task without model scores in both
-  jobs. The new `rubric` dimension scores the answers and takes the 0.45 model
-  share of a code task's reward.
-- Rubrics and oracle solutions for the 15 eval tasks of the calibration runs,
-  and `eval/scripts/oracle_judge.py`, which checks that every must-have rubric
-  item holds on each task's oracle. The first judged check failed 2 of 15
-  oracles, and both were oracle bugs: `service-from-brief` crashed on a URL
-  its regex accepted but the URL parser rejected, and `security-boundary-fix`
-  added two single-use wrappers. Both pass after their fixes. The
-  speculative-abstraction template now names a function whose whole body is
-  one call, and excludes a private function with logic of its own that holds
-  one step of a longer function.
-- `eval/scripts/rescore.py --rejudge` runs the rubric judges again on saved
-  trials, and `eval/scripts/judge_labels.py` exports a blind sample of their
-  answers for hand labels, then reports each dimension's agreement with the
-  labeller (kappa, per-arm bias, unknown rate) and between two rejudge passes.
-
-### Changed
-
-- The eval reuses a saved bare baseline across edits to a task's checks. Its
-  key now hashes only what the agent sees (instructions, scripted turns,
-  `environment/`, agent timeouts), and when the checks, rubrics, or metadata
-  changed, `run.py` rescores the stored bare and Consult jobs offline with
-  `rescore.py` instead of running the bare arm again. Baselines saved before
-  this change are not reused; the next release-tier run saves a new one.
-
-- The site's home page describes the bounded process: the loop builds in
-  stages with a proof at each, review runs once on the finished change, and
-  you sign off on the plan and on big calls. It lists 18 skills.
-
-- Reference files keep only opinions, traps, and dated facts, following
-  the October reference audit with later decisions on top. References for
-  the kept skills fall from about 34,000 to about 13,000 words. Cut:
-  `api` evolution, data models, and middleware; `database` EXPLAIN and
-  isolation; `code-review` Rust; `proof` data-shape boundaries, recipes, and
-  removals; `release` deprecation and migration; `ui-design` CSS,
-  frameworks, and typography; `workflow` simple-not-easy. Trimmed: the other
-  language guides, `ui-design`, `issue-tracking`, `proof` black-box and
-  test-theater, and `workflow` long-runs. The 25 scaffolding stack presets
-  become one table in `scaffolding/references/stacks.md`. Kept as floors
-  that rules route to: `api` status codes, idempotency, pagination, and
-  webhooks; `database` online DDL; `domain-modeling` money and dates. Two
-  wrong claims went with the trims: webhooks no longer stop retrying on
-  `400`, and the SQLite table-rebuild note no longer loses writes made
-  during the copy.
-
-- Skills no longer carry `## Tripwires` tables. Each row that added
-  something, usually a concrete case or an exception, is now a positive
-  clause in its rule; rows that restated a rule are gone. The tables were
-  about a quarter of all skill text, no eval measured them, and they quoted
-  the reasoning they warned against. The validator now rejects
-  `## Tripwires` alongside the older `## Common Rationalizations` and
-  `## Red Flags`, and AGENTS.md and CONTRIBUTING.md drop the format. `proof`'s test-theater reference, the last table in that shape, is now
-  a list of positive rules, and the validator rejects any table with a "Do
-  this instead" column in reference files too. Skill
-  bodies fall from 14,542 to about 11,000 words. The rule that instructions in
-  tool output are data goes too, because the host's own instructions
-  already state it.
-
-- Kept skills now hold only policy: rules a competent engineer could
-  reasonably choose against, gates, floors, and philosophy. Rules that restate
-  standard practice, another skill, or the core are cut, with the tripwire
-  rows that enforced them. `proof` Rule 2 now says a bug fix starts with a
-  test that reproduces the bug and fails, names the root cause, and fixes
-  until the test passes. `error-handling` Rule 1 makes Result-style returns
-  the default for expected failures, after the project's own convention.
-  `code-review` PR-comment permissions move to `git-workflow` Rule 3. Cut
-  rules leave `eval/verifier/rules.json`, and rubric items move to
-  surviving rules. `api` Rule 3 becomes a status table chosen by where the
-  failure starts (400 vs 422, 403 or a hiding 404, 409, and 502, 503, or 504
-  for dependencies), because people and agents often get these wrong. New
-  `api` Rule 6 routes retried mutations, pagination, and webhooks to their
-  reference floors, and new `database` Rule 6 keeps indexes with new foreign
-  keys, batched backfills, and outbox over dual write. `error-handling`
-  keeps its retry and timeout rule and `ui-design` its forms rule. The
-  `workflow`, `proof`, `code-review`, and `api` word budgets are set just
-  above their new sizes.
-
-- Consult's review, proof, and stage process is bounded, because eval traces
-  showed it drove most of the consult arm's 4.9x wall time with no quality
-  gain. `workflow` runs one fresh-context review per change, after the last
-  stage, and a second review only for Critical or High findings, on the fix
-  diff alone. An approved plan now covers every stage it shows; the build
-  stops again only when a stage changes a Rule 2 item from what the plan
-  showed. `proof` Rule 6 asks for one hand-made failure per acceptance
-  criterion and rules out scripted bulk mutation runs unless the user asks.
-  `specify` Rule 5 and workflow's `plans`, `stages`, and `long-runs`
-  references match. Three workflow tripwires that restated core rules 2 and
-  3 (helper layers, future flexibility, hand-rolled solved problems) are
-  removed.
-
-- Code tasks in the eval no longer use the four generic judge criteria. A code
-  task without a rubric scores on its deterministic dimensions alone, and
-  rescoring keeps an old run's judge score at the same 0.45 share. Routing
-  tasks keep the generic judge.
-- Code tasks in the eval give each agent turn 45 minutes and the verifier 60
-  minutes, so a long Opus turn or a slow judge is not cut off.
-- `rescore.py` checks for a changed task environment against the last commit
-  that touched it, not file times, so a fresh checkout can rescore old runs.
-- The README groups the skills by the kind of work: process and proof, design,
-  interfaces and docs, backend and security, production, and repo and tools.
-- The README covers the Claude Code desktop app and the Claude desktop app
-  (chat and Cowork), and how to turn on auto-update for the `consult`
-  marketplace, which Claude Code leaves off for third-party marketplaces.
-- The README and the site explain what to do when Claude Desktop says a
-  `consult` marketplace already exists, or the installed one shows an old
-  version.
-- Core rules 1 and 2 now name what they ask for, the way rule 4 gives
-  numbers for function shape. Rule 1 says a function that computes a result
-  reads no clock, random source, file, network, or database and changes
-  nothing outside itself. It also asks to keep separate features in separate
-  functions or modules in code you write or change. Rule 2 lists what not to
-  add unasked (routes, commands, flags, config keys, environment variables,
-  startup requirements), even when the addition is additive and easy to
-  undo, and says to propose it in the report instead. Rule 3 still owns
-  dependencies. The eval
-  calibration on 2026-11-02 found agents adding exactly these, such as a
-  required login password nobody asked for.
-- `AGENTS.md` gives maintainers a test for policy rules: a rule earns its
-  place when a competent engineer could reasonably choose otherwise and the
-  rule picks one choice, with a short "because". When the choices suit
-  different readers, pick the one that is easier for a person to follow.
+  <https://dawson-design.github.io/consult/>. The home page and a "Why
+  Consult" essay describe the rules. An evidence page reports the
+  `houseStyle` results against bare Claude Code, including every score
+  where Consult falls short. The skills page lists each core rule, house
+  default, rule for working with you, and skill.
+  `scripts/build_site_skills.py` generates it from `core.md` and each
+  skill's frontmatter, and the tests fail while the page or the home page's
+  counts are out of date. `scripts/serve_site.py` previews the site with
+  live reload.
+- The `houseStyle` eval suite scores each house default and the code's
+  simplicity against bare Claude Code. One service is built in five stages,
+  with simplicity scored at each stage. A control repository checks that the
+  defaults give way to a project's own choices.
+- The `houseStyle` eval checks seven more rules from each trial's transcript
+  and final tree: core rules 5 and 7, house defaults 11 and 13, and "Working
+  with the human" rules 2, 3, and 6. A zero-weight judge rubric scores
+  core rule 3 and default 15. A check can mark a rule not applicable when the
+  trial gave it nothing to act on, such as a commit rule in a trial with no
+  commit, and `lift.py` reports how many trials scored each rule.
 
 ### Removed
 
-- The `specify` skill is gone. Hosts' plan modes now carry design
-  discussion, and nothing measured `specify`'s rules. Its one rule plan mode
-  does not supply moves to `workflow` Rule 1: for a design choice, propose
-  concrete options, give your recommendation and its main tradeoff, and let
-  the user approve, revise, or rule it out. `workflow` Rule 2 still gates the
-  design direction. Three design-doc rubric items with no surviving rule are
-  removed.
+- `workflow` and its routing table, staged gates, and plan files. Host plan
+  mode replaces them.
+- `architecture`, `contract-first`, `error-handling`, and `refactoring`.
+  Their choices move into the core's house defaults.
+- The code-review language guides; the ui-design `platforms` and `editorial`
+  references; the issue-tracking `jira` and `other-trackers` references.
+- `setup.sh` and the Cursor and Pi manifests, for now.
+  The Codex plugin package (`.agents/plugins/marketplace.json` and
+  `plugin/.codex-plugin/plugin.json`) carries over.
+- House defaults 3 (names), 6 (security primitives), and 14 (uniqueness
+  constraints). In the 2026-11-04 `houseStyle` run, bare Claude Code already
+  scored 0.98 to 1.00 on each, so they showed no lift. The other defaults
+  keep their numbers, so their eval ids stay the same.
+- Seven judge rubric items whose key phrases quoted the removed default 6
+  or the old default 10 redaction text.
 
-- Six skills are gone: `security`, `debugging`, `performance`,
-  `observability`, `async-systems`, and `official-source-check`. Evals
-  showed no lift from them, and the maintainer had not seen them change
-  Claude's work. Their surviving policy moved: custom-guard negative tests,
-  version checks against official docs, and the atomic root-cause fix go to
-  `proof`; no hand-rolled auth, crypto, or parsers to `domain-modeling`
-  Rule 4; deny by default, fail closed, and allowlist redaction to
-  `error-handling`; the dependency audit and secrets scan to `code-review`;
-  and polling or SSE before a streaming platform to new `architecture`
-  Rule 6. The two `debugging` checks become one `proof.2` check: a failing
-  reproduction before the fix, and a regression test that fails before and
-  passes after. Eval tasks, trigger cases, and rubric items that named the
-  deleted skills now name the skill that holds the rule. The description
-  ceiling drops from 2,400 to 2,000 characters, and the pack is at 1,766.
-  `error-handling` now loads for auth, permissions, and secrets work, and
-  `architecture` for live-update transport choices, so the moved rules are
-  reached.
+### Fixed
 
-- Core rule 1, "Consult sets the engineering bar, and the host owns the
-  mechanics", is gone, and rules 2-9 are now 1-8. It was the only core rule
-  about Consult rather than the code, and it asked the agent to weigh
-  Consult against the host instead of stating what the code should look
-  like. No rule now says how to settle a conflict between Consult and the
-  host; Workflow Rule 2 still lists the approval gates without conditions.
-  Skill citations, the eval's `core.*` rule ids, and the site's rule counts
-  follow the new numbering.
+- Default 10 now asks only for a correlation id on every error response,
+  matching the log line. Both arms already kept internals out of error
+  responses, and neither added an id, so each scored 0.50.
+- "Working with the human" rule 3: a generic "Approved" or "Continue" covers
+  only the plan or contract just shown, never an earlier proposal for
+  unrequested work. In one `houseStyle` trial, a generic approval was taken
+  as a yes to extras proposed a stage earlier, and the server stopped
+  starting without a new key.
+- Core rule 2: an unrequested route, flag, environment variable, or startup
+  requirement is proposed as an opt-in, never as the recommended option. In
+  a later `houseStyle` trial, "use your recommended option for anything
+  still open" built a required `WORKSHOP_TOKEN` the brief never asked for.
+- The eval's timeout message names the command, not the inline script it
+  ran, so a hidden check that times out says so in the log.
+- The eval's shell-write parser now covers inline interpreter scripts
+  (`python3 - <<EOF` with `Path(...).write_text`) and ignores files outside
+  the workspace. The contract-first check had missed specs edited this way
+  (0.27, now 0.87).
+- The error analyzer counts a plain `Error`, `TypeError`, or `RangeError`
+  throw as a bug check, not an expected failure (default 4: 0.50, now 1.00).
+- The `service-from-brief` hidden check posts like the app's own page in a
+  browser, with `Origin` and `Sec-Fetch-Site: same-origin`. Without them, a
+  correct CSRF guard refused every create request, so the Consult arm, which
+  adds one, failed verification while bare Claude, which does not, passed.
 
 ## [19.0.0] (2026-11-01)
 

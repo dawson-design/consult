@@ -1,7 +1,7 @@
 {
   "task": "api-error-contract",
   "kind": "code",
-  "intended_skills": ["api", "error-handling", "documentation"],
+  "intended_skills": ["api"],
   "visible_test_cmd": "npm test",
   "test_file": "test/users.test.js"
 }

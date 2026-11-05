@@ -4,14 +4,13 @@
       "dimension": "structure",
       "extends": "structure.pure_calculation",
       "id": "structure.pure_validator",
-      "key_phrase": "push I/O, database access, network calls, and mutation to the edges of the code you write",
+      "key_phrase": "Push I/O and mutation to the edges.",
       "look_at": "`validateSignup` and its field checks in `src/signup.js`",
       "no_when": "The code trims, deletes, or rewrites fields on `input`, logs, or reads outside state.",
       "polarity": "positive",
       "question": "Do `validateSignup` and its field checks compute the result without reading the clock, random values, files, or the network, and without logging or changing `input`?",
       "rules": [
-        "core.1",
-        "domain-modeling.3"
+        "core.1"
       ],
       "tier": "must",
       "yes_when": "The checks only read `input`, and the result is built from new values."
@@ -64,13 +63,13 @@
       "dimension": "scope",
       "extends": "scope.no_unasked_dependency",
       "id": "scope.no_dependency",
-      "key_phrase": "Ask before adding a dependency.",
+      "key_phrase": "adding a dependency",
       "look_at": "Package manifests and lockfiles in the diff",
       "no_when": "A new dependency appears that nobody approved.",
       "polarity": "negative",
       "question": "Does NOT add a package dependency that the request or an approved plan did not name?",
       "rules": [
-        "core.3"
+        "human.2"
       ],
       "tier": "must",
       "yes_when": "No dependency was added, or each added one was named in the request or the approved plan."
@@ -93,14 +92,14 @@
     {
       "dimension": "boundaries",
       "id": "boundaries.missing_fields_reported",
-      "key_phrase": "Parse or validate it before use.",
+      "key_phrase": "Parse external input once at the boundary into trusted types",
       "look_at": "The `email`, `password`, and `country` checks in `src/signup.js`",
       "no_when": "A missing or non-string value reaches a string method such as `.length` or `.trim` and throws, or is coerced to a string (for example `/@/.test(undefined)` reads \"undefined\") and passes.",
       "polarity": "positive",
       "question": "When `email`, `password`, or `country` is missing or not a string (for example `email: 42`, no `password`, or `country: null`), does `validateSignup` report it in `errors` under that field instead of throwing?",
       "rules": [
-        "core.7",
-        "domain-modeling.4"
+        "core.6",
+        "default.5"
       ],
       "tier": "must",
       "yes_when": "Each check tests the value's type before using it, so a missing or wrong-type value produces that field's message."
@@ -108,44 +107,16 @@
     {
       "dimension": "boundaries",
       "id": "boundaries.age_integer",
-      "key_phrase": "Parse or validate it before use.",
+      "key_phrase": "Treat input that crosses a trust boundary as untrusted",
       "look_at": "The `age` check in `src/signup.js`",
       "no_when": "`30.5` passes, or `\"30\"` is converted with `Number`, `parseInt`, or unary `+` and accepted.",
       "polarity": "positive",
       "question": "Does the age check reject a non-integer number such as `30.5` and a numeric string such as `\"30\"`?",
       "rules": [
-        "core.7"
+        "core.6"
       ],
       "tier": "must",
       "yes_when": "Age must be an actual integer (for example `Number.isInteger(age)`), with no conversion from strings."
-    },
-    {
-      "dimension": "boundaries",
-      "id": "boundaries.actionable_messages",
-      "key_phrase": "User-facing errors are actionable",
-      "look_at": "Every message string `validateSignup` can put in `errors`",
-      "no_when": "Any message is a bare \"invalid\", \"Invalid age\", a field name, or a code, so the user cannot tell what to change.",
-      "polarity": "positive",
-      "question": "Does each error message tell the user what the field requires: the age range 13 to 120, the password's length, case, and digit rules, and two uppercase letters for the country?",
-      "rules": [
-        "error-handling.5"
-      ],
-      "tier": "must",
-      "yes_when": "The age, password, and country messages state the requirement that failed, or all of that field's requirements. For email, a message asking for a valid email address is enough."
-    },
-    {
-      "dimension": "boundaries",
-      "id": "boundaries.no_password_echo",
-      "key_phrase": "Secrets never enter source, logs, traces, metrics, errors, or client responses.",
-      "look_at": "The password message in `src/signup.js`",
-      "no_when": "The message interpolates the password or a slice of it, such as a template string that inserts the password into \"Password ... is too short\".",
-      "polarity": "negative",
-      "question": "Does NOT put the submitted password, or any part of it, into an error message?",
-      "rules": [
-        "error-handling.5"
-      ],
-      "tier": "must",
-      "yes_when": "The password message describes the rules without including the value."
     },
     {
       "dimension": "boundaries",
@@ -156,7 +127,7 @@
       "polarity": "positive",
       "question": "Does the email check reject addresses with whitespace, more than one `@`, or an empty part before or after the `@` (such as `a@`, `@example.com`, `a b@example.com`, or `a@@example.com`)?",
       "rules": [
-        "core.7"
+        "core.6"
       ],
       "tier": "quality",
       "yes_when": "All four example forms are rejected by the pattern or checks."
@@ -239,13 +210,13 @@
       "dimension": "report",
       "extends": "report.attention_first",
       "id": "report.attention_first",
-      "key_phrase": "Report what needs their attention first",
+      "key_phrase": "what needs the user's attention",
       "look_at": "The opening of the agent's final message",
       "no_when": "Decisions or risks appear only after the change list, or not at all.",
       "polarity": "positive",
       "question": "Does the final message open with what needs the user's attention (decisions, risks, unproven points) before describing the changes?",
       "rules": [
-        "core.5"
+        "human.7"
       ],
       "tier": "quality",
       "yes_when": "The first part names what the user must decide or watch, or says plainly that nothing needs attention."
@@ -275,7 +246,7 @@
       "polarity": "positive",
       "question": "Does every test and file the final message names exist in the diff or the repository, and do what the message says?",
       "rules": [
-        "core.5"
+        "human.7"
       ],
       "tier": "must",
       "yes_when": "Each named test and file exists and does what the message says."
@@ -283,13 +254,13 @@
     {
       "dimension": "report",
       "id": "report.email_rule_stated",
-      "key_phrase": "Report what needs their attention first",
+      "key_phrase": "what needs the user's attention",
       "look_at": "The agent's final message, compared with the email check in `src/signup.js`",
       "no_when": "The message presents the email check as complete validation, or does not describe it.",
       "polarity": "positive",
       "question": "Does the final message say how strict the email check is, for example that it is a basic pattern rather than full RFC 5322 validation, or which unusual addresses it accepts or rejects?",
       "rules": [
-        "core.5"
+        "human.7"
       ],
       "tier": "quality",
       "yes_when": "The message states the email rule it chose, or its known gaps, since the task's \"syntactically valid\" leaves that open."

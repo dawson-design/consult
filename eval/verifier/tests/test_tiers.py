@@ -66,13 +66,13 @@ class TierPlanTests(unittest.TestCase):
         self.assertEqual(parse(["--tier", "fast"]).arms, "consult")
 
     def test_an_ablation_names_its_dropped_references_in_the_job_label(self):
-        args = parse(["--tier", "fast", "--drop-references", "ui-design,code-review"])
-        self.assertIn("-norefs-code-review+ui-design", run.job_label(args))
+        args = parse(["--tier", "fast", "--drop-references", "ui-design,api"])
+        self.assertIn("-norefs-api+ui-design", run.job_label(args))
 
     def test_an_ablation_cannot_save_a_baseline(self):
         """The release tier saves one by default; an ablation saved there would replace the full pack's."""
         with redirect_stderr(io.StringIO()) as err, self.assertRaises(SystemExit):
-            parse(["--tier", "release", "--agent", "claude-code", "--drop-references", "code-review"])
+            parse(["--tier", "release", "--agent", "claude-code", "--drop-references", "api"])
         self.assertIn("an ablation never saves a baseline", err.getvalue())
 
     def test_dropping_references_from_a_skill_without_any_is_rejected(self):
@@ -109,26 +109,26 @@ class ArmConfigTests(unittest.TestCase):
         return {"consult": str(trial.parent)}
 
     def test_an_ablation_needs_a_reusable_baseline(self):
-        args = argparse.Namespace(drop_references=("code-review",))
+        args = argparse.Namespace(drop_references=("api",))
         with redirect_stderr(io.StringIO()):
             self.assertEqual(run.ablation_gate(args, None), 2)
 
     def test_an_ablation_runs_only_against_a_baseline_that_ran_todays_full_pack(self):
-        args = argparse.Namespace(drop_references=("code-review",))
+        args = argparse.Namespace(drop_references=("api",))
         self.assertIsNone(run.ablation_gate(args, self.baseline_consult_job(self.skills["consult"][0])))
 
     def test_an_ablation_against_an_older_pack_stops(self):
         """Skill edits since the baseline would be measured as part of the ablation."""
-        args = argparse.Namespace(drop_references=("code-review",))
+        args = argparse.Namespace(drop_references=("api",))
         with redirect_stderr(io.StringIO()) as err:
             self.assertEqual(run.ablation_gate(args, self.baseline_consult_job(str(self.runs / "older-pack"))), 2)
         self.assertIn("not today's full pack", err.getvalue())
 
     def test_dropped_references_leave_only_the_consult_arm(self):
-        ablated = run.frozen_skills(("code-review",))
+        ablated = run.frozen_skills(("ui-design",))
         consult = stub.skill_files(Path(ablated["consult"][0]))
-        self.assertFalse([path for path in consult if path.startswith("code-review/references/")])
-        self.assertIn("code-review/SKILL.md", consult)
+        self.assertFalse([path for path in consult if path.startswith("ui-design/references/")])
+        self.assertIn("ui-design/SKILL.md", consult)
         self.assertIn("api/references/pagination.md", consult)
         self.assertEqual(ablated["stub"], self.skills["stub"])
         self.assertNotEqual(ablated["consult"], self.skills["consult"])
@@ -137,7 +137,7 @@ class ArmConfigTests(unittest.TestCase):
         agent = self.agent("stub")
         skills = Path(agent["skills"][0])
         self.assertEqual(skills.parent, self.runs / "stub-skills")
-        self.assertTrue((skills / "workflow" / "SKILL.md").is_file())
+        self.assertTrue((skills / "proof" / "SKILL.md").is_file())
         self.assertEqual(agent["kwargs"]["config"], HOOK)
 
     def test_the_stub_arm_differs_from_consult_only_in_its_skills_dir(self):
@@ -184,14 +184,14 @@ class StubFailureBaselineTests(unittest.TestCase):
         write_result(self.job_dirs["stub"] / "t__1", None)
         self.stderr = io.StringIO()
         with redirect_stdout(io.StringIO()), redirect_stderr(self.stderr):
-            run.save_baseline("release-claude-code", {"tasks": {}, "checks": {}}, self.job_dirs)
+            run.save_baseline("release-claude-code", {"tasks": {}}, self.job_dirs)
 
     def tearDown(self) -> None:
         self._tmp.cleanup()
 
     def test_a_stub_trial_without_a_reward_leaves_the_baseline_reusable(self):
         with redirect_stdout(io.StringIO()):
-            reuse = run.reusable_baseline("release-claude-code", {"tasks": {}, "checks": {}})
+            reuse = run.reusable_baseline("release-claude-code", {"tasks": {}})
         self.assertEqual((reuse["bare"], reuse["consult"]), (str(self.job_dirs["bare"]), str(self.job_dirs["consult"])))
 
     def test_an_incomplete_stub_job_is_left_out_of_the_baseline(self):
@@ -202,7 +202,7 @@ class StubFailureBaselineTests(unittest.TestCase):
         empty = {**self.job_dirs, "bare": self.job_dirs["bare"].parent / "never-started"}
         stderr = io.StringIO()
         with redirect_stdout(io.StringIO()), redirect_stderr(stderr):
-            run.save_baseline("dry-run", {"tasks": {}, "checks": {}}, empty)
+            run.save_baseline("dry-run", {"tasks": {}}, empty)
         self.assertIsNone(baseline.load("dry-run"))
         self.assertIn("no trials in bare", stderr.getvalue())
 
@@ -264,8 +264,8 @@ class SelectionTests(unittest.TestCase):
         self.assertEqual(selection.skill_name("agents/.agents/skills/api/references/errors.md"), "api")
         self.assertIsNone(selection.skill_name("agents/.agents/README.md"))
 
-    def test_a_core_edit_maps_to_workflow(self):
-        self.assertEqual(selection.skill_name("agents/.agents/core.md"), "workflow")
+    def test_a_core_edit_maps_to_core(self):
+        self.assertEqual(selection.skill_name("agents/.agents/core.md"), "core")
 
     def test_tasks_where_the_skill_is_most_central_come_first(self):
         tasks = selection.select_tasks(
@@ -276,82 +276,17 @@ class SelectionTests(unittest.TestCase):
     def test_a_task_that_only_scores_the_skill_rules_is_selected(self):
         self.assertEqual(selection.select_tasks({"documentation"}, ["bug-from-symptom"], 4), ["bug-from-symptom"])
 
-    def test_a_task_that_scores_core_rules_is_selected_for_workflow(self):
+    def test_a_task_that_scores_core_rules_is_selected_for_core(self):
         with tempfile.TemporaryDirectory() as tmp:
             meta = Path(tmp) / "tasks" / "core-task" / "tests" / "consult.json"
             meta.parent.mkdir(parents=True)
-            meta.write_text(json.dumps({"intended_skills": ["proof"], "rules": ["core.3"]}))
+            meta.write_text(json.dumps({"intended_skills": ["proof"], "rules": ["human.1"]}))
             with mock.patch.object(selection, "EVAL_DIR", Path(tmp)):
-                self.assertEqual(selection.select_tasks({"workflow"}, ["core-task"], 4), ["core-task"])
+                self.assertEqual(selection.select_tasks({"core"}, ["core-task"], 4), ["core-task"])
 
     def test_selection_stops_at_the_limit(self):
         candidates = ["proof-first-bugfix", "proof-pipeline-shape", "proof-validator-error-content"]
         self.assertEqual(len(selection.select_tasks({"proof"}, candidates, 2)), 2)
-
-
-TASK_TOML = """schema_version = "1.4"
-[task]
-name = "consult/t"
-[metadata]
-features = ["proof"]
-[agent]
-timeout_sec = 900.0
-[verifier]
-timeout_sec = 600.0
-"""
-
-
-class AgentInputHashTests(unittest.TestCase):
-    def setUp(self):
-        self.tmp = tempfile.TemporaryDirectory()
-        self.task = Path(self.tmp.name) / "t"
-        for rel, text in {
-            "task.toml": TASK_TOML,
-            "instruction.md": "Fix the bug.\n",
-            "environment/Dockerfile": "FROM node:22\n",
-            "tests/consult.json": '{"rules": ["proof.2"]}\n',
-            "solution/solve.sh": "true\n",
-            "steps/approve/instruction.md": "Approved.\n",
-            "steps/approve/tests/test.sh": "true\n",
-        }.items():
-            (self.task / rel).parent.mkdir(parents=True, exist_ok=True)
-            (self.task / rel).write_text(text)
-        self.before = baseline.agent_input_hash(self.task)
-
-    def tearDown(self):
-        self.tmp.cleanup()
-
-    def edit(self, rel: str, old: str, new: str) -> str:
-        path = self.task / rel
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(path.read_text().replace(old, new) if old else new)
-        return baseline.agent_input_hash(self.task)
-
-    def test_checks_rubrics_metadata_and_solutions_do_not_change_it(self):
-        self.edit("task.toml", 'schema_version = "1.4"', 'schema_version = "1.4"\nmulti_step_reward_strategy = "final"')
-        self.before = baseline.agent_input_hash(self.task)
-        self.edit("task.toml", '"final"', '"mean"')
-        self.edit("tests/consult.json", "proof.2", "proof.3")
-        self.edit("steps/approve/tests/test.sh", "true", "false")
-        self.edit("solution/solve.sh", "true", "false")
-        self.edit("task.toml", '"proof"', '"workflow"')
-        self.assertEqual(self.edit("task.toml", "timeout_sec = 600.0", "timeout_sec = 300.0"), self.before)
-
-    def test_what_the_agent_sees_changes_it(self):
-        for rel, old, new in [
-            ("instruction.md", "Fix", "Repair"),
-            ("steps/approve/instruction.md", "Approved", "Rejected"),
-            ("environment/Dockerfile", "22", "24"),
-            ("environment/workspace/tests/a.test.js", "", "test('a', () => {});\n"),
-            ("task.toml", "timeout_sec = 900.0", "timeout_sec = 1800.0"),
-        ]:
-            with self.subTest(rel=rel):
-                self.assertNotEqual(self.edit(rel, old, new), self.before)
-                if old:
-                    self.edit(rel, new, old)
-                else:
-                    (self.task / rel).unlink()
-                self.assertEqual(baseline.agent_input_hash(self.task), self.before)
 
 
 class BaselineTests(unittest.TestCase):
@@ -365,63 +300,6 @@ class BaselineTests(unittest.TestCase):
             {**AGENT, "model_name": "anthropic/claude-haiku-4-5"}, None, ["api-error-contract"]
         )
         self.assertIn("model differs", baseline.mismatch(stored, current))
-
-    def test_a_baseline_saved_before_agent_input_keys_is_not_reusable(self):
-        stored = baseline.baseline_key(AGENT, None, ["api-error-contract"])
-        del stored["checks"]
-        current = baseline.baseline_key(AGENT, None, ["api-error-contract"])
-        self.assertIn("predates agent-input keys", baseline.mismatch(stored, current))
-
-    def test_changed_checks_keep_the_baseline_reusable_and_are_listed(self):
-        stored = baseline.baseline_key(AGENT, None, ["api-error-contract", "proof-first-bugfix"])
-        stored["checks"]["api-error-contract"] = "older"
-        current = baseline.baseline_key(AGENT, None, ["api-error-contract", "proof-first-bugfix"])
-        self.assertIsNone(baseline.mismatch(stored, current))
-        self.assertEqual(baseline.stale_checks(stored, current), ["api-error-contract"])
-
-    def test_unchanged_checks_reuse_the_stored_jobs_as_they_are(self):
-        key = baseline.baseline_key(AGENT, None, ["api-error-contract"])
-        reuse = {"key": key, "bare": "runs/b", "consult": "runs/c"}
-        with mock.patch.object(run.rescore, "main") as rescore_main:
-            self.assertIs(run.refresh_checks(reuse, key), reuse)
-        rescore_main.assert_not_called()
-
-    def test_changed_checks_rescore_both_stored_jobs_offline(self):
-        current = baseline.baseline_key(AGENT, None, ["api-error-contract"])
-        stored = {**current, "checks": {"api-error-contract": "older"}}
-        reuse = {"key": stored, "bare": "runs/b", "consult": "runs/c"}
-        with mock.patch.object(run.rescore, "main", return_value=0) as rescore_main, redirect_stdout(io.StringIO()):
-            refreshed = run.refresh_checks(reuse, current)
-        rescore_main.assert_called_once_with(["rescore.py", "runs/b", "runs/c", "--tasks", "api-error-contract"])
-        self.assertEqual((refreshed["bare"], refreshed["consult"]), ("runs/b-rescored", "runs/c-rescored"))
-
-    def test_a_rescore_that_cannot_run_falls_back_to_the_bare_arm(self):
-        current = baseline.baseline_key(AGENT, None, ["api-error-contract"])
-        reuse = {"key": {**current, "checks": {}}, "bare": "runs/b", "consult": "runs/c"}
-        failing = mock.patch.object(run.rescore, "main", side_effect=SystemExit("docker is not running"))
-        with failing, redirect_stdout(io.StringIO()):
-            self.assertIsNone(run.refresh_checks(reuse, current))
-
-    def test_unrescorable_trials_keep_the_rescored_baseline(self):
-        current = baseline.baseline_key(AGENT, None, ["api-error-contract"])
-        reuse = {"key": {**current, "checks": {}}, "bare": "runs/b", "consult": "runs/c"}
-        with mock.patch.object(run.rescore, "main", return_value=1), redirect_stdout(io.StringIO()) as out:
-            refreshed = run.refresh_checks(reuse, current)
-        self.assertEqual(refreshed["bare"], "runs/b-rescored")
-        self.assertIn("lists them as failed", out.getvalue())
-
-    def test_rescore_env_changes_do_not_leak_into_the_run(self):
-        current = baseline.baseline_key(AGENT, None, ["api-error-contract"])
-        reuse = {"key": {**current, "checks": {}}, "bare": "runs/b", "consult": "runs/c"}
-
-        def fake_rescore(argv):
-            run.os.environ["GIT_CONFIG_GLOBAL"] = "/dev/null"
-            return 0
-
-        before = run.os.environ.get("GIT_CONFIG_GLOBAL")
-        with mock.patch.object(run.rescore, "main", side_effect=fake_rescore), redirect_stdout(io.StringIO()):
-            run.refresh_checks(reuse, current)
-        self.assertEqual(run.os.environ.get("GIT_CONFIG_GLOBAL"), before)
 
     def test_a_task_the_baseline_never_ran_is_not_reusable(self):
         stored = baseline.baseline_key(AGENT, None, ["api-error-contract"])

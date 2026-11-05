@@ -3,19 +3,15 @@
 The bare arm reads no skills, so a skill edit cannot change it. A baseline
 records the bare and Consult job dirs of a full run, and the stub job dir when
 that arm ran, together with a key: the agent, model, effort, CLI version, and
-per task a hash of what the agent sees (instructions, scripted turns,
-environment, agent timeouts). A later run reuses the stored jobs when that key
-matches for the tasks it runs. The key also records a hash of each whole task
-dir, so a run can tell when only the checks changed (tests/, rubrics, task
-metadata) and rescore the stored jobs offline instead of running the bare arm
-again. Standard library only, so the tests run in CI.
+a hash of every task dir. A later run reuses the stored bare job when its key
+matches for the tasks it runs, and compares its Consult arm against the stored
+one. Standard library only, so the tests run in CI.
 """
 
 from __future__ import annotations
 
 import hashlib
 import json
-import tomllib
 from pathlib import Path
 
 EVAL_DIR = Path(__file__).resolve().parent.parent
@@ -31,46 +27,6 @@ def task_hash(task_dir: Path) -> str:
     return digest.hexdigest()
 
 
-# Parts of a task the agent never sees: the task's own checks and reference
-# solution (at the top level and per step, not inside environment/), and the
-# task.toml entries that only configure scoring.
-CHECK_DIRS = {"tests", "solution"}
-CHECK_TOML_KEYS = {"metadata", "verifier", "multi_step_reward_strategy"}
-
-
-def is_check_path(rel: Path) -> bool:
-    """tests/ or solution/ at the task's top level or directly under steps/<name>/."""
-    parts = rel.parts
-    if "__pycache__" in parts:
-        return True
-    if parts[0] in CHECK_DIRS:
-        return True
-    return len(parts) > 2 and parts[0] == "steps" and parts[2] in CHECK_DIRS
-
-
-def agent_toml(text: str) -> str:
-    """task.toml without its scoring tables, as canonical JSON."""
-    data = tomllib.loads(text)
-    for key in CHECK_TOML_KEYS:
-        data.pop(key, None)
-    for step in data.get("steps") or []:
-        for key in CHECK_TOML_KEYS:
-            step.pop(key, None)
-    return json.dumps(data, sort_keys=True)
-
-
-def agent_input_hash(task_dir: Path) -> str:
-    """sha256 over what the agent sees; editing checks, rubrics, or metadata leaves it unchanged."""
-    digest = hashlib.sha256()
-    for path in sorted(p for p in task_dir.rglob("*") if p.is_file()):
-        rel = path.relative_to(task_dir)
-        if is_check_path(rel):
-            continue
-        body = agent_toml(path.read_text()).encode() if rel.as_posix() == "task.toml" else path.read_bytes()
-        digest.update(rel.as_posix().encode() + b"\0" + body + b"\0")
-    return digest.hexdigest()
-
-
 def baseline_key(agent: dict, effort: str | None, tasks: list[str], harbor_args: list[str] = ()) -> dict:
     """harbor_args are the caller's own extra args; a tier's judge toggle is left out, since lift.py aligns it."""
     kwargs = agent.get("kwargs") or {}
@@ -81,15 +37,12 @@ def baseline_key(agent: dict, effort: str | None, tasks: list[str], harbor_args:
         "version": kwargs.get("version"),
         "kwargs": {k: v for k, v in kwargs.items() if k != "reasoning_effort"},
         "harbor_args": list(harbor_args),
-        "tasks": {t: agent_input_hash(EVAL_DIR / "tasks" / t) for t in tasks},
-        "checks": {t: task_hash(EVAL_DIR / "tasks" / t) for t in tasks},
+        "tasks": {t: task_hash(EVAL_DIR / "tasks" / t) for t in tasks},
     }
 
 
 def mismatch(stored: dict, current: dict) -> str | None:
     """Why a stored key cannot stand in for the current one, or None when it can."""
-    if "checks" not in stored:
-        return "baseline predates agent-input keys; save a new one with a release tier run"
     for field in ("agent", "model", "effort", "version", "kwargs", "harbor_args"):
         if stored.get(field) != current.get(field):
             return f"{field} differs: baseline {stored.get(field)!r}, this run {current.get(field)!r}"
@@ -98,13 +51,7 @@ def mismatch(stored: dict, current: dict) -> str | None:
     if missing:
         return f"baseline has no run of {', '.join(missing)}"
     changed = [t for t, h in current["tasks"].items() if stored_tasks[t] != h]
-    return f"what the agent sees changed since the baseline: {', '.join(changed)}" if changed else None
-
-
-def stale_checks(stored: dict, current: dict) -> list[str]:
-    """Tasks whose checks changed since the baseline while what the agent sees did not."""
-    stored_checks = stored.get("checks") or {}
-    return [t for t, h in current["checks"].items() if stored_checks.get(t) != h]
+    return f"task changed since the baseline: {', '.join(changed)}" if changed else None
 
 
 def unrewarded_trials(job_dir: Path) -> list[str]:

@@ -1,0 +1,8 @@
+{
+  "name": "consult-eval-analyzer",
+  "private": true,
+  "description": "Pins the TypeScript compiler that verifier/shared/code_shape.mjs uses; the shared Dockerfile installs the same version.",
+  "dependencies": {
+    "typescript": "5.9.3"
+  }
+}

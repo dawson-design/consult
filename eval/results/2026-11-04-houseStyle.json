@@ -1,0 +1,306 @@
+{
+  "suite": "houseStyle",
+  "date": "2026-11-04",
+  "agent": {
+    "name": "claude-code",
+    "version": "2.1.282",
+    "model": "claude-opus-5-5",
+    "reasoning_effort": "xhigh"
+  },
+  "attempts_per_arm": 5,
+  "tasks": [
+    "staged-commissions",
+    "follow-the-project"
+  ],
+  "jobs": {
+    "consult": [
+      "2026-11-04T16-07-42-houseStyle-claude-code-consult"
+    ],
+    "bare": [
+      "2026-11-04T08-36-12-houseStyle-claude-code-bare",
+      "2026-11-04T19-57-25-houseStyle-claude-code-bare"
+    ]
+  },
+  "notes": [
+    "Rule scores use the earlier bare trials rescored offline with the current checks; per-stage simplicity uses their original scores, because an offline rescore does not rebuild stage snapshots.",
+    "The Consult arm ran the core before core rule 2's opt-in clause and proof rule 3's test-style sentence were added.",
+    "core.2 is left out: its static check misses environment variables read through a schema parse of process.env.",
+    "Default and rule scores come from rescoring the saved trials with the current checks (rule_jobs). core.3 and default.15 are scored by a judge at zero reward weight. The eval image had no git identity, so Consult's commits failed; core.7 and default.13 score commit attempts."
+  ],
+  "simplicity_by_stage": {
+    "bare": [
+      0.82,
+      0.83,
+      0.79,
+      0.74,
+      0.74
+    ],
+    "consult": [
+      0.88,
+      0.9,
+      0.89,
+      0.88,
+      0.88
+    ]
+  },
+  "defaults": [
+    {
+      "id": "default.1",
+      "name": "Functional core",
+      "bare": 0.0,
+      "consult": 1.0
+    },
+    {
+      "id": "default.2",
+      "name": "Organize by feature",
+      "bare": 0.68,
+      "consult": 1.0
+    },
+    {
+      "id": "default.4",
+      "name": "Result-style errors",
+      "bare": 0.0,
+      "consult": 1.0
+    },
+    {
+      "id": "default.5",
+      "name": "Explicit state variants",
+      "bare": 0.2,
+      "consult": 1.0
+    },
+    {
+      "id": "default.7",
+      "name": "Contract first",
+      "bare": 0.0,
+      "consult": 0.88
+    },
+    {
+      "id": "default.9",
+      "name": "Remote calls: timeout and retry",
+      "bare": 0.5,
+      "consult": 0.8
+    },
+    {
+      "id": "default.10",
+      "name": "Correlation id on every error",
+      "bare": 0.0,
+      "consult": 0.8
+    },
+    {
+      "id": "default.11",
+      "name": "Tooling",
+      "bare": 0.5,
+      "consult": 0.52,
+      "method": "check"
+    },
+    {
+      "id": "default.13",
+      "name": "Git",
+      "bare": 0.6,
+      "consult": 1.0,
+      "method": "check"
+    },
+    {
+      "id": "default.15",
+      "name": "Comments explain why",
+      "bare": 1.0,
+      "consult": 0.9,
+      "method": "judge"
+    }
+  ],
+  "follows_the_project": {
+    "bare": 1.0,
+    "consult": 0.98
+  },
+  "cut_defaults": {
+    "attempts_per_arm": 3,
+    "job": "2026-11-04T08-36-12-houseStyle",
+    "items": [
+      {
+        "id": "default.3",
+        "name": "Names",
+        "bare": 0.98,
+        "consult": 0.97
+      },
+      {
+        "id": "default.6",
+        "name": "Security primitives",
+        "bare": 1.0,
+        "consult": 1.0
+      },
+      {
+        "id": "default.14",
+        "name": "Uniqueness constraint",
+        "bare": 1.0,
+        "consult": 1.0
+      }
+    ]
+  },
+  "cost_ratio": {
+    "output_tokens": 2.06,
+    "agent_seconds": 2.19
+  },
+  "v1_cost_ratio": {
+    "note": "Consult v1 on its own suites, 2026-11-01 and 2026-11-02",
+    "engineeringMaturity": {
+      "output_tokens": 4.49,
+      "agent_seconds": 5.32
+    },
+    "rules": {
+      "output_tokens": 5.49,
+      "agent_seconds": 6.42
+    }
+  },
+  "passed": {
+    "staged-commissions": {
+      "bare": 5,
+      "consult": 4,
+      "of": 5
+    },
+    "follow-the-project": {
+      "bare": 5,
+      "consult": 5,
+      "of": 5
+    }
+  },
+  "suite_reward_lift": {
+    "value": -0.06,
+    "interval": [
+      -0.15,
+      0.0
+    ]
+  },
+  "rules": [
+    {
+      "id": "core.1",
+      "name": "Pure calculations",
+      "bare": 0.39,
+      "consult": 0.67,
+      "method": "check",
+      "n_bare": 5,
+      "n_consult": 5
+    },
+    {
+      "id": "core.3",
+      "name": "Libraries for solved problems",
+      "bare": 1.0,
+      "consult": 0.9,
+      "method": "judge",
+      "n_bare": 10,
+      "n_consult": 10
+    },
+    {
+      "id": "core.4",
+      "name": "Code a reader can follow",
+      "bare": 0.9,
+      "consult": 0.96,
+      "method": "check",
+      "n_bare": 10,
+      "n_consult": 10
+    },
+    {
+      "id": "core.5",
+      "name": "Ask about compatibility",
+      "bare": 0.0,
+      "consult": 1.0,
+      "method": "check",
+      "n_bare": 5,
+      "n_consult": 5
+    },
+    {
+      "id": "core.6",
+      "name": "Untrusted input",
+      "bare": 1.0,
+      "consult": 0.77,
+      "method": "check",
+      "n_bare": 5,
+      "n_consult": 5
+    },
+    {
+      "id": "core.7",
+      "name": "Static checks before a commit",
+      "bare": 0.44,
+      "consult": 0.9,
+      "method": "check",
+      "n_bare": 10,
+      "n_consult": 10
+    },
+    {
+      "id": "human.1",
+      "name": "Two checkpoints",
+      "bare": 0.0,
+      "consult": 0.9,
+      "method": "check",
+      "n_bare": 10,
+      "n_consult": 10
+    },
+    {
+      "id": "human.2",
+      "name": "Ask before risky actions",
+      "bare": 0.0,
+      "consult": 1.0,
+      "method": "check",
+      "n_bare": 5,
+      "n_consult": 5
+    },
+    {
+      "id": "human.3",
+      "name": "Approval covers what was shown",
+      "bare": 0.7,
+      "consult": 1.0,
+      "method": "check",
+      "n_bare": 10,
+      "n_consult": 10
+    },
+    {
+      "id": "human.6",
+      "name": "No self-review",
+      "bare": 1.0,
+      "consult": 1.0,
+      "method": "check",
+      "n_bare": 10,
+      "n_consult": 10
+    },
+    {
+      "id": "human.7",
+      "name": "A report that explains",
+      "bare": 0.29,
+      "consult": 0.86,
+      "method": "check",
+      "n_bare": 10,
+      "n_consult": 10
+    }
+  ],
+  "core_rules": 27,
+  "untested": [
+    {
+      "id": "default.8",
+      "label": "(default 8)",
+      "reason": "No stage asks for live updates."
+    },
+    {
+      "id": "default.12",
+      "label": "(default 12)",
+      "reason": "No stage asks for a refactor."
+    },
+    {
+      "id": "human.8",
+      "label": "(human 8)",
+      "reason": "Neither repository keeps ADRs or a decision log."
+    },
+    {
+      "id": "human.5",
+      "label": "(human 5)",
+      "reason": "New pull request rule; no task opens a pull request."
+    }
+  ],
+  "rule_jobs": {
+    "consult": [
+      "2026-11-04T16-07-42-houseStyle-claude-code-consult-rejudged-rules"
+    ],
+    "bare": [
+      "2026-11-04T08-36-12-houseStyle-claude-code-bare-rejudged-rules",
+      "2026-11-04T19-57-25-houseStyle-claude-code-bare-rejudged-rules"
+    ]
+  }
+}

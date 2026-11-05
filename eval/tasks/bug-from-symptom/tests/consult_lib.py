@@ -74,22 +74,16 @@ SKILL_BASE_DIR_RE = re.compile(r"Base directory for this skill: \S*/skills/([a-z
 CONSULT_SKILLS = frozenset(
     {
         "api",
-        "architecture",
         "code-review",
-        "commit",
-        "contract-first",
         "database",
         "documentation",
         "domain-modeling",
-        "error-handling",
-        "git-workflow",
+        "git",
         "issue-tracking",
         "proof",
-        "refactoring",
         "release",
         "scaffolding",
         "ui-design",
-        "workflow",
     }
 )
 # `node --test` and `npm run -s test` may carry flags; `--test-name-pattern` alone is not a test run.
@@ -121,7 +115,7 @@ INTERPRETERS = ("python", "python3", "node", "perl", "ruby")
 # File-writing calls in an inline Python, Node, or Ruby script, with the target when it is a string or a name.
 SCRIPT_WRITE_RE = re.compile(
     r"\bopen\(\s*(?P<open>'[^']*'|\"[^\"]*\"|[A-Za-z_]\w*)?[^)]*['\"][wax]b?\+?['\"]"
-    r"|(?:\bPath\(\s*(?P<path>'[^']*'|\"[^\"]*\")\s*\))?\.write_(?:text|bytes)\("
+    r"|(?:\bPath\(\s*(?P<path>'[^']*'|\"[^\"]*\")\s*\)|\b(?P<receiver>[A-Za-z_]\w*))?\.write_(?:text|bytes)\("
     r"|\b(?:writeFileSync|writeFile|appendFileSync|File\.write)\(\s*(?P<call>'[^']*'|\"[^\"]*\"|[A-Za-z_]\w*)?"
 )
 COMMAND_FIELDS = ("cmd", "command", "script", "input", "chars")
@@ -261,16 +255,20 @@ def normalize_path(path: str) -> str:
 
 
 def written_paths(call: ToolCall) -> list[str]:
-    """Repo-relative paths a write call touched: tool path args, apply_patch headers, shell redirects."""
+    """Repo-relative paths a write call touched: tool path args, apply_patch headers, or shell writes.
+
+    Shell writes are the targets `_shell_write_targets` resolves inside /app, so a
+    scratch file in /tmp is not a write, and a target it cannot name is ".".
+    """
     if WRITE_TOOL_RE.match(call.name) and call.name.lower() != "apply_patch":
         return [normalize_path(v) for f in PATH_FIELDS if isinstance(v := call.arguments.get(f), str)]
     text = command_text(call)
     if call.name.lower() == "apply_patch" or "*** Begin Patch" in text:
         return [normalize_path(a or b) for a, b in PATCH_HEADER_RE.findall(text)]
-    if not is_write_call(call):
+    if not is_command_call(call):
         return []
-    targets = [normalize_path(a or b) for a, b in REDIRECT_TARGET_RE.findall(shell_text(call))]
-    return [t for t in targets if t and not t.startswith(("/dev/", "&"))]
+    targets = _shell_write_targets(text, _shell_source(text), count_copies=True)
+    return list(dict.fromkeys(normalize_path(target) for _, target in targets))
 
 
 def first_seq(trajectory: Trajectory, predicate) -> int | None:
@@ -392,7 +390,12 @@ def _in_function(offset: int, functions: list[re.Match]) -> bool:
 
 
 def _shell_edit_offsets(text: str, raw: str, count_copies: bool) -> list[int]:
-    """Offsets of segments with a shell write that resolves inside /app: a
+    """Offsets of segments with a shell write that resolves inside /app."""
+    return list(dict.fromkeys(offset for offset, _ in _shell_write_targets(text, raw, count_copies)))
+
+
+def _shell_write_targets(text: str, raw: str, count_copies: bool) -> list[tuple[int, str]]:
+    """(segment offset, target) for each shell write that resolves inside /app: a
     redirect, tee, sed -i or perl -i operand, or an inline interpreter script
     that writes a file. With `count_copies`, also a cp or mv destination or a
     git apply. git checkout and git stash are not writes.
@@ -405,16 +408,15 @@ def _shell_edit_offsets(text: str, raw: str, count_copies: bool) -> list[int]:
     current directory. Any other variable ($TMPDIR) is outside.
     """
     mask = SUBSTITUTION_RE.sub(lambda m: "$" + "_" * (len(m[0]) - 1), _mask_quotes(raw))
-    in_workspace, variables, offsets = True, {}, []
+    in_workspace, variables, found = True, {}, []
     for segment in SHELL_SEGMENT_RE.finditer(mask):
         words = _shell_words(raw, segment)
         if words[:1] == ["cd"]:
             in_workspace = _cd_in_workspace(words[1:], in_workspace)
         variables = {**variables, **_assignments(words)}
         targets = _expand(_segment_targets(text, raw, segment, words, count_copies), variables)
-        if any(_in_workspace(target, in_workspace) for target in targets):
-            offsets.append(segment.start())
-    return offsets
+        found += [(segment.start(), target) for target in targets if _in_workspace(target, in_workspace)]
+    return found
 
 
 def _blank_heredoc_bodies(text: str) -> str:
@@ -479,14 +481,15 @@ def _script_writes(text: str, segment: re.Match, words: list[str]) -> list[str]:
         return []
     bodies = [m[4] for m in HEREDOC_RE.finditer(text) if segment.start() <= m.start() < segment.end()]
     script = "\n".join([text[segment.start() : segment.end()], *bodies])
-    return [_script_target(script, m["open"] or m["path"] or m["call"]) for m in SCRIPT_WRITE_RE.finditer(script)]
+    targets = (m["open"] or m["path"] or m["call"] or m["receiver"] for m in SCRIPT_WRITE_RE.finditer(script))
+    return [_script_target(script, target) for target in targets]
 
 
 def _script_target(script: str, target: str | None) -> str:
-    """A string literal, the literal a name is first assigned in the script, or else the current directory."""
+    """A string literal, the literal (bare or in `Path(...)`) a name is first assigned, or the current directory."""
     if not target or target[0] in "'\"":
         return target or "."
-    assigned = re.search(rf"\b{target}\s*=\s*('[^']*'|\"[^\"]*\")", script)
+    assigned = re.search(rf"\b{target}\s*=\s*(?:Path\(\s*)?('[^']*'|\"[^\"]*\")", script)
     return assigned[1] if assigned else "."
 
 
@@ -530,6 +533,99 @@ def _in_workspace(path: str, cwd_in_workspace: bool) -> bool:
     return cwd_in_workspace and bool(path)
 
 
+# git commands in the transcript. Rescore rebuilds the final tree without the
+# agent's commits, so the commit rules read the commands the agent ran.
+
+GIT_VALUE_OPTIONS = ("-c", "-C", "--git-dir", "--work-tree", "--namespace")
+
+
+@dataclass
+class GitInvocation:
+    """One `git` command in a shell call.
+
+    subcommand: the first word after `git` and its global options.
+    args: the words after the subcommand, as written.
+    temp_index: it runs against a scratch index (GIT_INDEX_FILE), so it stages nothing in the real one.
+    message: a commit's message from `-m` or a heredoc fed to `-F -`; empty when neither applies.
+    """
+
+    subcommand: str
+    args: list[str]
+    temp_index: bool = False
+    message: str = ""
+
+
+def shell_commands(call: ToolCall) -> list[list[str]]:
+    """Each simple command in a shell call as its words, with heredoc bodies and quoted separators ignored."""
+    if not is_command_call(call):
+        return []
+    raw = _shell_source(command_text(call))
+    mask = SUBSTITUTION_RE.sub(lambda m: "$" + "_" * (len(m[0]) - 1), _mask_quotes(raw))
+    return [words for segment in SHELL_SEGMENT_RE.finditer(mask) if (words := _shell_words(raw, segment))]
+
+
+def git_invocations(call: ToolCall) -> list[GitInvocation]:
+    """The git commands in a shell call, in order.
+
+    `git` may be called through a variable the command set (`G="git -c ..."; $G commit`)
+    and given global options or an expanded array (`git "${ID[@]}" commit`). An exported
+    GIT_INDEX_FILE holds until `unset GIT_INDEX_FILE`.
+    """
+    if not is_command_call(call):
+        return []
+    text = command_text(call)
+    raw = _shell_source(text)
+    mask = SUBSTITUTION_RE.sub(lambda m: "$" + "_" * (len(m[0]) - 1), _mask_quotes(raw))
+    variables: dict[str, list[str]] = {}
+    exported_index, found = False, []
+    for segment in SHELL_SEGMENT_RE.finditer(mask):
+        words = _shell_words(raw, segment)
+        if words[:1] == ["unset"] and "GIT_INDEX_FILE" in words:
+            exported_index = False
+            continue
+        if words[:1] == ["export"]:
+            words = words[1:]
+        assigned = {m[1]: [m[2].strip("'\"")] for w in words if (m := ASSIGNMENT_RE.fullmatch(w))}
+        command = [w for w in words if not ASSIGNMENT_RE.fullmatch(w)]
+        variables = {**variables, **assigned}
+        if "GIT_INDEX_FILE" in assigned and not command:
+            exported_index = True
+        invocation = _git_invocation(command, variables)
+        if invocation is None:
+            continue
+        invocation.temp_index = exported_index or "GIT_INDEX_FILE" in assigned
+        if invocation.subcommand == "commit":
+            invocation.message = _commit_message(text, segment, invocation.args)
+        found.append(invocation)
+    return found
+
+
+def _git_invocation(words: list[str], variables: dict[str, list[str]]) -> GitInvocation | None:
+    if words[:1] and words[0].startswith("$"):
+        words = variables.get(words[0].strip("${}\"'"), [""])[0].split() + words[1:]
+    if words[:1] != ["git"]:
+        return None
+    rest, index = words[1:], 0
+    while index < len(rest) and (rest[index].startswith(("-", "$", '"$')) or rest[index] in ("''", '""')):
+        index += 2 if rest[index] in GIT_VALUE_OPTIONS else 1
+    if index >= len(rest):
+        return None
+    return GitInvocation(subcommand=rest[index], args=rest[index + 1 :])
+
+
+def _commit_message(text: str, segment: re.Match, args: list[str]) -> str:
+    """The message given with -m (or a flag cluster ending in m, like -am), or the heredoc a `-F -` reads."""
+    flag = next(
+        (a for a in args if a == "--message" or (a.startswith("-") and not a.startswith("--") and a.endswith("m"))),
+        None,
+    )
+    if flag is not None:
+        position = args.index(flag) + 1
+        return args[position].strip("'\"") if position < len(args) else ""
+    heredoc = next((m for m in HEREDOC_RE.finditer(text) if segment.start() <= m.start() < segment.end()), None)
+    return heredoc[4] if heredoc and "-F" in args else ""
+
+
 def git(workspace: Path, *args: str) -> str:
     return subprocess.run(["git", "-C", str(workspace), *args], capture_output=True, text=True, check=False).stdout
 
@@ -571,7 +667,9 @@ def run_command(workspace: Path, argv: list[str], timeout: int) -> tuple[bool, s
             argv, cwd=workspace, env=env, capture_output=True, text=True, timeout=timeout, check=False
         )
     except subprocess.TimeoutExpired:
-        return False, f"timed out after {timeout}s: {' '.join(argv)}"
+        # Name the command, not an inline script (`node -e <script>`), so the log says what timed out.
+        command = " ".join(arg for arg in argv if "\n" not in arg and len(arg) <= 80)
+        return False, f"timed out after {timeout}s: {command}"
     return result.returncode == 0, (result.stdout + result.stderr)[-4000:]
 
 

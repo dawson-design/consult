@@ -1,8 +1,7 @@
 # Product Defaults and Failure Modes
 
 Use when choosing a framework, font, type scale, or spacing default, or
-before building a tool, dashboard, admin, or CRUD screen. Brand and editorial
-pages use `editorial.md` instead.
+before building a tool, dashboard, admin, or CRUD screen.
 
 ## House Defaults
 

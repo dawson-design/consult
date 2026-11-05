@@ -58,16 +58,16 @@ class SkillDetectionTests(unittest.TestCase):
         self.assertEqual(set(cl.CONSULT_SKILLS), on_disk)
 
     def test_a_skill_path_seen_only_in_a_tool_result_is_not_counted(self):
-        listing = "/root/.claude/skills/workflow/SKILL.md\n/root/.claude/skills/proof/SKILL.md"
+        listing = "/root/.claude/skills/api/SKILL.md\n/root/.claude/skills/proof/SKILL.md"
         step = call_step("Bash", {"command": "find / -name SKILL.md"}, listing)
         self.assertEqual(skills_read(step), [])
 
     def test_an_installed_skill_that_claude_code_loaded_is_counted(self):
         steps = [
-            *skill_file_load("workflow", f"{INSTALLED_SKILLS}/workflow"),
+            *skill_file_load("api", f"{INSTALLED_SKILLS}/api"),
             *skill_file_load("proof", f"{INSTALLED_SKILLS}/proof"),
         ]
-        self.assertEqual(skills_read(*steps), ["proof", "workflow"])
+        self.assertEqual(skills_read(*steps), ["api", "proof"])
 
     def test_a_consult_plugin_skill_load_is_counted(self):
         plugin_dir = "/root/.claude/plugins/cache/consult/consult/15.2.0/skills/proof"
@@ -79,7 +79,7 @@ class SkillDetectionTests(unittest.TestCase):
 
     def test_a_bundled_skill_sharing_a_consult_name_is_not_counted(self):
         extracted = "/logs/agent/sessions/bundled-skills/2.1.282/0a1b2c3d/commit"
-        steps = [*skill_call("code-review", "Review the current diff for bugs."), *skill_file_load("commit", extracted)]
+        steps = [*skill_call("code-review", "Review the current diff for bugs."), *skill_file_load("git", extracted)]
         self.assertEqual(skills_read(*steps), [])
 
     def test_a_skill_call_claude_code_rejected_is_not_counted(self):
@@ -87,9 +87,9 @@ class SkillDetectionTests(unittest.TestCase):
         self.assertEqual(skills_read(step), [])
 
     def test_a_codex_shell_read_of_skill_md_is_counted(self):
-        cmd = "sed -n '1,220p' /root/.agents/skills/code-review/SKILL.md && cat /root/.agents/skills/workflow/SKILL.md"
+        cmd = "sed -n '1,220p' /root/.agents/skills/code-review/SKILL.md && cat /root/.agents/skills/api/SKILL.md"
         step = call_step("exec_command", {"cmd": cmd, "yield_time_ms": 10000}, "Process exited with code 0\nOutput:\n")
-        self.assertEqual(skills_read(step), ["code-review", "workflow"])
+        self.assertEqual(skills_read(step), ["api", "code-review"])
 
 
 if __name__ == "__main__":

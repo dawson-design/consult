@@ -1,0 +1,47 @@
+schema_version = "1.4"
+# The control for the houseStyle suite: a repository that already chose
+# classes, thrown error classes, layer folders, and a top-level test/ folder.
+# Consult's house defaults yield to the project's choices, so default.follow
+# should not drop under Consult. The trial reward is the final step's.
+multi_step_reward_strategy = "final"
+
+[task]
+name = "consult/follow-the-project"
+description = "Add gift cards to a layered, class-based shop API, scored on following the project's conventions."
+
+[metadata]
+kind = "code"
+features = ["api", "proof"]
+
+[agent]
+timeout_sec = 2700.0
+
+[verifier]
+timeout_sec = 1800.0
+
+[verifier.env]
+CLAUDE_CODE_OAUTH_TOKEN = "${CLAUDE_CODE_OAUTH_TOKEN:-}"
+REWARDKIT_FORCE_SUBSCRIPTION = "${REWARDKIT_FORCE_SUBSCRIPTION:-1}"
+REWARDKIT_JUDGE = "${CONSULT_EVAL_JUDGE:-claude-code}"
+
+# Step verifier timeouts must be set per step: a step's default is 600 and ignores [verifier].
+[[steps]]
+name = "brief"
+[steps.agent]
+timeout_sec = 2700.0
+[steps.verifier]
+timeout_sec = 300.0
+
+[[steps]]
+name = "approve"
+[steps.agent]
+timeout_sec = 2700.0
+[steps.verifier]
+timeout_sec = 60.0
+
+[[steps]]
+name = "continue"
+[steps.agent]
+timeout_sec = 2700.0
+[steps.verifier]
+timeout_sec = 1800.0

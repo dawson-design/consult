@@ -1,4 +1,4 @@
-// Rule probe: prints {"api.2", "api.3", "domain-modeling.8": 0|1} as its last line.
+// Rule probe: prints {"api.2", "api.3", "domain-modeling.2": 0|1} as its last line.
 import { createServer } from "./src/server.js";
 
 const items = [{ sku: "sku-mug", quantity: 1 }, { sku: "sku-tee", quantity: 1 }];
@@ -31,7 +31,7 @@ async function compatible(base) {
   return Boolean(shipped && cad && hasMoney(cad, "CAD", [4900, 49, "49.00", "49"]));
 }
 
-// domain-modeling.8 (references/money.md): the CAD amount sits beside its currency as
+// domain-modeling.2 (references/money.md): the CAD amount sits beside its currency as
 // integer minor units or a decimal string, never a float.
 async function preciseMoney(base) {
   const cad = await readCad(base);
@@ -54,10 +54,10 @@ async function callerErrors(base) {
 const server = createServer().listen(0);
 await new Promise((resolve) => server.once("listening", resolve));
 const base = `http://127.0.0.1:${server.address().port}`;
-const result = { "api.2": 0, "api.3": 0, "domain-modeling.8": 0 };
+const result = { "api.2": 0, "api.3": 0, "domain-modeling.2": 0 };
 try {
   result["api.2"] = (await compatible(base)) ? 1 : 0;
-  result["domain-modeling.8"] = (await preciseMoney(base)) ? 1 : 0;
+  result["domain-modeling.2"] = (await preciseMoney(base)) ? 1 : 0;
   result["api.3"] = (await callerErrors(base)) ? 1 : 0;
 } catch (error) {
   console.error(error);

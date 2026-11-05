@@ -1,4 +1,0 @@
-interface:
-  display_name: "Consult: Proof"
-  short_description: "Prove acceptance criteria with tests and checks"
-  default_prompt: "Use Consult proof to check each acceptance criterion with a test that fails when it is not met."

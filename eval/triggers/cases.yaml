@@ -11,7 +11,7 @@
 #   edits           applied to the workspace before the scaffold commit:
 #                   {path, replace: [old, new]} (old must occur once) or {path, content}
 #   uncommitted     same shape, applied after the scaffold commit (a dirty tree)
-#   code_change     counts toward workflow recall
+#   code_change     the case asks for a code change (reported)
 #   required_any    positives: one of these must load before the first write
 #   expect_silent   skills that have no business loading here (reported, not gated)
 
@@ -19,119 +19,111 @@
 # the Wilson interval at `confidence`.
 confidence: 0.90
 thresholds:
-  workflow_recall: {min: 0.83}      # code-changing positives: workflow before the first write
+  focused_rate: {min: 0.80}         # positives: at most 2 Consult skills before the first write
   narrow_recall: {min: 0.73}        # positives: a required_any skill before the first write
   false_trigger_rate: {max: 0.08}   # negatives: any Consult load
   negative_case_max_triggered: 1    # a negative that triggers in 2+ attempts fails
 
 cases:
   # Positives from existing eval tasks (first turn). expect_silent carries the
-  # task's tests/consult.json list, plus release, commit, git-workflow, and
-  # documentation where the task does not ask for them.
+  # task's tests/consult.json list, plus git where the task does not ask for it.
   - name: bug-from-symptom
     kind: positive
     source: {task: bug-from-symptom}
     code_change: true
     required_any: [proof]
-    expect_silent: [contract-first, scaffolding, documentation, api, database, release, commit, git-workflow]
+    expect_silent: [scaffolding, documentation, api, database, release, git]
 
   - name: proof-first-bugfix
     kind: positive
     source: {task: proof-first-bugfix}
     code_change: true
     required_any: [proof]
-    expect_silent: [release, commit, git-workflow, documentation]
+    expect_silent: [release, git, documentation]
 
   - name: security-boundary-fix
     kind: positive
     source: {task: security-boundary-fix}
     code_change: true
     required_any: [proof, domain-modeling]
-    expect_silent: [release, commit, git-workflow, documentation]
+    expect_silent: [release, git, documentation]
 
   - name: debugging-regression
     kind: positive
     source: {task: debugging-regression}
     code_change: true
-    required_any: [proof, error-handling]
-    expect_silent: [release, commit, git-workflow, documentation]
+    required_any: [proof]
+    expect_silent: [release, git, documentation]
 
   - name: api-error-contract
     kind: positive
     source: {task: api-error-contract}
     code_change: true
-    required_any: [api, error-handling]
-    expect_silent: [release, commit, git-workflow]
+    required_any: [api]
+    expect_silent: [release, git]
 
   - name: money-field-change
     kind: positive
     source: {task: money-field-change}
     code_change: true
-    required_any: [contract-first, domain-modeling, api]
-    expect_silent: [scaffolding, documentation, database, refactoring, release, commit, git-workflow]
+    required_any: [domain-modeling, api]
+    expect_silent: [scaffolding, documentation, database, release, git]
 
   - name: service-from-brief
     kind: positive
     source: {task: service-from-brief}
     code_change: true
-    required_any: [scaffolding, api, contract-first]
-    expect_silent: [release, refactoring, commit, git-workflow, documentation]
+    required_any: [scaffolding, api]
+    expect_silent: [release, git, documentation]
 
   - name: database-release-safety
     kind: positive
     source: {task: database-release-safety}
     code_change: true
     required_any: [database]
-    expect_silent: [commit, git-workflow, documentation]
+    expect_silent: [git, documentation]
 
   - name: observable-async-worker
     kind: positive
     source: {task: observable-async-worker}
     code_change: true
-    required_any: [error-handling]
-    expect_silent: [release, commit, git-workflow, documentation]
+    required_any: [proof]
+    expect_silent: [release, git, documentation]
 
   - name: accessible-ui-state
     kind: positive
     source: {task: accessible-ui-state}
     code_change: true
     required_any: [ui-design]
-    expect_silent: [release, commit, git-workflow, documentation]
+    expect_silent: [release, git, documentation]
 
   - name: proof-organize-tangled-seam
     kind: positive
     source: {task: proof-organize-tangled-seam}
     code_change: true
-    required_any: [refactoring, architecture]
-    expect_silent: [release, commit, git-workflow, documentation]
-
-  - name: design-decision-record
-    kind: positive
-    source: {task: design-decision-record}
-    code_change: true
-    required_any: [architecture]
-    expect_silent: [release, commit, git-workflow]
+    required_any: [proof]
+    expect_silent: [release, git, documentation]
 
   - name: proof-pipeline-shape
     kind: positive
     source: {task: proof-pipeline-shape}
     code_change: true
-    required_any: [domain-modeling, error-handling, proof]
-    expect_silent: [release, commit, git-workflow, documentation]
+    required_any: [proof, domain-modeling]
+    expect_silent: [release, git, documentation]
 
   - name: proof-validator-error-content
     kind: positive
     source: {task: proof-validator-error-content}
     code_change: true
-    required_any: [error-handling, domain-modeling]
-    expect_silent: [release, commit, git-workflow, documentation]
+    required_any: [proof, domain-modeling]
+    expect_silent: [release, git, documentation]
 
   - name: scaffold-repo-workflow
     kind: positive
     source: {task: scaffold-repo-workflow}
     code_change: true
     required_any: [scaffolding]
-    expect_silent: [release, commit]
+    expect_silent: [release, git]
 
   # Positives from small fixtures. Prompts never name Consult or a skill.
   - name: commit-dirty-tree
@@ -140,7 +132,7 @@ cases:
     prompt: Commit this work as small reviewable commits.
     # The first write is the first `git commit`.
     code_change: false
-    required_any: [commit, git-workflow]
+    required_any: [git]
     expect_silent: [release, documentation]
     uncommitted:
       - path: src/format.js
@@ -168,27 +160,6 @@ cases:
       - path: README.md
         replace: ["Formats greetings for the welcome email.", "Formats greetings and farewells for account emails."]
 
-  - name: release-prep
-    kind: positive
-    source: {fixture: release-prep}
-    prompt: Prepare the 2.0.0 release.
-    # A version bump and changelog, not a code change.
-    code_change: false
-    required_any: [release]
-    expect_silent: [commit, git-workflow, documentation]
-
-  - name: epic-breakdown
-    kind: positive
-    source: {task: large-checkout-workflow}
-    prompt: >-
-      Next quarter we want checkout to survive duplicate submits and payment
-      failures. Draft an epic and the issues under it for our GitHub tracker.
-      Don't create anything yet, just show me the drafts.
-    # Tracker drafts, not a code change.
-    code_change: false
-    required_any: [issue-tracking]
-    expect_silent: [release, commit, documentation]
-
   - name: node-api-support
     kind: positive
     source: {fixture: node-api-support}
@@ -197,7 +168,7 @@ cases:
       releases? Then update the code accordingly.
     code_change: true
     required_any: [proof]
-    expect_silent: [release, commit, git-workflow, documentation]
+    expect_silent: [release, git, documentation]
 
   # Negatives: trivial edits and questions. Any Consult load is a false trigger.
   - name: readme-typo

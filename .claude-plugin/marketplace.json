@@ -1,22 +1,17 @@
 {
   "name": "consult",
-  "owner": {
-    "name": "Dawson Design Ltd.",
-    "url": "https://github.com/dawson-design"
-  },
+  "owner": { "name": "Dawson Design Ltd.", "url": "https://github.com/dawson-design" },
   "metadata": {
-    "description": "Consult: collaborative engineering-discipline skills for Claude Code.",
-    "version": "19.0.0",
+    "description": "Consult: house engineering defaults and proof discipline for Claude Code.",
+    "version": "20.0.0",
     "license": "MIT"
   },
   "plugins": [
     {
       "name": "consult",
-      "description": "Portable, collaborative engineering-discipline skill pack: data, proof, security, design, and more.",
-      "version": "19.0.0",
-      "author": {
-        "name": "Dawson Design Ltd."
-      },
+      "description": "House engineering defaults and proof discipline, with the engineer in the loop.",
+      "version": "20.0.0",
+      "author": { "name": "Dawson Design Ltd." },
       "homepage": "https://github.com/dawson-design/consult",
       "license": "MIT",
       "source": "./plugin"

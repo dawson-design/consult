@@ -1,7 +1,7 @@
 {
   "task": "proof-first-bugfix",
   "kind": "code",
-  "intended_skills": ["workflow", "proof", "domain-modeling", "refactoring"],
+  "intended_skills": ["proof", "domain-modeling"],
   "visible_test_cmd": "npm test",
   "test_file": "test/cart.test.js"
 }

@@ -4,13 +4,13 @@
       "dimension": "structure",
       "extends": "structure.no_scattering_layer",
       "id": "structure.no_scattering_layer",
-      "key_phrase": "Horizontal layers exist only for a real boundary",
+      "key_phrase": "Add a horizontal layer only at a real boundary",
       "look_at": "New files and modules in the diff, and how the new behavior flows through them",
       "no_when": "One behavior is split across new pass-through layers that add no boundary.",
       "polarity": "negative",
       "question": "Does NOT add a new layer (a service, repository, manager, or helper module) that the change's behavior passes through without a process, deploy, trust, persistence, or transport boundary or proven duplication?",
       "rules": [
-        "architecture.2"
+        "default.2"
       ],
       "tier": "quality",
       "yes_when": "New modules sit at a real boundary or remove proven duplication, or the behavior stays in the module that owns the feature."
@@ -64,13 +64,13 @@
       "dimension": "scope",
       "extends": "scope.no_unasked_dependency",
       "id": "scope.no_dependency",
-      "key_phrase": "Ask before adding a dependency.",
+      "key_phrase": "adding a dependency",
       "look_at": "Package manifests and lockfiles in the diff",
       "no_when": "A new dependency appears that nobody approved.",
       "polarity": "negative",
       "question": "Does NOT add a package dependency that the request or an approved plan did not name?",
       "rules": [
-        "core.3"
+        "human.2"
       ],
       "tier": "must",
       "yes_when": "No dependency was added, or each added one was named in the request or the approved plan."
@@ -108,7 +108,7 @@
     {
       "dimension": "scope",
       "id": "scope.success_unchanged",
-      "key_phrase": "Preserve an existing service's representation and error contract.",
+      "key_phrase": "Keep an existing service's representation and error contract.",
       "look_at": "The success branch of `handleUserLookup` in `src/users.js`, compared with the original",
       "no_when": "The success body is wrapped, renamed, or given new or missing fields.",
       "polarity": "positive",
@@ -123,14 +123,14 @@
       "dimension": "boundaries",
       "extends": "boundaries.parse_at_boundary",
       "id": "boundaries.id_checked_first",
-      "key_phrase": "Parse or validate it before use.",
+      "key_phrase": "Parse external input once at the boundary into trusted types",
       "look_at": "`handleUserLookup` in `src/users.js`",
       "no_when": "The map is read with an unchecked id, or the id is checked in more than one place.",
       "polarity": "positive",
       "question": "Is `request.query.id` checked once, at the top of `handleUserLookup`, before the users map is read?",
       "rules": [
-        "core.7",
-        "domain-modeling.4"
+        "core.6",
+        "default.5"
       ],
       "tier": "must",
       "yes_when": "A missing or empty id is rejected before the lookup, and the lookup only ever sees a checked id."
@@ -138,7 +138,7 @@
     {
       "dimension": "boundaries",
       "id": "boundaries.one_error_shape",
-      "key_phrase": "New APIs use the chosen model's native error format",
+      "key_phrase": "Errors use the chosen format's native shape",
       "look_at": "Both error branches of `handleUserLookup` in `src/users.js`",
       "no_when": "The two errors use different body shapes, or one lacks a code or a message.",
       "polarity": "positive",
@@ -148,21 +148,6 @@
       ],
       "tier": "must",
       "yes_when": "Both error bodies have the same fields, holding a stable code and a readable message."
-    },
-    {
-      "dimension": "boundaries",
-      "extends": "boundaries.no_leaky_errors",
-      "id": "boundaries.no_leaky_errors",
-      "key_phrase": "expose no stack traces, SQL, file paths, hostnames, secrets, or auth-enumeration clues",
-      "look_at": "Error responses and messages the change sends to callers",
-      "no_when": "An error response can carry internal detail to the caller.",
-      "polarity": "negative",
-      "question": "Does NOT return stack traces, SQL, file paths, hostnames, or secrets to callers in error responses?",
-      "rules": [
-        "error-handling.5"
-      ],
-      "tier": "quality",
-      "yes_when": "Callers get actionable messages without internal detail."
     },
     {
       "dimension": "proof",
@@ -213,13 +198,13 @@
       "dimension": "report",
       "extends": "report.attention_first",
       "id": "report.attention_first",
-      "key_phrase": "Report what needs their attention first",
+      "key_phrase": "what needs the user's attention",
       "look_at": "The opening of the agent's final message",
       "no_when": "Decisions or risks appear only after the change list, or not at all.",
       "polarity": "positive",
       "question": "Does the final message open with what needs the user's attention (decisions, risks, unproven points) before describing the changes?",
       "rules": [
-        "core.5"
+        "human.7"
       ],
       "tier": "quality",
       "yes_when": "The first part names what the user must decide or watch, or says plainly that nothing needs attention."
@@ -249,7 +234,7 @@
       "polarity": "positive",
       "question": "Does every test and file the final message names exist in the diff or the repository, and do what the message says?",
       "rules": [
-        "core.5"
+        "human.7"
       ],
       "tier": "must",
       "yes_when": "Each named test and file exists and does what the message says."

@@ -1,5 +1,5 @@
 {
   "task": "routing-worker-retry",
   "kind": "routing",
-  "intended_skills": ["workflow", "error-handling", "proof", "code-review"]
+  "intended_skills": ["proof"]
 }

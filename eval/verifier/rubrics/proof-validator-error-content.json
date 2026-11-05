@@ -52,10 +52,10 @@
       "id": "boundaries.missing_fields_reported",
       "dimension": "boundaries",
       "rules": [
-        "core.7",
-        "domain-modeling.4"
+        "core.6",
+        "default.5"
       ],
-      "key_phrase": "Parse or validate it before use.",
+      "key_phrase": "Parse external input once at the boundary into trusted types",
       "question": "When `email`, `password`, or `country` is missing or not a string (for example `email: 42`, no `password`, or `country: null`), does `validateSignup` report it in `errors` under that field instead of throwing?",
       "polarity": "positive",
       "tier": "must",
@@ -67,9 +67,9 @@
       "id": "boundaries.age_integer",
       "dimension": "boundaries",
       "rules": [
-        "core.7"
+        "core.6"
       ],
-      "key_phrase": "Parse or validate it before use.",
+      "key_phrase": "Treat input that crosses a trust boundary as untrusted",
       "question": "Does the age check reject a non-integer number such as `30.5` and a numeric string such as `\"30\"`?",
       "polarity": "positive",
       "tier": "must",
@@ -78,38 +78,10 @@
       "no_when": "`30.5` passes, or `\"30\"` is converted with `Number`, `parseInt`, or unary `+` and accepted."
     },
     {
-      "id": "boundaries.actionable_messages",
-      "dimension": "boundaries",
-      "rules": [
-        "error-handling.5"
-      ],
-      "key_phrase": "User-facing errors are actionable",
-      "question": "Does each error message tell the user what the field requires: the age range 13 to 120, the password's length, case, and digit rules, and two uppercase letters for the country?",
-      "polarity": "positive",
-      "tier": "must",
-      "look_at": "Every message string `validateSignup` can put in `errors`",
-      "yes_when": "The age, password, and country messages state the requirement that failed, or all of that field's requirements. For email, a message asking for a valid email address is enough.",
-      "no_when": "Any message is a bare \"invalid\", \"Invalid age\", a field name, or a code, so the user cannot tell what to change."
-    },
-    {
-      "id": "boundaries.no_password_echo",
-      "dimension": "boundaries",
-      "rules": [
-        "error-handling.5"
-      ],
-      "key_phrase": "Secrets never enter source, logs, traces, metrics, errors, or client responses.",
-      "question": "Does NOT put the submitted password, or any part of it, into an error message?",
-      "polarity": "negative",
-      "tier": "must",
-      "look_at": "The password message in `src/signup.js`",
-      "yes_when": "The password message describes the rules without including the value.",
-      "no_when": "The message interpolates the password or a slice of it, such as a template string that inserts the password into \"Password ... is too short\"."
-    },
-    {
       "id": "boundaries.email_shape",
       "dimension": "boundaries",
       "rules": [
-        "core.7"
+        "core.6"
       ],
       "key_phrase": "Treat input that crosses a trust boundary as untrusted",
       "question": "Does the email check reject addresses with whitespace, more than one `@`, or an empty part before or after the `@` (such as `a@`, `@example.com`, `a b@example.com`, or `a@@example.com`)?",
@@ -176,9 +148,9 @@
       "id": "report.email_rule_stated",
       "dimension": "report",
       "rules": [
-        "core.5"
+        "human.7"
       ],
-      "key_phrase": "Report what needs their attention first",
+      "key_phrase": "what needs the user's attention",
       "question": "Does the final message say how strict the email check is, for example that it is a basic pattern rather than full RFC 5322 validation, or which unusual addresses it accepts or rejects?",
       "polarity": "positive",
       "tier": "quality",

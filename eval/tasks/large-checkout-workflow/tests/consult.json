@@ -1,7 +1,7 @@
 {
   "task": "large-checkout-workflow",
   "kind": "code",
-  "intended_skills": ["workflow", "domain-modeling", "architecture", "api", "error-handling", "database", "release", "proof", "code-review", "documentation"],
+  "intended_skills": ["domain-modeling", "api", "database", "proof"],
   "visible_test_cmd": "npm test",
   "test_file": "test/checkout.test.js"
 }

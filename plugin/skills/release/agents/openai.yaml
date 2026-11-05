@@ -1,4 +1,0 @@
-interface:
-  display_name: "Consult: Release"
-  short_description: "Late gate for approved release prep"
-  default_prompt: "Use $release only after release prep is requested or approved to classify version impact, sync release artifacts, and prepare rollout or rollback evidence without mutating shared environments."

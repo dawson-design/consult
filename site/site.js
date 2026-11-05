@@ -1,7 +1,7 @@
 /* site.js: page behaviour for the Consult site (index.html). Removes the no-js class, runs the
    install tabs (switched together across install blocks, with arrow-key support), and runs the
-   copy buttons, announcing results to screen readers. The wordmark animation is in wordmark.js
-   and the skills-page rail in rail.js. */
+   copy buttons, announcing results to screen readers. The wordmark animation is in
+   wordmark.js. */
 (function () {
   'use strict';
 
