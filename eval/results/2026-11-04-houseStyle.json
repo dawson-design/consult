@@ -26,7 +26,7 @@
     "The Consult arm ran the core before core rule 2's opt-in clause and proof rule 3's test-style sentence were added.",
     "core.2 is left out: its static check misses environment variables read through a schema parse of process.env.",
     "Default and rule scores come from rescoring the saved trials with the current checks (rule_jobs). core.3 and default.15 are scored by a judge at zero reward weight. The eval image had no git identity, so Consult's commits failed; core.7 and default.13 score commit attempts.",
-    "default.9 uses the probe as it was before 2026-11-11, which counted a retry of a transient 503 as a pass although the brief asks for no retry. The current probe gives a build with a timeout and no retry full marks."
+    "default.9 uses the probe as it was before 2026-11-11, which counted a retry of a transient 503 as a pass although the brief never asks for a retry. The current probe gives a build with a timeout and no retry full marks."
   ],
   "simplicity_by_stage": {
     "bare": [

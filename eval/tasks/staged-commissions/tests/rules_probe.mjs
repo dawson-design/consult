@@ -2,8 +2,8 @@
 // provider that hangs, fails once, fails for good, or returns garbage, plus
 // malformed requests. Prints {"default.9", "default.10", "core.untrusted": 0..1,
 // "default.9.retried": 0|1} as its last line. consult_rules.probe_results reads
-// it. default.9 is a timeout and no retry on a permanent failure; the brief asks
-// for no retry, so none is rewarded. When the build retried the transient 503,
+// it. default.9 is a timeout and no retry on a permanent failure; the brief
+// never asks for a retry, so none is rewarded. When the build retried the transient 503,
 // house_rules also wants jitter beside the outbound call. core.untrusted is a
 // readout: core rule 6 was cut. Each scenario starts a fresh app so a rates
 // cache from one cannot answer another.
