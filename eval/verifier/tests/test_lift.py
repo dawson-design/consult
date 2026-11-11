@@ -525,5 +525,50 @@ class StageTableTests(unittest.TestCase):
         self.assertNotIn("per stage", report)
 
 
+class PlaceboLiftTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self._tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self._tmp.name)
+
+    def tearDown(self) -> None:
+        self._tmp.cleanup()
+
+    def job(self, name: str, rewards: list[dict]) -> Path:
+        for n, r in enumerate(rewards):
+            write_trial(self.root / name, "proof-first-bugfix", n, r)
+        return self.root / name
+
+    def report(self, *flags: str) -> tuple[str, dict]:
+        jobs = {
+            "bare": self.job("bare", arm_rewards(0.3, 0.35, 0.4)),
+            "stub": self.job("stub", arm_rewards(0.6, 0.65, 0.7)),
+            "placebo": self.job("placebo", arm_rewards(0.4, 0.45, 0.5)),
+            "consult": self.job("consult", arm_rewards(0.8, 0.85, 0.9)),
+        }
+        argv = ["lift.py", str(jobs["bare"]), str(jobs["consult"])]
+        argv += [arg for flag in flags for arg in (f"--{flag}", str(jobs[flag]))]
+        with redirect_stdout(io.StringIO()):
+            lift.main(argv)
+        return (self.root / "lift" / "consult.md").read_text(), json.loads(
+            (self.root / "lift" / "consult.json").read_text()
+        )
+
+    def test_the_placebo_job_splits_the_stub_lift_into_core_content_and_any_rules(self):
+        report, summary = self.report("stub", "placebo")
+        core, rules = report.split("## Core content: stub vs placebo")[1].split("## Any rules: placebo vs bare")
+        self.assertIn("| placebo | stub | stub - placebo |", core)
+        self.assertIn("| consult/proof-first-bugfix | 0.450 | 0.650 | +0.200 |", core)
+        self.assertIn("Reward change: +0.200 (90% interval", core)
+        self.assertIn("| bare | placebo | placebo - bare |", rules)
+        self.assertIn("| consult/proof-first-bugfix | 0.350 | 0.450 | +0.100 |", rules)
+        self.assertGreater(summary["placebo"]["core"]["reward_interval"][0], 0.0)
+
+    def test_without_a_stub_job_only_placebo_vs_bare_is_reported(self):
+        report, summary = self.report("placebo")
+        self.assertNotIn("## Core content", report)
+        self.assertIn("## Any rules: placebo vs bare", report)
+        self.assertEqual(set(summary["placebo"]), {"rules"})
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -2,7 +2,7 @@
 """Compare a bare Harbor job with a Consult job and report per-task lift.
 
   uv run scripts/lift.py runs/<bare-job> runs/<consult-job> [--baseline-consult runs/<earlier-consult-job>]
-                        [--stub runs/<stub-job>]
+                        [--stub runs/<stub-job>] [--placebo runs/<placebo-job>]
 
 Lift = mean Consult reward - mean bare reward per task, over the tasks the
 Consult job ran. Trials without a reward (agent or verifier failure) count as
@@ -25,6 +25,11 @@ lists the failed trials of both jobs it compares. The skill-content section
 ends with a verdict on whether Consult beats the stub with an interval that
 excludes 0. A failed trial in either job withholds the verdict, since a gap
 from timeouts or auth failures is not a skill-content effect.
+
+--placebo adds the same sections for a placebo-arm job: the stub arm with a
+hook that prints rules no check scores in place of the Consult core. Stub vs
+placebo isolates what the core says, and needs --stub. Placebo vs bare is the
+effect of printing any rules at all.
 
 The fast tier runs without the judge. When one job has judge scores and the
 other does not, both are rescored from their shared deterministic dimensions
@@ -729,6 +734,23 @@ def content_verdict(result: dict) -> str:
     return "Verdict: consult does not beat stub beyond noise, interval contains 0."
 
 
+def placebo_comparisons(
+    bare: dict[str, list[dict]], placebo: dict[str, list[dict]], stub: dict[str, list[dict]] | None
+) -> dict:
+    """core: placebo to stub, the effect of the core's content. rules: bare to placebo, the effect of any rules."""
+    result = {"rules": aligned_comparison(bare, placebo)}
+    if stub is not None:
+        result["core"] = aligned_comparison(placebo, stub)
+    return result
+
+
+def render_placebo(comparisons: dict) -> list[str]:
+    rules = arm_section("Any rules: placebo vs bare", comparisons["rules"], "bare", "placebo")
+    if "core" not in comparisons:
+        return rules
+    return arm_section("Core content: stub vs placebo", comparisons["core"], "placebo", "stub") + rules
+
+
 def render_stub(comparisons: dict) -> list[str]:
     content, listing = comparisons["content"], comparisons["listing"]
     return [
@@ -809,6 +831,9 @@ def main(argv: list[str]) -> int:
     parser.add_argument("consult_job", type=Path)
     parser.add_argument("--baseline-consult", type=Path, help="an earlier Consult job to compare this one against")
     parser.add_argument("--stub", type=Path, help="a stub-arm job: adds consult vs stub and stub vs bare")
+    parser.add_argument(
+        "--placebo", type=Path, help="a placebo-arm job: adds stub vs placebo (with --stub) and placebo vs bare"
+    )
     args = parser.parse_args(argv[1:])
     bare_dir, consult_dir = args.bare_job, args.consult_job
     bare, consult = load_trials(bare_dir), load_trials(consult_dir)
@@ -817,6 +842,10 @@ def main(argv: list[str]) -> int:
     if args.stub:
         summary["stub"] = stub_comparisons(bare, load_trials(args.stub), consult)
         markdown += "\n".join(render_stub(summary["stub"])) + "\n"
+    if args.placebo:
+        stub = load_trials(args.stub) if args.stub else None
+        summary["placebo"] = placebo_comparisons(bare, load_trials(args.placebo), stub)
+        markdown += "\n".join(render_placebo(summary["placebo"])) + "\n"
     if args.baseline_consult:
         before, after, _ = align(load_trials(args.baseline_consult), consult)
         summary["regression"] = compare(before, after)

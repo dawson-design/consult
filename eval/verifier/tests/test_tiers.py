@@ -21,6 +21,7 @@ EVAL_DIR = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(EVAL_DIR / "scripts"))
 
 import baseline
+import placebo
 import run
 import selection
 import stub
@@ -154,7 +155,7 @@ class ArmConfigTests(unittest.TestCase):
 class ReportTests(unittest.TestCase):
     def test_lift_gets_the_stub_job_when_the_stub_arm_ran(self):
         args = argparse.Namespace(save_baseline=None, no_lift=False, install_only=False)
-        job_dirs = {arm: Path("/runs") / arm for arm in run.ARMS}
+        job_dirs = {arm: Path("/runs") / arm for arm in ("bare", "stub", "consult")}
         with mock.patch.object(run.subprocess, "run", return_value=subprocess.CompletedProcess([], 0)) as lift_call:
             run.report(args, job_dirs, None, {})
         self.assertEqual(lift_call.call_args.args[0][-4:], ["/runs/bare", "/runs/consult", "--stub", "/runs/stub"])
@@ -257,6 +258,59 @@ class SkillSnapshotTests(unittest.TestCase):
         self.assertEqual(
             frontmatter(self.arm_skills("consult"), "proof"), frontmatter(self.arm_skills("stub"), "proof")
         )
+
+
+class PlaceboArmTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self._tmp = tempfile.TemporaryDirectory()
+        self.runs = Path(self._tmp.name)
+        patcher = mock.patch.object(run, "RUNS_DIR", self.runs)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        self.skills = run.frozen_skills()
+
+    def tearDown(self) -> None:
+        self._tmp.cleanup()
+
+    def agent(self, arm: str) -> dict:
+        return run.build_job(JOB_ARGS, arm, "stamp", ["api-error-contract"], AGENT, HOOK, self.skills)["agents"][0]
+
+    def test_the_placebo_arm_installs_the_stub_skills_and_the_placebo_hook(self):
+        agent = self.agent("placebo")
+        self.assertEqual(agent["skills"], self.skills["stub"])
+        self.assertEqual(agent["kwargs"]["config"], json.loads(placebo.hooks_json()))
+
+    def test_the_placebo_hook_settings_are_written_under_runs(self):
+        self.agent("placebo")
+        self.assertEqual(len(list((self.runs / "placebo-hooks").glob("*/hooks.json"))), 1)
+
+    def test_the_placebo_arm_differs_from_stub_only_in_its_hook(self):
+        placebo_agent, stub_agent = self.agent("placebo"), self.agent("stub")
+        self.assertNotEqual(placebo_agent["kwargs"].pop("config"), stub_agent["kwargs"].pop("config"))
+        self.assertEqual(placebo_agent, stub_agent)
+
+    def test_tiers_run_the_placebo_arm_only_when_named(self):
+        for argv in (["--tier", "release", "--agent", "claude-code"], ["--suite", "rules", "--agent", "claude-code"]):
+            with self.subTest(argv=argv), mock.patch.object(sys, "argv", ["run.py", *argv]):
+                self.assertNotIn("placebo", run.parse_args().arms)
+
+    def test_an_agent_without_a_hook_cannot_run_the_placebo_arm(self):
+        argv = ["run.py", "--suite", "rules", "--agent", "codex", "--arms", "bare,placebo,consult"]
+        with (
+            mock.patch.multiple(
+                run, tier_tasks=lambda args: ["api-error-contract"], load_agent=lambda name, model: (AGENT, {}, None)
+            ),
+            mock.patch.object(sys, "argv", argv),
+            self.assertRaisesRegex(SystemExit, "agent codex has no hook"),
+        ):
+            run.main()
+
+    def test_lift_gets_the_placebo_job_when_the_placebo_arm_ran(self):
+        args = argparse.Namespace(save_baseline=None, no_lift=False, install_only=False)
+        job_dirs = {arm: Path("/runs") / arm for arm in run.ARMS}
+        with mock.patch.object(run.subprocess, "run", return_value=subprocess.CompletedProcess([], 0)) as lift_call:
+            run.report(args, job_dirs, None, {})
+        self.assertEqual(lift_call.call_args.args[0][-4:], ["--stub", "/runs/stub", "--placebo", "/runs/placebo"])
 
 
 class SelectionTests(unittest.TestCase):

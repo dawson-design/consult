@@ -124,6 +124,26 @@ guidance." `scripts/stub.py` builds it under `runs/stub-skills/`.
 Both arms read one snapshot of `agents/.agents/skills` taken when the run
 starts, so an edit made mid-run reaches neither.
 
+### Placebo arm
+
+The placebo arm separates what the Consult core says from the effect of
+printing any rules at all. It is the stub arm with one change: its hook prints
+`placebo/core.md` in place of the Consult core. That file keeps the core's
+opening paragraph byte for byte, so skill loading matches the stub arm. Below
+it are formatting rules with the core's sections, rule counts, and length
+(within 5% of its words), on matters no check, probe, rubric item, or judge
+criterion scores. `scripts/placebo.py` builds the hook settings under
+`runs/placebo-hooks/` with the function that writes `plugin/hooks/hooks.json`.
+
+- Stub minus placebo: what the core's content adds beyond any rules.
+- Placebo minus bare: what printing a core of that size changes on its own.
+
+No tier runs it; name it with `--arms bare,stub,placebo,consult`. It needs an
+agent with a hook (`consult_settings`), so Codex cannot run it. `lift.py
+--placebo` reports placebo vs bare, and stub vs placebo when `--stub` is also
+given. When `core.md` changes, keep the placebo's shape in step: a test in
+`verifier/tests/test_placebo.py` compares the two.
+
 ### Trigger suite
 
 ```sh
