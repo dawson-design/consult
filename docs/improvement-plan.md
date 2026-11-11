@@ -76,6 +76,8 @@ models miss.
 - How to fix, debug, test, or refactor.
 - Surface style: core rule 3, default 11, and default 15 show no lift.
 - Security prose: core rule 6 shows no lift, and SusVibes explains why.
+- The self-review ban: the first sentence of "Working with the human"
+  rule 6 scores 1.00 in both arms.
 - Overviews and architecture descriptions.
 - Dated specifics that do not yield to the project.
 
@@ -137,8 +139,14 @@ Consult does the same, the second job rests on step 5 and not on prose.
 
 ## Step 3: Cut what shows no lift
 
-1. **Cut four core lines now:** core rules 3 and 6, and defaults 11 and
-   15. They free 76 of the core's 994 words.
+1. **Cut four core lines and one sentence now.** Together they free 98 of
+   the core's 994 words.
+   - Core rules 3 and 6, and defaults 11 and 15.
+   - The first sentence of "Working with the human" rule 6, the
+     self-review ban. It guards a v1 habit that v2 no longer prompts, and
+     the `code-review` description still sends the user to a fresh
+     session. The second sentence stays and opens "When a change touches
+     auth", so the report still names the risky files first.
 2. **Cut skills by the stub result.** A skill body that adds no lift
    becomes user-invoked, or shrinks to its floors. `proof` goes first. It
    holds 875 words, loads on most changes, and has checks for two of its
