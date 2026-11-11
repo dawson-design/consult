@@ -36,6 +36,10 @@ import consult_rules as cr
 
 ANALYZER = Path(__file__).resolve().parent / "code_shape.mjs"
 SNAPSHOTS_DIR = Path("/opt/eval/snapshots")
+# A readout beside reward-details.json: per stage, line counts and the simplicity parts. Weighs nothing.
+STAGE_SHAPE_PATH = Path("/logs/verifier/stage-shape.json")
+# Spec and docs files for the line counts: Markdown, OpenAPI, and schema files.
+SPEC_PATH_RE = re.compile(r"\.md$|(^|/)openapi\.(ya?ml|json)$|(^|/)[^/]*schema[^/]*\.(json|ya?ml|sql|graphql|prisma)$")
 SOURCE_SUFFIXES = (".ts", ".tsx", ".mts", ".cts", ".js", ".jsx", ".mjs", ".cjs")
 SKIP_PARTS = {"node_modules", ".git", "dist", "build", "coverage"}
 
@@ -230,8 +234,7 @@ def no_speculative_abstraction(facts: dict) -> float:
 
 def simplicity(facts: dict) -> float:
     """The iron law, measured: the mean of the five shape scores."""
-    parts = (function_shape, logic_purity, state_isolation, acyclic_imports, no_speculative_abstraction)
-    return statistics.fmean(part(facts) for part in parts)
+    return statistics.fmean(simplicity_parts(facts).values())
 
 
 # Checks over the final workspace.
@@ -257,7 +260,10 @@ def shape_check(score):
 
 
 def stage_simplicity(stage: int):
-    """core.simple.s<stage>: simplicity of the tree as the stage's last step left it."""
+    """core.simple.s<stage>: simplicity of the tree as the stage's last step left it.
+
+    Also records the stage's line counts and simplicity parts in stage-shape.json, a readout for lift.py.
+    """
 
     def check(workspace: Path, trajectory: cl.Trajectory, meta: dict) -> float:
         per_stage = int(meta.get("steps_per_stage", 3))
@@ -265,9 +271,9 @@ def stage_simplicity(stage: int):
         if root is None:
             return 0.0
         files = source_files(root)
-        if not files or not built_beyond_scaffold(root, files, workspace):
-            return 0.0
-        return simplicity(shape(root, files))
+        facts = shape(root, files) if files and built_beyond_scaffold(root, files, workspace) else None
+        record_stage_shape(stage, root, facts)
+        return 0.0 if facts is None else simplicity(facts)
 
     return check
 
@@ -278,6 +284,48 @@ def stage_root(stage: int, per_stage: int, stages: int, workspace: Path) -> Path
         return workspace
     snapshot = SNAPSHOTS_DIR / str(stage * per_stage - 1)
     return snapshot if snapshot.is_dir() else None
+
+
+def simplicity_parts(facts: dict) -> dict[str, float]:
+    """The five shape scores simplicity() averages, by name."""
+    parts = (function_shape, logic_purity, state_isolation, acyclic_imports, no_speculative_abstraction)
+    return {part.__name__: part(facts) for part in parts}
+
+
+def line_kind(rel: str) -> str | None:
+    """source, test, or spec for a file the line counts include; None for config, data, and the rest."""
+    if SPEC_PATH_RE.search(rel):
+        return "spec"
+    if not rel.endswith(SOURCE_SUFFIXES):
+        return None
+    if cl.classify(rel) == "test":
+        return "test"
+    return "source" if is_analyzable(rel) else None
+
+
+def line_counts(root: Path) -> dict[str, int]:
+    """Non-blank lines of source, test, and spec files under root, skipping generated and vendored folders."""
+    counts = {"source": 0, "test": 0, "spec": 0}
+    for folder, dirs, names in os.walk(root):
+        dirs[:] = [d for d in dirs if d not in SKIP_PARTS]
+        for name in names:
+            path = Path(folder) / name
+            kind = line_kind(str(path.relative_to(root)))
+            if kind:
+                counts[kind] += sum(1 for line in path.read_text(errors="replace").splitlines() if line.strip())
+    return counts
+
+
+def record_stage_shape(stage: int, root: Path, facts: dict | None) -> None:
+    """Add the stage's line counts and simplicity parts (None when nothing was built) to stage-shape.json."""
+    try:
+        path = STAGE_SHAPE_PATH
+        stages = json.loads(path.read_text()) if path.is_file() else {}
+        parts = None if facts is None else simplicity_parts(facts)
+        stages[str(stage)] = {"lines": line_counts(root), "parts": parts}
+        path.write_text(json.dumps(stages, indent=2, sort_keys=True))
+    except (OSError, ValueError) as error:
+        sys.stderr.write(f"house_rules: could not record stage {stage} shape: {error}\n")
 
 
 def default_1(facts: dict) -> float:
@@ -357,11 +405,16 @@ def source_text(workspace: Path, meta: dict, suffixes: tuple[str, ...] = ()) -> 
 
 
 def default_9(workspace: Path, trajectory: cl.Trajectory, meta: dict) -> float:
-    """Timeout, transient-only retry (probe), and jittered backoff beside the outbound call (static)."""
+    """A timeout and no retry on a permanent failure (probe). A build that retries at all is also held to
+    jittered backoff beside the outbound call (static); one that does not retry needs none."""
+    probe = cr.probe_results(workspace)
+    score = float(probe.get("default.9", 0))
+    if not probe.get("default.9.retried"):
+        return score
     files = scoped_files(workspace, meta)
     texts = [(workspace / p).read_text(errors="replace") for p in files]
     jitter = any(OUTBOUND_RE.search(t) and JITTER_RE.search(t) for t in texts)
-    return 0.75 * float(cr.probe_results(workspace).get("default.9", 0)) + (0.25 if jitter else 0.0)
+    return 0.75 * score + (0.25 if jitter else 0.0)
 
 
 def probe_check(rule_id: str):
@@ -596,7 +649,7 @@ def default_7(workspace: Path, trajectory: cl.Trajectory, meta: dict) -> float:
     return stage_mean(trajectory, meta, contract_first)
 
 
-# Process rules read from the transcript: compatibility, commits, tooling, sign-off, and review.
+# Process rules read from the transcript: compatibility, commits, tooling, and sign-off.
 
 # A scripted approval that names nothing: human rule 3 limits it to the plan just shown.
 GENERIC_APPROVAL_RE = re.compile(r"^\s*(Approved\.?\s*)?Continue\.?\s*$", re.IGNORECASE)
@@ -622,7 +675,6 @@ RATE_LIMIT_RE = re.compile(
     r"\b429\b|rate.?limit|too.?many.?(requests|attempts)|throttl|lock.?out|login.?attempts|failed.?log.?ins?",
     re.IGNORECASE,
 )
-REVIEW_PROMPT_RE = re.compile(r"\breview", re.IGNORECASE)
 
 
 def all_turns(trajectory: cl.Trajectory, meta: dict) -> list[list[tuple[int, int]]]:
@@ -709,8 +761,8 @@ def version_pinned(workspace: Path) -> bool:
     return bool((manifest.get("volta") or {}).get("node")) or bool(EXACT_VERSION_RE.match(engine))
 
 
-def default_11(workspace: Path, trajectory: cl.Trajectory, meta: dict) -> float:
-    """Tooling: the mean of one lockfile, the share of test/lint/format/typecheck scripts present, and a pinned
+def default_tooling(workspace: Path, trajectory: cl.Trajectory, meta: dict) -> float:
+    """Tooling, a readout since house default 11 was cut: the mean of one lockfile, the share of test/lint/format/typecheck scripts present, and a pinned
     language version. The package manager is the scaffold's choice (npm), so it is not scored."""
     lockfiles = [name for name in cr.LOCKFILES if (workspace / name).is_file()]
     scripts = cr.package_scripts(workspace)
@@ -828,17 +880,6 @@ def human_3(workspace: Path, trajectory: cl.Trajectory, meta: dict) -> float:
     return 1.0
 
 
-def human_6(workspace: Path, trajectory: cl.Trajectory, meta: dict) -> float:
-    """No self-review: no subagent asked to review the change, and no code-review skill loaded."""
-    if "code-review" in cl.read_skill_names(trajectory):
-        return 0.0
-    for call in trajectory.calls:
-        prompt = f"{call.arguments.get('description') or ''} {call.arguments.get('prompt') or ''}"
-        if call.name in ("Task", "Agent") and REVIEW_PROMPT_RE.search(prompt):
-            return 0.0
-    return 1.0
-
-
 CHECKS = {
     "core.simple": shape_check(simplicity),
     **{f"core.simple.s{n}": stage_simplicity(n) for n in range(1, 6)},
@@ -846,7 +887,7 @@ CHECKS = {
     "core.2": core_2,
     "core.4": shape_check(function_shape),
     "core.5": core_5,
-    "core.6": probe_check("core.6"),
+    "core.untrusted": probe_check("core.untrusted"),
     "core.7": core_7,
     "default.1": shape_check(default_1),
     "default.2": default_2,
@@ -855,16 +896,18 @@ CHECKS = {
     "default.7": default_7,
     "default.9": default_9,
     "default.10": probe_check("default.10"),
-    "default.11": default_11,
+    "default.tooling": default_tooling,
     "default.13": default_13,
     "default.follow": default_follow,
+    "fork.cache-or-recompute": probe_check("fork.cache-or-recompute"),
+    "fork.config-or-constant": probe_check("fork.config-or-constant"),
+    "fork.copy-or-home": probe_check("fork.copy-or-home"),
+    "fork.queue-or-inline": probe_check("fork.queue-or-inline"),
+    "fork.retry-or-timeout": probe_check("fork.retry-or-timeout"),
+    "fork.special-case-or-reshape": probe_check("fork.special-case-or-reshape"),
     "human.1.stages": human_1_stages,
     "human.2": human_2,
     "human.3": human_3,
-    "human.6": human_6,
     "human.7": human_7,
     "proof.6": proof_6,
-    "fork.cache-or-recompute": probe_check("fork.cache-or-recompute"),
-    "fork.queue-or-inline": probe_check("fork.queue-or-inline"),
-    "fork.retry-or-timeout": probe_check("fork.retry-or-timeout"),
 }

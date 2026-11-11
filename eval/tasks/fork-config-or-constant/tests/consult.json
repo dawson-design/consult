@@ -1,0 +1,8 @@
+{
+  "task": "fork-config-or-constant",
+  "kind": "code",
+  "intended_skills": [],
+  "rules": ["fork.config-or-constant"],
+  "visible_test_cmd": "npm test",
+  "test_file": "test/payouts.test.js"
+}
