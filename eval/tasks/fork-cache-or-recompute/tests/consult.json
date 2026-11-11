@@ -1,0 +1,8 @@
+{
+  "task": "fork-cache-or-recompute",
+  "kind": "code",
+  "intended_skills": ["api", "performance"],
+  "rules": ["fork.cache-or-recompute"],
+  "visible_test_cmd": "npm test",
+  "test_file": "test/app.test.js"
+}

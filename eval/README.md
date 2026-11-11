@@ -124,6 +124,26 @@ guidance." `scripts/stub.py` builds it under `runs/stub-skills/`.
 Both arms read one snapshot of `agents/.agents/skills` taken when the run
 starts, so an edit made mid-run reaches neither.
 
+### Placebo arm
+
+The placebo arm separates what the Consult core says from the effect of
+printing any rules at all. It is the stub arm with one change: its hook prints
+`placebo/core.md` in place of the Consult core. That file keeps the core's
+opening paragraph byte for byte, so skill loading matches the stub arm. Below
+it are formatting rules with the core's sections, rule counts, and length
+(within 5% of its words), on matters no check, probe, rubric item, or judge
+criterion scores. `scripts/placebo.py` builds the hook settings under
+`runs/placebo-hooks/` with the function that writes `plugin/hooks/hooks.json`.
+
+- Stub minus placebo: what the core's content adds beyond any rules.
+- Placebo minus bare: what printing a core of that size changes on its own.
+
+No tier runs it; name it with `--arms bare,stub,placebo,consult`. It needs an
+agent with a hook (`consult_settings`), so Codex cannot run it. `lift.py
+--placebo` reports placebo vs bare, and stub vs placebo when `--stub` is also
+given. When `core.md` changes, keep the placebo's shape in step: a test in
+`verifier/tests/test_placebo.py` compares the two.
+
 ### Trigger suite
 
 ```sh
@@ -189,6 +209,15 @@ the low end next to the mean:
   since runs bill a subscription. A resumed multi-step trial reports its final
   step's tokens, which already include the earlier steps, and no cost, until
   a real trial shows whether Harbor's per-step cost covers one step or all.
+- **Size per stage** and **Simplicity parts per stage**: for a staged task,
+  each arm's means per stage, as `bare / consult`. The first table gives
+  non-blank lines of source, test, and spec or docs files (Markdown, OpenAPI,
+  and schema files) in the tree the stage left. The second gives the five
+  parts that `core.simple.s<k>` averages, which shows which part moves. Each
+  `core.simple.s<k>` check writes its stage to `stage-shape.json` beside
+  `reward-details.json`; it changes no reward. A stage that built nothing
+  beyond the scaffold counts toward the lines but not the parts. An offline
+  rescore has no step snapshots, so its trials record only the final stage.
 
 When a task's trials do not all carry the same model scores, as in a fast
 run against a release baseline, an old generic-judge job against a rubric
@@ -245,6 +274,8 @@ untouched workspace plus the generic judge.
 - `rules`: underspecified tasks scored per skill rule (3 tasks).
 - `houseStyle`: one project built in five stages plus a control, scored per
   house default and on simplicity at each stage (2 tasks).
+- `forks`: change requests with two sound designs, scored on which one the
+  agent took (6 tasks).
 
 Prompts and starting repositories never name Consult or a skill. The intended
 skills for a task live in `tests/consult.json` and feed only the trigger-rate
@@ -316,7 +347,8 @@ only for how it is built:
 | `core.1` | share of logic decisions (real conditions, loops, switch cases; not null checks or Result plumbing) in pure functions |
 | (part of `core.simple`) | share of files without mutated module state or stateful classes; no import cycles; no single-implementation interface or abstract class |
 | `default.1`, `default.2`, `default.4`, `default.5` | static: no stateful classes or inheritance; feature folders and colocated tests; Result values, with plain `Error`/`TypeError`/`RangeError` throws counted as bug checks; state variants and Zod parsing |
-| `default.9`, `default.10`, `core.6` | rule probe against a fake FX provider that hangs, fails once, fails for good, or sends garbage, plus malformed requests; `default.10` is the share of failure responses carrying a correlation id |
+| `default.9`, `default.10`, `core.untrusted` | rule probe against a fake FX provider that hangs, fails once, fails for good, or sends garbage, plus malformed requests. `default.9` wants a timeout and no retry on a permanent failure; a build that retries the transient failure also needs jitter beside the outbound call, and one that does not retry needs none. `default.10` is the share of failure responses carrying a correlation id |
+| `core.untrusted`, `default.tooling` | readouts kept after core rule 6 and default 11 were cut, so a later run shows whether the cuts cost anything: untrusted input rejected (probe), and one lockfile, the four check scripts, and a pinned language version |
 | `default.7`, `human.1.stages`, `human.7`, `proof.6` | per stage, from the trajectory: contract written first, the brief turn stopped at the plan, the report order, a test seen failing |
 
 A staged task adds `stages`, `steps_per_stage`, `stage_headings` (each brief's
@@ -326,6 +358,86 @@ first line, which splits the trajectory into stages),
 the intended style; `verifier/tests/test_house_rules.py` checks that the
 reference scores high and a typical layered, class-based, throwing variant
 scores low.
+
+### Follow-up change test
+
+The house-style checks score conformance to Consult's own defaults. The
+follow-up test asks a question Consult did not define: is the code one arm
+leaves behind cheaper for someone else to change? A bare agent in a fresh
+session makes a held-out sixth change to each arm's final
+`staged-commissions` tree.
+
+```sh
+uv run scripts/followup.py build runs/<bare-job> runs/<consult-job>   # needs Docker
+harbor run -c runs/followup/<stamp>/job.json --yes                    # the command build prints
+uv run scripts/followup.py report runs/<followup-job>
+```
+
+- `build` writes one single-step task under `runs/followup/<stamp>/` per
+  `staged-commissions` trial whose verification passed. The starting tree is
+  the trial's final tree, rebuilt as `rescore.py` rebuilds it, and committed
+  as the scaffold, so the follow-up diff holds only the sixth change. The
+  instruction is `followup/staged-commissions/instruction.md`: a discount for
+  returning patrons that cuts across pricing, withdrawal, accounts, and
+  currency. `job.json` runs every task with the agent's bare arm.
+- The verifier scores the visible tests and
+  `verifier/hidden/staged-commissions-followup.mjs`. That check reruns the five
+  stage checks unchanged, then checks stage 6 through the HTTP API alone. No
+  Consult rule, rubric, or shape score runs.
+- `report` prints, per source arm, the pass rate, output tokens, agent
+  seconds, files touched, and lines changed, with the change and a 90%
+  bootstrap interval from `lift.py`. Trials are pooled per arm. A trial
+  without a reward counts as a fail. Files and lines come from the follow-up
+  trial's `judge-bundle.md`.
+
+The oracle for the sixth change lies over the stage-5 reference, in
+`followup/staged-commissions/solution/overlay`.
+`verifier/tests/test_followup.py` runs the check with Node: the oracle passes
+all six stages, and the unmodified reference passes stages 1 to 5 and fails
+stage 6.
+
+### Forks suite
+
+`forks` asks whether Consult steers the agent to the simpler of two sound
+designs more often than bare Claude Code does. Each task is a small change
+request on a small Node repository where both designs meet the request and
+one has fewer moving parts.
+
+```sh
+uv run scripts/run.py --suite forks --agent claude-code --arms bare,consult --attempts 3 --skip-preflight
+```
+
+| Task | Fork | Simpler side |
+|---|---|---|
+| `fork-cache-or-recompute` | Cache or recompute | Recompute |
+| `fork-queue-or-inline` | Queue or inline call | Inline call |
+| `fork-retry-or-timeout` | Retry or timeout only | Timeout only |
+| `fork-config-or-constant` | Config key or constant | Constant |
+| `fork-special-case-or-reshape` | Special case or reshape | Reshape |
+| `fork-copy-or-home` | Parallel copy or the rule's existing home | Existing home |
+
+The tasks follow these conventions:
+
+- The instruction names neither design and does not ask for the simpler one.
+  It gives the other side a real reason to tempt, such as a slow upstream or
+  a flaky provider, without making the simpler side wrong. A fork informs
+  only if a bare agent sometimes takes the other side.
+- The hidden check accepts both designs.
+- The fork score has the rule id `fork.<name>`, the task name without its
+  `fork-` prefix. It is 1 when the agent took the simpler side and 0
+  otherwise, including when the change is not in place. The task's rule
+  probe, `verifier/hidden/<task>.rules.mjs`, prints it as its last line;
+  `house_rules.py` registers it with `probe_check`, and `rules.json` marks it
+  `check`. The probe prefers runtime evidence, such as counting upstream
+  calls, to reading source text.
+- `solution/solve.sh` takes the simpler side, and a second solution takes
+  the other side. It is `solution/other-side.sh` in the cache, queue, and
+  retry tasks, where both scripts take the workspace path as an optional
+  argument, and the `solution/other-side/` directory in the other three.
+  `verifier/tests/test_forks_*.py` run both through the hidden check and the
+  probe: both pass the check, the oracle scores 1, and the other side 0.
+- The tasks have no judge rubric, so the reward leaves out the rubric
+  dimension.
 
 ## Scoring
 
@@ -465,7 +577,7 @@ To add a task:
 A rubric is the checklist the code judges answer for one task: 12 to 20
 atomic items, each a yes/no question tied to the Consult rules it applies. A
 readout rubric (`"readout": true`, 1 to 6 items) scores rules a check cannot
-read, such as core rule 3 and default 15 in the house-style tasks. Its weight
+read. Its weight
 is 0, so the task reward does not move, and `lift.py` reports its answers per
 rule as `judge` rows.
 "Yes" always means the item is met, so a negative item starts with

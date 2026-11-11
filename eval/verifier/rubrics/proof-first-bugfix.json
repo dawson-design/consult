@@ -68,9 +68,9 @@
       "id": "boundaries.rejects_non_numbers",
       "dimension": "boundaries",
       "rules": [
-        "core.6"
+        "default.5"
       ],
-      "key_phrase": "Treat input that crosses a trust boundary as untrusted",
+      "key_phrase": "Parse external input once at the boundary into trusted types",
       "question": "Does `totalCents` reject item values that are not finite integers, such as a string `priceCents` like \"500\", `NaN`, or `Infinity`, not only negative or fractional numbers?",
       "polarity": "positive",
       "tier": "quality",

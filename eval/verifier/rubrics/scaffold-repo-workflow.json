@@ -141,7 +141,6 @@
       "id": "report.typecheck_needs_tsc",
       "dimension": "report",
       "rules": [
-        "core.3",
         "core.7"
       ],
       "key_phrase": "If a project past the prototype stage lacks one, say so and propose adding it.",

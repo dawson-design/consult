@@ -143,7 +143,6 @@
       "polarity": "positive",
       "question": "Is the order validated (non-empty `lines`, every SKU known) before any discount is computed or any charge or email is produced?",
       "rules": [
-        "core.6",
         "default.5"
       ],
       "tier": "must",

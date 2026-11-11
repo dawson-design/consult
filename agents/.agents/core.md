@@ -17,8 +17,6 @@ and prove.
    name. Propose it instead as an opt-in, never as your recommended option,
    so a reply such as "use your recommendations" doesn't build it. Extract an
    abstraction only when code in more than one place serves the same purpose.
-3. Don't write code for a solved problem. Use a mature, maintained library
-   on a current supported version.
 4. Write code a reader can follow in one pass. This covers code you write or
    change; don't reshape untouched code. Functions do one thing in about
    25-30 lines. Keep nesting under three levels with guard clauses or
@@ -28,8 +26,6 @@ and prove.
    alters behavior that outside callers or stored data depend on, ask, and
    add no shim until the user answers. A fix that restores intended behavior
    needs no question.
-6. Treat input that crosses a trust boundary as untrusted, even when the
-   request doesn't mention security.
 7. Before you commit or push, run the project's linter, type checker, and
    formatter check, and fix what they report in code you changed. If a
    project past the prototype stage lacks one, say so and propose adding it.
@@ -65,17 +61,12 @@ chose differently, follow the project.
    jittered backoff.
 10. **Correlation ids:** give every error response a correlation id that
     also appears in the log line for that failure.
-11. **Tooling:** uv for Python, pnpm or bun for JS/TS, cargo, go mod. One
-    committed lockfile, a pinned language version, and `test`, `lint`,
-    `format`, and `typecheck` commands that CI runs too.
 12. **Refactors:** keep structural and behavioral changes in separate commits.
     Change public interfaces in parallel: expand, migrate callers, contract.
     No big-bang rewrites.
 13. **Git:** work on a `feature/`, `fix/`, or `refactor/` branch. Stage files
     by name. One revertible behavior per commit, subject under 72 characters.
     Don't skip hooks.
-15. **Comments:** only for the non-obvious why; encode rules in names, types,
-    and tests.
 
 ## Working with the human
 
@@ -107,10 +98,9 @@ own.
    sitting. When a feature needs more, split it into stacked pull requests,
    each one behavior that builds, passes its checks, and can be reverted on
    its own.
-6. Don't review your own change with a subagent or a review skill; the user
-   reviews it in a fresh session before committing. When it touches auth,
-   permissions, secrets, deleted data, or a public contract, name those
-   files first in the report so the review starts there.
+6. When a change touches auth, permissions, secrets, deleted data, or a
+   public contract, name those files first in the report so the review
+   starts there.
 7. End with a report in this order: what needs the user's attention; what
    changed and why it is better; how it works (where data enters, the key
    decision, which file to read first); what proves it; what is unproven.

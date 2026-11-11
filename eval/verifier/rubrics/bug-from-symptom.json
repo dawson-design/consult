@@ -78,10 +78,9 @@
       "id": "scope.no_handrolled_clone",
       "dimension": "scope",
       "rules": [
-        "core.3",
         "code-review.5"
       ],
-      "key_phrase": "Don't write code for a solved problem.",
+      "key_phrase": "hand-rolled versions of solved problems",
       "question": "Does NOT add a hand-written general-purpose deep-clone function when the runtime's `structuredClone` (Node 17 and later; the task image runs Node 22) does the job?",
       "polarity": "negative",
       "tier": "quality",

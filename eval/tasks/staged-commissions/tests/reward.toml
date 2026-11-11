@@ -8,4 +8,4 @@
 [[reward]]
 name = "reward"
 aggregation = "weighted-mean"
-weights = { verification = 0.275, proof = 0.1925, change_quality = 0.0825, rubric = 0.0, skill_triggering = 0.0, non_interruption = 0.0, rules = 0.0 }
+weights = { verification = 0.275, proof = 0.1925, change_quality = 0.0825, rubric = 0.45, skill_triggering = 0.0, non_interruption = 0.0, rules = 0.0 }

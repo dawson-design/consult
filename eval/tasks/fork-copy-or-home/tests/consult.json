@@ -1,0 +1,8 @@
+{
+  "task": "fork-copy-or-home",
+  "kind": "code",
+  "intended_skills": ["architecture"],
+  "rules": ["fork.copy-or-home"],
+  "visible_test_cmd": "npm test",
+  "test_file": "test/tickets.test.js"
+}

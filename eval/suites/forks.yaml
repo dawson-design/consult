@@ -1,0 +1,9 @@
+name: forks
+description: Small change requests where two sound designs exist and one has fewer moving parts. Scores which side the agent took, so lift is how much more often Consult steers to the simpler side than bare.
+trials:
+  - fork-cache-or-recompute
+  - fork-queue-or-inline
+  - fork-retry-or-timeout
+  - fork-config-or-constant
+  - fork-special-case-or-reshape
+  - fork-copy-or-home

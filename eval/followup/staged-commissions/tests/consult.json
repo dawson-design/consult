@@ -1,0 +1,5 @@
+{
+  "task": "staged-commissions-followup",
+  "kind": "code",
+  "visible_test_cmd": "npm test"
+}

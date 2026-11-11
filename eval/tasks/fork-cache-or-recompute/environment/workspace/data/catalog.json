@@ -1,0 +1,14 @@
+{
+  "products": [
+    { "sku": "MUG-01", "name": "Stoneware mug", "category": "kitchen", "price": 1200, "inStock": true },
+    { "sku": "MUG-02", "name": "Enamel mug", "category": "kitchen", "price": 900, "inStock": false },
+    { "sku": "BWL-01", "name": "Mixing bowl", "category": "kitchen", "price": 2400, "inStock": true },
+    { "sku": "TWL-01", "name": "Linen tea towel", "category": "kitchen", "price": 800, "inStock": true },
+    { "sku": "CDL-01", "name": "Beeswax candle", "category": "home", "price": 1500, "inStock": true },
+    { "sku": "CSN-01", "name": "Wool cushion", "category": "home", "price": 3800, "inStock": false },
+    { "sku": "THR-01", "name": "Cotton throw", "category": "home", "price": 5200, "inStock": true },
+    { "sku": "NTB-01", "name": "Dot-grid notebook", "category": "stationery", "price": 1100, "inStock": true },
+    { "sku": "PEN-01", "name": "Brass pen", "category": "stationery", "price": 2900, "inStock": true },
+    { "sku": "PEN-02", "name": "Refill pack", "category": "stationery", "price": 450, "inStock": false }
+  ]
+}

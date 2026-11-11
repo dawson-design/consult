@@ -182,7 +182,6 @@
       "polarity": "positive",
       "question": "Does the final message say that the package does not include TypeScript, so `npm run typecheck` fails on a clean checkout until `tsc` is available, and propose or ask about adding it?",
       "rules": [
-        "core.3",
         "core.7"
       ],
       "tier": "must",

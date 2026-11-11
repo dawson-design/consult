@@ -100,7 +100,6 @@
       "polarity": "positive",
       "question": "Are `items` and each item's `priceCents` and `quantity` checked in `totalCents` before they are used in arithmetic?",
       "rules": [
-        "core.6",
         "default.5"
       ],
       "tier": "must",
@@ -124,13 +123,13 @@
     {
       "dimension": "boundaries",
       "id": "boundaries.rejects_non_numbers",
-      "key_phrase": "Treat input that crosses a trust boundary as untrusted",
+      "key_phrase": "Parse external input once at the boundary into trusted types",
       "look_at": "The `priceCents` and `quantity` checks in `src/cart.js`",
       "no_when": "A numeric string is converted and accepted, or `NaN` or `Infinity` passes the checks.",
       "polarity": "positive",
       "question": "Does `totalCents` reject item values that are not finite integers, such as a string `priceCents` like \"500\", `NaN`, or `Infinity`, not only negative or fractional numbers?",
       "rules": [
-        "core.6"
+        "default.5"
       ],
       "tier": "quality",
       "yes_when": "The checks require actual integers (for example `Number.isInteger`), so strings, `NaN`, and `Infinity` are rejected."

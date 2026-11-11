@@ -4,6 +4,7 @@
 Examples:
   uv run scripts/run.py --suite smoke --agent claude-code --arms bare,consult
   uv run scripts/run.py --suite core --agent claude-code --arms bare,stub,consult
+  uv run scripts/run.py --suite core --agent claude-code --arms bare,stub,placebo,consult
   uv run scripts/run.py --suite core --agent codex --arms consult --attempts 3
   uv run scripts/run.py --suite smoke --agent claude-code --install-only
   uv run scripts/run.py --suite rules --agent claude-code --preflight-only --effort high
@@ -17,8 +18,11 @@ reaches no arm. The bare arm is the same agent with no skills. The stub arm
 adds stub skills that stub.py builds from that snapshot under
 runs/stub-skills/: the same names and descriptions with neutral bodies. It gets
 the same hook as the consult arm, so it differs from consult only in skill
-content and from bare only in the listing and hook. Job configs and results
-land under eval/runs/.
+content and from bare only in the listing and hook. The placebo arm is the
+stub arm with a hook that prints placebo.py's placebo core, rules no check
+scores, in place of the Consult core; it runs only when --arms names it and
+needs an agent fragment with consult_settings. Job configs and results land
+under eval/runs/.
 
 Before the arms, a preflight runs each task's first turn in the consult arm with
 verification off and reports which Consult skills the agent loaded. The run
@@ -58,6 +62,7 @@ from itertools import chain
 from pathlib import Path
 
 import baseline
+import placebo
 import preflight
 import selection
 import stub
@@ -66,7 +71,7 @@ EVAL_DIR = Path(__file__).resolve().parent.parent
 REPO_DIR = EVAL_DIR.parent
 SKILLS_DIR = REPO_DIR / "agents" / ".agents" / "skills"
 RUNS_DIR = EVAL_DIR / "runs"
-ARMS = ("bare", "stub", "consult")
+ARMS = ("bare", "stub", "placebo", "consult")
 RELEASE_SUITES = ("engineeringMaturity", "rules")
 
 
@@ -117,7 +122,13 @@ def frozen_skills(drop_references: tuple[str, ...] = ()) -> dict[str, list[str]]
     """
     real = stub.snapshot(SKILLS_DIR, RUNS_DIR / "consult-skills")
     consult = stub.snapshot(real, RUNS_DIR / "consult-skills", drop_references) if drop_references else real
-    return {"bare": [], "stub": [str(stub.build(real, RUNS_DIR / "stub-skills"))], "consult": [str(consult)]}
+    stubs = [str(stub.build(real, RUNS_DIR / "stub-skills"))]
+    return {"bare": [], "stub": stubs, "placebo": stubs, "consult": [str(consult)]}
+
+
+def placebo_settings() -> dict:
+    """Hook settings that print the placebo core, built under runs/placebo-hooks/."""
+    return json.loads(placebo.build(RUNS_DIR / "placebo-hooks").read_text())
 
 
 def arm_agent(agent: dict, skills: list[str], settings: dict | None, effort: str | None) -> dict:
@@ -203,6 +214,8 @@ def build_job(
     settings: dict | None,
     skills: dict[str, list[str]],
 ) -> dict:
+    """The placebo arm swaps the agent's hook settings for the placebo core's; every other arm keeps them."""
+    arm_settings = placebo_settings() if arm == "placebo" else settings
     return {
         "job_name": f"{stamp}-{job_label(args)}-{arm}",
         "jobs_dir": str(RUNS_DIR),
@@ -210,7 +223,7 @@ def build_job(
         "n_concurrent_trials": args.concurrency,
         "install_only": bool(args.install_only),
         "tasks": [{"path": str(EVAL_DIR / "tasks" / t)} for t in tasks],
-        "agents": [arm_agent(agent, skills[arm], settings, args.effort)],
+        "agents": [arm_agent(agent, skills[arm], arm_settings, args.effort)],
     }
 
 
@@ -265,7 +278,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--agent", help="name of a file under eval/agents/; the fast tier defaults to claude-code")
     parser.add_argument("--tier", choices=("fast", "release"), help="preset run shape; see the tiers above")
     parser.add_argument(
-        "--arms", help="subset of bare,stub,consult (default bare,consult, all three for --tier release)"
+        "--arms",
+        help="subset of bare,stub,placebo,consult (default bare,consult, bare,stub,consult for --tier release)",
     )
     parser.add_argument("--model", help="override the agent fragment's model_name")
     parser.add_argument("--attempts", type=int, help="Harbor n_attempts per task (default 1, or 3 with --tier)")
@@ -366,6 +380,8 @@ def report(args, job_dirs: dict[str, Path], reuse: dict | None, key: dict) -> in
         cmd += ["--baseline-consult", reuse["consult"]]
     if "stub" in job_dirs:
         cmd += ["--stub", str(job_dirs["stub"])]
+    if "placebo" in job_dirs:
+        cmd += ["--placebo", str(job_dirs["placebo"])]
     return subprocess.run(cmd, check=False).returncode
 
 
@@ -402,6 +418,8 @@ def main() -> int:
 
     tasks = tier_tasks(args)
     agent, host_env, settings = load_agent(args.agent, args.model)
+    if "placebo" in requested and settings is None:
+        raise SystemExit(f"the placebo arm swaps the core the hook prints, and agent {args.agent} has no hook")
     key = baseline.baseline_key(agent, args.effort, tasks, args.user_harbor_args)
     reuse = None if args.install_only else reusable_baseline(args.baseline, key)
     arms = plan_arms(requested, reuse, needs_lift="consult" in requested and not (args.no_lift or args.install_only))

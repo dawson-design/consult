@@ -2,7 +2,7 @@
 """Compare a bare Harbor job with a Consult job and report per-task lift.
 
   uv run scripts/lift.py runs/<bare-job> runs/<consult-job> [--baseline-consult runs/<earlier-consult-job>]
-                        [--stub runs/<stub-job>]
+                        [--stub runs/<stub-job>] [--placebo runs/<placebo-job>]
 
 Lift = mean Consult reward - mean bare reward per task, over the tasks the
 Consult job ran. Trials without a reward (agent or verifier failure) count as
@@ -26,6 +26,11 @@ ends with a verdict on whether Consult beats the stub with an interval that
 excludes 0. A failed trial in either job withholds the verdict, since a gap
 from timeouts or auth failures is not a skill-content effect.
 
+--placebo adds the same sections for a placebo-arm job: the stub arm with a
+hook that prints rules no check scores in place of the Consult core. Stub vs
+placebo isolates what the core says, and needs --stub. Placebo vs bare is the
+effect of printing any rules at all.
+
 The fast tier runs without the judge. When one job has judge scores and the
 other does not, both are rescored from their shared deterministic dimensions
 with the weights in each task's tests/reward.toml, renormalized as RewardKit's
@@ -38,6 +43,11 @@ agent records in result.json (see token_records for multi-step trials); turns
 and questions from the final step's trajectory; lines changed from its
 judge-bundle.md. A trial that did not record a metric is left out of that
 metric's mean.
+
+For a staged task, two tables follow the cost table, from each trial's
+stage-shape.json: per stage and arm, the mean non-blank lines of source, test,
+and spec or docs files in the tree the stage left, and each of the five
+simplicity parts that core.simple.s<k> averages.
 
 Two scorecards follow:
   rules   per-rule pass rate per arm, from each trial's reward-details.json
@@ -89,6 +99,13 @@ COST_NOTE = (
     "estimate; these runs bill a subscription. Questions count agent messages that end in a question after "
     "the last user turn, the gate-fatigue number."
 )
+STAGE_LINES = ("source", "test", "spec")
+STAGE_PARTS = ("function_shape", "logic_purity", "state_isolation", "acyclic_imports", "no_speculative_abstraction")
+STAGE_NOTE = (
+    "Each cell is bare / consult, a mean over the trials that recorded the stage (trials column). Lines are non-blank"
+    " lines in the tree the stage left: source, tests, and spec and docs (Markdown, OpenAPI, schema files). A stage"
+    " with nothing built beyond the scaffold has no parts. core.simple.s<k> is the mean of the five parts."
+)
 JUDGE_EXCLUDED_NOTE = (
     "Rewards exclude the model judges for some tasks: their trials did not all carry the same model scores"
     " (a job without the judge, an older judge, or a failed judge call), so those tasks are scored on"
@@ -132,6 +149,7 @@ def trial_evidence(trial_dir: Path, result: dict, rewards: dict) -> dict:
         "signoff_mode": mode,
         "skills_read": cl.read_skill_names(trajectory),
         "cost": cost,
+        "stage_shape": stage_shape(final_dir / "verifier" / "stage-shape.json"),
     }
 
 
@@ -236,6 +254,11 @@ def criteria(details_path: Path, dimension: str) -> dict[str, float]:
         return {}
     node = json.loads(details_path.read_text()).get(dimension) or {}
     return {c["name"]: float(c["value"]) for c in node.get("criteria") or []}
+
+
+def stage_shape(path: Path) -> dict[int, dict]:
+    """stage -> its line counts and simplicity parts (house_rules.record_stage_shape); empty when absent."""
+    return {int(stage): record for stage, record in json.loads(path.read_text()).items()} if path.is_file() else {}
 
 
 def task_meta(task: str) -> dict:
@@ -399,6 +422,7 @@ def summarize(bare: dict[str, list[dict]], consult: dict[str, list[dict]]) -> di
         "cost": {m: compare_cost(bare, consult, m) for m in COST_METRICS},
         "rules": rule_scorecard(bare, consult),
         "skills": [skill_row(t, bare.get(t, []), consult.get(t, [])) for t in tasks],
+        "stages": stage_rows(bare, consult),
     }
 
 
@@ -525,6 +549,27 @@ def mode_counts(entries: list[dict]) -> dict[str, int]:
     return dict(Counter(e["signoff_mode"] for e in entries if e.get("signoff_mode")))
 
 
+def stage_rows(bare: dict[str, list[dict]], consult: dict[str, list[dict]]) -> list[dict]:
+    """Per task and stage, each arm's mean lines and simplicity parts; tasks no trial recorded stages for are left out."""
+    rows = []
+    for task in sorted(consult):
+        arms = {"bare": bare.get(task, []), "consult": consult[task]}
+        stages = sorted({s for entries in arms.values() for e in entries for s in e.get("stage_shape") or {}})
+        rows += [{"task": task, "stage": s, **{arm: stage_means(e, s) for arm, e in arms.items()}} for s in stages]
+    return rows
+
+
+def stage_means(entries: list[dict], stage: int) -> dict:
+    """Means over the trials that recorded the stage; parts over those that built something by then."""
+    records = [e["stage_shape"][stage] for e in entries if stage in (e.get("stage_shape") or {})]
+    parts = [r["parts"] for r in records if r.get("parts")]
+    return {
+        "trials": len(records),
+        "lines": {k: statistics.fmean(r["lines"][k] for r in records) if records else None for k in STAGE_LINES},
+        "parts": {p: statistics.fmean(x[p] for x in parts) if parts else None for p in STAGE_PARTS},
+    }
+
+
 def render_markdown(summary: dict, bare_dir: Path, consult_dir: Path) -> str:
     lines = [
         f"# Lift: {consult_dir.name} vs {bare_dir.name}",
@@ -552,7 +597,12 @@ def render_markdown(summary: dict, bare_dir: Path, consult_dir: Path) -> str:
             lines.append(f"- {row['task']}: {dims}")
         if row["failed"]:
             lines.append(f"- {row['task']}: no reward for {', '.join(row['failed'])}")
-    sections = render_cost(summary["cost"]) + render_rules(summary["rules"]) + render_skills(summary["skills"])
+    sections = (
+        render_cost(summary["cost"])
+        + render_stages(summary["stages"])
+        + render_rules(summary["rules"])
+        + render_skills(summary["skills"])
+    )
     return "\n".join(lines + sections) + "\n"
 
 
@@ -583,6 +633,39 @@ def render_cost_row(metric: str, result: dict) -> str:
     )
     means = f"{format(result['bare'], spec)} | {format(result['consult'], spec)}"
     return f"| {label} | {result['tasks']} | {means} | {change} | {spread} |"
+
+
+def render_stages(rows: list[dict]) -> list[str]:
+    """Two tables for staged tasks: lines by file kind, then the five simplicity parts, each bare / consult."""
+    if not rows:
+        return []
+    lines = [
+        "",
+        "## Size per stage",
+        "",
+        "| task | stage | source lines | test lines | spec and docs lines | trials |",
+        "| --- | ---: | ---: | ---: | ---: | ---: |",
+    ]
+    for r in rows:
+        counts = " | ".join(arm_pair(r, "lines", k, ",.0f") for k in STAGE_LINES)
+        trials = f"{r['bare']['trials']} / {r['consult']['trials']}"
+        lines.append(f"| {r['task']} | {r['stage']} | {counts} | {trials} |")
+    lines += [
+        "",
+        "## Simplicity parts per stage",
+        "",
+        "| task | stage | " + " | ".join(p.replace("_", " ") for p in STAGE_PARTS) + " |",
+        "| --- | ---: |" + " ---: |" * len(STAGE_PARTS),
+    ]
+    for r in rows:
+        parts = " | ".join(arm_pair(r, "parts", p, ".2f") for p in STAGE_PARTS)
+        lines.append(f"| {r['task']} | {r['stage']} | {parts} |")
+    return lines + ["", STAGE_NOTE]
+
+
+def arm_pair(row: dict, group: str, key: str, spec: str) -> str:
+    """`bare / consult` for one readout of a stage row; `-` for an arm that did not record it."""
+    return f"{rate(row['bare'][group][key], spec)} / {rate(row['consult'][group][key], spec)}"
 
 
 def render_comparison(result: dict, label: str, before: str = "the earlier job") -> list[str]:
@@ -649,6 +732,23 @@ def content_verdict(result: dict) -> str:
     if hi < 0.0:
         return "Verdict: consult scores below stub, interval excludes 0. Skill content lowers the reward."
     return "Verdict: consult does not beat stub beyond noise, interval contains 0."
+
+
+def placebo_comparisons(
+    bare: dict[str, list[dict]], placebo: dict[str, list[dict]], stub: dict[str, list[dict]] | None
+) -> dict:
+    """core: placebo to stub, the effect of the core's content. rules: bare to placebo, the effect of any rules."""
+    result = {"rules": aligned_comparison(bare, placebo)}
+    if stub is not None:
+        result["core"] = aligned_comparison(placebo, stub)
+    return result
+
+
+def render_placebo(comparisons: dict) -> list[str]:
+    rules = arm_section("Any rules: placebo vs bare", comparisons["rules"], "bare", "placebo")
+    if "core" not in comparisons:
+        return rules
+    return arm_section("Core content: stub vs placebo", comparisons["core"], "placebo", "stub") + rules
 
 
 def render_stub(comparisons: dict) -> list[str]:
@@ -731,6 +831,9 @@ def main(argv: list[str]) -> int:
     parser.add_argument("consult_job", type=Path)
     parser.add_argument("--baseline-consult", type=Path, help="an earlier Consult job to compare this one against")
     parser.add_argument("--stub", type=Path, help="a stub-arm job: adds consult vs stub and stub vs bare")
+    parser.add_argument(
+        "--placebo", type=Path, help="a placebo-arm job: adds stub vs placebo (with --stub) and placebo vs bare"
+    )
     args = parser.parse_args(argv[1:])
     bare_dir, consult_dir = args.bare_job, args.consult_job
     bare, consult = load_trials(bare_dir), load_trials(consult_dir)
@@ -739,6 +842,10 @@ def main(argv: list[str]) -> int:
     if args.stub:
         summary["stub"] = stub_comparisons(bare, load_trials(args.stub), consult)
         markdown += "\n".join(render_stub(summary["stub"])) + "\n"
+    if args.placebo:
+        stub = load_trials(args.stub) if args.stub else None
+        summary["placebo"] = placebo_comparisons(bare, load_trials(args.placebo), stub)
+        markdown += "\n".join(render_placebo(summary["placebo"])) + "\n"
     if args.baseline_consult:
         before, after, _ = align(load_trials(args.baseline_consult), consult)
         summary["regression"] = compare(before, after)

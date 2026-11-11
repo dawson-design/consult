@@ -1,9 +1,12 @@
 // Rule probe for staged-commissions: drives the final app against a fake FX
 // provider that hangs, fails once, fails for good, or returns garbage, plus
-// malformed requests. Prints {"default.9", "default.10", "core.6": 0..1} as its
-// last line. consult_rules.probe_results reads it; house_rules adds the static
-// half of default.9 (jitter). Each scenario starts a fresh app so a rates cache
-// from one cannot answer another.
+// malformed requests. Prints {"default.9", "default.10", "core.untrusted": 0..1,
+// "default.9.retried": 0|1} as its last line. consult_rules.probe_results reads
+// it. default.9 is a timeout and no retry on a permanent failure; the brief
+// never asks for a retry, so none is rewarded. When the build retried the transient 503,
+// house_rules also wants jitter beside the outbound call. core.untrusted is a
+// readout: core rule 6 was cut. Each scenario starts a fresh app so a rates
+// cache from one cannot answer another.
 import { spawn } from "node:child_process";
 import { mkdtempSync } from "node:fs";
 import { createServer } from "node:http";
@@ -168,13 +171,13 @@ try {
   const permanent = await scenario(() => ({ status: 404, body: { error: "no such base" } }));
   const garbage = await scenario(() => ({ status: 200, body: { base: "GBP", rates: { EUR: "lots", USD: null } } }));
   const timedOut = failed(hang.response) && hang.response.ms < HANG_LIMIT_MS ? 1 : 0;
-  const retried = flaky.response?.status === 200 ? 1 : 0;
   const noPointlessRetry = failed(permanent.response) && permanent.providerCalls === 1 ? 1 : 0;
-  scores["default.9"] = mean([timedOut, retried, noPointlessRetry]);
+  scores["default.9"] = mean([timedOut, noPointlessRetry]);
+  scores["default.9.retried"] = flaky.providerCalls > 1 ? 1 : 0;
   const failures = [hang.response, permanent.response].filter(failed);
   scores["default.10"] = failures.length ? mean(failures.map((r) => (hasCorrelationId(r) ? 1 : 0))) : 0;
   const rejectedGarbage = garbage.response && garbage.response.status >= 500 && !/NaN|null/.test(garbage.response.text) ? 1 : 0;
-  scores["core.6"] = mean([rejectedGarbage, ...(await inputChecks())]);
+  scores["core.untrusted"] = mean([rejectedGarbage, ...(await inputChecks())]);
 } catch (error) {
   console.error(`probe failed: ${error.message}`);
 }
