@@ -6,6 +6,58 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+The first build steps of `docs/improvement-plan.md`. No agent trial has run
+on any of it yet.
+
+### Changed
+
+- The core drops core rules 3 (libraries for solved problems) and 6
+  (untrusted input), house defaults 11 (tooling) and 15 (comments), and the
+  self-review ban that opened "Working with the human" rule 6. None showed
+  lift over bare in the 2026-11-04 `houseStyle` run. Surviving rules keep
+  their numbers, so eval rule ids stay comparable. Rule 6 now only asks the
+  agent to name auth, permission, secret, deleted-data, and public-contract
+  files first in the report. The core is 97 words shorter.
+- The eval keeps the untrusted-input probe and the tooling check as
+  readouts, `core.untrusted` and `default.tooling`, so the next run shows
+  whether the cuts cost anything. The `human.6` check and the judge readout
+  rubrics for core rule 3 and default 15 are retired. Rubric items that
+  cited a cut rule now cite the nearest surviving rule, with unchanged
+  questions.
+
+### Added
+
+- `docs/improvement-plan.md`: the plan these changes follow, with the
+  public-eval evidence behind it.
+- A `placebo` eval arm (`run.py --arms bare,stub,placebo,consult`). It
+  installs the stub skills with a hook that prints `eval/placebo/core.md`:
+  the core's opening paragraph, sections, rule numbers, and length, with
+  formatting rules that no check scores. `lift.py --placebo` reports stub
+  against placebo (what the core's content adds) and placebo against bare
+  (the effect of printing any rules). No tier runs it by default.
+- The lift report breaks a staged task down per stage and arm: mean
+  non-blank lines of source, test, and spec or docs files, and each of the
+  five simplicity parts behind `core.simple.s<k>`. The checks write these to
+  `stage-shape.json` beside the verifier details. Rewards are unchanged.
+- The follow-up change test. `eval/scripts/followup.py build` turns each
+  passing `staged-commissions` trial into a single-step task, where a bare
+  agent in a fresh session makes a held-out sixth change, a
+  returning-customer discount, to that arm's final tree. `followup.py report`
+  compares pass rate, output tokens, agent seconds, files touched, and lines
+  changed by source arm.
+- The `forks` eval suite: six small tasks where two sound designs exist and
+  one has fewer moving parts (retry or timeout, cache or recompute, queue or
+  inline, config or constant, special case or reshape, copy or the rule's
+  home). Each hidden check accepts both designs, and a probe scores
+  `fork.<name>` 1 when the agent took the simpler side.
+
+### Fixed
+
+- The default 9 probe in `staged-commissions` no longer rewards a retry on a
+  503 that the brief never asked for. A build that sets a timeout and does
+  not retry gets full marks. A build that retries is still held to sparing
+  permanent failures and to jittered backoff.
+
 ## [20.0.1] (2026-11-05)
 
 ### Fixed

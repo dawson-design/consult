@@ -13,6 +13,19 @@ This plan gets there in five steps:
 4. Trial four choice rules.
 5. Move the size limits into each project's linter.
 
+## Status
+
+As of 2026-11-11 the parts that need no agent trial are built and
+unit-tested. No trial has run on any of them.
+
+| Step | Built | Waiting on |
+|---|---|---|
+| 1 | Placebo arm, per-stage line and simplicity tables, default 9 probe fix | The stub and placebo runs, and the citation check |
+| 2 | Follow-up change test, six forks tasks | Their first runs, the SlopCodeBench arm, fresh sessions, and a brownfield start |
+| 3 | The four core lines and the self-review sentence are cut | The stub result for skills, and the checkpoint trial |
+| 4 | Nothing | The SlopCodeBench and forks results |
+| 5 | Nothing | The SlopCodeBench result |
+
 ## What the review found
 
 - **Steering works.** Four house defaults go from 0.20 or below to 1.00
@@ -105,8 +118,8 @@ These use the existing harness and need no new tasks.
 6. **Check a citation.** `AGENTS.md` says SWE-Skills-Bench found no effect
    in 92 of 98 skills. The paper's abstract says 39 of 49.
 
-Done when the lift report shows consult against stub and against placebo,
-each with an interval.
+Done when the lift report shows consult against stub, stub against placebo,
+and placebo against bare, each with an interval.
 
 ## Step 2: Measure both jobs with outside metrics
 
@@ -139,7 +152,7 @@ Consult does the same, the second job rests on step 5 and not on prose.
 
 ## Step 3: Cut what shows no lift
 
-1. **Cut four core lines and one sentence now.** Together they free 98 of
+1. **Cut four core lines and one sentence now.** Together they free 97 of
    the core's 994 words.
    - Core rules 3 and 6, and defaults 11 and 15.
    - The first sentence of "Working with the human" rule 6, the
