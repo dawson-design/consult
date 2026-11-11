@@ -12,6 +12,7 @@ styles rather than rewarding size.
 
 from __future__ import annotations
 
+import io
 import json
 import os
 import shutil
@@ -19,6 +20,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from contextlib import redirect_stderr
 from pathlib import Path
 from unittest import mock
 
@@ -130,6 +132,100 @@ class FollowTheProjectTests(unittest.TestCase):
 
     def test_imposing_the_house_style_on_a_project_that_chose_otherwise_scores_low(self):
         self.assertLess(self.score(IMPOSED), 0.3)
+
+
+# The names lift.py reads (lift.STAGE_PARTS); test_lift.py checks its side.
+STAGE_PARTS = ("function_shape", "logic_purity", "state_isolation", "acyclic_imports", "no_speculative_abstraction")
+
+
+def snapshot(source: Path, target: Path) -> None:
+    """A step verifier's snapshot: the tree without .git."""
+    shutil.copytree(source, target, ignore=shutil.ignore_patterns(".git", "node_modules"))
+
+
+class StageShapeTests(unittest.TestCase):
+    """stage-shape.json, the per-stage readout core.simple.s<k> writes beside the verifier details."""
+
+    def setUp(self) -> None:
+        self._tmp = tempfile.TemporaryDirectory()
+        self.tmp = Path(self._tmp.name)
+        self.details = self.tmp / "stage-shape.json"
+        for name, value in (("SNAPSHOTS_DIR", self.tmp / "snapshots"), ("STAGE_SHAPE_PATH", self.details)):
+            patcher = mock.patch.object(hr, name, value)
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
+    def tearDown(self) -> None:
+        self._tmp.cleanup()
+
+    def stage_scores(self, root: Path) -> dict[int, float]:
+        empty = cl.Trajectory(steps=[], calls=[])
+        return {n: hr.CHECKS[f"core.simple.s{n}"](root, empty, META) for n in range(1, 6)}
+
+    def recorded(self) -> dict:
+        return json.loads(self.details.read_text())
+
+    def test_lines_split_into_source_tests_and_specs_without_blank_lines_or_vendored_folders(self):
+        files = {
+            "src/orders/order.ts": "const a = 1;\n\n  \nexport { a };\n",
+            "src/orders/order.test.ts": "test();\n",
+            "test/api.test.ts": "one();\ntwo();\n",
+            "openapi.yaml": "openapi: 3.1.0\ninfo: {}\npaths: {}\n",
+            "db/schema.sql": "CREATE TABLE t (id INTEGER);\n",
+            "README.md": "# Orders\n\nText.\n",
+            "src/types.d.ts": "declare const x: number;\n",
+            "package.json": "{}\n",
+            "catalogue.json": "[]\n",
+            "node_modules/dep/index.js": "module.exports = 1;\n",
+            "dist/main.js": "built();\n",
+        }
+        for rel, text in files.items():
+            (self.tmp / rel).parent.mkdir(parents=True, exist_ok=True)
+            (self.tmp / rel).write_text(text)
+
+        self.assertEqual(hr.line_counts(self.tmp), {"source": 2, "test": 3, "spec": 6})
+
+    @unittest.skipUnless(HAS_ANALYZER, NEEDS_ANALYZER)
+    def test_each_stage_with_a_snapshot_records_its_lines_and_the_parts_its_score_averages(self):
+        snapshot(workspace_with(self.tmp / "scaffold"), self.tmp / "snapshots" / "2")  # stage 1 built nothing
+        workspace = workspace_with(self.tmp, (REFERENCE, "."))
+        snapshot(workspace, self.tmp / "snapshots" / "5")  # stage 2 left the reference
+
+        scores = self.stage_scores(workspace)
+        stages = self.recorded()
+
+        self.assertEqual(set(stages), {"1", "2", "5"})
+        self.assertIsNone(stages["1"]["parts"])
+        self.assertEqual(scores[1], 0.0)
+        self.assertEqual(scores[3], 0.0)
+        self.assertGreater(stages["2"]["lines"]["source"], stages["1"]["lines"]["source"])
+        self.assertGreater(stages["2"]["lines"]["test"], 0)
+        self.assertEqual(stages["2"], stages["5"])
+        self.assertEqual(set(stages["5"]["parts"]), set(STAGE_PARTS))
+        self.assertAlmostEqual(scores[5], sum(stages["5"]["parts"].values()) / 5)
+        self.assertEqual(scores[5], hr.CHECKS["core.simple"](workspace, cl.Trajectory(steps=[], calls=[]), META))
+
+    @unittest.skipUnless(HAS_ANALYZER, NEEDS_ANALYZER)
+    def test_without_snapshots_only_the_final_tree_is_recorded(self):
+        # As in an offline rescore, which does not rebuild /opt/eval/snapshots.
+        workspace = workspace_with(self.tmp, (REFERENCE, "."))
+
+        scores = self.stage_scores(workspace)
+
+        self.assertEqual([scores[n] for n in range(1, 5)], [0.0] * 4)
+        self.assertEqual(set(self.recorded()), {"5"})
+
+    @unittest.skipUnless(HAS_ANALYZER, NEEDS_ANALYZER)
+    def test_a_details_file_that_cannot_be_written_leaves_the_score_unchanged(self):
+        workspace = workspace_with(self.tmp, (REFERENCE, "."))
+        expected = hr.CHECKS["core.simple"](workspace, cl.Trajectory(steps=[], calls=[]), META)
+
+        unwritable = self.tmp / "missing" / "stage-shape.json"
+        with mock.patch.object(hr, "STAGE_SHAPE_PATH", unwritable), redirect_stderr(io.StringIO()) as err:
+            score = self.stage_scores(workspace)[5]
+
+        self.assertEqual(score, expected)
+        self.assertIn("could not record stage 5", err.getvalue())
 
 
 @unittest.skipUnless(HAS_ANALYZER, NEEDS_ANALYZER)

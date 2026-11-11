@@ -36,6 +36,10 @@ import consult_rules as cr
 
 ANALYZER = Path(__file__).resolve().parent / "code_shape.mjs"
 SNAPSHOTS_DIR = Path("/opt/eval/snapshots")
+# A readout beside reward-details.json: per stage, line counts and the simplicity parts. Weighs nothing.
+STAGE_SHAPE_PATH = Path("/logs/verifier/stage-shape.json")
+# Spec and docs files for the line counts: Markdown, OpenAPI, and schema files.
+SPEC_PATH_RE = re.compile(r"\.md$|(^|/)openapi\.(ya?ml|json)$|(^|/)[^/]*schema[^/]*\.(json|ya?ml|sql|graphql|prisma)$")
 SOURCE_SUFFIXES = (".ts", ".tsx", ".mts", ".cts", ".js", ".jsx", ".mjs", ".cjs")
 SKIP_PARTS = {"node_modules", ".git", "dist", "build", "coverage"}
 
@@ -230,8 +234,7 @@ def no_speculative_abstraction(facts: dict) -> float:
 
 def simplicity(facts: dict) -> float:
     """The iron law, measured: the mean of the five shape scores."""
-    parts = (function_shape, logic_purity, state_isolation, acyclic_imports, no_speculative_abstraction)
-    return statistics.fmean(part(facts) for part in parts)
+    return statistics.fmean(simplicity_parts(facts).values())
 
 
 # Checks over the final workspace.
@@ -257,7 +260,10 @@ def shape_check(score):
 
 
 def stage_simplicity(stage: int):
-    """core.simple.s<stage>: simplicity of the tree as the stage's last step left it."""
+    """core.simple.s<stage>: simplicity of the tree as the stage's last step left it.
+
+    Also records the stage's line counts and simplicity parts in stage-shape.json, a readout for lift.py.
+    """
 
     def check(workspace: Path, trajectory: cl.Trajectory, meta: dict) -> float:
         per_stage = int(meta.get("steps_per_stage", 3))
@@ -265,9 +271,9 @@ def stage_simplicity(stage: int):
         if root is None:
             return 0.0
         files = source_files(root)
-        if not files or not built_beyond_scaffold(root, files, workspace):
-            return 0.0
-        return simplicity(shape(root, files))
+        facts = shape(root, files) if files and built_beyond_scaffold(root, files, workspace) else None
+        record_stage_shape(stage, root, facts)
+        return 0.0 if facts is None else simplicity(facts)
 
     return check
 
@@ -278,6 +284,48 @@ def stage_root(stage: int, per_stage: int, stages: int, workspace: Path) -> Path
         return workspace
     snapshot = SNAPSHOTS_DIR / str(stage * per_stage - 1)
     return snapshot if snapshot.is_dir() else None
+
+
+def simplicity_parts(facts: dict) -> dict[str, float]:
+    """The five shape scores simplicity() averages, by name."""
+    parts = (function_shape, logic_purity, state_isolation, acyclic_imports, no_speculative_abstraction)
+    return {part.__name__: part(facts) for part in parts}
+
+
+def line_kind(rel: str) -> str | None:
+    """source, test, or spec for a file the line counts include; None for config, data, and the rest."""
+    if SPEC_PATH_RE.search(rel):
+        return "spec"
+    if not rel.endswith(SOURCE_SUFFIXES):
+        return None
+    if cl.classify(rel) == "test":
+        return "test"
+    return "source" if is_analyzable(rel) else None
+
+
+def line_counts(root: Path) -> dict[str, int]:
+    """Non-blank lines of source, test, and spec files under root, skipping generated and vendored folders."""
+    counts = {"source": 0, "test": 0, "spec": 0}
+    for folder, dirs, names in os.walk(root):
+        dirs[:] = [d for d in dirs if d not in SKIP_PARTS]
+        for name in names:
+            path = Path(folder) / name
+            kind = line_kind(str(path.relative_to(root)))
+            if kind:
+                counts[kind] += sum(1 for line in path.read_text(errors="replace").splitlines() if line.strip())
+    return counts
+
+
+def record_stage_shape(stage: int, root: Path, facts: dict | None) -> None:
+    """Add the stage's line counts and simplicity parts (None when nothing was built) to stage-shape.json."""
+    try:
+        path = STAGE_SHAPE_PATH
+        stages = json.loads(path.read_text()) if path.is_file() else {}
+        parts = None if facts is None else simplicity_parts(facts)
+        stages[str(stage)] = {"lines": line_counts(root), "parts": parts}
+        path.write_text(json.dumps(stages, indent=2, sort_keys=True))
+    except (OSError, ValueError) as error:
+        sys.stderr.write(f"house_rules: could not record stage {stage} shape: {error}\n")
 
 
 def default_1(facts: dict) -> float:

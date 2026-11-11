@@ -189,6 +189,15 @@ the low end next to the mean:
   since runs bill a subscription. A resumed multi-step trial reports its final
   step's tokens, which already include the earlier steps, and no cost, until
   a real trial shows whether Harbor's per-step cost covers one step or all.
+- **Size per stage** and **Simplicity parts per stage**: for a staged task,
+  each arm's means per stage, as `bare / consult`. The first table gives
+  non-blank lines of source, test, and spec or docs files (Markdown, OpenAPI,
+  and schema files) in the tree the stage left. The second gives the five
+  parts that `core.simple.s<k>` averages, which shows which part moves. Each
+  `core.simple.s<k>` check writes its stage to `stage-shape.json` beside
+  `reward-details.json`; it changes no reward. A stage that built nothing
+  beyond the scaffold counts toward the lines but not the parts. An offline
+  rescore has no step snapshots, so its trials record only the final stage.
 
 When a task's trials do not all carry the same model scores, as in a fast
 run against a release baseline, an old generic-judge job against a rubric

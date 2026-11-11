@@ -446,5 +446,84 @@ class RuleScorecardTests(unittest.TestCase):
         self.assertEqual(evidence["rules"], {"default.13": 0.5})
 
 
+TASK = "consult/staged-commissions"
+PARTS = ("function_shape", "logic_purity", "state_isolation", "acyclic_imports", "no_speculative_abstraction")
+
+
+def stage_record(source: int, test: int, spec: int, part: float | None) -> dict:
+    """One stage of house_rules.record_stage_shape: line counts, and every part at `part` (None: nothing built)."""
+    parts = None if part is None else dict.fromkeys(PARTS, part)
+    return {"lines": {"source": source, "test": test, "spec": spec}, "parts": parts}
+
+
+class StageTableTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self._tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self._tmp.name)
+
+    def tearDown(self) -> None:
+        self._tmp.cleanup()
+
+    def job(self, name: str, stages: list[dict | None]) -> Path:
+        """A staged-commissions job, one trial per entry; None writes no stage-shape.json."""
+        job = self.root / name
+        for n, record in enumerate(stages):
+            write_trial(job, "staged-commissions", n, code_rewards(0.8))
+            if record is not None:
+                (job / f"staged-commissions__{n}" / "verifier").mkdir()
+                (job / f"staged-commissions__{n}" / "verifier" / "stage-shape.json").write_text(json.dumps(record))
+        return job
+
+    def report(self, bare: Path, consult: Path) -> tuple[dict, str]:
+        summary = lift.summarize(lift.load_trials(bare), lift.load_trials(consult))
+        return summary, lift.render_markdown(summary, bare, consult)
+
+    def test_each_arm_reports_mean_lines_and_parts_per_stage(self):
+        bare = self.job(
+            "bare",
+            [
+                {"1": stage_record(100, 40, 0, 0.8), "5": stage_record(500, 100, 0, 0.6)},
+                {"1": stage_record(120, 60, 0, 1.0), "5": stage_record(700, 140, 0, 0.8)},
+            ],
+        )
+        consult = self.job(
+            "consult",
+            [
+                {"1": stage_record(200, 150, 80, 1.0), "5": stage_record(900, 400, 200, 0.9)},
+                {"1": stage_record(220, 170, 100, None), "5": stage_record(1100, 600, 300, 1.0)},
+            ],
+        )
+
+        summary, report = self.report(bare, consult)
+        stage_one = summary["stages"][0]
+
+        self.assertEqual([(r["task"], r["stage"]) for r in summary["stages"]], [(TASK, 1), (TASK, 5)])
+        self.assertEqual(stage_one["bare"]["lines"], {"source": 110, "test": 50, "spec": 0})
+        self.assertEqual(stage_one["consult"]["lines"], {"source": 210, "test": 160, "spec": 90})
+        self.assertAlmostEqual(stage_one["bare"]["parts"]["logic_purity"], 0.9)
+        # A trial that built nothing by stage 1 counts toward its lines, not its parts.
+        self.assertEqual((stage_one["consult"]["trials"], stage_one["consult"]["parts"]["acyclic_imports"]), (2, 1.0))
+        self.assertIn("| consult/staged-commissions | 1 | 110 / 210 | 50 / 160 | 0 / 90 | 2 / 2 |", report)
+        self.assertIn("| consult/staged-commissions | 5 | 600 / 1,000 | 120 / 500 | 0 / 250 | 2 / 2 |", report)
+        self.assertIn("| consult/staged-commissions | 5 | 0.70 / 0.95 | 0.70 / 0.95 |", report)
+        self.assertLess(report.index("## Size per stage"), report.index("## Simplicity parts per stage"))
+        self.assertEqual(tuple(lift.STAGE_PARTS), PARTS)
+
+    def test_an_arm_without_stage_records_shows_dashes(self):
+        summary, report = self.report(
+            self.job("bare", [None]), self.job("consult", [{"5": stage_record(10, 5, 1, 1.0)}])
+        )
+
+        self.assertEqual(summary["stages"][0]["bare"]["trials"], 0)
+        self.assertIn("| consult/staged-commissions | 5 | - / 10 | - / 5 | - / 1 | 0 / 1 |", report)
+        self.assertIn("| consult/staged-commissions | 5 | - / 1.00 |", report)
+
+    def test_jobs_without_stage_records_print_no_stage_tables(self):
+        summary, report = self.report(self.job("bare", [None]), self.job("consult", [None]))
+
+        self.assertEqual(summary["stages"], [])
+        self.assertNotIn("per stage", report)
+
+
 if __name__ == "__main__":
     unittest.main()
