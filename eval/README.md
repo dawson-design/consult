@@ -316,7 +316,8 @@ only for how it is built:
 | `core.1` | share of logic decisions (real conditions, loops, switch cases; not null checks or Result plumbing) in pure functions |
 | (part of `core.simple`) | share of files without mutated module state or stateful classes; no import cycles; no single-implementation interface or abstract class |
 | `default.1`, `default.2`, `default.4`, `default.5` | static: no stateful classes or inheritance; feature folders and colocated tests; Result values, with plain `Error`/`TypeError`/`RangeError` throws counted as bug checks; state variants and Zod parsing |
-| `default.9`, `default.10`, `core.6` | rule probe against a fake FX provider that hangs, fails once, fails for good, or sends garbage, plus malformed requests; `default.10` is the share of failure responses carrying a correlation id |
+| `default.9`, `default.10`, `core.untrusted` | rule probe against a fake FX provider that hangs, fails once, fails for good, or sends garbage, plus malformed requests. `default.9` wants a timeout and no retry on a permanent failure; a build that retries the transient failure also needs jitter beside the outbound call, and one that does not retry needs none. `default.10` is the share of failure responses carrying a correlation id |
+| `core.untrusted`, `default.tooling` | readouts kept after core rule 6 and default 11 were cut, so a later run shows whether the cuts cost anything: untrusted input rejected (probe), and one lockfile, the four check scripts, and a pinned language version |
 | `default.7`, `human.1.stages`, `human.7`, `proof.6` | per stage, from the trajectory: contract written first, the brief turn stopped at the plan, the report order, a test seen failing |
 
 A staged task adds `stages`, `steps_per_stage`, `stage_headings` (each brief's
@@ -465,7 +466,7 @@ To add a task:
 A rubric is the checklist the code judges answer for one task: 12 to 20
 atomic items, each a yes/no question tied to the Consult rules it applies. A
 readout rubric (`"readout": true`, 1 to 6 items) scores rules a check cannot
-read, such as core rule 3 and default 15 in the house-style tasks. Its weight
+read. Its weight
 is 0, so the task reward does not move, and `lift.py` reports its answers per
 rule as `judge` rows.
 "Yes" always means the item is met, so a negative item starts with

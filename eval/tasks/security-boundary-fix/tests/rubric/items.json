@@ -135,13 +135,13 @@
     {
       "dimension": "boundaries",
       "id": "boundaries.relative_tricks_rejected",
-      "key_phrase": "Treat input that crosses a trust boundary as untrusted",
+      "key_phrase": "Fail closed on auth, validation, and crypto errors.",
       "look_at": "The same-site path branch in `src/redirect.js`",
       "no_when": "A target passes as same-site because it merely starts with `/`, so a form such as `/\\host` or `/\\t/host` gets through.",
       "polarity": "positive",
       "question": "Does the same-site check reject targets that a browser would send off-site, including protocol-relative `//host`, backslash `/\\host`, and paths with leading whitespace or control characters such as a tab before `//host`?",
       "rules": [
-        "core.6"
+        "default.4"
       ],
       "tier": "quality",
       "yes_when": "Relative targets are resolved against the trusted origin and the result's origin is compared, or the check explicitly rejects `//`, `/\\`, and whitespace or control characters."

@@ -65,9 +65,9 @@
 <tr data-rule="default.7"><th scope="row">Contract first<span class="what">In each stage, the first file written is the contract: the OpenAPI spec or types.</span></th><td class="num">0.00</td><td class="num">0.88</td></tr>
 <tr data-rule="default.9"><th scope="row">Remote calls: timeout and retry<span class="what">Calls to a failing provider time out, retry only transient failures, and back off with jitter.</span></th><td class="num">0.50</td><td class="num">0.80</td></tr>
 <tr data-rule="default.10"><th scope="row">Correlation id on every error<span class="what">Every error response carries a correlation id.</span></th><td class="num">0.00</td><td class="num">0.80</td></tr>
-<tr data-rule="default.11"><th scope="row">Tooling<span class="what">One lockfile, test, lint, format, and typecheck scripts, and a pinned language version.</span></th><td class="num">0.50</td><td class="num">0.52</td></tr>
+<tr data-rule="default.11"><th scope="row">Tooling<span class="what">One lockfile, test, lint, format, and typecheck scripts, and a pinned language version. Since cut.</span></th><td class="num">0.50</td><td class="num">0.52</td></tr>
 <tr data-rule="default.13"><th scope="row">Git<span class="what">A feature/, fix/, or refactor/ branch, files staged by name, short subjects, and no skipped hooks.</span></th><td class="num">0.60</td><td class="num">1.00</td></tr>
-<tr data-rule="default.15"><th scope="row">Comments explain why<span class="what">A judge reads the comments for the reason behind the code, not a restatement of it.</span></th><td class="num">1.00</td><td class="num">0.90</td></tr>
+<tr data-rule="default.15"><th scope="row">Comments explain why<span class="what">A judge reads the comments for the reason behind the code, not a restatement of it. Since cut.</span></th><td class="num">1.00</td><td class="num">0.90</td></tr>
 </tbody>
 </table>
 <p>Three earlier defaults were cut because bare Claude Code already followed them: naming with the project’s glossary (bare 0.98), maintained security primitives (1.00), and database uniqueness constraints (1.00).</p>
@@ -79,19 +79,20 @@
 <thead><tr><th scope="col">Rule and what its check looks for</th><th scope="col" class="num">Bare</th><th scope="col" class="num">Consult</th></tr></thead>
 <tbody>
 <tr data-rule="core.1"><th scope="row">Pure calculations<span class="what">Share of decisions made in pure functions, away from I/O and mutation. Staged project.</span></th><td class="num">0.39</td><td class="num">0.67</td></tr>
-<tr data-rule="core.3"><th scope="row">Libraries for solved problems<span class="what">A judge reads the code for anything hand-rolled that a maintained library or built-in already solves.</span></th><td class="num">1.00</td><td class="num">0.90</td></tr>
+<tr data-rule="core.3"><th scope="row">Libraries for solved problems<span class="what">A judge reads the code for anything hand-rolled that a maintained library or built-in already solves. Since cut.</span></th><td class="num">1.00</td><td class="num">0.90</td></tr>
 <tr data-rule="core.4"><th scope="row">Code a reader can follow<span class="what">Share of functions short and flat enough to read in one pass.</span></th><td class="num">0.90</td><td class="num">0.96</td></tr>
 <tr data-rule="core.5"><th scope="row">Ask about compatibility<span class="what">When a stage changes behavior that stored data depends on, the agent asks before building it. Staged project.</span></th><td class="num">0.00</td><td class="num">1.00</td></tr>
-<tr data-rule="core.6"><th scope="row">Untrusted input<span class="what">Bad requests and a provider’s malformed reply are rejected. One Consult build didn’t start and scores 0. Staged project.</span></th><td class="num">1.00</td><td class="num">0.77</td></tr>
+<tr data-rule="core.6"><th scope="row">Untrusted input<span class="what">Bad requests and a provider’s malformed reply are rejected. One Consult build didn’t start and scores 0. Since cut. Staged project.</span></th><td class="num">1.00</td><td class="num">0.77</td></tr>
 <tr data-rule="core.7"><th scope="row">Static checks before a commit<span class="what">The project’s checks run before each commit, and a missing linter is named.</span></th><td class="num">0.44</td><td class="num">0.90</td></tr>
 <tr data-rule="human.1"><th scope="row">Two checkpoints<span class="what">The agent stops for approval of the plan, then of the data and contracts.</span></th><td class="num">0.00</td><td class="num">0.90</td></tr>
 <tr data-rule="human.2"><th scope="row">Ask before risky actions<span class="what">Installs, schema changes, pushes, and destructive git commands are named before they run. Staged project.</span></th><td class="num">0.00</td><td class="num">1.00</td></tr>
 <tr data-rule="human.3"><th scope="row">Approval covers what was shown<span class="what">After a generic “Approved. Continue.”, no unrequested setting or rate limit gets built.</span></th><td class="num">0.70</td><td class="num">1.00</td></tr>
-<tr data-rule="human.6"><th scope="row">No self-review<span class="what">No review subagent or review skill runs; you review the change.</span></th><td class="num">1.00</td><td class="num">1.00</td></tr>
+<tr data-rule="human.6"><th scope="row">No self-review<span class="what">No review subagent or review skill runs; you review the change. Since cut.</span></th><td class="num">1.00</td><td class="num">1.00</td></tr>
 <tr data-rule="human.7"><th scope="row">A report that explains<span class="what">Each stage’s report runs in order: what needs you, what changed, how it works, what proves it, what is unproven.</span></th><td class="num">0.29</td><td class="num">0.86</td></tr>
 </tbody>
 </table>
 <p>Of the core’s 27 rules, this page scores 21. Live updates (default 8), refactor commits (default 12), and decision logs (human 8) never came up in this project, and the pull request rule (human 5) is new, so these four have no score yet. Working without asking on small fixes (human 4) is scored in another suite, and the method below explains why core rule 2 is left out.</p>
+<p>Five of these scores showed no lift, so their rules have since been cut: core rule 3 (libraries), core rule 6 (untrusted input), default 11 (tooling), default 15 (comments), and the self-review ban that opened human rule 6. The untrusted-input and tooling checks still run as readouts, so the next run shows whether the cuts cost anything.</p>
 
 <h2 id="cost">What it costs</h2>
 <p>Consult used 2.1 times the output tokens and 2.2 times the agent time of bare Claude Code. Its first version used about five times the tokens and scored no better, which is why it was rebuilt.</p>
@@ -115,7 +116,7 @@
 </table>
 
 <h2 id="method">How it was measured</h2>
-<p>Both arms ran Claude Code 2.1.282 with Claude Opus 5.5 at extra-high effort in sandboxed Harbor trials, with the same prompts and scripted replies. Code analysis, the transcript, and a probe that runs the finished app produce every score but two: a language model judge reads the code for core rule 3 and default 15, with no weight in the task reward. The rule scores come from rescoring the same saved attempts with the current checks. The check for unrequested environment variables (core rule 2) is left out, because it misses settings read through a schema.</p>
+<p>Both arms ran Claude Code 2.1.282 with Claude Opus 5.5 at extra-high effort in sandboxed Harbor trials, with the same prompts and scripted replies. Code analysis, the transcript, and a probe that runs the finished app produce every score but two: a language model judge reads the code for core rule 3 and default 15, with no weight in the task reward. The rule scores come from rescoring the same saved attempts with the current checks. The check for unrequested environment variables (core rule 2) is left out, because it misses settings read through a schema. The remote-calls score (default 9) uses the probe as it was then, which counted a retry the brief never asked for as a pass; the probe now gives full marks to a timeout without a retry.</p>
 <p>Limits: five attempts per arm, one five-stage TypeScript project plus a control, and a simplicity score we defined. The eval image had no git identity, so Consult’s commits failed and the commit rules score each attempt to commit. The measured version predates the opt-in rule and a proof rule that prefers spec-style test libraries.</p>
 </div>
 </div></article>

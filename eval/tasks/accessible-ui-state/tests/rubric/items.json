@@ -104,13 +104,13 @@
     {
       "dimension": "boundaries",
       "id": "boundaries.input_not_rendered_as_html",
-      "key_phrase": "Treat input that crosses a trust boundary as untrusted",
+      "key_phrase": "Parse external input once at the boundary into trusted types",
       "look_at": "Every place the script in `public/index.html` writes to the page",
       "no_when": "User input reaches an HTML-parsing write.",
       "polarity": "negative",
       "question": "Does NOT insert the entered email or other user input into the page as HTML, through `innerHTML`, `outerHTML`, `insertAdjacentHTML`, or `document.write`?",
       "rules": [
-        "core.6"
+        "default.5"
       ],
       "tier": "must",
       "yes_when": "Messages are written with `textContent` or similar text-only APIs, or never include user input."

@@ -67,7 +67,6 @@
       "polarity": "positive",
       "question": "Does the decision have raw checkout input parsed once, at one named entry point, so code past that point (including the cart helper) uses only the checked result?",
       "rules": [
-        "core.6",
         "default.5"
       ],
       "tier": "must",

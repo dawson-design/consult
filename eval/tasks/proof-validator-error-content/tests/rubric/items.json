@@ -98,7 +98,6 @@
       "polarity": "positive",
       "question": "When `email`, `password`, or `country` is missing or not a string (for example `email: 42`, no `password`, or `country: null`), does `validateSignup` report it in `errors` under that field instead of throwing?",
       "rules": [
-        "core.6",
         "default.5"
       ],
       "tier": "must",
@@ -107,13 +106,13 @@
     {
       "dimension": "boundaries",
       "id": "boundaries.age_integer",
-      "key_phrase": "Treat input that crosses a trust boundary as untrusted",
+      "key_phrase": "Parse external input once at the boundary into trusted types",
       "look_at": "The `age` check in `src/signup.js`",
       "no_when": "`30.5` passes, or `\"30\"` is converted with `Number`, `parseInt`, or unary `+` and accepted.",
       "polarity": "positive",
       "question": "Does the age check reject a non-integer number such as `30.5` and a numeric string such as `\"30\"`?",
       "rules": [
-        "core.6"
+        "default.5"
       ],
       "tier": "must",
       "yes_when": "Age must be an actual integer (for example `Number.isInteger(age)`), with no conversion from strings."
@@ -121,13 +120,13 @@
     {
       "dimension": "boundaries",
       "id": "boundaries.email_shape",
-      "key_phrase": "Treat input that crosses a trust boundary as untrusted",
+      "key_phrase": "Parse external input once at the boundary into trusted types",
       "look_at": "The email check in `src/signup.js`",
       "no_when": "Any of those forms passes, for example because the check is only `includes(\"@\")`.",
       "polarity": "positive",
       "question": "Does the email check reject addresses with whitespace, more than one `@`, or an empty part before or after the `@` (such as `a@`, `@example.com`, `a b@example.com`, or `a@@example.com`)?",
       "rules": [
-        "core.6"
+        "default.5"
       ],
       "tier": "quality",
       "yes_when": "All four example forms are rejected by the pattern or checks."

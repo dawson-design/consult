@@ -75,9 +75,9 @@
       "id": "boundaries.guard_every_level",
       "dimension": "boundaries",
       "rules": [
-        "core.6"
+        "default.5"
       ],
-      "key_phrase": "Treat input that crosses a trust boundary as untrusted, even when the request doesn't mention security.",
+      "key_phrase": "Parse external input once at the boundary into trusted types",
       "question": "Is the prototype-key guard applied at every nesting level, so that a parsed patch such as `{\"preferences\": {\"__proto__\": {\"polluted\": true}}}` cannot change `Object.prototype` or the prototype of any object in the result?",
       "polarity": "positive",
       "tier": "must",

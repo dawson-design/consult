@@ -129,7 +129,6 @@
       "polarity": "positive",
       "question": "Is `request.query.id` checked once, at the top of `handleUserLookup`, before the users map is read?",
       "rules": [
-        "core.6",
         "default.5"
       ],
       "tier": "must",

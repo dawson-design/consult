@@ -77,9 +77,9 @@
       "id": "boundaries.input_not_rendered_as_html",
       "dimension": "boundaries",
       "rules": [
-        "core.6"
+        "default.5"
       ],
-      "key_phrase": "Treat input that crosses a trust boundary as untrusted",
+      "key_phrase": "Parse external input once at the boundary into trusted types",
       "question": "Does NOT insert the entered email or other user input into the page as HTML, through `innerHTML`, `outerHTML`, `insertAdjacentHTML`, or `document.write`?",
       "polarity": "negative",
       "tier": "must",

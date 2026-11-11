@@ -25,7 +25,8 @@
     "Rule scores use the earlier bare trials rescored offline with the current checks; per-stage simplicity uses their original scores, because an offline rescore does not rebuild stage snapshots.",
     "The Consult arm ran the core before core rule 2's opt-in clause and proof rule 3's test-style sentence were added.",
     "core.2 is left out: its static check misses environment variables read through a schema parse of process.env.",
-    "Default and rule scores come from rescoring the saved trials with the current checks (rule_jobs). core.3 and default.15 are scored by a judge at zero reward weight. The eval image had no git identity, so Consult's commits failed; core.7 and default.13 score commit attempts."
+    "Default and rule scores come from rescoring the saved trials with the current checks (rule_jobs). core.3 and default.15 are scored by a judge at zero reward weight. The eval image had no git identity, so Consult's commits failed; core.7 and default.13 score commit attempts.",
+    "default.9 uses the probe as it was before 2026-11-11, which counted a retry of a transient 503 as a pass although the brief asks for no retry. The current probe gives a build with a timeout and no retry full marks."
   ],
   "simplicity_by_stage": {
     "bare": [
@@ -301,6 +302,32 @@
     "bare": [
       "2026-11-04T08-36-12-houseStyle-claude-code-bare-rejudged-rules",
       "2026-11-04T19-57-25-houseStyle-claude-code-bare-rejudged-rules"
+    ]
+  },
+  "cut_since": {
+    "date": "2026-11-11",
+    "reason": "No lift over bare in this run. core.6 and default.11 stay as readouts (core.untrusted, default.tooling); human rule 6 lost only its first sentence, the self-review ban that human.6 scored.",
+    "items": [
+      {
+        "id": "core.3",
+        "label": "core rule 3"
+      },
+      {
+        "id": "core.6",
+        "label": "core rule 6"
+      },
+      {
+        "id": "default.11",
+        "label": "default 11"
+      },
+      {
+        "id": "default.15",
+        "label": "default 15"
+      },
+      {
+        "id": "human.6",
+        "label": "the self-review ban in human rule 6"
+      }
     ]
   }
 }

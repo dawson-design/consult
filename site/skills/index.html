@@ -5,7 +5,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Consult Skills</title>
-<meta name="description" content="The 7 core rules, 12 house defaults, and 11 skills in Consult, the open-source skills plugin for coding agents.">
+<meta name="description" content="The 5 core rules, 10 house defaults, and 11 skills in Consult, the open-source skills plugin for coding agents.">
 <title>Consult Skills</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@800..900&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="../base.css">
@@ -23,17 +23,15 @@
 <article class="catalog"><div class="wrap wrap-wide catalog-grid">
 <div class="catalog-text">
 <h1>Skills and core rules</h1>
-<p class="section-lead">Every rule serves one Iron Law: complexity is the enemy. The core prints at the start of every session: 7 core rules, 12 house defaults, and 8 rules for working with you. The <a href="#skills-title">11 skills</a> load only when their topic comes up or when you invoke them.</p>
+<p class="section-lead">Every rule serves one Iron Law: complexity is the enemy. The core prints at the start of every session: 5 core rules, 10 house defaults, and 8 rules for working with you. The <a href="#skills-title">11 skills</a> load only when their topic comes up or when you invoke them.</p>
 <h2 id="core-title">Core rules</h2>
 <p class="law-label">Iron Law</p>
 <p class="law law-lead">Complexity is the enemy: keep software simple enough to understand, change, and prove.</p>
 <ol class="rules">
 <li value="1">Keep calculations, I/O, and state changes apart. A function that computes a result reads no clock, random source, file, network, or database, and changes nothing outside itself. Push I/O and mutation to the edges.</li>
 <li value="2">Build only what the user asked for. Add no route, command, flag, config key, environment variable, or startup requirement the request did not name. Propose it instead as an opt-in, never as your recommended option, so a reply such as "use your recommendations" doesn't build it. Extract an abstraction only when code in more than one place serves the same purpose.</li>
-<li value="3">Don't write code for a solved problem. Use a mature, maintained library on a current supported version.</li>
 <li value="4">Write code a reader can follow in one pass. This covers code you write or change; don't reshape untouched code. Functions do one thing in about 25-30 lines. Keep nesting under three levels with guard clauses or extraction. Name a condition that joins checks with and/or: a predicate when reused, a local otherwise. Null and bounds checks need no name.</li>
 <li value="5">Don't assume backward compatibility is or isn't required. When a change alters behavior that outside callers or stored data depend on, ask, and add no shim until the user answers. A fix that restores intended behavior needs no question.</li>
-<li value="6">Treat input that crosses a trust boundary as untrusted, even when the request doesn't mention security.</li>
 <li value="7">Before you commit or push, run the project's linter, type checker, and formatter check, and fix what they report in code you changed. If a project past the prototype stage lacks one, say so and propose adding it.</li>
 </ol>
 <h2 id="defaults-title">House defaults</h2>
@@ -47,10 +45,8 @@
 <li value="8"><b>Live updates:</b> polling, SSE, or WebSockets. Adopt Kafka or another stream only after naming a need they can't meet, such as replay or fan-out.</li>
 <li value="9"><b>Remote calls:</b> declare timeout, retry, and failure behavior together. Retry only idempotent transient failures, in one layer, with capped, jittered backoff.</li>
 <li value="10"><b>Correlation ids:</b> give every error response a correlation id that also appears in the log line for that failure.</li>
-<li value="11"><b>Tooling:</b> uv for Python, pnpm or bun for JS/TS, cargo, go mod. One committed lockfile, a pinned language version, and <code>test</code>, <code>lint</code>, <code>format</code>, and <code>typecheck</code> commands that CI runs too.</li>
 <li value="12"><b>Refactors:</b> keep structural and behavioral changes in separate commits. Change public interfaces in parallel: expand, migrate callers, contract. No big-bang rewrites.</li>
 <li value="13"><b>Git:</b> work on a <code>feature/</code>, <code>fix/</code>, or <code>refactor/</code> branch. Stage files by name. One revertible behavior per commit, subject under 72 characters. Don't skip hooks.</li>
-<li value="15"><b>Comments:</b> only for the non-obvious why; encode rules in names, types, and tests.</li>
 </ol>
 <h2 id="human-title">Working with you</h2>
 <p>The engineer stays in the loop so they keep understanding the system they own.</p>
@@ -60,7 +56,7 @@
 <li value="3">Approval covers what was shown. A generic "Approved" or "Continue" covers only the plan or contract just shown, never an earlier proposal for work the request did not name; build that only after an explicit yes. If building shows that an approved plan or contract must change, stop and show the change. If no one can answer, stop and report what needs approval.</li>
 <li value="4">Otherwise, do the work and prove it without asking.</li>
 <li value="5">Keep each pull request small enough for one person to review in one sitting. When a feature needs more, split it into stacked pull requests, each one behavior that builds, passes its checks, and can be reverted on its own.</li>
-<li value="6">Don't review your own change with a subagent or a review skill; the user reviews it in a fresh session before committing. When it touches auth, permissions, secrets, deleted data, or a public contract, name those files first in the report so the review starts there.</li>
+<li value="6">When a change touches auth, permissions, secrets, deleted data, or a public contract, name those files first in the report so the review starts there.</li>
 <li value="7">End with a report in this order: what needs the user's attention; what changed and why it is better; how it works (where data enters, the key decision, which file to read first); what proves it; what is unproven.</li>
 <li value="8">When the project keeps ADRs or a decision log, record each checkpoint decision and its reason there.</li>
 </ol>

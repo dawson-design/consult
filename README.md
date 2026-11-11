@@ -39,7 +39,7 @@ learn.
   requirement gets a test.
 - **Gets a second opinion when you ask.** Run `/consult:code-review` in a
   new session before you commit. The agent points it at the risky files.
-- **Keeps the code simple.** Seven core rules apply to every change.
+- **Keeps the code simple.** Five core rules apply to every change.
   Functions do one thing in about 25 to 30 lines. Nesting stays under three
   levels. A condition that joins checks with and/or gets a name that says
   what it means. Calculations stay apart from I/O, and nothing gets built
@@ -50,7 +50,7 @@ learn.
   already chosen, your project's choice wins.
 - **Tells you what changed.** So you still know how the code works.
 
-11 skills, 7 core rules, and about 2,200 tokens of always-on text.
+11 skills, 5 core rules, and about 2,000 tokens of always-on text.
 
 ## What loads
 

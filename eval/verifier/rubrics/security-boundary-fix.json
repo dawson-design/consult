@@ -79,9 +79,9 @@
       "id": "boundaries.relative_tricks_rejected",
       "dimension": "boundaries",
       "rules": [
-        "core.6"
+        "default.4"
       ],
-      "key_phrase": "Treat input that crosses a trust boundary as untrusted",
+      "key_phrase": "Fail closed on auth, validation, and crypto errors.",
       "question": "Does the same-site check reject targets that a browser would send off-site, including protocol-relative `//host`, backslash `/\\host`, and paths with leading whitespace or control characters such as a tab before `//host`?",
       "polarity": "positive",
       "tier": "quality",

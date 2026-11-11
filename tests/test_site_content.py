@@ -26,6 +26,8 @@ CORE = build_site_skills.parse_core((ROOT / "agents/.agents/core.md").read_text(
 RESULTS = json.loads((ROOT / "eval/results/2026-11-04-houseStyle.json").read_text(encoding="utf-8"))
 SHIPPED_PAGES = {"index.html", "skills/index.html", "why/index.html", "evidence/index.html"}
 NUMBER_WORDS = {
+    5: "Five",
+    6: "Six",
     7: "Seven",
     8: "Eight",
     9: "Nine",
@@ -117,6 +119,11 @@ class EvidencePageFactsTest(unittest.TestCase):
         self.assertIn(f"Of the core’s {RESULTS['core_rules']} rules, this page scores {scored}.", EVIDENCE)
         for rule in RESULTS["untested"]:
             self.assertIn(rule["label"], EVIDENCE, rule["id"])
+
+    def test_rules_cut_since_the_run_are_marked(self) -> None:
+        cut = {item["id"] for item in RESULTS["cut_since"]["items"]}
+        marked = set(re.findall(r'<tr data-rule="([^"]+)">(?:(?!</tr>).)*Since cut\.', EVIDENCE, re.DOTALL))
+        self.assertEqual(marked, cut)
 
     def test_every_shortfall_is_listed(self) -> None:
         """A score where Consult beats bare by less than 0.05 must appear in the shortfall table."""

@@ -357,11 +357,16 @@ def source_text(workspace: Path, meta: dict, suffixes: tuple[str, ...] = ()) -> 
 
 
 def default_9(workspace: Path, trajectory: cl.Trajectory, meta: dict) -> float:
-    """Timeout, transient-only retry (probe), and jittered backoff beside the outbound call (static)."""
+    """A timeout and no retry on a permanent failure (probe). A build that retries at all is also held to
+    jittered backoff beside the outbound call (static); one that does not retry needs none."""
+    probe = cr.probe_results(workspace)
+    score = float(probe.get("default.9", 0))
+    if not probe.get("default.9.retried"):
+        return score
     files = scoped_files(workspace, meta)
     texts = [(workspace / p).read_text(errors="replace") for p in files]
     jitter = any(OUTBOUND_RE.search(t) and JITTER_RE.search(t) for t in texts)
-    return 0.75 * float(cr.probe_results(workspace).get("default.9", 0)) + (0.25 if jitter else 0.0)
+    return 0.75 * score + (0.25 if jitter else 0.0)
 
 
 def probe_check(rule_id: str):
@@ -596,7 +601,7 @@ def default_7(workspace: Path, trajectory: cl.Trajectory, meta: dict) -> float:
     return stage_mean(trajectory, meta, contract_first)
 
 
-# Process rules read from the transcript: compatibility, commits, tooling, sign-off, and review.
+# Process rules read from the transcript: compatibility, commits, tooling, and sign-off.
 
 # A scripted approval that names nothing: human rule 3 limits it to the plan just shown.
 GENERIC_APPROVAL_RE = re.compile(r"^\s*(Approved\.?\s*)?Continue\.?\s*$", re.IGNORECASE)
@@ -622,7 +627,6 @@ RATE_LIMIT_RE = re.compile(
     r"\b429\b|rate.?limit|too.?many.?(requests|attempts)|throttl|lock.?out|login.?attempts|failed.?log.?ins?",
     re.IGNORECASE,
 )
-REVIEW_PROMPT_RE = re.compile(r"\breview", re.IGNORECASE)
 
 
 def all_turns(trajectory: cl.Trajectory, meta: dict) -> list[list[tuple[int, int]]]:
@@ -709,8 +713,8 @@ def version_pinned(workspace: Path) -> bool:
     return bool((manifest.get("volta") or {}).get("node")) or bool(EXACT_VERSION_RE.match(engine))
 
 
-def default_11(workspace: Path, trajectory: cl.Trajectory, meta: dict) -> float:
-    """Tooling: the mean of one lockfile, the share of test/lint/format/typecheck scripts present, and a pinned
+def default_tooling(workspace: Path, trajectory: cl.Trajectory, meta: dict) -> float:
+    """Tooling, a readout since house default 11 was cut: the mean of one lockfile, the share of test/lint/format/typecheck scripts present, and a pinned
     language version. The package manager is the scaffold's choice (npm), so it is not scored."""
     lockfiles = [name for name in cr.LOCKFILES if (workspace / name).is_file()]
     scripts = cr.package_scripts(workspace)
@@ -828,17 +832,6 @@ def human_3(workspace: Path, trajectory: cl.Trajectory, meta: dict) -> float:
     return 1.0
 
 
-def human_6(workspace: Path, trajectory: cl.Trajectory, meta: dict) -> float:
-    """No self-review: no subagent asked to review the change, and no code-review skill loaded."""
-    if "code-review" in cl.read_skill_names(trajectory):
-        return 0.0
-    for call in trajectory.calls:
-        prompt = f"{call.arguments.get('description') or ''} {call.arguments.get('prompt') or ''}"
-        if call.name in ("Task", "Agent") and REVIEW_PROMPT_RE.search(prompt):
-            return 0.0
-    return 1.0
-
-
 CHECKS = {
     "core.simple": shape_check(simplicity),
     **{f"core.simple.s{n}": stage_simplicity(n) for n in range(1, 6)},
@@ -846,7 +839,7 @@ CHECKS = {
     "core.2": core_2,
     "core.4": shape_check(function_shape),
     "core.5": core_5,
-    "core.6": probe_check("core.6"),
+    "core.untrusted": probe_check("core.untrusted"),
     "core.7": core_7,
     "default.1": shape_check(default_1),
     "default.2": default_2,
@@ -855,13 +848,12 @@ CHECKS = {
     "default.7": default_7,
     "default.9": default_9,
     "default.10": probe_check("default.10"),
-    "default.11": default_11,
+    "default.tooling": default_tooling,
     "default.13": default_13,
     "default.follow": default_follow,
     "human.1.stages": human_1_stages,
     "human.2": human_2,
     "human.3": human_3,
-    "human.6": human_6,
     "human.7": human_7,
     "proof.6": proof_6,
 }

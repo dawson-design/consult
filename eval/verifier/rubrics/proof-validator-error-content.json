@@ -52,7 +52,6 @@
       "id": "boundaries.missing_fields_reported",
       "dimension": "boundaries",
       "rules": [
-        "core.6",
         "default.5"
       ],
       "key_phrase": "Parse external input once at the boundary into trusted types",
@@ -67,9 +66,9 @@
       "id": "boundaries.age_integer",
       "dimension": "boundaries",
       "rules": [
-        "core.6"
+        "default.5"
       ],
-      "key_phrase": "Treat input that crosses a trust boundary as untrusted",
+      "key_phrase": "Parse external input once at the boundary into trusted types",
       "question": "Does the age check reject a non-integer number such as `30.5` and a numeric string such as `\"30\"`?",
       "polarity": "positive",
       "tier": "must",
@@ -81,9 +80,9 @@
       "id": "boundaries.email_shape",
       "dimension": "boundaries",
       "rules": [
-        "core.6"
+        "default.5"
       ],
-      "key_phrase": "Treat input that crosses a trust boundary as untrusted",
+      "key_phrase": "Parse external input once at the boundary into trusted types",
       "question": "Does the email check reject addresses with whitespace, more than one `@`, or an empty part before or after the `@` (such as `a@`, `@example.com`, `a b@example.com`, or `a@@example.com`)?",
       "polarity": "positive",
       "tier": "quality",

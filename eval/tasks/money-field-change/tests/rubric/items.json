@@ -112,7 +112,6 @@
       "polarity": "positive",
       "question": "Is the order's currency (the requested one, when the request accepts it, or the one from the customer's country) checked against the supported currencies once, before any price is looked up?",
       "rules": [
-        "core.6",
         "default.5"
       ],
       "tier": "must",

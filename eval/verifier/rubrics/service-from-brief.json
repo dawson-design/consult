@@ -68,9 +68,9 @@
       "id": "boundaries.html_escaped",
       "dimension": "boundaries",
       "rules": [
-        "core.6"
+        "default.5"
       ],
-      "key_phrase": "Treat input that crosses a trust boundary as untrusted",
+      "key_phrase": "Parse external input once at the boundary into trusted types",
       "question": "Does every HTML response escape each value that comes from the request (the body, or headers such as Host) or from a stored link before putting it into the markup?",
       "polarity": "positive",
       "tier": "must",

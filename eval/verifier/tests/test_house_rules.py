@@ -20,6 +20,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 EVAL_DIR = Path(__file__).resolve().parents[2]
 SHARED = EVAL_DIR / "verifier" / "shared"
@@ -417,14 +418,14 @@ class ProcessRuleTests(unittest.TestCase):
             self.assertEqual(hr.core_7(workspace, build(checked), STAGED), 1.0)
             self.assertEqual(hr.core_7(workspace, build(unchecked), STAGED), 0.0)
 
-    def test_tooling_needs_one_lockfile_four_scripts_and_a_pinned_version(self):
+    def test_tooling_readout_needs_one_lockfile_four_scripts_and_a_pinned_version(self):
         scripts = {"test": "a", "lint": "b", "format": "c", "typecheck": "d"}
         with tempfile.TemporaryDirectory() as full, tempfile.TemporaryDirectory() as scaffold:
             complete = project(Path(full), scripts, "package-lock.json", ".nvmrc")
             as_given = project(Path(scaffold), {"test": "a", "typecheck": "d"}, "package-lock.json")
 
-            self.assertEqual(hr.default_11(complete, build([]), STAGED), 1.0)
-            self.assertEqual(hr.default_11(as_given, build([]), STAGED), 0.5)
+            self.assertEqual(hr.default_tooling(complete, build([]), STAGED), 1.0)
+            self.assertEqual(hr.default_tooling(as_given, build([]), STAGED), 0.5)
 
     def test_git_conventions_score_the_branch_staging_subject_and_hooks(self):
         # Consult trials: a feature/ branch and files staged by name.
@@ -478,20 +479,43 @@ class ProcessRuleTests(unittest.TestCase):
         self.assertEqual(hr.human_3(Path("/nonexistent"), in_the_plan, meta), 1.0)
         self.assertEqual(hr.human_3(Path("/nonexistent"), fix, meta), 1.0)
 
-    def test_a_review_subagent_is_self_review(self):
-        task = {
-            "tool_call_id": "t1",
-            "function_name": "Task",
-            "arguments": {"description": "Review the change", "prompt": "x"},
-        }
-        search = {
-            "tool_call_id": "t2",
-            "function_name": "Task",
-            "arguments": {"description": "Find callers", "prompt": "x"},
-        }
 
-        self.assertEqual(hr.human_6(Path("/nonexistent"), build([user("# One"), agent("", task)]), STAGED), 0.0)
-        self.assertEqual(hr.human_6(Path("/nonexistent"), build([user("# One"), agent("", search)]), STAGED), 1.0)
+class RemoteCallTests(unittest.TestCase):
+    """default.9 from the rule probe's output (patched here; the probe itself needs a running app)."""
+
+    def score(self, root: Path, probe: dict) -> float:
+        with mock.patch.object(hr.cr, "probe_results", return_value=probe):
+            return hr.default_9(root, cl.Trajectory(steps=[], calls=[]), META)
+
+    def test_the_oracle_retries_transient_failures_with_jitter_and_scores_one(self):
+        # What the probe prints for the oracle reference.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = workspace_with(Path(tmp), (REFERENCE, "."))
+
+            self.assertEqual(self.score(root, {"default.9": 1, "default.9.retried": 1}), 1.0)
+
+    def test_a_timeout_without_a_retry_scores_one(self):
+        # The oracle with ATTEMPTS = 1: the brief asks for no retry, so none is rewarded.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = workspace_with(Path(tmp), (REFERENCE, "."))
+
+            self.assertEqual(self.score(root, {"default.9": 1, "default.9.retried": 0}), 1.0)
+
+    def test_a_retry_is_held_to_jitter_and_to_sparing_permanent_failures(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "src").mkdir()
+            (root / "src" / "rates.ts").write_text("export const get = (url: string) => fetch(url);\n")
+
+            self.assertEqual(self.score(root, {"default.9": 1, "default.9.retried": 1}), 0.75)
+            self.assertEqual(self.score(root, {"default.9": 0.5, "default.9.retried": 1}), 0.375)
+
+    def test_the_ordinary_variant_has_no_rates_call_and_scores_zero(self):
+        # The probe cannot place a commission or read rates there, so it prints {}.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = workspace_with(Path(tmp), (ORDINARY, "."))
+
+            self.assertEqual(self.score(root, {}), 0.0)
 
 
 def build_failing(steps: list[dict], failing: set[str]) -> cl.Trajectory:

@@ -159,7 +159,6 @@
       "id": "boundaries.parse_at_boundary",
       "dimension": "boundaries",
       "rules": [
-        "core.6",
         "default.5"
       ],
       "key_phrase": "Parse external input once at the boundary into trusted types",
