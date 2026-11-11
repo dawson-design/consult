@@ -1,0 +1,23 @@
+schema_version = "1.3"
+
+[task]
+name = "consult/fork-retry-or-timeout"
+description = "Stop an endpoint hanging on a slow, sometimes unavailable carrier API."
+
+[metadata]
+kind = "code"
+features = ["error-handling"]
+
+# Generous on purpose: an Opus turn at xhigh effort can run long, and a cut-off
+# turn scores the harness, not the agent.
+[agent]
+timeout_sec = 2700.0
+
+# No rubric: the verifier runs no judge, only the hidden check and the fork probe.
+[verifier]
+timeout_sec = 600.0
+
+[verifier.env]
+CLAUDE_CODE_OAUTH_TOKEN = "${CLAUDE_CODE_OAUTH_TOKEN:-}"
+REWARDKIT_FORCE_SUBSCRIPTION = "${REWARDKIT_FORCE_SUBSCRIPTION:-1}"
+REWARDKIT_JUDGE = "${CONSULT_EVAL_JUDGE:-claude-code}"

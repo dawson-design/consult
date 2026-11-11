@@ -274,6 +274,8 @@ untouched workspace plus the generic judge.
 - `rules`: underspecified tasks scored per skill rule (3 tasks).
 - `houseStyle`: one project built in five stages plus a control, scored per
   house default and on simplicity at each stage (2 tasks).
+- `forks`: change requests with two sound designs, scored on which one the
+  agent took (6 tasks).
 
 Prompts and starting repositories never name Consult or a skill. The intended
 skills for a task live in `tests/consult.json` and feed only the trigger-rate
@@ -393,6 +395,49 @@ The oracle for the sixth change lies over the stage-5 reference, in
 `verifier/tests/test_followup.py` runs the check with Node: the oracle passes
 all six stages, and the unmodified reference passes stages 1 to 5 and fails
 stage 6.
+
+### Forks suite
+
+`forks` asks whether Consult steers the agent to the simpler of two sound
+designs more often than bare Claude Code does. Each task is a small change
+request on a small Node repository where both designs meet the request and
+one has fewer moving parts.
+
+```sh
+uv run scripts/run.py --suite forks --agent claude-code --arms bare,consult --attempts 3 --skip-preflight
+```
+
+| Task | Fork | Simpler side |
+|---|---|---|
+| `fork-cache-or-recompute` | Cache or recompute | Recompute |
+| `fork-queue-or-inline` | Queue or inline call | Inline call |
+| `fork-retry-or-timeout` | Retry or timeout only | Timeout only |
+| `fork-config-or-constant` | Config key or constant | Constant |
+| `fork-special-case-or-reshape` | Special case or reshape | Reshape |
+| `fork-copy-or-home` | Parallel copy or the rule's existing home | Existing home |
+
+The tasks follow these conventions:
+
+- The instruction names neither design and does not ask for the simpler one.
+  It gives the other side a real reason to tempt, such as a slow upstream or
+  a flaky provider, without making the simpler side wrong. A fork informs
+  only if a bare agent sometimes takes the other side.
+- The hidden check accepts both designs.
+- The fork score has the rule id `fork.<name>`, the task name without its
+  `fork-` prefix. It is 1 when the agent took the simpler side and 0
+  otherwise, including when the change is not in place. The task's rule
+  probe, `verifier/hidden/<task>.rules.mjs`, prints it as its last line;
+  `house_rules.py` registers it with `probe_check`, and `rules.json` marks it
+  `check`. The probe prefers runtime evidence, such as counting upstream
+  calls, to reading source text.
+- `solution/solve.sh` takes the simpler side, and a second solution takes
+  the other side. It is `solution/other-side.sh` in the cache, queue, and
+  retry tasks, where both scripts take the workspace path as an optional
+  argument, and the `solution/other-side/` directory in the other three.
+  `verifier/tests/test_forks_*.py` run both through the hidden check and the
+  probe: both pass the check, the oracle scores 1, and the other side 0.
+- The tasks have no judge rubric, so the reward leaves out the rubric
+  dimension.
 
 ## Scoring
 

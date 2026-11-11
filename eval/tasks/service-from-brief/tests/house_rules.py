@@ -904,4 +904,7 @@ CHECKS = {
     "human.3": human_3,
     "human.7": human_7,
     "proof.6": proof_6,
+    "fork.cache-or-recompute": probe_check("fork.cache-or-recompute"),
+    "fork.queue-or-inline": probe_check("fork.queue-or-inline"),
+    "fork.retry-or-timeout": probe_check("fork.retry-or-timeout"),
 }

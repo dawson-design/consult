@@ -1,0 +1,8 @@
+{
+  "task": "fork-queue-or-inline",
+  "kind": "code",
+  "intended_skills": ["async-systems"],
+  "rules": ["fork.queue-or-inline"],
+  "visible_test_cmd": "npm test",
+  "test_file": "test/app.test.js"
+}

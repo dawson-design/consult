@@ -1,0 +1,8 @@
+{
+  "task": "fork-retry-or-timeout",
+  "kind": "code",
+  "intended_skills": ["error-handling"],
+  "rules": ["fork.retry-or-timeout"],
+  "visible_test_cmd": "npm test",
+  "test_file": "test/app.test.js"
+}
