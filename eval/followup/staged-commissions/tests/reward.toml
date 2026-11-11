@@ -1,0 +1,6 @@
+# The follow-up task's reward is its verification dimension alone: the visible
+# tests and the hidden check both pass.
+[[reward]]
+name = "reward"
+aggregation = "weighted-mean"
+weights = { verification = 1.0 }

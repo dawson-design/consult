@@ -357,6 +357,43 @@ the intended style; `verifier/tests/test_house_rules.py` checks that the
 reference scores high and a typical layered, class-based, throwing variant
 scores low.
 
+### Follow-up change test
+
+The house-style checks score conformance to Consult's own defaults. The
+follow-up test asks a question Consult did not define: is the code one arm
+leaves behind cheaper for someone else to change? A bare agent in a fresh
+session makes a held-out sixth change to each arm's final
+`staged-commissions` tree.
+
+```sh
+uv run scripts/followup.py build runs/<bare-job> runs/<consult-job>   # needs Docker
+harbor run -c runs/followup/<stamp>/job.json --yes                    # the command build prints
+uv run scripts/followup.py report runs/<followup-job>
+```
+
+- `build` writes one single-step task under `runs/followup/<stamp>/` per
+  `staged-commissions` trial whose verification passed. The starting tree is
+  the trial's final tree, rebuilt as `rescore.py` rebuilds it, and committed
+  as the scaffold, so the follow-up diff holds only the sixth change. The
+  instruction is `followup/staged-commissions/instruction.md`: a discount for
+  returning patrons that cuts across pricing, withdrawal, accounts, and
+  currency. `job.json` runs every task with the agent's bare arm.
+- The verifier scores the visible tests and
+  `verifier/hidden/staged-commissions-followup.mjs`. That check reruns the five
+  stage checks unchanged, then checks stage 6 through the HTTP API alone. No
+  Consult rule, rubric, or shape score runs.
+- `report` prints, per source arm, the pass rate, output tokens, agent
+  seconds, files touched, and lines changed, with the change and a 90%
+  bootstrap interval from `lift.py`. Trials are pooled per arm. A trial
+  without a reward counts as a fail. Files and lines come from the follow-up
+  trial's `judge-bundle.md`.
+
+The oracle for the sixth change lies over the stage-5 reference, in
+`followup/staged-commissions/solution/overlay`.
+`verifier/tests/test_followup.py` runs the check with Node: the oracle passes
+all six stages, and the unmodified reference passes stages 1 to 5 and fails
+stage 6.
+
 ## Scoring
 
 RewardKit combines dimension scores with `tests/reward.toml`. The weights keep
