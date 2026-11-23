@@ -32,17 +32,23 @@ with the weights in each task's tests/reward.toml, renormalized as RewardKit's
 weighted mean does.
 
 A cost table follows the lift table: each arm's suite mean for output tokens,
-cost, API calls, context per call, cache-read tokens, agent seconds, turns,
-lines changed, and questions asked, with the change and its 90% bootstrap
-interval. Tokens, cost, and agent time come from Harbor's agent records in
-result.json (see token_records for multi-step trials); API calls, context,
-turns, and questions from the final step's trajectory; lines changed from its
-judge-bundle.md. Words per stop is the mean length of the message the agent
-ends each turn on. A trial that did not record a metric is left out of that
-metric's mean. A per-task table then gives Consult's cost and agent time as
-multiples of bare's, against COST_GATE, for every Consult task, and an overall
-verdict. A task that cannot be checked, such as one bare lacks, says why and
-makes the verdict unknown, not a pass.
+cost, API calls, context per call, cache-read tokens, tokens added at resumes
+and their cost, agent seconds, turns, lines changed, and questions asked, with
+the change and its 90% bootstrap interval. Tokens, cost, and agent time come
+from Harbor's agent records in result.json (see token_records for multi-step
+trials); API calls, context, resume tokens, turns, and questions from the final
+step's trajectory; lines changed from its judge-bundle.md. Words per stop is
+the mean length of the message the agent ends each turn on. A trial that did
+not record a metric is left out of that metric's mean. A per-task table then
+gives Consult's cost and agent time as multiples of bare's, against the gate
+(TIME_GATE on every task; COST_GATE, or MULTI_STAGE_COST_GATE for a task whose
+steps open more than one brief, counted from the trials' own step names), with
+the cost ratio less the tokens added at resumes and the cost per 100 changed
+lines. Every Consult task gets a row, and an overall verdict follows; a task
+that cannot be checked, such as one bare lacks, says why and makes the verdict
+unknown, not a pass. For each multi-step task, a per-stage table gives each
+arm's API calls, cost, and output tokens per stage, over the trials that share
+the most common stage list; stages.py says how the session is split.
 
 An activity table follows: per kind of tool call (test runs, edit-and-test and
 break-and-restore scripts, static checks, reads, writes, skill loads and
@@ -69,6 +75,7 @@ import random
 import re
 import statistics
 import sys
+import tomllib
 from collections import Counter, defaultdict
 from collections.abc import Iterable
 from datetime import datetime
@@ -80,6 +87,7 @@ TASKS_DIR = EVAL_DIR / "tasks"
 sys.path.insert(0, str(EVAL_DIR / "verifier" / "shared"))
 import activity
 import consult_lib as cl
+import stages
 from bundle import RebuildError, parse_bundle
 
 MODES = ("stopped", "provisional", "built")
@@ -95,6 +103,8 @@ COST_METRICS = (
     "api_calls",
     "context_per_call",
     "cache_read_tokens",
+    "resume_tokens",
+    "resume_cost_usd",
     "agent_seconds",
     "turns",
     "lines_changed",
@@ -108,6 +118,8 @@ COST_LABELS = {
     "api_calls": ("API calls", ",.0f"),
     "context_per_call": ("context per call (tokens)", ",.0f"),
     "cache_read_tokens": ("cache-read tokens", ",.0f"),
+    "resume_tokens": ("tokens added at resumes", ",.0f"),
+    "resume_cost_usd": ("cost of tokens added at resumes (USD)", ",.2f"),
     "agent_seconds": ("agent seconds", ",.0f"),
     "turns": ("turns", ",.1f"),
     "lines_changed": ("lines changed", ",.0f"),
@@ -117,12 +129,19 @@ COST_LABELS = {
 COST_NOTE = (
     "Each metric averages over the tasks where both arms recorded it. Cost is the agent's API-equivalent "
     "estimate; these runs bill a subscription. Each API call reads the session's cached context again, so cost "
-    "follows API calls times context per call. Questions count agent messages that end in a question after "
-    "the last user turn, the gate-fatigue number."
+    "follows API calls times context per call. Tokens added at resumes are what each resumed turn adds beyond "
+    "the stop message and the prompt, priced as one cache write and a read by every later call. Questions count "
+    "agent messages that end in a question after the last user turn, the gate-fatigue number."
 )
-# The most Consult may spend per task, as a multiple of bare, in cost and in agent time.
+# The most Consult may spend per task, as a multiple of bare: agent time on every task, and cost for a single
+# change or for a multi-stage build (a task whose steps open more than one brief, see task_briefs).
+TIME_GATE = 1.5
 COST_GATE = 1.5
 GATE_METRICS = {"cost_usd": "cost", "agent_seconds": "agent time"}
+MULTI_STAGE_COST_GATE = 2.0
+COST_ARMS = ("bare", "consult")
+# A task's brief count when cost_gate is not given one: a single change.
+ONE_BRIEF = {"briefs": 1, "source": "default"}
 JUDGE_EXCLUDED_NOTE = (
     "Rewards exclude the model judges for some tasks: their trials did not all carry the same model scores"
     " (a job without the judge, an older judge, or a failed judge call), so those tasks are scored on"
@@ -166,6 +185,8 @@ def trial_evidence(trial_dir: Path, result: dict, rewards: dict) -> dict:
         "signoff_mode": mode,
         "skills_read": cl.read_skill_names(trajectory),
         "cost": cost,
+        "stages": stages.stage_costs(result, trajectory),
+        "briefs": stages.brief_count(result),
         "activity": activity.trial_activity(trajectory) if trajectory.steps else None,
     }
 
@@ -186,8 +207,9 @@ def trial_cost(result: dict, trajectory: cl.Trajectory, bundle_path: Path) -> di
     """What one trial spent: Harbor's token, cost, and agent-time records, plus turns, changed lines, and questions.
 
     Agent seconds sum every step's wall time. Tokens and cost come from token_records(), API calls and context
-    from session_metrics(). Turns and questions come from the final step's trajectory, the one the verifier
-    scores. A metric the trial did not record is None, so it is left out of a mean rather than averaged in as 0.
+    from session_metrics(), and the tokens added at resumes from stages.resume_figures(). Turns and questions come
+    from the final step's trajectory, the one the verifier scores. A metric the trial did not record is None, so it
+    is left out of a mean rather than averaged in as 0.
     """
     steps = result.get("step_results") or []
     phases = [s.get("agent_execution") or {} for s in steps] if steps else [result.get("agent_execution") or {}]
@@ -196,6 +218,7 @@ def trial_cost(result: dict, trajectory: cl.Trajectory, bundle_path: Path) -> di
         "output_tokens": tokens,
         "cost_usd": cost,
         **session_metrics(trajectory),
+        **stages.resume_figures(trajectory),
         "agent_seconds": total(phase_seconds(p) for p in phases),
         "turns": len(trajectory.agent_messages) if trajectory.steps else None,
         "lines_changed": lines_changed(bundle_path),
@@ -218,7 +241,7 @@ def token_records(result: dict, steps: list[dict]) -> tuple[float | None, float 
     if not steps:
         record = result.get("agent_result") or {}
         return record.get("n_output_tokens"), record.get("cost_usd")
-    if ((result.get("config") or {}).get("agent") or {}).get("resume_trajectory"):
+    if stages.resumed_session(result):
         record = steps[-1].get("agent_result") or {}
         return record.get("n_output_tokens"), record.get("cost_usd")
     records = [s.get("agent_result") or {} for s in steps]
@@ -231,11 +254,7 @@ def session_metrics(trajectory: cl.Trajectory) -> dict[str, float | None]:
     Each agent step with token metrics is one API call; with resume_trajectory the final trajectory holds the whole
     session. None for each when no step recorded prompt tokens.
     """
-    calls = [
-        s["metrics"]
-        for s in trajectory.steps
-        if s.get("source") == "agent" and "prompt_tokens" in (s.get("metrics") or {})
-    ]
+    calls = [s["metrics"] for s in trajectory.steps if stages.is_api_call(s)]
     if not calls:
         return dict.fromkeys(SESSION_METRICS)
     return {
@@ -450,7 +469,7 @@ def summarize(bare: dict[str, list[dict]], consult: dict[str, list[dict]]) -> di
         row["lift"] = row["consult"] - row["bare"]
         rows.append(row)
     suite = compare(bare, consult)
-    gate = cost_gate(rows)
+    gate = cost_gate(rows, {task: task_briefs(task, bare.get(task, []) + consult.get(task, [])) for task in tasks})
     return {
         "tasks": rows,
         "suite_lift": suite["reward"],
@@ -459,24 +478,77 @@ def summarize(bare: dict[str, list[dict]], consult: dict[str, list[dict]]) -> di
         "cost": {m: compare_cost(bare, consult, m) for m in COST_METRICS},
         "gate": gate,
         "gate_verdict": gate_verdict(gate),
+        "stages": compare_stages(bare, consult, tasks),
         "activity": compare_activity(bare, consult),
         "rules": rule_scorecard(bare, consult),
         "skills": [skill_row(t, bare.get(t, []), consult.get(t, [])) for t in tasks],
     }
 
 
-def cost_gate(rows: list[dict]) -> list[dict]:
-    """Per Consult task: each arm's mean cost, agent time, and API calls, Consult's multiple of bare, and whether
-    cost and agent time both stay within COST_GATE. A task that cannot be checked gets within None and the reason
-    (gate_gap), so it shows in the table instead of dropping out."""
+def task_briefs(task: str, entries: list[dict]) -> dict:
+    """How many briefs the task's steps open, and where that count came from.
+
+    The count comes from the trials' own step names (stages.brief_count), so a later change to the task's steps
+    does not change an old run's limit. When the trials disagree, as a truncated trial would, the count most trials
+    share wins (the larger on a tie) and the source says so. Only when no trial names a brief step does the count come
+    from the task's current task.toml, with a warning on stderr.
+    """
+    counts = Counter(e["briefs"] for e in entries if e.get("briefs") is not None)
+    if len(counts) == 1:
+        return {"briefs": next(iter(counts)), "source": "trials"}
+    if counts:
+        briefs = max(counts, key=lambda n: (counts[n], n))
+        spread = ", ".join(f"{n} in {counts[n]}" for n in sorted(counts, reverse=True))
+        warn(f"{task}: the trials disagree on how many briefs the task opens ({spread}); the cost limit uses {briefs}")
+        return {"briefs": briefs, "source": f"trials disagree: {spread}"}
+    briefs = brief_steps(task)
+    if briefs is None:
+        warn(f"{task}: no trial names a brief step and there is no task.toml; the cost limit assumes one brief")
+        return ONE_BRIEF
+    warn(f"{task}: no trial names a brief step; the cost limit counts the briefs in the current task.toml ({briefs})")
+    return {"briefs": briefs, "source": "task.toml"}
+
+
+def brief_steps(task: str) -> int | None:
+    """How many of the steps in the task's current task.toml open a brief (a name ending in `brief`), at least 1;
+    None when the task has no task.toml."""
+    path = TASKS_DIR / task.split("/")[-1] / "task.toml"
+    if not path.is_file():
+        return None
+    steps = tomllib.loads(path.read_text()).get("steps", [])
+    return max(1, sum(1 for step in steps if str(step.get("name", "")).endswith("brief")))
+
+
+def warn(message: str) -> None:
+    """Print a warning about the run's figures on stderr, apart from the report on stdout."""
+    print(f"lift: {message}", file=sys.stderr)
+
+
+def cost_limit(briefs: int) -> float:
+    """The cost gate for a task: a multi-stage build, which opens more than one brief, gets the higher limit."""
+    return MULTI_STAGE_COST_GATE if briefs > 1 else COST_GATE
+
+
+def cost_gate(rows: list[dict], briefs: dict[str, dict]) -> list[dict]:
+    """Per Consult task: each arm's mean cost, agent time, and API calls, Consult's multiple of bare, the task's
+    limits from its brief count (task_briefs; ONE_BRIEF for a task briefs lacks), and whether cost and agent time
+    both stay within them. A task that cannot be checked gets within None and the reason (gate_gap), so it shows in
+    the table instead of dropping out. Cost without the tokens added at resumes and cost per changed line come
+    alongside, for reading the cost ratio."""
     gate = []
     for row in rows:
         metrics = {
             m: {**row["cost"][m], "ratio": ratio(row["cost"][m])} for m in ("cost_usd", "agent_seconds", "api_calls")
         }
+        task_brief = briefs.get(row["task"], ONE_BRIEF)
+        limits = {"cost_usd": cost_limit(task_brief["briefs"]), "agent_seconds": TIME_GATE}
         reason = gate_gap(row)
-        within = None if reason else max(metrics["cost_usd"]["ratio"], metrics["agent_seconds"]["ratio"]) <= COST_GATE
-        gate.append({"task": row["task"], **metrics, "within": within, "reason": reason})
+        within = None if reason else all(metrics[m]["ratio"] <= limit for m, limit in limits.items())
+        metrics["cost_without_resume"] = cost_without_resume(row["cost"])
+        metrics["cost_per_line"] = cost_per_line(row["cost"])
+        gate.append(
+            {"task": row["task"], **metrics, "briefs": task_brief, "limits": limits, "within": within, "reason": reason}
+        )
     return gate
 
 
@@ -501,6 +573,74 @@ def gate_verdict(gate: list[dict]) -> dict:
     counts = Counter("unknown" if g["within"] is None else "within" if g["within"] else "outside" for g in gate)
     verdict = "fail" if counts["outside"] else "unknown" if counts["unknown"] or not gate else "pass"
     return {"verdict": verdict, **{k: counts[k] for k in ("within", "outside", "unknown")}}
+
+
+def cost_without_resume(cost: dict) -> dict:
+    """Each arm's mean cost less its mean cost of tokens added at resumes, and Consult's multiple of bare's."""
+    spent = {arm: difference(cost["cost_usd"][arm], cost["resume_cost_usd"][arm]) for arm in COST_ARMS}
+    return {**spent, "ratio": ratio(spent)}
+
+
+def cost_per_line(cost: dict) -> dict:
+    """Each arm's mean cost over its mean lines changed, and Consult's multiple of bare's."""
+    per_line = {arm: quotient(cost["cost_usd"][arm], cost["lines_changed"][arm]) for arm in COST_ARMS}
+    return {**per_line, "ratio": ratio(per_line)}
+
+
+def difference(value: float | None, less: float | None) -> float | None:
+    return None if value is None or less is None else value - less
+
+
+def quotient(value: float | None, by: float | None) -> float | None:
+    return value / by if value is not None and by else None
+
+
+def compare_stages(bare: dict[str, list[dict]], consult: dict[str, list[dict]], tasks: list[str]) -> dict[str, dict]:
+    """Per task where both arms have stage figures (stages.stage_costs): each stage's mean per arm with Consult's
+    multiple of bare's, then a total row. The stage list is the one most trials of both arms share (the longer on a
+    tie), so one truncated trial cannot set it. Trials without stage figures or with another stage list are left out
+    and counted under "dropped"."""
+    result = {}
+    for task in tasks:
+        entries = {"bare": bare.get(task, []), "consult": consult.get(task, [])}
+        lists = Counter(tuple(names) for e in chain(*entries.values()) if (names := stage_names(e)))
+        if not lists:
+            continue
+        names = list(max(lists, key=lambda n: (lists[n], len(n))))
+        arms = {arm: [e for e in group if stage_names(e) == names] for arm, group in entries.items()}
+        if not all(arms.values()):
+            continue
+        rows = [stage_row(name, arms) for name in names]
+        result[task] = {
+            "trials": {arm: len(group) for arm, group in arms.items()},
+            "dropped": {arm: len(entries[arm]) - len(arms[arm]) for arm in COST_ARMS},
+            "stages": [*rows, total_row(rows)],
+        }
+    return result
+
+
+def stage_names(entry: dict) -> list[str] | None:
+    return [s["stage"] for s in entry["stages"]] if entry.get("stages") else None
+
+
+def stage_row(name: str, arms: dict[str, list[dict]]) -> dict:
+    row: dict = {"stage": name}
+    for metric in stages.STAGE_METRICS:
+        means = {
+            arm: statistics.fmean(next(s[metric] for s in e["stages"] if s["stage"] == name) for e in entries)
+            for arm, entries in arms.items()
+        }
+        row[metric] = {**means, "ratio": ratio(means)}
+    return row
+
+
+def total_row(rows: list[dict]) -> dict:
+    """The stage means summed, which equal each arm's mean trial total."""
+    row: dict = {"stage": "total"}
+    for metric in stages.STAGE_METRICS:
+        sums = {arm: sum(r[metric][arm] for r in rows) for arm in COST_ARMS}
+        row[metric] = {**sums, "ratio": ratio(sums)}
+    return row
 
 
 def ratio(means: dict) -> float | None:
@@ -688,6 +828,7 @@ def render_markdown(summary: dict, bare_dir: Path, consult_dir: Path) -> str:
         if row["failed"]:
             lines.append(f"- {row['task']}: no reward for {', '.join(row['failed'])}")
     sections = render_cost(summary["cost"]) + render_gate(summary["gate"], summary["gate_verdict"])
+    sections += render_stages(summary["stages"])
     sections += render_activity(summary["activity"])
     sections += render_rules(summary["rules"]) + render_skills(summary["skills"])
     return "\n".join(lines + sections) + "\n"
@@ -713,10 +854,21 @@ def render_gate(gate: list[dict], verdict: dict) -> list[str]:
         return []
     header = [
         "",
-        f"## Per-task cost against the {COST_GATE}x gate",
+        "## Per-task cost against the gate",
         "",
-        "| task | cost (bare / consult) | cost ratio | agent minutes (bare / consult) | time ratio | API calls (bare / consult) | within gate |",
-        "| --- | ---: | ---: | ---: | ---: | ---: | --- |",
+        (
+            f"Agent time stays within {TIME_GATE}x bare's on every task. Cost stays within {COST_GATE}x for a single "
+            f"change and {MULTI_STAGE_COST_GATE}x for a multi-stage build, a task that opens more than one brief. The "
+            "briefs column gives the count and where it came from: the trials' step names, or task.toml when no trial "
+            "names a brief step."
+        ),
+        "",
+        (
+            "| task | cost (bare / consult) | cost ratio | briefs (source) | cost limit | agent minutes (bare / consult) "
+            "| time ratio | API calls (bare / consult) | cost ratio without resume tokens | USD per 100 changed lines "
+            "(bare / consult) | line-cost ratio | within gate |"
+        ),
+        "| --- | ---: | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
     ]
     return header + [render_gate_row(row) for row in gate] + ["", render_verdict(verdict, len(gate))]
 
@@ -724,10 +876,14 @@ def render_gate(gate: list[dict], verdict: dict) -> list[str]:
 def render_gate_row(row: dict) -> str:
     cost, seconds, calls = row["cost_usd"], row["agent_seconds"], row["api_calls"]
     api = "-" if calls["ratio"] is None else f"{calls['bare']:,.0f} / {calls['consult']:,.0f}"
+    line = row["cost_per_line"]
+    per_100 = "-" if line["ratio"] is None else f"{100 * line['bare']:,.2f} / {100 * line['consult']:,.2f}"
     within = {True: "yes", False: "no", None: f"unknown: {row['reason']}"}[row["within"]]
     return (
-        f"| {row['task']} | {pair(cost, ',.2f')} | {times(cost['ratio'])} | {pair(seconds, ',.1f', 1 / 60)} "
-        f"| {times(seconds['ratio'])} | {api} | {within} |"
+        f"| {row['task']} | {pair(cost, ',.2f')} | {times(cost['ratio'])} "
+        f"| {row['briefs']['briefs']} ({row['briefs']['source']}) | {row['limits']['cost_usd']:.1f}x "
+        f"| {pair(seconds, ',.1f', 1 / 60)} | {times(seconds['ratio'])} | {api} "
+        f"| {times(row['cost_without_resume']['ratio'])} | {per_100} | {times(line['ratio'])} | {within} |"
     )
 
 
@@ -748,6 +904,51 @@ def pair(means: dict, spec: str, scale: float = 1.0) -> str:
 def times(value: float | None) -> str:
     """A ratio as `1.23x`, or - when there is none."""
     return "-" if value is None else f"{value:.2f}x"
+
+
+STAGE_FORMATS = {
+    "api_calls": ("API calls", ",.1f"),
+    "cost_usd": ("cost", ",.2f"),
+    "output_tokens": ("output tokens", ",.0f"),
+}
+
+
+def render_stages(by_task: dict[str, dict]) -> list[str]:
+    """A table per multi-step task: each stage's API calls, cost, and output tokens per arm, with the ratio."""
+    lines = []
+    columns = " | ".join(f"{label} (bare / consult) | ratio" for label, _ in STAGE_FORMATS.values())
+    for task, result in by_task.items():
+        trials, dropped = result["trials"], result["dropped"]
+        left_out = (
+            f" Left out: {dropped['bare']} bare and {dropped['consult']} consult trials whose stage figures are missing "
+            "or follow another stage list."
+            if any(dropped.values())
+            else ""
+        )
+        lines += [
+            "",
+            f"## Per-stage cost: {task}",
+            "",
+            (
+                f"Per trial, over {trials['bare']} bare and {trials['consult']} consult trials. A stage is a step, or "
+                "the steps that share a name prefix such as `s2-`. API calls split the session at each prompt; cost "
+                "and output tokens are the rise in Harbor's running totals per step, so the stages sum to the trial."
+                + left_out
+            ),
+            "",
+            f"| stage | {columns} |",
+            "| --- |" + " ---: | ---: |" * len(STAGE_FORMATS),
+        ]
+        lines += [render_stage_row(row) for row in result["stages"]]
+    return lines
+
+
+def render_stage_row(row: dict) -> str:
+    cells = [
+        f"{format(row[m]['bare'], spec)} / {format(row[m]['consult'], spec)} | {times(row[m]['ratio'])}"
+        for m, (_, spec) in STAGE_FORMATS.items()
+    ]
+    return f"| {row['stage']} | " + " | ".join(cells) + " |"
 
 
 def render_activity(result: dict) -> list[str]:
