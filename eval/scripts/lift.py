@@ -173,16 +173,17 @@ def token_records(result: dict, steps: list[dict]) -> tuple[float | None, float 
     A single-step trial has one record. Without resume_trajectory each step runs
     its own session, so the steps sum. With it, each step continues the last
     session and Harbor builds the step's record from the whole session, so the
-    final step's tokens already hold every earlier step. That is read from
-    Harbor's Claude Code agent; for Codex it is unverified. Cost is left None:
-    whether Claude Code's total_cost_usd covers the whole session on --continue
-    is unverified, and Harbor's fallback estimate prices the whole trajectory.
+    final step's record already holds every earlier step. On the saved houseStyle
+    jobs its token counts equal the sum over every call in the final trajectory,
+    and its cost equals that trajectory's final_metrics.total_cost_usd. That is
+    read from Harbor's Claude Code agent; for Codex it is unverified.
     """
     if not steps:
         record = result.get("agent_result") or {}
         return record.get("n_output_tokens"), record.get("cost_usd")
     if ((result.get("config") or {}).get("agent") or {}).get("resume_trajectory"):
-        return (steps[-1].get("agent_result") or {}).get("n_output_tokens"), None
+        record = steps[-1].get("agent_result") or {}
+        return record.get("n_output_tokens"), record.get("cost_usd")
     records = [s.get("agent_result") or {} for s in steps]
     return total(r.get("n_output_tokens") for r in records), total(r.get("cost_usd") for r in records)
 

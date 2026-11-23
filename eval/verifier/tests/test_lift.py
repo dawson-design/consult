@@ -347,12 +347,11 @@ class LiftTests(unittest.TestCase):
         (trial / "verifier").rename(trial / "steps" / "build" / "verifier")
         return trial
 
-    def test_a_resumed_multi_step_trial_takes_tokens_from_its_final_step(self):
+    def test_a_resumed_multi_step_trial_takes_tokens_and_cost_from_its_final_step(self):
         """With resume_trajectory the build step continues the brief's session, so its record already holds the brief."""
         trial = self.multi_step_trial(True, agent_run(300, 0.25, 30), agent_run(1200, 1.0, 120))
         cost = self.cost_of(trial)
-        self.assertEqual((cost["output_tokens"], cost["agent_seconds"]), (1200, 150.0))
-        self.assertIsNone(cost["cost_usd"])
+        self.assertEqual((cost["output_tokens"], cost["cost_usd"], cost["agent_seconds"]), (1200, 1.0, 150.0))
         self.assertEqual((cost["turns"], cost["lines_changed"]), (3, 6))
 
     def test_a_multi_step_trial_without_resume_sums_its_steps(self):

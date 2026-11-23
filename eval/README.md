@@ -187,8 +187,7 @@ the low end next to the mean:
   Questions count agent messages that end in a question after the last user
   turn, the gate-fatigue number. Cost is the agent's API-equivalent estimate,
   since runs bill a subscription. A resumed multi-step trial reports its final
-  step's tokens, which already include the earlier steps, and no cost, until
-  a real trial shows whether Harbor's per-step cost covers one step or all.
+  step's tokens and cost, which cover the whole session.
 
 When a task's trials do not all carry the same model scores, as in a fast
 run against a release baseline, an old generic-judge job against a rubric
