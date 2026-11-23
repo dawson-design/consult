@@ -32,12 +32,22 @@ with the weights in each task's tests/reward.toml, renormalized as RewardKit's
 weighted mean does.
 
 A cost table follows the lift table: each arm's suite mean for output tokens,
-cost, agent seconds, turns, lines changed, and questions asked, with the change
-and its 90% bootstrap interval. Tokens, cost, and agent time come from Harbor's
-agent records in result.json (see token_records for multi-step trials); turns
-and questions from the final step's trajectory; lines changed from its
-judge-bundle.md. A trial that did not record a metric is left out of that
+cost, API calls, context per call, cache-read tokens, agent seconds, turns,
+lines changed, and questions asked, with the change and its 90% bootstrap
+interval. Tokens, cost, and agent time come from Harbor's agent records in
+result.json (see token_records for multi-step trials); API calls, context,
+turns, and questions from the final step's trajectory; lines changed from its
+judge-bundle.md. Words per stop is the mean length of the message the agent
+ends each turn on. A trial that did not record a metric is left out of that
 metric's mean.
+
+An activity table follows: per kind of tool call (test runs, edit-and-test and
+break-and-restore scripts, static checks, reads, writes, skill loads and
+references, messages), each arm's calls, seconds, and output tokens per trial,
+and that kind's share of Consult's extra seconds and tokens. A kind's seconds
+include the model's time to write the step after each of its calls, so
+messages get none of their own. activity.py says how calls are classified and
+how steps and gaps are charged.
 
 Two scorecards follow:
   rules   per-rule pass rate per arm, from each trial's reward-details.json
@@ -65,6 +75,7 @@ from pathlib import Path
 EVAL_DIR = Path(__file__).resolve().parent.parent
 TASKS_DIR = EVAL_DIR / "tasks"
 sys.path.insert(0, str(EVAL_DIR / "verifier" / "shared"))
+import activity
 import consult_lib as cl
 from bundle import RebuildError, parse_bundle
 
@@ -75,18 +86,35 @@ FLOOR_REWARD = 0.5
 BOOTSTRAP_ROUNDS = 2000
 WEIGHTS_RE = re.compile(r"^weights\s*=\s*\{(.*)\}", re.MULTILINE)
 WEIGHT_RE = re.compile(r"(\w+)\s*=\s*([0-9.]+)")
-COST_METRICS = ("output_tokens", "cost_usd", "agent_seconds", "turns", "lines_changed", "questions")
+COST_METRICS = (
+    "output_tokens",
+    "cost_usd",
+    "api_calls",
+    "context_per_call",
+    "cache_read_tokens",
+    "agent_seconds",
+    "turns",
+    "lines_changed",
+    "questions",
+    "words_per_stop",
+)
+SESSION_METRICS = ("api_calls", "context_per_call", "cache_read_tokens")
 COST_LABELS = {
     "output_tokens": ("output tokens", ",.0f"),
     "cost_usd": ("cost (USD)", ",.2f"),
+    "api_calls": ("API calls", ",.0f"),
+    "context_per_call": ("context per call (tokens)", ",.0f"),
+    "cache_read_tokens": ("cache-read tokens", ",.0f"),
     "agent_seconds": ("agent seconds", ",.0f"),
     "turns": ("turns", ",.1f"),
     "lines_changed": ("lines changed", ",.0f"),
     "questions": ("questions", ",.2f"),
+    "words_per_stop": ("words per stop", ",.0f"),
 }
 COST_NOTE = (
     "Each metric averages over the tasks where both arms recorded it. Cost is the agent's API-equivalent "
-    "estimate; these runs bill a subscription. Questions count agent messages that end in a question after "
+    "estimate; these runs bill a subscription. Each API call reads the session's cached context again, so cost "
+    "follows API calls times context per call. Questions count agent messages that end in a question after "
     "the last user turn, the gate-fatigue number."
 )
 JUDGE_EXCLUDED_NOTE = (
@@ -132,6 +160,7 @@ def trial_evidence(trial_dir: Path, result: dict, rewards: dict) -> dict:
         "signoff_mode": mode,
         "skills_read": cl.read_skill_names(trajectory),
         "cost": cost,
+        "activity": activity.trial_activity(trajectory) if trajectory.steps else None,
     }
 
 
@@ -150,9 +179,9 @@ def judge_rule_rates(path: Path) -> dict[str, float]:
 def trial_cost(result: dict, trajectory: cl.Trajectory, bundle_path: Path) -> dict:
     """What one trial spent: Harbor's token, cost, and agent-time records, plus turns, changed lines, and questions.
 
-    Agent seconds sum every step's wall time. Tokens and cost come from token_records(). Turns and questions
-    come from the final step's trajectory, the one the verifier scores. A metric the trial did not record is
-    None, so it is left out of a mean rather than averaged in as 0.
+    Agent seconds sum every step's wall time. Tokens and cost come from token_records(), API calls and context
+    from session_metrics(). Turns and questions come from the final step's trajectory, the one the verifier
+    scores. A metric the trial did not record is None, so it is left out of a mean rather than averaged in as 0.
     """
     steps = result.get("step_results") or []
     phases = [s.get("agent_execution") or {} for s in steps] if steps else [result.get("agent_execution") or {}]
@@ -160,10 +189,12 @@ def trial_cost(result: dict, trajectory: cl.Trajectory, bundle_path: Path) -> di
     return {
         "output_tokens": tokens,
         "cost_usd": cost,
+        **session_metrics(trajectory),
         "agent_seconds": total(phase_seconds(p) for p in phases),
         "turns": len(trajectory.agent_messages) if trajectory.steps else None,
         "lines_changed": lines_changed(bundle_path),
         "questions": cl.question_message_count(trajectory) if trajectory.steps else None,
+        "words_per_stop": activity.words_per_stop(trajectory),
     }
 
 
@@ -186,6 +217,26 @@ def token_records(result: dict, steps: list[dict]) -> tuple[float | None, float 
         return record.get("n_output_tokens"), record.get("cost_usd")
     records = [s.get("agent_result") or {} for s in steps]
     return total(r.get("n_output_tokens") for r in records), total(r.get("cost_usd") for r in records)
+
+
+def session_metrics(trajectory: cl.Trajectory) -> dict[str, float | None]:
+    """API calls, mean context per call, and cache-read tokens, from the per-call metrics in the trajectory.
+
+    Each agent step with token metrics is one API call; with resume_trajectory the final trajectory holds the whole
+    session. None for each when no step recorded prompt tokens.
+    """
+    calls = [
+        s["metrics"]
+        for s in trajectory.steps
+        if s.get("source") == "agent" and "prompt_tokens" in (s.get("metrics") or {})
+    ]
+    if not calls:
+        return dict.fromkeys(SESSION_METRICS)
+    return {
+        "api_calls": len(calls),
+        "context_per_call": sum(m["prompt_tokens"] or 0 for m in calls) / len(calls),
+        "cache_read_tokens": sum(m.get("cached_tokens") or 0 for m in calls),
+    }
 
 
 def total(values: Iterable[float | None]) -> float | None:
@@ -398,6 +449,7 @@ def summarize(bare: dict[str, list[dict]], consult: dict[str, list[dict]]) -> di
         "suite": suite,
         "judge_excluded": judge_excluded,
         "cost": {m: compare_cost(bare, consult, m) for m in COST_METRICS},
+        "activity": compare_activity(bare, consult),
         "rules": rule_scorecard(bare, consult),
         "skills": [skill_row(t, bare.get(t, []), consult.get(t, [])) for t in tasks],
     }
@@ -411,6 +463,35 @@ def mean_cost(entries: list[dict], metric: str) -> float | None:
 
 def recorded(entries: list[dict], metric: str) -> list[float]:
     return [e["cost"][metric] for e in entries if e["cost"][metric] is not None]
+
+
+def compare_activity(bare: dict[str, list[dict]], consult: dict[str, list[dict]]) -> dict:
+    """Per activity and measure, each arm's suite mean per trial, plus the activity's share of Consult's extra
+    seconds and output tokens (None when Consult spent no more). Only tasks where both arms recorded activity count.
+    """
+    tasks = sorted(t for t in consult if with_activity(bare.get(t, [])) and with_activity(consult[t]))
+    if not tasks:
+        return {"tasks": 0, "activities": {}}
+    rows = {
+        name: {
+            m: {"bare": activity_mean(bare, tasks, name, m), "consult": activity_mean(consult, tasks, name, m)}
+            for m in activity.MEASURES
+        }
+        for name in activity.CATEGORIES
+    }
+    for measure in ("seconds", "output_tokens"):
+        extra = sum(r[measure]["consult"] - r[measure]["bare"] for r in rows.values())
+        for r in rows.values():
+            r[measure]["share_of_extra"] = (r[measure]["consult"] - r[measure]["bare"]) / extra if extra > 0 else None
+    return {"tasks": len(tasks), "activities": rows}
+
+
+def with_activity(entries: list[dict]) -> list[dict]:
+    return [e for e in entries if e.get("activity")]
+
+
+def activity_mean(by_task: dict[str, list[dict]], tasks: list[str], name: str, measure: str) -> float:
+    return suite_means({t: [e["activity"][name][measure] for e in with_activity(by_task[t])] for t in tasks}, tasks)
 
 
 def compare_cost(bare: dict[str, list[dict]], consult: dict[str, list[dict]], metric: str, seed: int = 0) -> dict:
@@ -553,7 +634,8 @@ def render_markdown(summary: dict, bare_dir: Path, consult_dir: Path) -> str:
             lines.append(f"- {row['task']}: {dims}")
         if row["failed"]:
             lines.append(f"- {row['task']}: no reward for {', '.join(row['failed'])}")
-    sections = render_cost(summary["cost"]) + render_rules(summary["rules"]) + render_skills(summary["skills"])
+    sections = render_cost(summary["cost"]) + render_activity(summary["activity"])
+    sections += render_rules(summary["rules"]) + render_skills(summary["skills"])
     return "\n".join(lines + sections) + "\n"
 
 
@@ -569,6 +651,47 @@ def render_cost(cost: dict[str, dict]) -> list[str]:
         "| --- | ---: | ---: | ---: | ---: | --- |",
     ]
     return header + rows + ["", COST_NOTE]
+
+
+def render_activity(result: dict) -> list[str]:
+    """Activities sorted by Consult's extra seconds, leaving out those neither arm did."""
+    rows = sorted(
+        ((name, r) for name, r in result["activities"].items() if r["calls"]["bare"] or r["calls"]["consult"]),
+        key=lambda item: item[1]["seconds"]["bare"] - item[1]["seconds"]["consult"],
+    )
+    if not rows:
+        return []
+    header = [
+        "",
+        "## Where the time goes",
+        "",
+        (
+            f"Per trial, over {result['tasks']} tasks. Share is the activity's part of Consult's extra. Seconds run "
+            "from each call to the next step, so they include the model's time to write that step; messages, which "
+            "end a turn, get no seconds of their own."
+        ),
+        "",
+        (
+            "| activity | calls (bare / consult) | seconds (bare / consult) | share of extra seconds "
+            "| output tokens (bare / consult) | share of extra tokens |"
+        ),
+        "| --- | ---: | ---: | ---: | ---: | ---: |",
+    ]
+    return header + [render_activity_row(name, r) for name, r in rows]
+
+
+def render_activity_row(name: str, r: dict) -> str:
+    def pair(measure: str, spec: str) -> str:
+        return f"{format(r[measure]['bare'], spec)} / {format(r[measure]['consult'], spec)}"
+
+    def share(measure: str) -> str:
+        value = r[measure]["share_of_extra"]
+        return "n/a" if value is None else f"{value:.0%}"
+
+    return (
+        f"| {activity.CATEGORIES[name]} | {pair('calls', ',.1f')} | {pair('seconds', ',.0f')} | {share('seconds')} "
+        f"| {pair('output_tokens', ',.0f')} | {share('output_tokens')} |"
+    )
 
 
 def render_cost_row(metric: str, result: dict) -> str:
