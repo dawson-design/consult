@@ -111,6 +111,36 @@ def write_costed_trial(job: Path, task: str, n: int, output_tokens: int, cost: f
     return trial
 
 
+def test_run_trajectory(runs: int) -> dict:
+    """The prompt, `runs` whole-suite test runs ten seconds apart, then the final message."""
+    return command_trajectory(*["npm test"] * runs)
+
+
+def command_trajectory(*commands: str) -> dict:
+    """The prompt, one shell call per command ten seconds apart, then the final message."""
+    stamp = "2026-11-04T12:{:02d}:{:02d}Z".format
+    steps = [{"source": "user", "message": "Fix the bug.", "timestamp": stamp(0, 0)}]
+    for n, command in enumerate(commands):
+        call = {"tool_call_id": f"call_{n}", "function_name": "Bash", "arguments": {"command": command}}
+        steps.append(
+            {"source": "agent", "message": "", "timestamp": stamp(*divmod(1 + 10 * n, 60)), "tool_calls": [call]}
+        )
+    steps.append({"source": "agent", "message": "Fixed it.", "timestamp": stamp(*divmod(1 + 10 * len(commands), 60))})
+    return {"steps": steps}
+
+
+def gate_row(
+    task: str, cost: tuple[float | None, float | None], seconds: tuple[float, float], bare_trials: int = 1
+) -> dict:
+    """A summarize() task row with only what cost_gate reads: cost, agent seconds, and API calls per arm."""
+    means = {"cost_usd": cost, "agent_seconds": seconds, "api_calls": (None, None)}
+    return {
+        "task": task,
+        "cost": {m: {"bare": b, "consult": c} for m, (b, c) in means.items()},
+        "trials": {"bare": bare_trials, "consult": 1},
+    }
+
+
 def stub_sections(report: str) -> list[str]:
     """The skill-content section and the listing-and-hook section of a lift report."""
     return report.split("## Skill content: consult vs stub")[1].split("## Listing and hook: stub vs bare")
@@ -324,10 +354,14 @@ class LiftTests(unittest.TestCase):
             {
                 "output_tokens": 1200,
                 "cost_usd": 0.5,
+                "api_calls": None,
+                "context_per_call": None,
+                "cache_read_tokens": None,
                 "agent_seconds": 90.0,
                 "turns": 3,
                 "lines_changed": 6,
                 "questions": 1,
+                "words_per_stop": 2.0,
             },
         )
 
@@ -347,18 +381,40 @@ class LiftTests(unittest.TestCase):
         (trial / "verifier").rename(trial / "steps" / "build" / "verifier")
         return trial
 
-    def test_a_resumed_multi_step_trial_takes_tokens_from_its_final_step(self):
+    def test_a_resumed_multi_step_trial_takes_tokens_and_cost_from_its_final_step(self):
         """With resume_trajectory the build step continues the brief's session, so its record already holds the brief."""
         trial = self.multi_step_trial(True, agent_run(300, 0.25, 30), agent_run(1200, 1.0, 120))
         cost = self.cost_of(trial)
-        self.assertEqual((cost["output_tokens"], cost["agent_seconds"]), (1200, 150.0))
-        self.assertIsNone(cost["cost_usd"])
+        self.assertEqual((cost["output_tokens"], cost["cost_usd"], cost["agent_seconds"]), (1200, 1.0, 150.0))
         self.assertEqual((cost["turns"], cost["lines_changed"]), (3, 6))
+
+    def test_api_calls_and_context_come_from_each_calls_token_metrics(self):
+        trial = write_costed_trial(self.root / "consult", "proof-first-bugfix", 0, output_tokens=1)
+        steps = [
+            {"source": "user", "message": "Fix the bug."},
+            {"source": "agent", "message": "", "metrics": {"prompt_tokens": 18_000, "cached_tokens": 16_000}},
+            {"source": "agent", "message": "Fixed.", "metrics": {"prompt_tokens": 22_000, "cached_tokens": 18_000}},
+        ]
+        (trial / "agent" / "trajectory.json").write_text(json.dumps({"steps": steps}))
+        cost = self.cost_of(trial)
+        self.assertEqual(
+            (cost["api_calls"], cost["context_per_call"], cost["cache_read_tokens"]), (2, 20_000.0, 34_000)
+        )
 
     def test_a_multi_step_trial_without_resume_sums_its_steps(self):
         trial = self.multi_step_trial(False, agent_run(300, 0.25, 30), agent_run(900, 0.75, 120))
         cost = self.cost_of(trial)
         self.assertEqual((cost["output_tokens"], cost["cost_usd"], cost["agent_seconds"]), (1200, 1.0, 150.0))
+
+    def test_a_resumed_multi_step_trial_counts_each_call_once(self):
+        """The build step's trajectory already holds the brief's calls, so the brief's own trajectory is not added."""
+        trial = self.multi_step_trial(True, agent_run(300, 0.25, 30), agent_run(1200, 1.0, 120))
+        (trial / "steps" / "brief" / "agent").mkdir(parents=True)
+        (trial / "steps" / "brief" / "agent" / "trajectory.json").write_text(json.dumps(test_run_trajectory(1)))
+        (trial / "steps" / "build" / "agent" / "trajectory.json").write_text(json.dumps(test_run_trajectory(2)))
+        result = json.loads((trial / "result.json").read_text())
+        evidence = lift.trial_evidence(trial, result, result["verifier_result"]["rewards"])
+        self.assertEqual(evidence["activity"]["test_suite"]["calls"], 2.0)
 
     def test_only_lines_inside_hunks_count_as_changed(self):
         trial = write_costed_trial(self.root / "consult", "proof-first-bugfix", 0, output_tokens=1)
@@ -391,6 +447,99 @@ class LiftTests(unittest.TestCase):
         self.assertIsNone(summary["cost"]["turns"]["interval"])
         report = (self.root / "lift" / "consult.md").read_text()
         self.assertIn("| output tokens | 1 | 1,100 | 1,600 | +500 (+45%) | +", report)
+
+    def test_the_report_checks_each_tasks_cost_and_agent_time_against_the_gate(self):
+        for n in range(2):
+            write_costed_trial(self.root / "bare", "proof-first-bugfix", n, output_tokens=1, cost=1.0, seconds=60)
+            write_costed_trial(self.root / "consult", "proof-first-bugfix", n, output_tokens=1, cost=1.4, seconds=120)
+        with redirect_stdout(io.StringIO()):
+            lift.main(["lift.py", str(self.root / "bare"), str(self.root / "consult")])
+        gate = json.loads((self.root / "lift" / "consult.json").read_text())["gate"]
+        self.assertEqual(len(gate), 1)
+        self.assertAlmostEqual(gate[0]["cost_usd"]["ratio"], 1.4)
+        self.assertEqual((gate[0]["agent_seconds"]["ratio"], gate[0]["within"]), (2.0, False))
+        report = (self.root / "lift" / "consult.md").read_text()
+        self.assertIn("| consult/proof-first-bugfix | 1.00 / 1.40 | 1.40x | 1.0 / 2.0 | 2.00x | - | no |", report)
+
+    def test_a_task_exactly_at_the_gate_is_within_it(self):
+        gate = lift.cost_gate([gate_row("consult/a", (1.0, 1.5), (60.0, 90.0))])
+        self.assertTrue(gate[0]["within"])
+
+    def test_every_consult_task_is_in_the_gate_and_one_that_cannot_be_checked_makes_the_verdict_unknown(self):
+        rows = [
+            gate_row("consult/a", (1.0, 1.2), (60.0, 70.0)),
+            gate_row("consult/b", (None, 9.0), (None, 600.0), bare_trials=0),
+            gate_row("consult/c", (None, 9.0), (60.0, 600.0)),
+            gate_row("consult/z", (0.0, 5.0), (60.0, 600.0)),
+        ]
+        gate = lift.cost_gate(rows)
+        self.assertEqual(
+            [(g["task"], g["within"], g["reason"]) for g in gate],
+            [
+                ("consult/a", True, None),
+                ("consult/b", None, "no bare trials"),
+                ("consult/c", None, "no bare cost"),
+                ("consult/z", None, "bare cost 0"),
+            ],
+        )
+        self.assertEqual(lift.gate_verdict(gate), {"verdict": "unknown", "within": 1, "outside": 0, "unknown": 3})
+        outside = lift.cost_gate([*rows, gate_row("consult/slow", (1.0, 1.0), (60.0, 120.0))])
+        self.assertEqual(lift.gate_verdict(outside)["verdict"], "fail")
+        self.assertEqual(lift.gate_verdict(gate[:1])["verdict"], "pass")
+
+    def test_the_report_lists_a_task_bare_lacks_and_gives_the_verdict(self):
+        write_costed_trial(self.root / "bare", "proof-first-bugfix", 0, output_tokens=1, cost=1.0, seconds=60)
+        write_costed_trial(self.root / "consult", "proof-first-bugfix", 0, output_tokens=1, cost=1.2, seconds=60)
+        write_costed_trial(self.root / "consult", "follow-the-project", 0, output_tokens=1, cost=3.0, seconds=60)
+        with redirect_stdout(io.StringIO()):
+            lift.main(["lift.py", str(self.root / "bare"), str(self.root / "consult")])
+        report = (self.root / "lift" / "consult.md").read_text()
+        self.assertIn(
+            "| consult/follow-the-project | - / 3.00 | - | - / 1.0 | - | - | unknown: no bare trials |", report
+        )
+        self.assertIn("Gate verdict: unknown. Within the gate on 1 of 2 tasks, outside on 0, unknown on 1.", report)
+
+    def test_the_report_sorts_activities_by_consults_extra_seconds(self):
+        arms = {"bare": ["npm test", "cat src/a.ts"], "consult": ["npm test"] * 3 + ["cat src/a.ts"] * 2}
+        for arm, commands in arms.items():
+            trial = write_costed_trial(self.root / arm, "proof-first-bugfix", 0, output_tokens=1000)
+            (trial / "agent" / "trajectory.json").write_text(json.dumps(command_trajectory(*commands)))
+        with redirect_stdout(io.StringIO()):
+            lift.main(["lift.py", str(self.root / "bare"), str(self.root / "consult")])
+        report = (self.root / "lift" / "consult.md").read_text()
+        self.assertLess(report.index("| whole-suite test runs |"), report.index("| reads |"))
+
+    def test_no_share_of_extra_when_consult_spends_less(self):
+        for arm, runs in (("bare", 3), ("consult", 1)):
+            trial = write_costed_trial(self.root / arm, "proof-first-bugfix", 0, output_tokens=1000)
+            (trial / "agent" / "trajectory.json").write_text(json.dumps(test_run_trajectory(runs)))
+        with redirect_stdout(io.StringIO()):
+            lift.main(["lift.py", str(self.root / "bare"), str(self.root / "consult")])
+        activities = json.loads((self.root / "lift" / "consult.json").read_text())["activity"]["activities"]
+        self.assertIsNone(activities["test_suite"]["seconds"]["share_of_extra"])
+
+    def test_a_task_without_bare_activity_is_left_out_of_the_activity_table(self):
+        for task in ("proof-first-bugfix", "follow-the-project"):
+            for arm in ("bare", "consult"):
+                trial = write_costed_trial(self.root / arm, task, 0, output_tokens=1000)
+                (trial / "agent" / "trajectory.json").write_text(json.dumps(test_run_trajectory(2)))
+        (self.root / "bare" / "follow-the-project__0" / "agent" / "trajectory.json").unlink()
+        with redirect_stdout(io.StringIO()):
+            lift.main(["lift.py", str(self.root / "bare"), str(self.root / "consult")])
+        self.assertEqual(json.loads((self.root / "lift" / "consult.json").read_text())["activity"]["tasks"], 1)
+
+    def test_the_report_shows_where_consults_extra_time_goes(self):
+        for arm, runs in (("bare", 1), ("consult", 3)):
+            for n in range(2):
+                trial = write_costed_trial(self.root / arm, "proof-first-bugfix", n, output_tokens=1000)
+                (trial / "agent" / "trajectory.json").write_text(json.dumps(test_run_trajectory(runs)))
+        with redirect_stdout(io.StringIO()):
+            lift.main(["lift.py", str(self.root / "bare"), str(self.root / "consult")])
+        seconds = json.loads((self.root / "lift" / "consult.json").read_text())["activity"]["activities"]
+        self.assertEqual(seconds["test_suite"]["seconds"], {"bare": 11.0, "consult": 31.0, "share_of_extra": 1.0})
+        report = (self.root / "lift" / "consult.md").read_text()
+        self.assertIn("| whole-suite test runs | 1.0 / 3.0 | 11 / 31 | 100% |", report)
+        self.assertNotIn("| subagents |", report)
 
     def test_a_metric_with_one_recorded_trial_per_arm_gets_no_interval(self):
         bare = self.costed_job("bare", [1000])

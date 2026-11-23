@@ -182,13 +182,33 @@ the low end next to the mean:
 - **Intervals**: suite lift and floor-rate change each carry a 90% bootstrap
   interval over trials resampled within each task. An interval that contains
   0 is labelled "not distinguishable from noise".
-- **Cost and effort**: each arm's mean output tokens, cost, agent seconds,
-  turns, lines changed, and questions asked, with the change and its interval.
-  Questions count agent messages that end in a question after the last user
-  turn, the gate-fatigue number. Cost is the agent's API-equivalent estimate,
-  since runs bill a subscription. A resumed multi-step trial reports its final
-  step's tokens, which already include the earlier steps, and no cost, until
-  a real trial shows whether Harbor's per-step cost covers one step or all.
+- **Cost and effort**: each arm's mean output tokens, cost, API calls,
+  context per call, cache-read tokens, agent seconds, turns, lines changed,
+  and questions asked, with the change and its interval. Questions count
+  agent messages that end in a question after the last user turn, the
+  gate-fatigue number. Cost is the agent's API-equivalent estimate, since runs
+  bill a subscription. Each API call reads the session's cached context
+  again, so cost follows API calls times context per call. A resumed
+  multi-step trial reports its final step's tokens and cost, which cover the
+  whole session. Words per stop is the mean length of the message the agent
+  ends each turn on.
+- **Per-task cost against the gate**: per task, each arm's cost, agent
+  minutes, and API calls, Consult's multiple of bare for cost and agent time,
+  and whether both stay within 1.5x. Every Consult task gets a row. A task
+  that cannot be checked (no bare trials, no bare cost, or a bare cost of 0)
+  says why, and the verdict line under the table counts it as unknown, not as
+  a pass.
+- **Where the time goes**: per kind of tool call (targeted and whole-suite
+  test runs, edit-and-test and break-and-restore scripts, static checks,
+  reads, writes, skill loads and references, messages), each arm's calls,
+  seconds, and output tokens per trial, and that kind's share of Consult's
+  extra. A shell call that writes files counts as a write, or as a script when
+  it also runs the tests. A test run is targeted when its own test command
+  names a test file, folder, or test name. Each step counts under its first
+  tool call, so seconds are approximate. A step's seconds run to the next
+  step, so a kind's seconds include the model's time to write the step after
+  each of its calls, and messages, which end a turn, get none of their own.
+  `scripts/activity.py` has the details.
 
 When a task's trials do not all carry the same model scores, as in a fast
 run against a release baseline, an old generic-judge job against a rubric
