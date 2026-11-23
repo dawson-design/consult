@@ -129,6 +129,18 @@ def command_trajectory(*commands: str) -> dict:
     return {"steps": steps}
 
 
+def gate_row(
+    task: str, cost: tuple[float | None, float | None], seconds: tuple[float, float], bare_trials: int = 1
+) -> dict:
+    """A summarize() task row with only what cost_gate reads: cost, agent seconds, and API calls per arm."""
+    means = {"cost_usd": cost, "agent_seconds": seconds, "api_calls": (None, None)}
+    return {
+        "task": task,
+        "cost": {m: {"bare": b, "consult": c} for m, (b, c) in means.items()},
+        "trials": {"bare": bare_trials, "consult": 1},
+    }
+
+
 def stub_sections(report: str) -> list[str]:
     """The skill-content section and the listing-and-hook section of a lift report."""
     return report.split("## Skill content: consult vs stub")[1].split("## Listing and hook: stub vs bare")
@@ -435,6 +447,57 @@ class LiftTests(unittest.TestCase):
         self.assertIsNone(summary["cost"]["turns"]["interval"])
         report = (self.root / "lift" / "consult.md").read_text()
         self.assertIn("| output tokens | 1 | 1,100 | 1,600 | +500 (+45%) | +", report)
+
+    def test_the_report_checks_each_tasks_cost_and_agent_time_against_the_gate(self):
+        for n in range(2):
+            write_costed_trial(self.root / "bare", "proof-first-bugfix", n, output_tokens=1, cost=1.0, seconds=60)
+            write_costed_trial(self.root / "consult", "proof-first-bugfix", n, output_tokens=1, cost=1.4, seconds=120)
+        with redirect_stdout(io.StringIO()):
+            lift.main(["lift.py", str(self.root / "bare"), str(self.root / "consult")])
+        gate = json.loads((self.root / "lift" / "consult.json").read_text())["gate"]
+        self.assertEqual(len(gate), 1)
+        self.assertAlmostEqual(gate[0]["cost_usd"]["ratio"], 1.4)
+        self.assertEqual((gate[0]["agent_seconds"]["ratio"], gate[0]["within"]), (2.0, False))
+        report = (self.root / "lift" / "consult.md").read_text()
+        self.assertIn("| consult/proof-first-bugfix | 1.00 / 1.40 | 1.40x | 1.0 / 2.0 | 2.00x | - | no |", report)
+
+    def test_a_task_exactly_at_the_gate_is_within_it(self):
+        gate = lift.cost_gate([gate_row("consult/a", (1.0, 1.5), (60.0, 90.0))])
+        self.assertTrue(gate[0]["within"])
+
+    def test_every_consult_task_is_in_the_gate_and_one_that_cannot_be_checked_makes_the_verdict_unknown(self):
+        rows = [
+            gate_row("consult/a", (1.0, 1.2), (60.0, 70.0)),
+            gate_row("consult/b", (None, 9.0), (None, 600.0), bare_trials=0),
+            gate_row("consult/c", (None, 9.0), (60.0, 600.0)),
+            gate_row("consult/z", (0.0, 5.0), (60.0, 600.0)),
+        ]
+        gate = lift.cost_gate(rows)
+        self.assertEqual(
+            [(g["task"], g["within"], g["reason"]) for g in gate],
+            [
+                ("consult/a", True, None),
+                ("consult/b", None, "no bare trials"),
+                ("consult/c", None, "no bare cost"),
+                ("consult/z", None, "bare cost 0"),
+            ],
+        )
+        self.assertEqual(lift.gate_verdict(gate), {"verdict": "unknown", "within": 1, "outside": 0, "unknown": 3})
+        outside = lift.cost_gate([*rows, gate_row("consult/slow", (1.0, 1.0), (60.0, 120.0))])
+        self.assertEqual(lift.gate_verdict(outside)["verdict"], "fail")
+        self.assertEqual(lift.gate_verdict(gate[:1])["verdict"], "pass")
+
+    def test_the_report_lists_a_task_bare_lacks_and_gives_the_verdict(self):
+        write_costed_trial(self.root / "bare", "proof-first-bugfix", 0, output_tokens=1, cost=1.0, seconds=60)
+        write_costed_trial(self.root / "consult", "proof-first-bugfix", 0, output_tokens=1, cost=1.2, seconds=60)
+        write_costed_trial(self.root / "consult", "follow-the-project", 0, output_tokens=1, cost=3.0, seconds=60)
+        with redirect_stdout(io.StringIO()):
+            lift.main(["lift.py", str(self.root / "bare"), str(self.root / "consult")])
+        report = (self.root / "lift" / "consult.md").read_text()
+        self.assertIn(
+            "| consult/follow-the-project | - / 3.00 | - | - / 1.0 | - | - | unknown: no bare trials |", report
+        )
+        self.assertIn("Gate verdict: unknown. Within the gate on 1 of 2 tasks, outside on 0, unknown on 1.", report)
 
     def test_the_report_sorts_activities_by_consults_extra_seconds(self):
         arms = {"bare": ["npm test", "cat src/a.ts"], "consult": ["npm test"] * 3 + ["cat src/a.ts"] * 2}

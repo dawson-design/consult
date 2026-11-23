@@ -39,7 +39,10 @@ result.json (see token_records for multi-step trials); API calls, context,
 turns, and questions from the final step's trajectory; lines changed from its
 judge-bundle.md. Words per stop is the mean length of the message the agent
 ends each turn on. A trial that did not record a metric is left out of that
-metric's mean.
+metric's mean. A per-task table then gives Consult's cost and agent time as
+multiples of bare's, against COST_GATE, for every Consult task, and an overall
+verdict. A task that cannot be checked, such as one bare lacks, says why and
+makes the verdict unknown, not a pass.
 
 An activity table follows: per kind of tool call (test runs, edit-and-test and
 break-and-restore scripts, static checks, reads, writes, skill loads and
@@ -117,6 +120,9 @@ COST_NOTE = (
     "follows API calls times context per call. Questions count agent messages that end in a question after "
     "the last user turn, the gate-fatigue number."
 )
+# The most Consult may spend per task, as a multiple of bare, in cost and in agent time.
+COST_GATE = 1.5
+GATE_METRICS = {"cost_usd": "cost", "agent_seconds": "agent time"}
 JUDGE_EXCLUDED_NOTE = (
     "Rewards exclude the model judges for some tasks: their trials did not all carry the same model scores"
     " (a job without the judge, an older judge, or a failed judge call), so those tasks are scored on"
@@ -438,21 +444,68 @@ def summarize(bare: dict[str, list[dict]], consult: dict[str, list[dict]]) -> di
             },
             "readouts": {r: {"bare": mean_reward(b, r), "consult": mean_reward(c, r)} for r in READOUTS},
             "cost": {m: {"bare": mean_cost(b, m), "consult": mean_cost(c, m)} for m in COST_METRICS},
+            "trials": {"bare": len(b), "consult": len(c)},
             "failed": failed_trials(b + c),
         }
         row["lift"] = row["consult"] - row["bare"]
         rows.append(row)
     suite = compare(bare, consult)
+    gate = cost_gate(rows)
     return {
         "tasks": rows,
         "suite_lift": suite["reward"],
         "suite": suite,
         "judge_excluded": judge_excluded,
         "cost": {m: compare_cost(bare, consult, m) for m in COST_METRICS},
+        "gate": gate,
+        "gate_verdict": gate_verdict(gate),
         "activity": compare_activity(bare, consult),
         "rules": rule_scorecard(bare, consult),
         "skills": [skill_row(t, bare.get(t, []), consult.get(t, [])) for t in tasks],
     }
+
+
+def cost_gate(rows: list[dict]) -> list[dict]:
+    """Per Consult task: each arm's mean cost, agent time, and API calls, Consult's multiple of bare, and whether
+    cost and agent time both stay within COST_GATE. A task that cannot be checked gets within None and the reason
+    (gate_gap), so it shows in the table instead of dropping out."""
+    gate = []
+    for row in rows:
+        metrics = {
+            m: {**row["cost"][m], "ratio": ratio(row["cost"][m])} for m in ("cost_usd", "agent_seconds", "api_calls")
+        }
+        reason = gate_gap(row)
+        within = None if reason else max(metrics["cost_usd"]["ratio"], metrics["agent_seconds"]["ratio"]) <= COST_GATE
+        gate.append({"task": row["task"], **metrics, "within": within, "reason": reason})
+    return gate
+
+
+def gate_gap(row: dict) -> str | None:
+    """Why a task's cost and agent time cannot be checked against the gate, or None when they can."""
+    if not row["trials"]["bare"]:
+        return "no bare trials"
+    for metric, label in GATE_METRICS.items():
+        means = row["cost"][metric]
+        if means["bare"] is None:
+            return f"no bare {label}"
+        if not means["bare"]:
+            return f"bare {label} 0"
+        if means["consult"] is None:
+            return f"no consult {label}"
+    return None
+
+
+def gate_verdict(gate: list[dict]) -> dict:
+    """The gate over every task: fail when any task is outside it, else unknown when any task could not be checked
+    (or there are none), else pass; with the count of tasks within, outside, and unknown."""
+    counts = Counter("unknown" if g["within"] is None else "within" if g["within"] else "outside" for g in gate)
+    verdict = "fail" if counts["outside"] else "unknown" if counts["unknown"] or not gate else "pass"
+    return {"verdict": verdict, **{k: counts[k] for k in ("within", "outside", "unknown")}}
+
+
+def ratio(means: dict) -> float | None:
+    """Consult's mean as a multiple of bare's; None when either is missing or bare's is 0."""
+    return means["consult"] / means["bare"] if means["bare"] and means["consult"] is not None else None
 
 
 def mean_cost(entries: list[dict], metric: str) -> float | None:
@@ -634,7 +687,8 @@ def render_markdown(summary: dict, bare_dir: Path, consult_dir: Path) -> str:
             lines.append(f"- {row['task']}: {dims}")
         if row["failed"]:
             lines.append(f"- {row['task']}: no reward for {', '.join(row['failed'])}")
-    sections = render_cost(summary["cost"]) + render_activity(summary["activity"])
+    sections = render_cost(summary["cost"]) + render_gate(summary["gate"], summary["gate_verdict"])
+    sections += render_activity(summary["activity"])
     sections += render_rules(summary["rules"]) + render_skills(summary["skills"])
     return "\n".join(lines + sections) + "\n"
 
@@ -651,6 +705,49 @@ def render_cost(cost: dict[str, dict]) -> list[str]:
         "| --- | ---: | ---: | ---: | ---: | --- |",
     ]
     return header + rows + ["", COST_NOTE]
+
+
+def render_gate(gate: list[dict], verdict: dict) -> list[str]:
+    """The per-task gate table, every Consult task included, then the overall verdict."""
+    if not gate:
+        return []
+    header = [
+        "",
+        f"## Per-task cost against the {COST_GATE}x gate",
+        "",
+        "| task | cost (bare / consult) | cost ratio | agent minutes (bare / consult) | time ratio | API calls (bare / consult) | within gate |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | --- |",
+    ]
+    return header + [render_gate_row(row) for row in gate] + ["", render_verdict(verdict, len(gate))]
+
+
+def render_gate_row(row: dict) -> str:
+    cost, seconds, calls = row["cost_usd"], row["agent_seconds"], row["api_calls"]
+    api = "-" if calls["ratio"] is None else f"{calls['bare']:,.0f} / {calls['consult']:,.0f}"
+    within = {True: "yes", False: "no", None: f"unknown: {row['reason']}"}[row["within"]]
+    return (
+        f"| {row['task']} | {pair(cost, ',.2f')} | {times(cost['ratio'])} | {pair(seconds, ',.1f', 1 / 60)} "
+        f"| {times(seconds['ratio'])} | {api} | {within} |"
+    )
+
+
+def render_verdict(verdict: dict, tasks: int) -> str:
+    """The line under the gate table: the overall verdict and the count of tasks within, outside, and unknown."""
+    return (
+        f"Gate verdict: {verdict['verdict']}. Within the gate on {verdict['within']} of {tasks} tasks, outside on "
+        f"{verdict['outside']}, unknown on {verdict['unknown']}. A task that cannot be checked counts as unknown, "
+        "not as within."
+    )
+
+
+def pair(means: dict, spec: str, scale: float = 1.0) -> str:
+    """Bare's and Consult's means as `bare / consult`, scaled, with - for a missing one."""
+    return " / ".join("-" if means[arm] is None else format(means[arm] * scale, spec) for arm in ("bare", "consult"))
+
+
+def times(value: float | None) -> str:
+    """A ratio as `1.23x`, or - when there is none."""
+    return "-" if value is None else f"{value:.2f}x"
 
 
 def render_activity(result: dict) -> list[str]:

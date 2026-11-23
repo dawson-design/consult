@@ -192,6 +192,12 @@ the low end next to the mean:
   multi-step trial reports its final step's tokens and cost, which cover the
   whole session. Words per stop is the mean length of the message the agent
   ends each turn on.
+- **Per-task cost against the gate**: per task, each arm's cost, agent
+  minutes, and API calls, Consult's multiple of bare for cost and agent time,
+  and whether both stay within 1.5x. Every Consult task gets a row. A task
+  that cannot be checked (no bare trials, no bare cost, or a bare cost of 0)
+  says why, and the verdict line under the table counts it as unknown, not as
+  a pass.
 - **Where the time goes**: per kind of tool call (targeted and whole-suite
   test runs, edit-and-test and break-and-restore scripts, static checks,
   reads, writes, skill loads and references, messages), each arm's calls,
