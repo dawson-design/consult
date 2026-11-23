@@ -44,6 +44,15 @@ def is_main_call(step: dict) -> bool:
     return is_api_call(step) and not (step.get("extra") or {}).get("is_sidechain")
 
 
+def brief_count(result: dict) -> int | None:
+    """How many of a trial's Harbor steps open a brief, read from its own step names (ending in `brief`). A
+    single-step trial has one. None for a multi-step trial with no step so named."""
+    steps = result.get("step_results") or []
+    if not steps:
+        return 1
+    return sum(1 for step in steps if str(step.get("step_name", "")).endswith("brief")) or None
+
+
 def stage_of(step_name: str) -> str:
     """The stage a Harbor step belongs to: `s2-approve` is in stage `s2`; a name without a dash is its own stage."""
     return step_name.split("-", 1)[0]

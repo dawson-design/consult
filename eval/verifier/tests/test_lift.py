@@ -10,7 +10,7 @@ import json
 import sys
 import tempfile
 import unittest
-from contextlib import redirect_stdout
+from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 from unittest import mock
 
@@ -95,6 +95,18 @@ def trajectory(*messages: str) -> dict:
     """An ATIF trajectory: the user prompt, then one agent step per message."""
     steps = [{"source": "user", "message": "Fix the bug."}]
     return {"steps": steps + [{"source": "agent", "message": m} for m in messages]}
+
+
+def gate_cost(consult_seconds: int) -> dict:
+    """A task row's cost means for cost_gate: Consult at 1.9x bare's cost, against bare's 60 agent seconds."""
+    pair = {"bare": 1.0, "consult": 1.9}
+    return {
+        "cost_usd": pair,
+        "agent_seconds": {"bare": 60.0, "consult": float(consult_seconds)},
+        "api_calls": pair,
+        "lines_changed": pair,
+        "resume_cost_usd": {"bare": 0.0, "consult": 0.0},
+    }
 
 
 def write_costed_trial(job: Path, task: str, n: int, output_tokens: int, cost: float = 1.0, seconds: int = 60) -> Path:
@@ -541,7 +553,7 @@ class LiftTests(unittest.TestCase):
         self.assertIn("| s1 | 6.0 / 6.0 | 1.00x | 1.00 / 2.00 | 2.00x | 625 / 1,250 | 2.00x |", report)
         self.assertIn("| total | 7.0 / 7.0 | 1.00x | 1.30 / 2.60 | 2.00x | 685 / 1,370 | 2.00x |", report)
         self.assertIn("| tokens added at resumes | 1 | 1,500 | 1,500 | +0 (+0%) |", report)
-        self.assertIn("| consult/staged-commissions | 1.30 / 2.60 | 2.00x |", report)
+        self.assertIn("| consult/staged-commissions | 1.30 / 2.60 | 2.00x | 2 (trials) | 2.0x |", report)
         resume_cost = 1_500 * (RATES[0] + 3 * RATES[1])
         self.assertIn(f"| {(2.6 - resume_cost) / (1.3 - resume_cost):.2f}x |", report)
 
@@ -589,10 +601,58 @@ class LiftTests(unittest.TestCase):
         self.assertEqual((gate[0]["agent_seconds"]["ratio"], gate[0]["within"]), (2.0, False))
         report = (self.root / "lift" / "consult.md").read_text()
         self.assertIn(
-            "| consult/proof-first-bugfix | 1.00 / 1.40 | 1.40x | 1.0 / 2.0 | 2.00x | - | - "
+            "| consult/proof-first-bugfix | 1.00 / 1.40 | 1.40x | 1 (trials) | 1.5x | 1.0 / 2.0 | 2.00x | - | - "
             "| 16.67 / 23.33 | 1.40x | no |",
             report,
         )
+
+    def test_a_multi_stage_build_gets_the_higher_cost_limit_and_the_same_time_limit(self):
+        rows = [
+            {"task": task, "cost": gate_cost(seconds), "trials": {"bare": 1, "consult": 1}}
+            for task, seconds in (
+                ("consult/staged-commissions", 84),
+                ("consult/follow-the-project", 84),
+                ("consult/staged-slow", 96),
+            )
+        ]
+        five, one = {"briefs": 5, "source": "trials"}, {"briefs": 1, "source": "trials"}
+        briefs = {"consult/staged-commissions": five, "consult/follow-the-project": one, "consult/staged-slow": five}
+        gate = {row["task"]: row for row in lift.cost_gate(rows, briefs)}
+        self.assertEqual(gate["consult/staged-commissions"]["limits"], {"cost_usd": 2.0, "agent_seconds": 1.5})
+        self.assertTrue(gate["consult/staged-commissions"]["within"])
+        self.assertEqual(gate["consult/follow-the-project"]["limits"]["cost_usd"], 1.5)
+        self.assertFalse(gate["consult/follow-the-project"]["within"])
+        self.assertFalse(gate["consult/staged-slow"]["within"])
+
+    def test_the_brief_count_comes_from_the_trials_own_step_names(self):
+        names = ("s1-brief", "s1-brief-review", "s1-approve", "s2-brief")
+        self.assertEqual(stages.brief_count({"step_results": [{"step_name": n} for n in names]}), 2)
+        self.assertEqual(stages.brief_count({"agent_result": {}}), 1)
+        self.assertIsNone(stages.brief_count({"step_results": [{"step_name": n} for n in ("build", "approve")]}))
+
+    def test_a_task_takes_the_brief_count_its_trials_share_and_says_when_they_disagree(self):
+        entries = [{"briefs": 5}] * 4 + [{"briefs": 4}]
+        self.assertEqual(lift.task_briefs("consult/x", entries[:4]), {"briefs": 5, "source": "trials"})
+        stderr = io.StringIO()
+        with redirect_stderr(stderr):
+            disagree = lift.task_briefs("consult/x", entries)
+        self.assertEqual(disagree, {"briefs": 5, "source": "trials disagree: 5 in 4, 4 in 1"})
+        self.assertIn("consult/x: the trials disagree", stderr.getvalue())
+
+    def test_the_brief_count_falls_back_to_task_toml_only_with_a_warning(self):
+        stderr = io.StringIO()
+        with redirect_stderr(stderr):
+            fallback = lift.task_briefs("consult/staged-commissions", [{"briefs": None}])
+            missing = lift.task_briefs("consult/staged-commissions-v2", [])
+        self.assertEqual(fallback, {"briefs": 5, "source": "task.toml"})
+        self.assertEqual(missing, {"briefs": 1, "source": "default"})
+        self.assertEqual(stderr.getvalue().count("lift: "), 2)
+        self.assertEqual((lift.brief_steps("follow-the-project"), lift.brief_steps("staged-commissions-v2")), (1, None))
+        (self.root / "renamed").mkdir()
+        steps = "".join(f'[[steps]]\nname = "{n}"\n' for n in ("s1-brief", "s1-brief-review", "s2-brief"))
+        (self.root / "renamed" / "task.toml").write_text(steps)
+        with mock.patch.object(lift, "TASKS_DIR", self.root):
+            self.assertEqual(lift.brief_steps("consult/renamed"), 2)
 
     def test_the_stage_table_takes_the_stage_list_most_trials_share(self):
         def entry(names: list[str], cost: float) -> dict:
@@ -644,7 +704,7 @@ class LiftTests(unittest.TestCase):
         self.assertEqual(stages.calls_per_prompt(lift.cl.Trajectory(steps=early, calls=[])), [1, 1, 1])
 
     def test_a_task_exactly_at_the_gate_is_within_it(self):
-        gate = lift.cost_gate([gate_row("consult/a", (1.0, 1.5), (60.0, 90.0))])
+        gate = lift.cost_gate([gate_row("consult/a", (1.0, 1.5), (60.0, 90.0))], {})
         self.assertTrue(gate[0]["within"])
 
     def test_every_consult_task_is_in_the_gate_and_one_that_cannot_be_checked_makes_the_verdict_unknown(self):
@@ -654,7 +714,7 @@ class LiftTests(unittest.TestCase):
             gate_row("consult/c", (None, 9.0), (60.0, 600.0)),
             gate_row("consult/z", (0.0, 5.0), (60.0, 600.0)),
         ]
-        gate = lift.cost_gate(rows)
+        gate = lift.cost_gate(rows, {})
         self.assertEqual(
             [(g["task"], g["within"], g["reason"]) for g in gate],
             [
@@ -665,7 +725,7 @@ class LiftTests(unittest.TestCase):
             ],
         )
         self.assertEqual(lift.gate_verdict(gate), {"verdict": "unknown", "within": 1, "outside": 0, "unknown": 3})
-        outside = lift.cost_gate([*rows, gate_row("consult/slow", (1.0, 1.0), (60.0, 120.0))])
+        outside = lift.cost_gate([*rows, gate_row("consult/slow", (1.0, 1.0), (60.0, 120.0))], {})
         self.assertEqual(lift.gate_verdict(outside)["verdict"], "fail")
         self.assertEqual(lift.gate_verdict(gate[:1])["verdict"], "pass")
 
@@ -677,7 +737,8 @@ class LiftTests(unittest.TestCase):
             lift.main(["lift.py", str(self.root / "bare"), str(self.root / "consult")])
         report = (self.root / "lift" / "consult.md").read_text()
         self.assertIn(
-            "| consult/follow-the-project | - / 3.00 | - | - / 1.0 | - | - | - | - | - | unknown: no bare trials |",
+            "| consult/follow-the-project | - / 3.00 | - | 1 (trials) | 1.5x | - / 1.0 | - | - | - | - | - "
+            "| unknown: no bare trials |",
             report,
         )
         self.assertIn("Gate verdict: unknown. Within the gate on 1 of 2 tasks, outside on 0, unknown on 1.", report)

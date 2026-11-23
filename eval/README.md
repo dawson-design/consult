@@ -201,11 +201,16 @@ the low end next to the mean:
   cost runs a little low next to it.
 - **Per-task cost against the gate**: per task, each arm's cost, agent
   minutes, and API calls, Consult's multiple of bare for cost and agent time,
-  and whether both stay within 1.5x. Two columns help read the cost ratio: the
-  ratio without the tokens added at resumes, and each arm's cost per 100
-  changed lines. Every Consult task gets a row. A task that cannot be checked
-  (no bare trials, no bare cost, or a bare cost of 0) says why, and the verdict
-  line under the table counts it as unknown, not as a pass.
+  and whether both stay within the gate: 1.5x agent time on every task, and
+  1.5x cost for a single change or 2.0x for a multi-stage build (a task whose
+  steps open more than one brief). The brief count comes from the trials' own
+  step names; the table says when the trials disagree, or when no trial names
+  a brief step and the count comes from task.toml, which also prints a
+  warning. Two columns help read the cost ratio: the ratio without the tokens
+  added at resumes, and each arm's cost per 100 changed lines. Every Consult
+  task gets a row. A task that cannot be checked (no bare trials, no bare
+  cost, or a bare cost of 0) says why, and the verdict line under the table
+  counts it as unknown, not as a pass.
 - **Per-stage cost**: for each multi-step task, each arm's API calls, cost,
   and output tokens per stage, with Consult's multiple of bare. A stage is a
   step, or the steps that share a name prefix such as `s2-`. API calls come

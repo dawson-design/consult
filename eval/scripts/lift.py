@@ -40,13 +40,15 @@ trials); API calls, context, resume tokens, turns, and questions from the final
 step's trajectory; lines changed from its judge-bundle.md. Words per stop is
 the mean length of the message the agent ends each turn on. A trial that did
 not record a metric is left out of that metric's mean. A per-task table then
-gives Consult's cost and agent time as multiples of bare's, against COST_GATE,
-with the cost ratio less the tokens added at resumes and the cost per 100
-changed lines. Every Consult task gets a row, and an overall verdict follows; a
-task that cannot be checked, such as one bare lacks, says why and makes the
-verdict unknown, not a pass. For each multi-step task, a per-stage table gives
-each arm's API calls, cost, and output tokens per stage, over the trials that
-share the most common stage list; stages.py says how the session is split.
+gives Consult's cost and agent time as multiples of bare's, against the gate
+(TIME_GATE on every task; COST_GATE, or MULTI_STAGE_COST_GATE for a task whose
+steps open more than one brief, counted from the trials' own step names), with
+the cost ratio less the tokens added at resumes and the cost per 100 changed
+lines. Every Consult task gets a row, and an overall verdict follows; a task
+that cannot be checked, such as one bare lacks, says why and makes the verdict
+unknown, not a pass. For each multi-step task, a per-stage table gives each
+arm's API calls, cost, and output tokens per stage, over the trials that share
+the most common stage list; stages.py says how the session is split.
 
 An activity table follows: per kind of tool call (test runs, edit-and-test and
 break-and-restore scripts, static checks, reads, writes, skill loads and
@@ -73,6 +75,7 @@ import random
 import re
 import statistics
 import sys
+import tomllib
 from collections import Counter, defaultdict
 from collections.abc import Iterable
 from datetime import datetime
@@ -130,10 +133,15 @@ COST_NOTE = (
     "the stop message and the prompt, priced as one cache write and a read by every later call. Questions count "
     "agent messages that end in a question after the last user turn, the gate-fatigue number."
 )
-# The most Consult may spend per task, as a multiple of bare, in cost and in agent time.
+# The most Consult may spend per task, as a multiple of bare: agent time on every task, and cost for a single
+# change or for a multi-stage build (a task whose steps open more than one brief, see task_briefs).
+TIME_GATE = 1.5
 COST_GATE = 1.5
 GATE_METRICS = {"cost_usd": "cost", "agent_seconds": "agent time"}
+MULTI_STAGE_COST_GATE = 2.0
 COST_ARMS = ("bare", "consult")
+# A task's brief count when cost_gate is not given one: a single change.
+ONE_BRIEF = {"briefs": 1, "source": "default"}
 JUDGE_EXCLUDED_NOTE = (
     "Rewards exclude the model judges for some tasks: their trials did not all carry the same model scores"
     " (a job without the judge, an older judge, or a failed judge call), so those tasks are scored on"
@@ -178,6 +186,7 @@ def trial_evidence(trial_dir: Path, result: dict, rewards: dict) -> dict:
         "skills_read": cl.read_skill_names(trajectory),
         "cost": cost,
         "stages": stages.stage_costs(result, trajectory),
+        "briefs": stages.brief_count(result),
         "activity": activity.trial_activity(trajectory) if trajectory.steps else None,
     }
 
@@ -460,7 +469,7 @@ def summarize(bare: dict[str, list[dict]], consult: dict[str, list[dict]]) -> di
         row["lift"] = row["consult"] - row["bare"]
         rows.append(row)
     suite = compare(bare, consult)
-    gate = cost_gate(rows)
+    gate = cost_gate(rows, {task: task_briefs(task, bare.get(task, []) + consult.get(task, [])) for task in tasks})
     return {
         "tasks": rows,
         "suite_lift": suite["reward"],
@@ -476,21 +485,70 @@ def summarize(bare: dict[str, list[dict]], consult: dict[str, list[dict]]) -> di
     }
 
 
-def cost_gate(rows: list[dict]) -> list[dict]:
-    """Per Consult task: each arm's mean cost, agent time, and API calls, Consult's multiple of bare, and whether
-    cost and agent time both stay within COST_GATE. A task that cannot be checked gets within None and the reason
-    (gate_gap), so it shows in the table instead of dropping out. Cost without the tokens added at resumes and cost
-    per changed line come alongside, for reading the cost ratio."""
+def task_briefs(task: str, entries: list[dict]) -> dict:
+    """How many briefs the task's steps open, and where that count came from.
+
+    The count comes from the trials' own step names (stages.brief_count), so a later change to the task's steps
+    does not change an old run's limit. When the trials disagree, as a truncated trial would, the count most trials
+    share wins (the larger on a tie) and the source says so. Only when no trial names a brief step does the count come
+    from the task's current task.toml, with a warning on stderr.
+    """
+    counts = Counter(e["briefs"] for e in entries if e.get("briefs") is not None)
+    if len(counts) == 1:
+        return {"briefs": next(iter(counts)), "source": "trials"}
+    if counts:
+        briefs = max(counts, key=lambda n: (counts[n], n))
+        spread = ", ".join(f"{n} in {counts[n]}" for n in sorted(counts, reverse=True))
+        warn(f"{task}: the trials disagree on how many briefs the task opens ({spread}); the cost limit uses {briefs}")
+        return {"briefs": briefs, "source": f"trials disagree: {spread}"}
+    briefs = brief_steps(task)
+    if briefs is None:
+        warn(f"{task}: no trial names a brief step and there is no task.toml; the cost limit assumes one brief")
+        return ONE_BRIEF
+    warn(f"{task}: no trial names a brief step; the cost limit counts the briefs in the current task.toml ({briefs})")
+    return {"briefs": briefs, "source": "task.toml"}
+
+
+def brief_steps(task: str) -> int | None:
+    """How many of the steps in the task's current task.toml open a brief (a name ending in `brief`), at least 1;
+    None when the task has no task.toml."""
+    path = TASKS_DIR / task.split("/")[-1] / "task.toml"
+    if not path.is_file():
+        return None
+    steps = tomllib.loads(path.read_text()).get("steps", [])
+    return max(1, sum(1 for step in steps if str(step.get("name", "")).endswith("brief")))
+
+
+def warn(message: str) -> None:
+    """Print a warning about the run's figures on stderr, apart from the report on stdout."""
+    print(f"lift: {message}", file=sys.stderr)
+
+
+def cost_limit(briefs: int) -> float:
+    """The cost gate for a task: a multi-stage build, which opens more than one brief, gets the higher limit."""
+    return MULTI_STAGE_COST_GATE if briefs > 1 else COST_GATE
+
+
+def cost_gate(rows: list[dict], briefs: dict[str, dict]) -> list[dict]:
+    """Per Consult task: each arm's mean cost, agent time, and API calls, Consult's multiple of bare, the task's
+    limits from its brief count (task_briefs; ONE_BRIEF for a task briefs lacks), and whether cost and agent time
+    both stay within them. A task that cannot be checked gets within None and the reason (gate_gap), so it shows in
+    the table instead of dropping out. Cost without the tokens added at resumes and cost per changed line come
+    alongside, for reading the cost ratio."""
     gate = []
     for row in rows:
         metrics = {
             m: {**row["cost"][m], "ratio": ratio(row["cost"][m])} for m in ("cost_usd", "agent_seconds", "api_calls")
         }
+        task_brief = briefs.get(row["task"], ONE_BRIEF)
+        limits = {"cost_usd": cost_limit(task_brief["briefs"]), "agent_seconds": TIME_GATE}
         reason = gate_gap(row)
-        within = None if reason else max(metrics["cost_usd"]["ratio"], metrics["agent_seconds"]["ratio"]) <= COST_GATE
+        within = None if reason else all(metrics[m]["ratio"] <= limit for m, limit in limits.items())
         metrics["cost_without_resume"] = cost_without_resume(row["cost"])
         metrics["cost_per_line"] = cost_per_line(row["cost"])
-        gate.append({"task": row["task"], **metrics, "within": within, "reason": reason})
+        gate.append(
+            {"task": row["task"], **metrics, "briefs": task_brief, "limits": limits, "within": within, "reason": reason}
+        )
     return gate
 
 
@@ -796,14 +854,21 @@ def render_gate(gate: list[dict], verdict: dict) -> list[str]:
         return []
     header = [
         "",
-        f"## Per-task cost against the {COST_GATE}x gate",
+        "## Per-task cost against the gate",
         "",
         (
-            "| task | cost (bare / consult) | cost ratio | agent minutes (bare / consult) "
+            f"Agent time stays within {TIME_GATE}x bare's on every task. Cost stays within {COST_GATE}x for a single "
+            f"change and {MULTI_STAGE_COST_GATE}x for a multi-stage build, a task that opens more than one brief. The "
+            "briefs column gives the count and where it came from: the trials' step names, or task.toml when no trial "
+            "names a brief step."
+        ),
+        "",
+        (
+            "| task | cost (bare / consult) | cost ratio | briefs (source) | cost limit | agent minutes (bare / consult) "
             "| time ratio | API calls (bare / consult) | cost ratio without resume tokens | USD per 100 changed lines "
             "(bare / consult) | line-cost ratio | within gate |"
         ),
-        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
+        "| --- | ---: | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
     ]
     return header + [render_gate_row(row) for row in gate] + ["", render_verdict(verdict, len(gate))]
 
@@ -816,6 +881,7 @@ def render_gate_row(row: dict) -> str:
     within = {True: "yes", False: "no", None: f"unknown: {row['reason']}"}[row["within"]]
     return (
         f"| {row['task']} | {pair(cost, ',.2f')} | {times(cost['ratio'])} "
+        f"| {row['briefs']['briefs']} ({row['briefs']['source']}) | {row['limits']['cost_usd']:.1f}x "
         f"| {pair(seconds, ',.1f', 1 / 60)} | {times(seconds['ratio'])} | {api} "
         f"| {times(row['cost_without_resume']['ratio'])} | {per_100} | {times(line['ratio'])} | {within} |"
     )
