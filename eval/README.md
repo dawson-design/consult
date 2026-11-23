@@ -192,12 +192,27 @@ the low end next to the mean:
   multi-step trial reports its final step's tokens and cost, which cover the
   whole session. Words per stop is the mean length of the message the agent
   ends each turn on.
+- **Tokens added at resumes**: what each resumed turn adds to the context
+  beyond the stop message and the prompt, mostly snippets of files that
+  changed since the last turn, and their cost: one cache write, then a read
+  by every later call, at the trial's own per-token rates fitted to its
+  per-call cost estimates. Those estimates price cache writes about $3 per
+  million tokens below the step records the trial's cost comes from, so this
+  cost runs a little low next to it.
 - **Per-task cost against the gate**: per task, each arm's cost, agent
   minutes, and API calls, Consult's multiple of bare for cost and agent time,
-  and whether both stay within 1.5x. Every Consult task gets a row. A task
-  that cannot be checked (no bare trials, no bare cost, or a bare cost of 0)
-  says why, and the verdict line under the table counts it as unknown, not as
-  a pass.
+  and whether both stay within 1.5x. Two columns help read the cost ratio: the
+  ratio without the tokens added at resumes, and each arm's cost per 100
+  changed lines. Every Consult task gets a row. A task that cannot be checked
+  (no bare trials, no bare cost, or a bare cost of 0) says why, and the verdict
+  line under the table counts it as unknown, not as a pass.
+- **Per-stage cost**: for each multi-step task, each arm's API calls, cost,
+  and output tokens per stage, with Consult's multiple of bare. A stage is a
+  step, or the steps that share a name prefix such as `s2-`. API calls come
+  from splitting the session at each prompt; cost and output tokens from the
+  rise in Harbor's running totals per step, so the stages sum to the trial.
+  The stage list is the one most trials share, and the table says how many
+  trials it left out. `scripts/stages.py` has the details.
 - **Where the time goes**: per kind of tool call (targeted and whole-suite
   test runs, edit-and-test and break-and-restore scripts, static checks,
   reads, writes, skill loads and references, messages), each arm's calls,

@@ -18,6 +18,7 @@ EVAL_DIR = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(EVAL_DIR / "scripts"))
 
 import lift
+import stages
 
 
 def write_trial(job: Path, task: str, n: int, rewards: dict | None) -> None:
@@ -133,12 +134,67 @@ def gate_row(
     task: str, cost: tuple[float | None, float | None], seconds: tuple[float, float], bare_trials: int = 1
 ) -> dict:
     """A summarize() task row with only what cost_gate reads: cost, agent seconds, and API calls per arm."""
-    means = {"cost_usd": cost, "agent_seconds": seconds, "api_calls": (None, None)}
+    means = {
+        "cost_usd": cost,
+        "agent_seconds": seconds,
+        "api_calls": (None, None),
+        "lines_changed": (None, None),
+        "resume_cost_usd": (None, None),
+    }
     return {
         "task": task,
         "cost": {m: {"bare": b, "consult": c} for m, (b, c) in means.items()},
         "trials": {"bare": bare_trials, "consult": 1},
     }
+
+
+RATES = (5e-6, 2e-7, 2e-5)  # USD per new input, cache-read, and output token
+
+
+def call(prompt: int, cached: int, output: int, tools: bool = False, sidechain: bool = False) -> dict:
+    """One API call as an ATIF agent step, its cost priced at RATES."""
+    cost = RATES[0] * (prompt - cached) + RATES[1] * cached + RATES[2] * output
+    metrics = {"prompt_tokens": prompt, "cached_tokens": cached, "completion_tokens": output, "cost_usd": cost}
+    step = {"source": "agent", "message": "" if tools else "Done.", "metrics": metrics}
+    if tools:
+        step["tool_calls"] = [{"tool_call_id": f"c{prompt}", "function_name": "Bash", "arguments": {"command": "ls"}}]
+    if sidechain:
+        step["extra"] = {"is_sidechain": True}
+    return step
+
+
+def prompt(message: str) -> dict:
+    return {"source": "user", "message": message}
+
+
+def resumed_session() -> list[dict]:
+    """Three prompts. The second resumes after a stop and adds 1,500 tokens beyond the stop's output and its own
+    text, which three later main calls read; a skill body and a subagent's call sit in between."""
+    return [
+        prompt("# Commissions\n\nBuild it."),
+        call(10_000, 9_000, 200, tools=True),
+        call(12_000, 10_000, 300),
+        prompt("x" * 400),
+        call(13_900, 12_000, 400, tools=True),
+        prompt("Base directory for this skill: /logs/agent/sessions/skills/proof\n\n# Proof\n"),
+        call(3_000, 0, 100, sidechain=True),
+        call(14_500, 13_900, 250, tools=True),
+        call(15_000, 14_500, 150),
+        prompt("Approved. Continue.\n"),
+        call(15_155, 15_000, 120),
+    ]
+
+
+def approx(value: float) -> object:
+    """Equal to any float within 1e-9 of value, for comparing computed costs inside larger structures."""
+
+    class Near(float):
+        def __eq__(self, other: object) -> bool:
+            return isinstance(other, float) and abs(other - value) < 1e-9
+
+        __hash__ = float.__hash__
+
+    return Near(value)
 
 
 def stub_sections(report: str) -> list[str]:
@@ -357,6 +413,8 @@ class LiftTests(unittest.TestCase):
                 "api_calls": None,
                 "context_per_call": None,
                 "cache_read_tokens": None,
+                "resume_tokens": None,
+                "resume_cost_usd": None,
                 "agent_seconds": 90.0,
                 "turns": 3,
                 "lines_changed": 6,
@@ -416,6 +474,77 @@ class LiftTests(unittest.TestCase):
         evidence = lift.trial_evidence(trial, result, result["verifier_result"]["rewards"])
         self.assertEqual(evidence["activity"]["test_suite"]["calls"], 2.0)
 
+    def staged_trial(self, arm: str, n: int, records: list[tuple[int, float]]) -> Path:
+        """A resumed trial of steps s1-brief, s1-approve, and s2-brief with resumed_session() as its trajectory and
+        (output tokens, cost) running totals as its step records."""
+        trial = write_costed_trial(self.root / arm, "staged-commissions", n, output_tokens=0)
+        result = json.loads((trial / "result.json").read_text())
+        result.pop("agent_result"), result.pop("agent_execution")
+        result["config"] = {"agent": {"resume_trajectory": True}}
+        result["step_results"] = [
+            {
+                "step_name": name,
+                "agent_result": {"n_output_tokens": tokens, "cost_usd": cost},
+                "agent_execution": agent_run(0, 0, 60)[1],
+            }
+            for name, (tokens, cost) in zip(("s1-brief", "s1-approve", "s2-brief"), records, strict=True)
+        ]
+        (trial / "result.json").write_text(json.dumps(result))
+        (trial / "steps" / "s2-brief").mkdir(parents=True)
+        (trial / "agent").rename(trial / "steps" / "s2-brief" / "agent")
+        (trial / "verifier").rename(trial / "steps" / "s2-brief" / "verifier")
+        (trial / "steps" / "s2-brief" / "agent" / "trajectory.json").write_text(
+            json.dumps({"steps": resumed_session()})
+        )
+        return trial
+
+    def evidence_of(self, trial: Path) -> dict:
+        return next(iter(lift.load_trials(trial.parent).values()))[0]
+
+    def test_stage_figures_split_the_session_at_each_prompt_and_sum_to_the_trial(self):
+        evidence = self.evidence_of(self.staged_trial("consult", 0, [(500, 0.5), (1_250, 2.0), (1_370, 2.6)]))
+        self.assertEqual(
+            evidence["stages"],
+            [
+                {"stage": "s1", "api_calls": 6, "cost_usd": 2.0, "output_tokens": 1_250},
+                {"stage": "s2", "api_calls": 1, "cost_usd": approx(0.6), "output_tokens": 120},
+            ],
+        )
+        cost = evidence["cost"]
+        self.assertEqual((cost["api_calls"], cost["cost_usd"], cost["output_tokens"]), (7, 2.6, 1_370))
+
+    def test_tokens_added_at_a_resume_are_priced_as_one_write_and_a_read_by_each_later_call(self):
+        cost = self.evidence_of(self.staged_trial("consult", 0, [(500, 0.5), (1_250, 2.0), (1_370, 2.6)]))["cost"]
+        self.assertAlmostEqual(cost["resume_tokens"], 1_500)
+        # Read by the three main calls after the resumed one; the stop before "Approved. Continue." added nothing.
+        self.assertAlmostEqual(cost["resume_cost_usd"], 1_500 * (RATES[0] + 3 * RATES[1]))
+
+    def test_the_per_token_rates_are_fitted_from_the_per_call_costs(self):
+        calls = [step["metrics"] for step in resumed_session() if step["source"] == "agent"]
+        for fitted, rate in zip(stages.token_rates(calls), RATES, strict=True):
+            self.assertAlmostEqual(fitted / rate, 1.0)
+        self.assertIsNone(stages.token_rates(calls[:2]))
+
+    def test_a_trial_whose_prompts_do_not_match_its_steps_has_no_stage_figures(self):
+        trial = self.staged_trial("consult", 0, [(500, 0.5), (1_250, 2.0), (1_370, 2.6)])
+        path = trial / "steps" / "s2-brief" / "agent" / "trajectory.json"
+        path.write_text(json.dumps({"steps": resumed_session()[:-2]}))
+        self.assertIsNone(self.evidence_of(trial)["stages"])
+
+    def test_the_report_gives_each_stage_per_arm_with_its_ratio_and_a_total(self):
+        self.staged_trial("bare", 0, [(250, 0.25), (625, 1.0), (685, 1.3)])
+        self.staged_trial("consult", 0, [(500, 0.5), (1_250, 2.0), (1_370, 2.6)])
+        with redirect_stdout(io.StringIO()):
+            lift.main(["lift.py", str(self.root / "bare"), str(self.root / "consult")])
+        report = (self.root / "lift" / "consult.md").read_text()
+        self.assertIn("## Per-stage cost: consult/staged-commissions", report)
+        self.assertIn("| s1 | 6.0 / 6.0 | 1.00x | 1.00 / 2.00 | 2.00x | 625 / 1,250 | 2.00x |", report)
+        self.assertIn("| total | 7.0 / 7.0 | 1.00x | 1.30 / 2.60 | 2.00x | 685 / 1,370 | 2.00x |", report)
+        self.assertIn("| tokens added at resumes | 1 | 1,500 | 1,500 | +0 (+0%) |", report)
+        self.assertIn("| consult/staged-commissions | 1.30 / 2.60 | 2.00x |", report)
+        resume_cost = 1_500 * (RATES[0] + 3 * RATES[1])
+        self.assertIn(f"| {(2.6 - resume_cost) / (1.3 - resume_cost):.2f}x |", report)
+
     def test_only_lines_inside_hunks_count_as_changed(self):
         trial = write_costed_trial(self.root / "consult", "proof-first-bugfix", 0, output_tokens=1)
         hunk_with_dashes = BUNDLE.replace("-const b = 2;", "--- a/looks-like-a-header")
@@ -459,7 +588,60 @@ class LiftTests(unittest.TestCase):
         self.assertAlmostEqual(gate[0]["cost_usd"]["ratio"], 1.4)
         self.assertEqual((gate[0]["agent_seconds"]["ratio"], gate[0]["within"]), (2.0, False))
         report = (self.root / "lift" / "consult.md").read_text()
-        self.assertIn("| consult/proof-first-bugfix | 1.00 / 1.40 | 1.40x | 1.0 / 2.0 | 2.00x | - | no |", report)
+        self.assertIn(
+            "| consult/proof-first-bugfix | 1.00 / 1.40 | 1.40x | 1.0 / 2.0 | 2.00x | - | - "
+            "| 16.67 / 23.33 | 1.40x | no |",
+            report,
+        )
+
+    def test_the_stage_table_takes_the_stage_list_most_trials_share(self):
+        def entry(names: list[str], cost: float) -> dict:
+            figures = [{"stage": n, "api_calls": 10, "cost_usd": cost, "output_tokens": 100} for n in names]
+            return {"stages": figures}
+
+        full, short = [f"s{i}" for i in range(1, 6)], ["s1", "s2"]
+        bare = {"consult/s": [entry(full, 1.6) for _ in range(5)]}
+        consult = {"consult/s": [entry(short, 1.0)] + [entry(full, 3.8) for _ in range(4)]}
+        result = lift.compare_stages(bare, consult, ["consult/s"])["consult/s"]
+        self.assertEqual([row["stage"] for row in result["stages"]], [*full, "total"])
+        self.assertEqual((result["trials"], result["dropped"]), ({"bare": 5, "consult": 4}, {"bare": 0, "consult": 1}))
+        self.assertAlmostEqual(result["stages"][-1]["cost_usd"]["consult"], 19.0)
+        report = "\n".join(lift.render_stages({"consult/s": result}))
+        self.assertIn("Left out: 0 bare and 1 consult trials whose stage figures are missing", report)
+        self.assertEqual(lift.compare_stages({"consult/s": [{"stages": None}]}, consult, ["consult/s"]), {})
+        tied = lift.compare_stages(
+            {"consult/s": [entry(short, 1.0), entry(full, 1.6)]},
+            {"consult/s": [entry(full, 3.8), entry(short, 1.0)]},
+            ["consult/s"],
+        )
+        self.assertEqual(len(tied["consult/s"]["stages"]), len(full) + 1)
+
+    def test_a_trial_without_resumed_sessions_has_no_stage_figures(self):
+        records = [(500, 0.5), (1_250, 2.0), (1_370, 2.6)]
+        steps = [
+            {"step_name": name, "agent_result": {"n_output_tokens": tokens, "cost_usd": cost}}
+            for name, (tokens, cost) in zip(("s1-brief", "s1-approve", "s2-brief"), records, strict=True)
+        ]
+        session = lift.cl.Trajectory(steps=resumed_session(), calls=[])
+        resumed = {"config": {"agent": {"resume_trajectory": True}}, "step_results": steps}
+        self.assertIsNotNone(stages.stage_costs(resumed, session))
+        self.assertIsNone(stages.stage_costs({**resumed, "config": {"agent": {"resume_trajectory": False}}}, session))
+
+    def test_a_turn_that_stopped_mid_tool_call_adds_no_resume_tokens(self):
+        session = [
+            prompt("Build it."),
+            call(10_000, 9_000, 200, tools=True),
+            prompt("Continue."),
+            call(13_000, 10_000, 100),
+        ]
+        self.assertEqual(stages.resume_figures(lift.cl.Trajectory(steps=session, calls=[]))["resume_tokens"], 0)
+
+    def test_steps_before_the_first_prompt_open_a_stage_only_when_they_are_api_calls(self):
+        system = {"source": "system", "message": "You are a coding agent."}
+        steps = [system, prompt("Build it."), call(10_000, 9_000, 200), prompt("Approved."), call(10_300, 10_000, 50)]
+        self.assertEqual(stages.calls_per_prompt(lift.cl.Trajectory(steps=steps, calls=[])), [1, 1])
+        early = [call(5_000, 0, 10), *steps[1:]]
+        self.assertEqual(stages.calls_per_prompt(lift.cl.Trajectory(steps=early, calls=[])), [1, 1, 1])
 
     def test_a_task_exactly_at_the_gate_is_within_it(self):
         gate = lift.cost_gate([gate_row("consult/a", (1.0, 1.5), (60.0, 90.0))])
@@ -495,7 +677,8 @@ class LiftTests(unittest.TestCase):
             lift.main(["lift.py", str(self.root / "bare"), str(self.root / "consult")])
         report = (self.root / "lift" / "consult.md").read_text()
         self.assertIn(
-            "| consult/follow-the-project | - / 3.00 | - | - / 1.0 | - | - | unknown: no bare trials |", report
+            "| consult/follow-the-project | - / 3.00 | - | - / 1.0 | - | - | - | - | - | unknown: no bare trials |",
+            report,
         )
         self.assertIn("Gate verdict: unknown. Within the gate on 1 of 2 tasks, outside on 0, unknown on 1.", report)
 
